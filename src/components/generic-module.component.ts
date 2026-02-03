@@ -1,12 +1,22 @@
 
-import { Component, inject, computed, input } from '@angular/core';
+import { Component, inject, computed, input, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppStateService, MenuItem } from '../services/app-state.service';
+
+interface MockData {
+  id: number;
+  date: string;
+  operator: string;
+  operatorId: string;
+  detail: string;
+  status: 'Conforme' | 'Attenzione' | 'Non Conforme';
+}
 
 @Component({
   selector: 'app-generic-module',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="space-y-6">
       <!-- Header Module -->
@@ -25,7 +35,7 @@ import { AppStateService, MenuItem } from '../services/app-state.service';
           <button class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
             <i class="fa-solid fa-download mr-2"></i> Export PDF
           </button>
-          <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+          <button (click)="openModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
             <i class="fa-solid fa-plus mr-2"></i> Nuovo Record
           </button>
         </div>
@@ -42,7 +52,7 @@ import { AppStateService, MenuItem } from '../services/app-state.service';
          </div>
       }
 
-      <!-- Data Table Placeholder -->
+      <!-- Data Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-600">
@@ -57,8 +67,8 @@ import { AppStateService, MenuItem } from '../services/app-state.service';
             </thead>
             <tbody class="divide-y divide-slate-100">
               @for (item of filteredData(); track item.id) {
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-6 py-4 whitespace-nowrap">{{ item.date }}</td>
+                <tr class="hover:bg-slate-50 transition-colors animate-fade-in">
+                  <td class="px-6 py-4 whitespace-nowrap font-mono text-xs">{{ item.date }}</td>
                   <td class="px-6 py-4 font-medium text-slate-800">
                     <div class="flex items-center gap-2">
                       <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
@@ -92,53 +102,185 @@ import { AppStateService, MenuItem } from '../services/app-state.service';
         
         <!-- Pagination Mock -->
         <div class="px-6 py-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-          <span>Visualizzazione {{ filteredData().length }} di {{ rawData().length }} record</span>
+          <span>Visualizzazione {{ filteredData().length }} di {{ items().length }} record</span>
           <div class="flex gap-2">
             <button class="p-1 px-2 rounded hover:bg-slate-100 disabled:opacity-50"><i class="fa-solid fa-chevron-left"></i></button>
              <button class="p-1 px-2 rounded hover:bg-slate-100"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
         </div>
       </div>
+
+      <!-- New Record Modal -->
+      @if (isModalOpen()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
+          
+          <!-- Modal Content -->
+          <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 class="text-lg font-bold text-slate-800">
+                Nuova Registrazione
+              </h3>
+              <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+              </button>
+            </div>
+            
+            <form [formGroup]="recordForm" (ngSubmit)="saveRecord()" class="p-6 space-y-4">
+              
+              <div class="space-y-1">
+                 <label class="text-sm font-medium text-slate-700">Data e Ora</label>
+                 <input type="datetime-local" formControlName="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              </div>
+
+              <div class="space-y-1">
+                 <label class="text-sm font-medium text-slate-700">Dettaglio / Note Operative</label>
+                 <textarea formControlName="detail" rows="3" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descrivi l'attività svolta..."></textarea>
+              </div>
+
+              <div class="space-y-1">
+                 <label class="text-sm font-medium text-slate-700">Esito Verifica</label>
+                 <select formControlName="status" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                    <option value="Conforme">Conforme</option>
+                    <option value="Attenzione">Attenzione / Monitorare</option>
+                    <option value="Non Conforme">Non Conforme</option>
+                 </select>
+              </div>
+
+              <div class="bg-blue-50 p-3 rounded-lg flex items-start gap-3 mt-2">
+                 <i class="fa-solid fa-user-tag text-blue-500 mt-1"></i>
+                 <div class="text-sm">
+                   <p class="font-bold text-blue-900">Operatore Registrato</p>
+                   <p class="text-blue-700">{{ state.currentUser()?.name }}</p>
+                 </div>
+              </div>
+
+              <div class="pt-4 flex justify-end gap-3">
+                <button type="button" (click)="closeModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium">
+                  Annulla
+                </button>
+                <button type="submit" [disabled]="recordForm.invalid" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Salva Registrazione
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      }
     </div>
   `
 })
 export class GenericModuleComponent {
   state = inject(AppStateService);
+  fb = inject(FormBuilder);
   moduleId = input.required<string>();
+
+  // Writable signal for data instead of computed, to allow updates
+  items = signal<MockData[]>([]);
+  isModalOpen = signal(false);
+  
+  recordForm: FormGroup;
 
   moduleInfo = computed(() => 
     this.state.menuItems.find(m => m.id === this.moduleId())
   );
 
-  // Raw Data (Unfiltered)
-  rawData = computed(() => {
-    const id = this.moduleId();
-    const isTemp = id.includes('temp');
-    const isSuppliers = id.includes('suppliers');
-    
-    // Static data with varying operators
-    return [
-      { id: 1, date: '2024-05-20 08:30', operator: 'Mario Rossi', detail: isTemp ? 'Cella Frigo 1: +3.5°C' : (isSuppliers ? 'Forniture Globali Srl' : 'Controllo Ordinario'), status: 'Conforme' },
-      { id: 2, date: '2024-05-19 18:45', operator: 'Luigi Verdi', detail: isTemp ? 'Abbattitore: -18.2°C' : (isSuppliers ? 'Bio Alimenti SpA' : 'Pulizia Fine Turno'), status: 'Conforme' },
-      { id: 3, date: '2024-05-19 12:00', operator: 'Mario Rossi', detail: isTemp ? 'Vetrina Bibite: +5.0°C' : (isSuppliers ? 'TecnoClean Italia' : 'Verifica scadenze'), status: 'Conforme' },
-      { id: 4, date: '2024-05-18 09:15', operator: 'Giulia Bianchi', detail: isTemp ? 'Cella Carni: +2.1°C' : (isSuppliers ? 'Dolci & Co.' : 'Ricezione Merce'), status: 'Attenzione' },
-      { id: 5, date: '2024-05-18 08:00', operator: 'Mario Rossi', detail: isTemp ? 'Frizer 2: -20°C' : (isSuppliers ? 'Panificio Locale' : 'Sanificazione Superfici'), status: 'Conforme' },
-      { id: 6, date: '2024-05-17 14:30', operator: 'Luigi Verdi', detail: isTemp ? 'Cella Frigo 2: +4.0°C' : (isSuppliers ? 'Ortofrutta Express' : 'Manutenzione Ordinaria'), status: 'Conforme' },
-    ];
-  });
+  constructor() {
+    this.recordForm = this.fb.group({
+      date: ['', Validators.required],
+      detail: ['', Validators.required],
+      status: ['Conforme', Validators.required]
+    });
 
-  // Filtered Data
+    // React to moduleId changes to reload data
+    effect(() => {
+      const id = this.moduleId();
+      // Simulate fetching data
+      this.items.set(this.generateMockData(id));
+    }, { allowSignalWrites: true });
+  }
+
+  // Generate mock data (moved from computed)
+  private generateMockData(moduleId: string): MockData[] {
+    const users = this.state.systemUsers();
+    
+    // Generate ~45 mock items
+    const data: MockData[] = Array.from({ length: 45 }, (_, i) => {
+      const user = users[Math.floor(Math.random() * users.length)];
+      
+      const date = new Date();
+      date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+      date.setHours(7 + Math.floor(Math.random() * 14), Math.floor(Math.random() * 60));
+      
+      // Pad to keep ISO string format compatible with sorting
+      const dateStr = date.getFullYear() + '-' + 
+                      String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(date.getDate()).padStart(2, '0') + ' ' + 
+                      String(date.getHours()).padStart(2, '0') + ':' + 
+                      String(date.getMinutes()).padStart(2, '0');
+
+      let detail = 'Registrazione generica';
+      let status: MockData['status'] = 'Conforme';
+      
+      // -- Logic for content generation
+      if (moduleId.includes('temp') || moduleId.includes('chiller') || moduleId.includes('machine')) {
+        const units = ['Cella Frigo #1', 'Cella Frigo #2', 'Freezer Pozzetto', 'Vetrina Bibite', 'Abbattitore Master'];
+        const unit = units[Math.floor(Math.random() * units.length)];
+        const temp = moduleId.includes('chiller') ? -(Math.random() * 30 + 10).toFixed(1) : (Math.random() * 6 + 1).toFixed(1);
+        detail = `${unit}: ${temp}°C`;
+        if (Math.abs(Number(temp)) < 2 || Math.abs(Number(temp)) > 25) status = Math.random() > 0.5 ? 'Attenzione' : 'Conforme';
+      
+      } else if (moduleId.includes('clean') || moduleId.includes('hygiene')) {
+        const tasks = ['Sanificazione Piani', 'Pulizia Pavimenti', 'Lavaggio Attrezzature', 'Igiene Mani', 'Sanificazione WC', 'Pulizia Cappa'];
+        detail = tasks[Math.floor(Math.random() * tasks.length)];
+        
+      } else if (moduleId.includes('goods')) {
+        const suppliers = ['Global Foods Srl', 'Ortofrutta Express', 'Panificio Città', 'Carni Scelte SpA'];
+        const items = ['Farina 00', 'Pomodori Pelati', 'Mozzarella', 'Manzo Tagli', 'Verdure Miste'];
+        detail = `Arrivo: ${items[Math.floor(Math.random() * items.length)]} da ${suppliers[Math.floor(Math.random() * suppliers.length)]}`;
+      
+      } else if (moduleId.includes('pest')) {
+        detail = `Controllo trappola #${Math.floor(Math.random() * 10) + 1}`;
+        if (Math.random() > 0.9) status = 'Attenzione';
+      
+      } else if (moduleId.includes('training')) {
+        const courses = ['HACCP Base', 'Aggiornamento Allergeni', 'Sicurezza 81/08', 'Antincendio'];
+        detail = `Corso: ${courses[Math.floor(Math.random() * courses.length)]}`;
+      } else if (moduleId.includes('suppliers')) {
+         const suppliers = ['Global Foods Srl', 'Ortofrutta Express', 'Panificio Città', 'Carni Scelte SpA', 'Bevande & Co.', 'Carta e Igiene Srl'];
+         detail = `Anagrafica: ${suppliers[i % suppliers.length] || 'Nuovo Fornitore'}`;
+      } else if (moduleId.includes('compliance')) {
+         detail = `Segnalazione #${1000 + i}`;
+         status = 'Non Conforme';
+      }
+
+      if (status === 'Conforme' && Math.random() > 0.9) {
+        status = 'Attenzione';
+      }
+
+      return {
+        id: i + 1,
+        date: dateStr,
+        operator: user.name,
+        operatorId: user.id,
+        detail,
+        status
+      };
+    });
+
+    return data.sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  // Filtered Data Logic
   filteredData = computed(() => {
-    const allData = this.rawData();
+    const allData = this.items();
     const filterId = this.state.filterCollaboratorId();
 
     if (!filterId) return allData;
 
-    // Find the user name associated with the ID in the systemUsers list
-    const filterUser = this.state.systemUsers().find(u => u.id === filterId);
-    if (!filterUser) return allData; // Should not happen
-
-    return allData.filter(item => item.operator === filterUser.name);
+    return allData.filter(item => item.operatorId === filterId);
   });
 
   getFilterName() {
@@ -153,6 +295,50 @@ export class GenericModuleComponent {
   getStatusClass(status: string): string {
     if (status === 'Conforme') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800';
     if (status === 'Attenzione') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800';
+     if (status === 'Non Conforme') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
     return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800';
+  }
+
+  // Modal Actions
+  openModal() {
+    // Set default date to now (local ISO string logic)
+    const now = new Date();
+    const nowStr = now.getFullYear() + '-' + 
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(now.getDate()).padStart(2, '0') + 'T' + 
+                   String(now.getHours()).padStart(2, '0') + ':' + 
+                   String(now.getMinutes()).padStart(2, '0');
+                   
+    this.recordForm.reset({
+      date: nowStr,
+      detail: '',
+      status: 'Conforme'
+    });
+    this.isModalOpen.set(true);
+  }
+
+  closeModal() {
+    this.isModalOpen.set(false);
+  }
+
+  saveRecord() {
+    if (this.recordForm.valid) {
+      const formVal = this.recordForm.value;
+      const currentUser = this.state.currentUser();
+      
+      const newRecord: MockData = {
+        id: Date.now(), // simple unique id
+        date: formVal.date.replace('T', ' '),
+        operator: currentUser?.name || 'Sconosciuto',
+        operatorId: 'CURRENT_USER_ID', // In a real app this would be the ID
+        detail: formVal.detail,
+        status: formVal.status
+      };
+
+      // Add to list (prepend)
+      this.items.update(current => [newRecord, ...current]);
+      
+      this.closeModal();
+    }
   }
 }

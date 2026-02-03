@@ -16,10 +16,10 @@ import { AppStateService, SystemUser } from '../services/app-state.service';
         <div>
           <h2 class="text-2xl font-bold text-slate-800 flex items-center">
             <i class="fa-solid fa-users-gear mr-3 text-blue-600"></i>
-            Gestione Collaboratori
+            Gestione Collaboratori e Accessi
           </h2>
           <p class="text-slate-500 text-sm mt-1">
-            Gestisci gli accessi del personale, assegna ruoli e aree operative.
+            Gestisci le utenze, assegna i collaboratori alle aziende e controlla i permessi di accesso.
           </p>
         </div>
         <button (click)="openModal()" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200 font-medium flex items-center">
@@ -34,19 +34,26 @@ import { AppStateService, SystemUser } from '../services/app-state.service';
             <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
               <tr>
                 <th class="px-6 py-4">Utente</th>
-                <th class="px-6 py-4">Ruolo</th>
-                <th class="px-6 py-4">Dipartimento / Area</th>
-                <th class="px-6 py-4">Stato</th>
+                <th class="px-6 py-4">Azienda Assegnata</th>
+                <th class="px-6 py-4">Ruolo & Area</th>
+                <th class="px-6 py-4">Accesso Piattaforma</th>
                 <th class="px-6 py-4 text-right">Azioni</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               @for (user of state.systemUsers(); track user.id) {
-                <tr class="hover:bg-slate-50 transition-colors">
+                <tr class="hover:bg-slate-50 transition-colors" [class.bg-slate-50]="!user.active">
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
-                      <img [src]="user.avatar" class="w-10 h-10 rounded-full border border-slate-200">
-                      <div>
+                      <div class="relative">
+                        <img [src]="user.avatar" class="w-10 h-10 rounded-full border border-slate-200" [class.grayscale]="!user.active">
+                        @if (!user.active) {
+                          <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                            <i class="fa-solid fa-ban text-[8px] text-white"></i>
+                          </div>
+                        }
+                      </div>
+                      <div [class.opacity-50]="!user.active">
                         <div class="font-bold text-slate-800">{{ user.name }}</div>
                         <div class="text-xs text-slate-400">{{ user.email }}</div>
                       </div>
@@ -54,35 +61,44 @@ import { AppStateService, SystemUser } from '../services/app-state.service';
                   </td>
                   <td class="px-6 py-4">
                     @if (user.role === 'ADMIN') {
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded border border-slate-200 bg-slate-100 text-slate-800 text-xs font-bold">
-                        <i class="fa-solid fa-shield-halved mr-1.5 text-slate-500"></i> ADMIN
-                      </span>
+                       <span class="text-slate-400 italic">-- Super Admin --</span>
                     } @else {
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold">
-                        <i class="fa-solid fa-user mr-1.5"></i> OPERATIVO
-                      </span>
+                       <div class="flex items-center gap-2">
+                         <i class="fa-solid fa-building text-slate-400"></i>
+                         <span class="font-medium text-slate-700">{{ getClientName(user.clientId) }}</span>
+                       </div>
                     }
                   </td>
                   <td class="px-6 py-4">
-                    <span class="text-slate-700">{{ user.department || 'Generale' }}</span>
+                    <div class="flex flex-col">
+                      @if (user.role === 'ADMIN') {
+                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-bold mb-1">
+                          ADMIN
+                        </span>
+                      } @else {
+                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-bold mb-1">
+                          OPERATIVO
+                        </span>
+                      }
+                      <span class="text-xs text-slate-500">{{ user.department || 'Generale' }}</span>
+                    </div>
                   </td>
                   <td class="px-6 py-4">
-                    @if (user.active) {
-                      <span class="text-emerald-600 font-medium text-xs flex items-center">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Attivo
-                      </span>
-                    } @else {
-                      <span class="text-slate-400 font-medium text-xs flex items-center">
-                        <span class="w-2 h-2 rounded-full bg-slate-300 mr-2"></span> Disabilitato
-                      </span>
-                    }
+                    <div class="flex items-center gap-3">
+                       <button (click)="toggleUserActive(user)" 
+                          [class]="'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ' + (user.active ? 'bg-emerald-500' : 'bg-slate-200')">
+                          <span [class]="'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ' + (user.active ? 'translate-x-5' : 'translate-x-0')"></span>
+                       </button>
+                       <span [class]="'text-xs font-medium ' + (user.active ? 'text-emerald-600' : 'text-slate-400')">
+                         {{ user.active ? 'Abilitato' : 'Disabilitato' }}
+                       </span>
+                    </div>
                   </td>
                   <td class="px-6 py-4 text-right">
                     <button (click)="openModal(user)" class="text-slate-400 hover:text-blue-600 mx-1 p-2 hover:bg-blue-50 rounded-full transition-all" title="Modifica">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
                     @if (user.role !== 'ADMIN') { 
-                       <!-- Prevent deleting admins for safety in demo -->
                       <button (click)="deleteUser(user.id)" class="text-slate-400 hover:text-red-600 mx-1 p-2 hover:bg-red-50 rounded-full transition-all" title="Elimina">
                         <i class="fa-solid fa-trash-can"></i>
                       </button>
@@ -93,13 +109,6 @@ import { AppStateService, SystemUser } from '../services/app-state.service';
             </tbody>
           </table>
         </div>
-        
-        @if (state.systemUsers().length === 0) {
-          <div class="p-12 text-center text-slate-400">
-            <i class="fa-solid fa-users-slash text-4xl mb-3"></i>
-            <p>Nessun collaboratore trovato.</p>
-          </div>
-        }
       </div>
 
       <!-- Add/Edit Modal Overlay -->
@@ -143,6 +152,18 @@ import { AppStateService, SystemUser } from '../services/app-state.service';
                 </div>
               </div>
 
+              <!-- Company Selection -->
+              <div class="space-y-1 bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                <label class="text-sm font-bold text-slate-800 block mb-1">Azienda di Appartenenza</label>
+                <p class="text-xs text-slate-500 mb-2">Seleziona l'anagrafica aziendale a cui collegare questo utente.</p>
+                <select formControlName="clientId" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium">
+                  <option value="">-- Seleziona Cliente --</option>
+                  @for (client of state.clients(); track client.id) {
+                    <option [value]="client.id">{{ client.name }} ({{ client.piva }})</option>
+                  }
+                </select>
+              </div>
+
               <!-- Role & Department Grid -->
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
@@ -164,14 +185,6 @@ import { AppStateService, SystemUser } from '../services/app-state.service';
                     <option value="Direzione">Direzione</option>
                   </select>
                 </div>
-              </div>
-
-              <!-- Active Status -->
-              <div class="flex items-center gap-2 pt-2">
-                <input type="checkbox" formControlName="active" id="activeUser" class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
-                <label for="activeUser" class="text-sm text-slate-700 cursor-pointer select-none">
-                  Utente Attivo (Abilitato all'accesso)
-                </label>
               </div>
 
               <!-- Action Buttons -->
@@ -209,8 +222,20 @@ export class CollaboratorsViewComponent {
       email: ['', [Validators.required, Validators.email]],
       role: ['COLLABORATOR', Validators.required],
       department: [''],
+      clientId: ['', Validators.required], // Now Required
       active: [true]
     });
+  }
+
+  getClientName(clientId?: string): string {
+    if (!clientId) return 'N.D.';
+    const client = this.state.clients().find(c => c.id === clientId);
+    return client ? client.name : 'Azienda Sconosciuta';
+  }
+
+  toggleUserActive(user: SystemUser) {
+    if (user.role === 'ADMIN') return; // Cannot disable main admin
+    this.state.updateSystemUser(user.id, { active: !user.active });
   }
 
   openModal(user?: SystemUser) {
@@ -222,16 +247,27 @@ export class CollaboratorsViewComponent {
         email: user.email,
         role: user.role,
         department: user.department || '',
+        clientId: user.clientId || '',
         active: user.active
       });
+      // Handle Admin logic (admins might not need clientID in this simplified view, but usually do)
+      if (user.role === 'ADMIN') {
+        this.userForm.get('clientId')?.clearValidators();
+      } else {
+        this.userForm.get('clientId')?.setValidators(Validators.required);
+      }
+      this.userForm.get('clientId')?.updateValueAndValidity();
+
     } else {
       this.isEditing.set(false);
       this.editingUserId.set(null);
       this.userForm.reset({
         role: 'COLLABORATOR',
         active: true,
-        department: ''
+        department: '',
+        clientId: ''
       });
+      this.userForm.get('clientId')?.setValidators(Validators.required);
     }
     this.isModalOpen.set(true);
   }

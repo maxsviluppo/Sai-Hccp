@@ -7,6 +7,7 @@ import { GenericModuleComponent } from './components/generic-module.component';
 import { SettingsViewComponent } from './components/settings-view.component';
 import { CollaboratorsViewComponent } from './components/collaborators-view.component';
 import { OperationalChecklistComponent } from './components/operational-checklist.component';
+import { StaffTrainingChecklistComponent } from './components/staff-training-checklist.component';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +18,8 @@ import { OperationalChecklistComponent } from './components/operational-checklis
     GenericModuleComponent, 
     SettingsViewComponent,
     CollaboratorsViewComponent,
-    OperationalChecklistComponent
+    OperationalChecklistComponent,
+    StaffTrainingChecklistComponent
   ],
   templateUrl: './app.component.html'
 })
