@@ -18,26 +18,39 @@ interface MockData {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="space-y-6">
-      <!-- Header Module -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div>
-           <div class="flex items-center gap-2 mb-1">
-             <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2 py-0.5 rounded">{{ moduleInfo()?.category }}</span>
-           </div>
-           <h2 class="text-2xl font-bold text-slate-800 flex items-center">
-             <i [class]="'fa-solid ' + (moduleInfo()?.icon || 'fa-folder') + ' mr-3 text-blue-600'"></i>
-             {{ moduleInfo()?.label }}
-           </h2>
-           <p class="text-slate-500 text-sm mt-1">Gestione operativa e archivio digitale.</p>
+    <div class="space-y-6 pb-10">
+      <!-- Premium Header with Gradient -->
+      <div class="bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700 p-8 rounded-3xl shadow-2xl border border-slate-600/20 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <i [class]="'fa-solid ' + (moduleInfo()?.icon || 'fa-folder') + ' text-9xl text-white'"></i>
         </div>
-        <div class="flex gap-3">
-          <button class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-            <i class="fa-solid fa-download mr-2"></i> Export PDF
-          </button>
-          <button (click)="openModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
-            <i class="fa-solid fa-plus mr-2"></i> Nuovo Record
-          </button>
+
+        <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-white/60 bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/20">
+                {{ moduleInfo()?.category }}
+              </span>
+            </div>
+            <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
+              <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mr-4 shadow-lg border border-white/30">
+                  <i [class]="'fa-solid ' + (moduleInfo()?.icon || 'fa-folder') + ' text-white'"></i>
+              </span>
+              {{ moduleInfo()?.label }}
+            </h2>
+            <p class="text-slate-200 text-sm mt-2 font-medium ml-1">
+              Gestione operativa e archivio digitale
+            </p>
+          </div>
+          
+          <div class="flex gap-3">
+            <button class="px-5 py-3 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-xl hover:bg-white/20 transition-all shadow-lg font-bold">
+              <i class="fa-solid fa-download mr-2"></i> Export PDF
+            </button>
+            <button (click)="openModal()" class="px-5 py-3 bg-white text-slate-700 rounded-xl hover:bg-slate-50 transition-all shadow-xl font-bold">
+              <i class="fa-solid fa-plus mr-2"></i> Nuovo Record
+            </button>
+          </div>
         </div>
       </div>
 
@@ -180,10 +193,10 @@ export class GenericModuleComponent {
   // Writable signal for data instead of computed, to allow updates
   items = signal<MockData[]>([]);
   isModalOpen = signal(false);
-  
+
   recordForm: FormGroup;
 
-  moduleInfo = computed(() => 
+  moduleInfo = computed(() =>
     this.state.menuItems.find(m => m.id === this.moduleId())
   );
 
@@ -205,25 +218,25 @@ export class GenericModuleComponent {
   // Generate mock data (moved from computed)
   private generateMockData(moduleId: string): MockData[] {
     const users = this.state.systemUsers();
-    
+
     // Generate ~45 mock items
     const data: MockData[] = Array.from({ length: 45 }, (_, i) => {
       const user = users[Math.floor(Math.random() * users.length)];
-      
+
       const date = new Date();
       date.setDate(date.getDate() - Math.floor(Math.random() * 30));
       date.setHours(7 + Math.floor(Math.random() * 14), Math.floor(Math.random() * 60));
-      
+
       // Pad to keep ISO string format compatible with sorting
-      const dateStr = date.getFullYear() + '-' + 
-                      String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                      String(date.getDate()).padStart(2, '0') + ' ' + 
-                      String(date.getHours()).padStart(2, '0') + ':' + 
-                      String(date.getMinutes()).padStart(2, '0');
+      const dateStr = date.getFullYear() + '-' +
+        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0') + ' ' +
+        String(date.getHours()).padStart(2, '0') + ':' +
+        String(date.getMinutes()).padStart(2, '0');
 
       let detail = 'Registrazione generica';
       let status: MockData['status'] = 'Conforme';
-      
+
       // -- Logic for content generation
       if (moduleId.includes('temp') || moduleId.includes('chiller') || moduleId.includes('machine')) {
         const units = ['Cella Frigo #1', 'Cella Frigo #2', 'Freezer Pozzetto', 'Vetrina Bibite', 'Abbattitore Master'];
@@ -231,29 +244,29 @@ export class GenericModuleComponent {
         const temp = moduleId.includes('chiller') ? -(Math.random() * 30 + 10).toFixed(1) : (Math.random() * 6 + 1).toFixed(1);
         detail = `${unit}: ${temp}°C`;
         if (Math.abs(Number(temp)) < 2 || Math.abs(Number(temp)) > 25) status = Math.random() > 0.5 ? 'Attenzione' : 'Conforme';
-      
+
       } else if (moduleId.includes('clean') || moduleId.includes('hygiene')) {
         const tasks = ['Sanificazione Piani', 'Pulizia Pavimenti', 'Lavaggio Attrezzature', 'Igiene Mani', 'Sanificazione WC', 'Pulizia Cappa'];
         detail = tasks[Math.floor(Math.random() * tasks.length)];
-        
+
       } else if (moduleId.includes('goods')) {
         const suppliers = ['Global Foods Srl', 'Ortofrutta Express', 'Panificio Città', 'Carni Scelte SpA'];
         const items = ['Farina 00', 'Pomodori Pelati', 'Mozzarella', 'Manzo Tagli', 'Verdure Miste'];
         detail = `Arrivo: ${items[Math.floor(Math.random() * items.length)]} da ${suppliers[Math.floor(Math.random() * suppliers.length)]}`;
-      
+
       } else if (moduleId.includes('pest')) {
         detail = `Controllo trappola #${Math.floor(Math.random() * 10) + 1}`;
         if (Math.random() > 0.9) status = 'Attenzione';
-      
+
       } else if (moduleId.includes('training')) {
         const courses = ['HACCP Base', 'Aggiornamento Allergeni', 'Sicurezza 81/08', 'Antincendio'];
         detail = `Corso: ${courses[Math.floor(Math.random() * courses.length)]}`;
       } else if (moduleId.includes('suppliers')) {
-         const suppliers = ['Global Foods Srl', 'Ortofrutta Express', 'Panificio Città', 'Carni Scelte SpA', 'Bevande & Co.', 'Carta e Igiene Srl'];
-         detail = `Anagrafica: ${suppliers[i % suppliers.length] || 'Nuovo Fornitore'}`;
+        const suppliers = ['Global Foods Srl', 'Ortofrutta Express', 'Panificio Città', 'Carni Scelte SpA', 'Bevande & Co.', 'Carta e Igiene Srl'];
+        detail = `Anagrafica: ${suppliers[i % suppliers.length] || 'Nuovo Fornitore'}`;
       } else if (moduleId.includes('compliance')) {
-         detail = `Segnalazione #${1000 + i}`;
-         status = 'Non Conforme';
+        detail = `Segnalazione #${1000 + i}`;
+        status = 'Non Conforme';
       }
 
       if (status === 'Conforme' && Math.random() > 0.9) {
@@ -295,7 +308,7 @@ export class GenericModuleComponent {
   getStatusClass(status: string): string {
     if (status === 'Conforme') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800';
     if (status === 'Attenzione') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800';
-     if (status === 'Non Conforme') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+    if (status === 'Non Conforme') return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
     return 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800';
   }
 
@@ -303,12 +316,12 @@ export class GenericModuleComponent {
   openModal() {
     // Set default date to now (local ISO string logic)
     const now = new Date();
-    const nowStr = now.getFullYear() + '-' + 
-                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                   String(now.getDate()).padStart(2, '0') + 'T' + 
-                   String(now.getHours()).padStart(2, '0') + ':' + 
-                   String(now.getMinutes()).padStart(2, '0');
-                   
+    const nowStr = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0') + 'T' +
+      String(now.getHours()).padStart(2, '0') + ':' +
+      String(now.getMinutes()).padStart(2, '0');
+
     this.recordForm.reset({
       date: nowStr,
       detail: '',
@@ -325,7 +338,7 @@ export class GenericModuleComponent {
     if (this.recordForm.valid) {
       const formVal = this.recordForm.value;
       const currentUser = this.state.currentUser();
-      
+
       const newRecord: MockData = {
         id: Date.now(), // simple unique id
         date: formVal.date.replace('T', ' '),
@@ -337,7 +350,7 @@ export class GenericModuleComponent {
 
       // Add to list (prepend)
       this.items.update(current => [newRecord, ...current]);
-      
+
       this.closeModal();
     }
   }

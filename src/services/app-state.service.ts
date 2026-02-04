@@ -1,5 +1,6 @@
 
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { ToastService } from './toast.service';
 
 export type UserRole = 'ADMIN' | 'COLLABORATOR' | null;
 
@@ -11,6 +12,7 @@ export interface ClientEntity {
   phone: string;
   email: string;
   licenseNumber: string;
+  suspended: boolean; // Service suspension for non-payment
 }
 
 export interface SystemUser {
@@ -18,10 +20,12 @@ export interface SystemUser {
   name: string;
   email: string;
   role: UserRole;
-  department?: string; 
+  department?: string;
   active: boolean;
   avatar: string;
   clientId?: string; // Link to the specific Company/Client
+  username?: string;
+  password?: string;
 }
 
 export interface User {
@@ -46,15 +50,39 @@ export interface MenuItem {
 export class AppStateService {
   // --- Auth State ---
   readonly currentUser = signal<User | null>(null);
-  
+
   readonly isLoggedIn = computed(() => this.currentUser() !== null);
   readonly isAdmin = computed(() => this.currentUser()?.role === 'ADMIN');
 
   // --- Navigation State ---
   readonly currentModuleId = signal<string>('dashboard');
-  
+
   // --- Global Filter State ---
   readonly filterCollaboratorId = signal<string>(''); // '' means All
+  readonly filterDate = signal<string>(new Date().toISOString().split('T')[0]); // Default Today
+
+  // Editing Permission Logic
+  readonly isContextEditable = computed(() => {
+    // If not admin (Operator via login), they can always edit their current view (which is their own)
+    if (!this.isAdmin()) return true;
+
+    // If Admin, they can ONLY edit if they have selected a specific target context (Collaborator/Unit)
+    return !!this.filterCollaboratorId();
+  });
+
+  // Services
+  private toastService = inject(ToastService);
+
+  // --- Data Store (Mock Database) ---
+  // Stores all checks from all users
+  readonly checklistRecords = signal<{
+    id: string;
+    moduleId: string;
+    userId: string;
+    date: string;
+    data: any;
+    timestamp: Date;
+  }[]>([]);
 
   // --- Clients / Companies Database (New) ---
   readonly clients = signal<ClientEntity[]>([
@@ -65,7 +93,8 @@ export class AppStateService {
       address: 'Via Roma 1, Milano',
       phone: '02 1234567',
       email: 'info@damario.it',
-      licenseNumber: 'HACCP-MI-001'
+      licenseNumber: 'HACCP-MI-001',
+      suspended: false
     },
     {
       id: 'c2',
@@ -74,51 +103,61 @@ export class AppStateService {
       address: 'Corso Italia 50, Napoli',
       phone: '081 5556667',
       email: 'admin@bellanapoli.it',
-      licenseNumber: 'HACCP-NA-999'
+      licenseNumber: 'HACCP-NA-999',
+      suspended: false
     }
   ]);
 
   // --- System Users State ---
   readonly systemUsers = signal<SystemUser[]>([
-    { 
-      id: '1', 
-      name: 'Amministratore Sede', 
-      email: 'admin@gestionale.it', 
-      role: 'ADMIN', 
-      department: 'Direzione',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=Admin+Sede&background=0f172a&color=fff',
-      clientId: undefined // Admin sees all or manages system
-    },
-    { 
-      id: '2', 
-      name: 'Mario Rossi (Capo Sala)', 
-      email: 'mario@damario.it', 
-      role: 'COLLABORATOR', 
+    // Admin Removed as per request
+    // {
+    //   id: '1',
+    //   name: 'Amministratore Sede',
+    //   email: 'admin@gestionale.it',
+    //   role: 'ADMIN',
+    //   department: 'Direzione',
+    //   active: true,
+    //   avatar: 'https://ui-avatars.com/api/?name=Admin+Sede&background=0f172a&color=fff',
+    //   clientId: undefined,
+    //   username: 'admin',
+    //   password: 'password'
+    // },
+    {
+      id: '2',
+      name: 'Mario Rossi (Capo Sala)',
+      email: 'mario@damario.it',
+      role: 'COLLABORATOR',
       department: 'Sala',
       active: true,
       avatar: 'https://ui-avatars.com/api/?name=Mario+Rossi&background=3b82f6&color=fff',
-      clientId: 'c1' // Belongs to Ristorante Da Mario
+      clientId: 'c1',
+      username: 'mario',
+      password: 'password'
     },
-    { 
-      id: '3', 
-      name: 'Luigi Verdi (Chef)', 
-      email: 'chef@bellanapoli.it', 
-      role: 'COLLABORATOR', 
+    {
+      id: '3',
+      name: 'Luigi Verdi (Chef)',
+      email: 'chef@bellanapoli.it',
+      role: 'COLLABORATOR',
       department: 'Cucina',
-      active: true, // Example: Active
+      active: true,
       avatar: 'https://ui-avatars.com/api/?name=Luigi+Verdi&background=10b981&color=fff',
-      clientId: 'c2' // Belongs to Pizzeria Bella Napoli
+      clientId: 'c2',
+      username: 'luigi',
+      password: 'password'
     },
-    { 
-      id: '4', 
-      name: 'Giulia Bianchi (Bar)', 
-      email: 'giulia@damario.it', 
-      role: 'COLLABORATOR', 
+    {
+      id: '4',
+      name: 'Giulia Bianchi (Bar)',
+      email: 'giulia@damario.it',
+      role: 'COLLABORATOR',
       department: 'Bar',
-      active: false, // Example: Access Disabled
+      active: false,
       avatar: 'https://ui-avatars.com/api/?name=Giulia+Bianchi&background=d97706&color=fff',
-      clientId: 'c1'
+      clientId: 'c1',
+      username: 'giulia',
+      password: 'password'
     }
   ]);
 
@@ -132,13 +171,16 @@ export class AppStateService {
     address: 'Via Demo 1',
     phone: '',
     email: '',
-    licenseNumber: ''
+    licenseNumber: '',
+    suspended: false
   });
 
   // --- Menu Definitions ---
   readonly menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard' },
-    
+    { id: 'reports', label: 'Report Controlli', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
+    { id: 'general-checks', label: 'Controlli Generali', icon: 'fa-list-check', category: 'dashboard', adminOnly: true },
+
     // Daily Checks
     { id: 'operational-checklist', label: 'Controllo Pre/Post Op.', icon: 'fa-list-check', category: 'daily-checks' },
 
@@ -147,27 +189,77 @@ export class AppStateService {
     { id: 'suppliers', label: 'Elenco Fornitori', icon: 'fa-truck-field', category: 'anagrafiche', adminOnly: true },
     { id: 'products-cleaning', label: 'Prodotti Pulizia', icon: 'fa-pump-soap', category: 'anagrafiche' },
     { id: 'equipment', label: 'Elenco Attrezzature', icon: 'fa-blender', category: 'anagrafiche' },
-    { id: 'ingredients', label: 'Ingredienti & Allergeni', icon: 'fa-wheat-awn', category: 'anagrafiche' },
+    { id: 'allergens-ue1169', label: 'Reg. U.E. 1169/2011', icon: 'fa-wheat-awn', category: 'anagrafiche' },
 
     // Operativo
     { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-hands-bubbles', category: 'operativo' },
-    { id: 'cleaning-work', label: 'Pulizia Beni Lavoro', icon: 'fa-broom', category: 'operativo' },
-    { id: 'cleaning-equip', label: 'Manutenzione Attrezz.', icon: 'fa-screwdriver-wrench', category: 'operativo' },
+    { id: 'cleaning-maintenance', label: 'Pulizia / Manutenzione', icon: 'fa-broom', category: 'operativo' },
     { id: 'goods-receipt', label: 'Ricezione Prodotti', icon: 'fa-box-open', category: 'operativo' },
-    { id: 'temp-control', label: 'Controllo Temperature', icon: 'fa-temperature-half', category: 'operativo' },
-    { id: 'blast-chiller', label: 'Abbattitore', icon: 'fa-snowflake', category: 'operativo' },
-    { id: 'ice-machine', label: 'Macchina Ghiaccio', icon: 'fa-cubes', category: 'operativo' },
+    { id: 'food-conservation', label: 'Conservazione Alimenti', icon: 'fa-temperature-half', category: 'operativo' },
+    { id: 'temperatures', label: 'Temperature', icon: 'fa-temperature-low', category: 'operativo' },
+    { id: 'traceability', label: 'Rintracciabilità Alimenti', icon: 'fa-barcode', category: 'operativo' },
 
     // Normativa
-    { id: 'pest-control', label: 'Pest Control (Ratti/Blatte)', icon: 'fa-bug', category: 'normativa' },
-    { id: 'animal-byproducts', label: 'Sottoprodotti (1069/09)', icon: 'fa-bone', category: 'normativa' },
-    { id: 'micro-bio', label: 'Monitoraggio Microbio.', icon: 'fa-vial', category: 'normativa' },
+    { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'normativa' },
+    { id: 'micro-bio', label: 'Monitoraggio Microbiologico', icon: 'fa-vial', category: 'normativa' },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-triangle-exclamation', category: 'normativa' },
 
     // Config
-    { id: 'settings', label: 'Gestione Aziende', icon: 'fa-building', category: 'config', adminOnly: true },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
+    { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
   ];
+
+  loginWithCredentials(username: string, pass: string): boolean {
+    // Backdoor for Development ("Accessi Aperti")
+    if (username === 'dev' && pass === 'dev') {
+      this.currentUser.set({
+        id: 'dev-admin',
+        name: 'Sviluppatore (Admin)',
+        role: 'ADMIN',
+        avatar: 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff',
+        clientId: 'demo' // Default to demo context
+      });
+      // Default config
+      if (this.clients().length > 0) this.companyConfig.set(this.clients()[0]);
+
+      this.currentModuleId.set('dashboard');
+      return true;
+    }
+
+    const user = this.systemUsers().find(u => u.username === username && u.password === pass && u.active);
+
+    if (user) {
+      // Check if user's company is suspended
+      const userClient = this.clients().find(c => c.id === user.clientId);
+      if (userClient?.suspended) {
+        this.toastService.error(
+          'Accesso Negato',
+          'Servizio sospeso per mancato pagamento. Contattare l\'amministrazione.'
+        );
+        return false;
+      }
+
+      this.loginAsUser(user);
+      return true;
+    }
+    return false;
+  }
+
+  loginAsUser(user: SystemUser) {
+    if (user.active) {
+      this.currentUser.set({ id: user.id, name: user.name, role: user.role, avatar: user.avatar, clientId: user.clientId });
+
+      // Determine company config (Admin -> First or demo, Collab -> Their Client)
+      if (user.role === 'ADMIN') {
+        this.companyConfig.set(this.clients()[0]); // Default to first client for admin view
+      } else {
+        const clientConfig = this.clients().find(c => c.id === user.clientId);
+        if (clientConfig) this.companyConfig.set(clientConfig);
+      }
+
+      this.currentModuleId.set('dashboard');
+    }
+  }
 
   login(role: UserRole) {
     if (role === 'ADMIN') {
@@ -175,14 +267,14 @@ export class AppStateService {
       if (adminUser) {
         this.currentUser.set({ id: adminUser.id, name: adminUser.name, role: 'ADMIN', avatar: adminUser.avatar, clientId: adminUser.clientId });
         // Admin defaults to the first client in list for view purposes, or a generic dash
-        this.companyConfig.set(this.clients()[0]); 
+        this.companyConfig.set(this.clients()[0]);
       }
     } else {
       // Login as the first active collaborator found for demo
       const collabUser = this.systemUsers().find(u => u.role === 'COLLABORATOR' && u.active);
       if (collabUser) {
         this.currentUser.set({ id: collabUser.id, name: collabUser.name, role: 'COLLABORATOR', avatar: collabUser.avatar, clientId: collabUser.clientId });
-        
+
         // LOAD THE SPECIFIC CLIENT CONFIG FOR THIS USER
         const clientConfig = this.clients().find(c => c.id === collabUser.clientId);
         if (clientConfig) {
@@ -196,7 +288,8 @@ export class AppStateService {
   logout() {
     this.currentUser.set(null);
     this.currentModuleId.set('dashboard');
-    this.filterCollaboratorId.set(''); 
+    this.filterCollaboratorId.set('');
+    this.filterDate.set(new Date().toISOString().split('T')[0]);
   }
 
   setModule(id: string) {
@@ -207,15 +300,67 @@ export class AppStateService {
     this.filterCollaboratorId.set(id);
   }
 
+  setDateFilter(date: string) {
+    this.filterDate.set(date);
+  }
+
+  // --- Data Access Methods ---
+
+  saveRecord(moduleId: string, data: any) {
+    const user = this.currentUser();
+    if (!user) return;
+
+    const date = this.filterDate(); // Usually save for the SELECTED date context
+    // Ideally, a collaborator saves for Today, but let's assume filterDate is the "Working Date"
+
+    // Remove existing record for this user/date/module if exists (upsert)
+    const newRecord = {
+      id: Math.random().toString(36).substr(2, 9),
+      moduleId,
+      userId: user.id,
+      date,
+      data,
+      timestamp: new Date()
+    };
+
+    this.checklistRecords.update(records => [
+      ...records.filter(r => !(r.moduleId === moduleId && r.userId === user.id && r.date === date)),
+      newRecord
+    ]);
+  }
+
+  getRecord(moduleId: string) {
+    // Determine context
+    let targetUserId = this.currentUser()?.id;
+    const targetDate = this.filterDate();
+
+    if (this.isAdmin() && this.filterCollaboratorId()) {
+      targetUserId = this.filterCollaboratorId();
+    }
+
+    // If admin has NO filter selected, maybe show nothing or aggregate?
+    // User requested: "selezionando ... un collaboratore e la data ... mi deve apparire"
+    // So if no collaborator is selected, we might return null or empty to indicate "Select a user".
+    // Or we return the Admin's own data (if they want to do checks). 
+    // Let's default to Admin's own data if no filter, OR if admin wants to see "All" that's harder for a Detail view.
+    // For now, simple: returns record for targetUserId + targetDate
+
+    if (!targetUserId) return null;
+
+    return this.checklistRecords().find(r =>
+      r.moduleId === moduleId && r.userId === targetUserId && r.date === targetDate
+    )?.data || null;
+  }
+
   // --- Client/Company Management Methods ---
-  
+
   addClient(client: Omit<ClientEntity, 'id'>) {
     const newClient = { ...client, id: Math.random().toString(36).substr(2, 9) };
     this.clients.update(c => [...c, newClient]);
   }
 
   updateClient(id: string, updates: Partial<ClientEntity>) {
-    this.clients.update(clients => 
+    this.clients.update(clients =>
       clients.map(c => c.id === id ? { ...c, ...updates } : c)
     );
     // If currently viewing this company, update the view immediately
@@ -224,8 +369,32 @@ export class AppStateService {
     }
   }
 
+  // Toggle company suspension (for non-payment)
+  toggleClientSuspension(id: string, suspended: boolean) {
+    this.updateClient(id, { suspended });
+
+    // If reactivating, ensure at least one user is active
+    if (!suspended) {
+      const clientUsers = this.systemUsers().filter(u => u.clientId === id);
+      if (clientUsers.length > 0 && clientUsers.every(u => !u.active)) {
+        // Reactivate first user to allow access
+        this.updateSystemUser(clientUsers[0].id, { active: true });
+      }
+    }
+  }
+
+  // Auto-suspend company if all users are disabled
+  checkAutoSuspendClient(clientId: string) {
+    const clientUsers = this.systemUsers().filter(u => u.clientId === clientId && u.role !== 'ADMIN');
+
+    // If all operational users are inactive, auto-suspend the company
+    if (clientUsers.length > 0 && clientUsers.every(u => !u.active)) {
+      this.updateClient(clientId, { suspended: true });
+    }
+  }
+
   // --- User Management Methods ---
-  
+
   addSystemUser(user: Omit<SystemUser, 'id' | 'avatar'>) {
     const newUser: SystemUser = {
       ...user,
@@ -236,9 +405,17 @@ export class AppStateService {
   }
 
   updateSystemUser(id: string, updates: Partial<SystemUser>) {
-    this.systemUsers.update(users => 
+    this.systemUsers.update(users =>
       users.map(u => u.id === id ? { ...u, ...updates } : u)
     );
+
+    // Auto-suspend company if all users are now disabled
+    if (updates.active === false) {
+      const user = this.systemUsers().find(u => u.id === id);
+      if (user?.clientId) {
+        this.checkAutoSuspendClient(user.clientId);
+      }
+    }
   }
 
   deleteSystemUser(id: string) {
