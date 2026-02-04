@@ -48,7 +48,7 @@ interface CheckCategory {
           <div class="flex items-center gap-3">
             <div class="bg-white/10 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20">
               <label class="text-xs text-white/70 font-bold uppercase block mb-2">Filtra per Azienda</label>
-              <select [(ngModel)]="selectedCompanyId" (ngModelChange)="onCompanyChange()"
+          <select [ngModel]="selectedCompanyId()" (ngModelChange)="selectedCompanyId.set($event)"
                       class="bg-white/20 text-white border border-white/30 rounded-lg px-4 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[250px]">
                 <option value="" class="bg-slate-800">Tutte le Aziende</option>
                 @for (client of state.clients(); track client.id) {
@@ -250,8 +250,18 @@ export class GeneralChecksViewComponent {
 
     expandedCategoryIds = signal<Set<string>>(new Set());
 
+    // Local filter state
+    selectedCompanyId = signal<string>('');
+
     // Use global filter instead of local selector
     selectedClient = computed(() => {
+        // First check if there's a local selection from the dropdown
+        const localId = this.selectedCompanyId();
+        if (localId) {
+            return this.state.clients().find(c => c.id === localId) || null;
+        }
+
+        // Otherwise fallback to global filter
         const filterId = this.state.filterCollaboratorId();
         if (!filterId) return null;
         const user = this.state.systemUsers().find(u => u.id === filterId);
