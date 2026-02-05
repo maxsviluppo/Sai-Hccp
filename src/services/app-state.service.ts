@@ -1,4 +1,3 @@
-
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { ToastService } from './toast.service';
 
@@ -40,9 +39,35 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  category: 'dashboard' | 'daily-checks' | 'anagrafiche' | 'operativo' | 'normativa' | 'config';
+  category: 'dashboard' | 'daily-checks' | 'anagrafiche' | 'operativo' | 'normativa' | 'config' | 'communication';
   adminOnly?: boolean;
 }
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderName: string;
+  recipientType: 'ALL' | 'SINGLE';
+  recipientId?: string; // clientId if SINGLE
+  subject: string;
+  content: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  timestamp: Date;
+  read: boolean;
+  replies: MessageReply[];
+}
+
+export interface MessageReply {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  timestamp: Date;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -175,6 +200,25 @@ export class AppStateService {
     suspended: false
   });
 
+  // --- Messages Database ---
+  readonly messages = signal<Message[]>([]);
+
+  readonly unreadMessagesCount = computed(() => {
+    const user = this.currentUser();
+    if (!user) return 0;
+
+    return this.messages().filter(msg => {
+      // Admin sees all messages
+      if (user.role === 'ADMIN') {
+        return !msg.read && msg.senderId !== user.id;
+      }
+      // Collaborator sees messages for their company or broadcast
+      return !msg.read &&
+        msg.senderId !== user.id &&
+        (msg.recipientType === 'ALL' || msg.recipientId === user.clientId);
+    }).length;
+  });
+
   // --- Menu Definitions ---
   readonly menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard' },
@@ -206,6 +250,7 @@ export class AppStateService {
 
     // Config
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
+    { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
   ];
 
@@ -421,4 +466,83 @@ export class AppStateService {
   deleteSystemUser(id: string) {
     this.systemUsers.update(users => users.filter(u => u.id !== id));
   }
+
+  // --- Messaging Methods ---
+  sendMessage(subject: string, content: string, recipientType: 'ALL' | 'SINGLE', recipientId?: string, attachment?: { url: string, name: string }) {
+    const user = this.currentUser();
+    if (!user) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      senderId: user.id,
+      senderName: user.name,
+      recipientType,
+      recipientId,
+      subject,
+      content,
+      attachmentUrl: attachment?.url,
+      attachmentName: attachment?.name,
+      timestamp: new Date(),
+      read: false,
+      replies: []
+    };
+
+    this.messages.update(msgs => [...msgs, newMessage]);
+
+    // Show toast notification to recipients
+    if (recipientType === 'ALL') {
+      this.toastService.success('Messaggio inviato', 'Inviato a tutte le aziende');
+    } else {
+      const client = this.clients().find(c => c.id === recipientId);
+      this.toastService.success('Messaggio inviato', `Inviato a ${client?.name}`);
+    }
+  }
+
+  replyToMessage(messageId: string, content: string, attachment?: { url: string, name: string }) {
+    const user = this.currentUser();
+    if (!user) return;
+
+    const reply: MessageReply = {
+      id: Date.now().toString(),
+      senderId: user.id,
+      senderName: user.name,
+      content,
+      attachmentUrl: attachment?.url,
+      attachmentName: attachment?.name,
+      timestamp: new Date()
+    };
+
+    this.messages.update(msgs =>
+      msgs.map(msg =>
+        msg.id === messageId
+          ? { ...msg, replies: [...msg.replies, reply] }
+          : msg
+      )
+    );
+
+    this.toastService.success('Risposta inviata', 'La tua risposta è stata inviata');
+  }
+
+  markMessageAsRead(messageId: string) {
+    this.messages.update(msgs =>
+      msgs.map(msg =>
+        msg.id === messageId ? { ...msg, read: true } : msg
+      )
+    );
+  }
+
+  getMessagesForCurrentUser() {
+    const user = this.currentUser();
+    if (!user) return [];
+
+    if (user.role === 'ADMIN') {
+      return this.messages();
+    }
+
+    // Collaborators see messages for their company or broadcast
+    return this.messages().filter(msg =>
+      msg.recipientType === 'ALL' || msg.recipientId === user.clientId
+    );
+  }
 }
+

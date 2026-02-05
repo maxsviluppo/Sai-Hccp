@@ -24,6 +24,7 @@ import { AllergensConfigViewComponent } from './components/allergens-config-view
 import { CleaningMaintenanceViewComponent } from './components/cleaning-maintenance-view.component';
 import { MicrobioMonitorViewComponent } from './components/microbio-monitor-view.component';
 import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
+import { MessagesViewComponent } from './components/messages-view.component';
 import { ToastContainerComponent } from './components/toast-container.component';
 
 @Component({
@@ -53,6 +54,7 @@ import { ToastContainerComponent } from './components/toast-container.component'
     CleaningMaintenanceViewComponent,
     MicrobioMonitorViewComponent,
     StaffHygieneViewComponent,
+    MessagesViewComponent,
     ToastContainerComponent
   ],
   templateUrl: './app.component.html'

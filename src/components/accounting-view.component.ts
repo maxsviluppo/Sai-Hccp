@@ -125,6 +125,73 @@ interface Reminder {
         </div>
       </div>
 
+      <!-- Filters Section -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-filter text-slate-400"></i>
+          Filtri Avanzati
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Month Filter -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-2">Mese</label>
+            <select [(ngModel)]="filterMonth" (change)="applyFilters()" 
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+              <option value="">Tutti i Mesi</option>
+              <option value="01">Gennaio</option>
+              <option value="02">Febbraio</option>
+              <option value="03">Marzo</option>
+              <option value="04">Aprile</option>
+              <option value="05">Maggio</option>
+              <option value="06">Giugno</option>
+              <option value="07">Luglio</option>
+              <option value="08">Agosto</option>
+              <option value="09">Settembre</option>
+              <option value="10">Ottobre</option>
+              <option value="11">Novembre</option>
+              <option value="12">Dicembre</option>
+            </select>
+          </div>
+
+          <!-- Year Filter -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-2">Anno</label>
+            <select [(ngModel)]="filterYear" (change)="applyFilters()" 
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+              <option value="">Tutti gli Anni</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+
+          <!-- Date From -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-2">Data Da</label>
+            <input type="date" [(ngModel)]="filterDateFrom" (change)="applyFilters()" 
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+          </div>
+
+          <!-- Date To -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-2">Data A</label>
+            <input type="date" [(ngModel)]="filterDateTo" (change)="applyFilters()" 
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+          </div>
+        </div>
+
+        <!-- Reset Filters Button -->
+        @if (hasActiveFilters()) {
+          <div class="mt-4 flex justify-end">
+            <button (click)="resetFilters()" 
+                    class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all flex items-center gap-2">
+              <i class="fa-solid fa-rotate-left"></i>
+              Azzera Filtri
+            </button>
+          </div>
+        }
+      </div>
+
       <!-- Tabs -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="border-b border-slate-200 flex">
@@ -607,6 +674,12 @@ export class AccountingViewComponent {
   showJournalModal = signal(false);
   showReminderModal = signal(false);
 
+  // Filter properties
+  filterMonth = '';
+  filterYear = '';
+  filterDateFrom = '';
+  filterDateTo = '';
+
   // Mock Data - In production would come from backend
   payments = signal<Payment[]>([
     {
@@ -627,6 +700,35 @@ export class AccountingViewComponent {
       dueDate: '2026-02-01',
       status: 'overdue',
       notes: 'Sollecito inviato'
+    },
+    {
+      id: '3',
+      clientId: 'c1',
+      amount: 150,
+      frequency: 'monthly',
+      dueDate: '2026-01-15',
+      paidDate: '2026-01-12',
+      status: 'paid',
+      notes: 'Pagamento Gennaio'
+    },
+    {
+      id: '4',
+      clientId: 'c2',
+      amount: 200,
+      frequency: 'monthly',
+      dueDate: '2026-03-01',
+      status: 'pending',
+      notes: 'Pagamento Marzo'
+    },
+    {
+      id: '5',
+      clientId: 'c1',
+      amount: 450,
+      frequency: 'quarterly',
+      dueDate: '2025-12-31',
+      paidDate: '2025-12-28',
+      status: 'paid',
+      notes: 'Pagamento trimestrale Q4 2025'
     }
   ]);
 
@@ -648,6 +750,33 @@ export class AccountingViewComponent {
       debit: 50,
       credit: 0,
       category: 'expense'
+    },
+    {
+      id: '3',
+      clientId: 'c1',
+      date: '2026-01-12',
+      description: 'Pagamento servizio HACCP Gennaio',
+      debit: 0,
+      credit: 150,
+      category: 'payment'
+    },
+    {
+      id: '4',
+      clientId: 'c2',
+      date: '2026-02-20',
+      description: 'Spese materiale consumabile',
+      debit: 75,
+      credit: 0,
+      category: 'expense'
+    },
+    {
+      id: '5',
+      clientId: 'c1',
+      date: '2025-12-28',
+      description: 'Pagamento trimestrale Q4 2025',
+      debit: 0,
+      credit: 450,
+      category: 'payment'
     }
   ]);
 
@@ -718,22 +847,50 @@ export class AccountingViewComponent {
   });
 
   filteredPayments = computed(() => {
+    let filtered = this.payments();
+
+    // Filter by client
     const client = this.selectedClient();
-    if (!client) return this.payments();
-    return this.payments().filter(p => p.clientId === client.id);
+    if (client) {
+      filtered = filtered.filter(p => p.clientId === client.id);
+    }
+
+    // Apply date filters
+    filtered = this.applyDateFilters(filtered, (p) => p.dueDate);
+
+    return filtered;
   });
 
   filteredJournalEntries = computed(() => {
+    let filtered = this.journalEntries();
+
+    // Filter by client
     const client = this.selectedClient();
-    if (!client) return this.journalEntries();
-    return this.journalEntries().filter(e => e.clientId === client.id);
+    if (client) {
+      filtered = filtered.filter(e => e.clientId === client.id);
+    }
+
+    // Apply date filters
+    filtered = this.applyDateFilters(filtered, (e) => e.date);
+
+    return filtered;
   });
 
   filteredReminders = computed(() => {
+    let filtered = this.reminders();
+
+    // Filter by client
     const client = this.selectedClient();
-    if (!client) return this.reminders();
-    return this.reminders().filter(r => r.clientId === client.id);
+    if (client) {
+      filtered = filtered.filter(r => r.clientId === client.id);
+    }
+
+    // Apply date filters
+    filtered = this.applyDateFilters(filtered, (r) => r.dueDate);
+
+    return filtered;
   });
+
 
   activeReminders = computed(() => this.reminders().filter(r => !r.dismissed));
 
@@ -889,4 +1046,58 @@ export class AccountingViewComponent {
     );
     this.toastService.success('Promemoria Archiviato', 'Il promemoria è stato archiviato.');
   }
+
+  // Filter helper methods
+  applyDateFilters<T>(items: T[], dateGetter: (item: T) => string): T[] {
+    let filtered = items;
+
+    // Filter by month and year
+    if (this.filterMonth || this.filterYear) {
+      filtered = filtered.filter(item => {
+        const date = dateGetter(item);
+        const itemDate = new Date(date);
+        const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
+        const itemYear = itemDate.getFullYear().toString();
+
+        if (this.filterMonth && itemMonth !== this.filterMonth) return false;
+        if (this.filterYear && itemYear !== this.filterYear) return false;
+        return true;
+      });
+    }
+
+    // Filter by date range
+    if (this.filterDateFrom) {
+      filtered = filtered.filter(item => {
+        const date = dateGetter(item);
+        return date >= this.filterDateFrom;
+      });
+    }
+
+    if (this.filterDateTo) {
+      filtered = filtered.filter(item => {
+        const date = dateGetter(item);
+        return date <= this.filterDateTo;
+      });
+    }
+
+    return filtered;
+  }
+
+  applyFilters() {
+    // Trigger recomputation by updating a signal or forcing change detection
+    // The computed properties will automatically recalculate
+  }
+
+  hasActiveFilters(): boolean {
+    return !!(this.filterMonth || this.filterYear || this.filterDateFrom || this.filterDateTo);
+  }
+
+  resetFilters() {
+    this.filterMonth = '';
+    this.filterYear = '';
+    this.filterDateFrom = '';
+    this.filterDateTo = '';
+    this.applyFilters();
+  }
 }
+
