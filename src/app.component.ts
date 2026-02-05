@@ -147,7 +147,8 @@ export class AppComponent {
       'anagrafiche': 'Anagrafiche',
       'operativo': 'Operativo',
       'normativa': 'Normativa & Controllo',
-      'config': 'Configurazione'
+      'config': 'Configurazione',
+      'communication': 'Comunicazioni'
     };
     return labels[category] || category;
   }

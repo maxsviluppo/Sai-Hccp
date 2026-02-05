@@ -153,17 +153,19 @@ interface Reminder {
             </select>
           </div>
 
-          <!-- Year Filter -->
+          <!-- Client Filter -->
+          @if (!selectedClient()) {
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-2">Anno</label>
-            <select [(ngModel)]="filterYear" (change)="applyFilters()" 
+            <label class="block text-xs font-bold text-slate-600 mb-2">Azienda</label>
+            <select [(ngModel)]="filterClientId" (change)="applyFilters()" 
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-              <option value="">Tutti gli Anni</option>
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
+              <option value="">Tutte le Aziende</option>
+              @for (client of state.clients(); track client.id) {
+                <option [value]="client.id">{{ client.name }}</option>
+              }
             </select>
           </div>
+          }
 
           <!-- Date From -->
           <div>
@@ -676,7 +678,7 @@ export class AccountingViewComponent {
 
   // Filter properties
   filterMonth = '';
-  filterYear = '';
+  filterClientId = '';
   filterDateFrom = '';
   filterDateTo = '';
 
@@ -853,6 +855,8 @@ export class AccountingViewComponent {
     const client = this.selectedClient();
     if (client) {
       filtered = filtered.filter(p => p.clientId === client.id);
+    } else if (this.filterClientId) {
+      filtered = filtered.filter(p => p.clientId === this.filterClientId);
     }
 
     // Apply date filters
@@ -868,6 +872,8 @@ export class AccountingViewComponent {
     const client = this.selectedClient();
     if (client) {
       filtered = filtered.filter(e => e.clientId === client.id);
+    } else if (this.filterClientId) {
+      filtered = filtered.filter(e => e.clientId === this.filterClientId);
     }
 
     // Apply date filters
@@ -883,6 +889,8 @@ export class AccountingViewComponent {
     const client = this.selectedClient();
     if (client) {
       filtered = filtered.filter(r => r.clientId === client.id);
+    } else if (this.filterClientId) {
+      filtered = filtered.filter(r => r.clientId === this.filterClientId);
     }
 
     // Apply date filters
@@ -1051,16 +1059,14 @@ export class AccountingViewComponent {
   applyDateFilters<T>(items: T[], dateGetter: (item: T) => string): T[] {
     let filtered = items;
 
-    // Filter by month and year
-    if (this.filterMonth || this.filterYear) {
+    // Filter by month
+    if (this.filterMonth) {
       filtered = filtered.filter(item => {
         const date = dateGetter(item);
         const itemDate = new Date(date);
         const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
-        const itemYear = itemDate.getFullYear().toString();
 
         if (this.filterMonth && itemMonth !== this.filterMonth) return false;
-        if (this.filterYear && itemYear !== this.filterYear) return false;
         return true;
       });
     }
@@ -1089,12 +1095,12 @@ export class AccountingViewComponent {
   }
 
   hasActiveFilters(): boolean {
-    return !!(this.filterMonth || this.filterYear || this.filterDateFrom || this.filterDateTo);
+    return !!(this.filterMonth || this.filterClientId || this.filterDateFrom || this.filterDateTo);
   }
 
   resetFilters() {
     this.filterMonth = '';
-    this.filterYear = '';
+    this.filterClientId = '';
     this.filterDateFrom = '';
     this.filterDateTo = '';
     this.applyFilters();

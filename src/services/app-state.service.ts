@@ -201,7 +201,31 @@ export class AppStateService {
   });
 
   // --- Messages Database ---
-  readonly messages = signal<Message[]>([]);
+  readonly messages = signal<Message[]>([
+    {
+      id: 'm1',
+      senderId: '1',
+      senderName: 'Amministrazione',
+      subject: 'Benvenuti nel nuovo sistema HACCP Pro',
+      content: 'Siamo lieti di annunciare il lancio della nuova piattaforma. Per qualsiasi assistenza, utilizzate questo modulo di messaggistica.',
+      recipientType: 'ALL',
+      timestamp: new Date(Date.now() - 86400000 * 2), // 2 days ago
+      read: true,
+      replies: []
+    },
+    {
+      id: 'm2',
+      senderId: '1',
+      senderName: 'Amministrazione',
+      subject: 'Aggiornamento Documentazione',
+      content: 'Abbiamo caricato i nuovi moduli per il controllo temperature. Si prega di prenderne visione.',
+      recipientType: 'SINGLE',
+      recipientId: 'c1',
+      timestamp: new Date(Date.now() - 3600000 * 5), // 5 hours ago
+      read: false,
+      replies: []
+    }
+  ]);
 
   readonly unreadMessagesCount = computed(() => {
     const user = this.currentUser();
@@ -250,7 +274,7 @@ export class AppStateService {
 
     // Config
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
-    { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: true },
+    { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
   ];
 
@@ -492,6 +516,8 @@ export class AppStateService {
     // Show toast notification to recipients
     if (recipientType === 'ALL') {
       this.toastService.success('Messaggio inviato', 'Inviato a tutte le aziende');
+    } else if (recipientId === 'ADMIN_OFFICE') {
+      this.toastService.success('Messaggio inviato', 'Inviato all\'Amministrazione');
     } else {
       const client = this.clients().find(c => c.id === recipientId);
       this.toastService.success('Messaggio inviato', `Inviato a ${client?.name}`);
@@ -539,9 +565,14 @@ export class AppStateService {
       return this.messages();
     }
 
-    // Collaborators see messages for their company or broadcast
+    // Collaborators see:
+    // 1. Messages they sent
+    // 2. Messages sent to everyone (broadcast)
+    // 3. Messages sent to their specific company
     return this.messages().filter(msg =>
-      msg.recipientType === 'ALL' || msg.recipientId === user.clientId
+      msg.senderId === user.id ||
+      msg.recipientType === 'ALL' ||
+      msg.recipientId === user.clientId
     );
   }
 }

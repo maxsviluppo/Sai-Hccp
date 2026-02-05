@@ -24,7 +24,7 @@ import { AppStateService, Message } from '../services/app-state.service';
                 <p class="text-blue-100 text-sm mt-2 font-medium ml-1">Comunicazione diretta con le aziende</p>
             </div>
             <div class="relative z-10">
-                <button (click)="showNewMessageForm = true" 
+                <button (click)="openNewMessageForm()" 
                         class="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i>
                     Nuovo Messaggio
@@ -44,6 +44,7 @@ import { AppStateService, Message } from '../services/app-state.service';
 
                 <div class="space-y-4">
                     <!-- Recipient Type -->
+                    @if (state.isAdmin()) {
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">Destinatario</label>
                         <div class="flex gap-4">
@@ -68,6 +69,17 @@ import { AppStateService, Message } from '../services/app-state.service';
                                     <option [value]="client.id">{{ client.name }}</option>
                                 }
                             </select>
+                        </div>
+                    }
+                    } @else {
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-blue-600 uppercase">Destinatario</p>
+                                <p class="font-bold text-slate-800">Amministrazione / Supporto</p>
+                            </div>
                         </div>
                     }
 
@@ -264,6 +276,40 @@ export class MessagesViewComponent {
         this.messages.set(this.state.getMessagesForCurrentUser());
     }
 
+    openNewMessageForm() {
+        this.showNewMessageForm = true;
+
+        // If not admin, automatically address to Admin
+        if (!this.state.isAdmin()) {
+            // Find admin user (assuming role 'ADMIN')
+            // In a real scenario, this might be a specific support user ID or group
+            // For now, we look for the first user with 'ADMIN' role
+            const admin = this.state.systemUsers().find(u => u.role === 'ADMIN');
+            this.newMessage.recipientType = 'SINGLE';
+            // We use the ADMIN's Client ID context or User ID depending on how messaging works.
+            // Based on 'app-state', recipientId for 'SINGLE' seems to expect a CLIENT ID usually, 
+            // but for direct messaging it might be User ID.
+            // However, the previous code used Client ID for companies.
+            // If we want to msg Admin, Admin usually doesn't have a Client ID like a customer.
+            // Let's assume Admin handles 'ALL' company but for direct message we might need a convention.
+            // Actually, looking at 'app-state.service.ts', messages are filtered by:
+            // (msg.recipientType === 'ALL' || msg.recipientId === user.clientId)
+            // So if I send to admin, I should probably NOT set recipientId to a client ID, 
+            // OR I should set it to something Admin sees.
+
+            // Re-reading logic: Admin filters: (!msg.read && msg.senderId !== user.id) -> Admin sees ALL messages not from self.
+            // So recipientId doesn't matter for Admin visibility as long as it's not broadcast 'ALL' which might confuse UI.
+            // Let's set recipientType 'SINGLE' and recipientId to 'ADMIN' or leave empty?
+            // If I leave empty, 'canSendMessage' might fail if checking for recipientId.
+            // Let's check 'canSendMessage'. It checks !recipientId if SINGLE.
+            // So we need a dummy ID.
+            this.newMessage.recipientId = 'ADMIN_OFFICE';
+        } else {
+            this.newMessage.recipientType = 'ALL';
+            this.newMessage.recipientId = '';
+        }
+    }
+
     canSendMessage(): boolean {
         if (!this.newMessage.subject.trim() || !this.newMessage.content.trim()) return false;
         if (this.newMessage.recipientType === 'SINGLE' && !this.newMessage.recipientId) return false;
@@ -350,6 +396,7 @@ export class MessagesViewComponent {
 
     getClientName(clientId?: string): string {
         if (!clientId) return '';
-        return this.state.clients().find(c => c.id === clientId)?.name || '';
+        if (clientId === 'ADMIN_OFFICE') return 'Amministrazione';
+        return this.state.clients().find(c => c.id === clientId)?.name || 'Sconosciuto';
     }
 }

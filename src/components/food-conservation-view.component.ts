@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 interface CheckItem {
@@ -34,7 +34,7 @@ interface CheckItem {
             <div class="relative z-10">
                 <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
                     <i class="fa-solid fa-snowflake text-white text-lg"></i>
-                    <span class="text-white font-bold">{{ checks().filter(c => c.checked).length }} / {{ checks().length }}</span>
+                    <span class="text-white font-bold">{{ checkedCount() }} / {{ checks().length }}</span>
                 </div>
             </div>
         </div>
@@ -98,6 +98,10 @@ export class FoodConservationViewComponent {
         { id: 'perishable', label: 'ALIMENTI DEPERIBILI RIPORRE ALLA TEMPERATURA POSITIVA O NEGATIVA', checked: false },
         { id: 'non-perishable', label: 'ALIMENTI NON DEPERIBILI RIPORRE NEL DEPOSITO/MAGAZZINO', checked: false }
     ]);
+
+    checkedCount = computed<number>(() => {
+        return this.checks().filter((c: CheckItem) => c.checked).length;
+    });
 
     toggleCheck(id: string) {
         this.checks.update(items =>

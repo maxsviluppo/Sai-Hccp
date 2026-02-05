@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../services/app-state.service';
 
@@ -31,7 +31,7 @@ interface CheckItem {
             <div class="relative z-10 flex flex-col gap-2">
                 <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
                     <i class="fa-solid fa-temperature-three-quarters text-white text-lg"></i>
-                    <span class="text-white font-bold">{{ checks().filter(c => c.checked).length }} / {{ checks().length }}</span>
+                    <span class="text-white font-bold">{{ checkedCount() }} / {{ checks().length }}</span>
                 </div>
                 <div class="text-xs text-cyan-100 font-medium flex items-center gap-2">
                     <i class="fa-regular fa-calendar"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}
@@ -91,6 +91,10 @@ export class TemperaturesViewComponent {
         { id: 'fridge', label: 'TEMPERATURE FRIGORIGERI +4°C - +8°C', checked: false },
         { id: 'freezer', label: 'TEMPERATURE CONGELATORI -18°C – 24°C', checked: false }
     ]);
+
+    checkedCount = computed<number>(() => {
+        return this.checks().filter((c: CheckItem) => c.checked).length;
+    });
 
     constructor() {
         // React to global filter changes (Date or User)
