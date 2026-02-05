@@ -72,9 +72,7 @@ export class AppComponent {
       return ['dashboard', 'config', 'communication'].includes(category);
     }
     // Collaborator restrictions:
-    // Can see Anagrafiche, Operativo, Normativa, etc.
-    // Cannot see Config (Management).
-    if (category === 'config') return false;
+    // Can see Anagrafiche, Operativo, Normativa, and Config (Settings).
     return true;
   }
   loginMode = signal<'SELECT' | 'ADMIN' | 'OPERATOR'>('SELECT');

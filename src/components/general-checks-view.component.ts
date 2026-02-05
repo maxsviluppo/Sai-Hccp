@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
@@ -250,6 +250,19 @@ export class GeneralChecksViewComponent {
 
     expandedCategoryIds = signal<Set<string>>(new Set());
 
+    // Injecting effect to handle global sync
+    private _syncEffect = effect(() => {
+        const filterId = this.state.filterCollaboratorId();
+        if (filterId) {
+            const user = this.state.systemUsers().find(u => u.id === filterId);
+            if (user && user.clientId) {
+                this.selectedCompanyId.set(user.clientId);
+            }
+        } else {
+            this.selectedCompanyId.set('');
+        }
+    });
+
     // Local filter state
     selectedCompanyId = signal<string>('');
 
@@ -270,6 +283,14 @@ export class GeneralChecksViewComponent {
 
     // Mock data - in production this would come from the state/database
     categories = computed((): CheckCategory[] => {
+        const client = this.selectedClient();
+        const clientId = client?.id || 'default';
+
+        // Simulating different data per company for visual feedback
+        const isC1 = clientId === 'c1';
+        const isC2 = clientId === 'c2';
+        const isAll = clientId === 'default';
+
         return [
             {
                 id: 'pre-operative',
@@ -277,9 +298,9 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-eye',
                 color: '#3b82f6',
                 items: [
-                    { id: 'pre-1', label: 'Ispezione visiva degli ambienti di lavoro', moduleId: 'operational-checklist', completed: true },
-                    { id: 'pre-2', label: 'Verifica integrità delle attrezzature', moduleId: 'operational-checklist', completed: true },
-                    { id: 'pre-3', label: 'Verifica pulizia superfici prima dell\'uso', moduleId: 'operational-checklist', completed: false }
+                    { id: 'pre-1', label: 'Ispezione visiva degli ambienti di lavoro', moduleId: 'operational-checklist', completed: isC1 || isAll },
+                    { id: 'pre-2', label: 'Verifica integrità delle attrezzature', moduleId: 'operational-checklist', completed: isC1 || isC2 },
+                    { id: 'pre-3', label: 'Verifica pulizia superfici prima dell\'uso', moduleId: 'operational-checklist', completed: isC2 }
                 ]
             },
             {
@@ -288,10 +309,10 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-fire-burner',
                 color: '#f59e0b',
                 items: [
-                    { id: 'op-1', label: 'Controllo temperature (Valori positivi)', moduleId: 'operational-checklist', completed: true },
-                    { id: 'op-2', label: 'Controllo temperature (Valori negativi)', moduleId: 'operational-checklist', completed: false },
-                    { id: 'op-3', label: 'Evitare contaminazioni crociate', moduleId: 'operational-checklist', completed: false },
-                    { id: 'op-4', label: 'Compilazione schede monitoraggio produzione', moduleId: 'operational-checklist', completed: false }
+                    { id: 'op-1', label: 'Controllo temperature (Valori positivi)', moduleId: 'operational-checklist', completed: isC1 || isAll },
+                    { id: 'op-2', label: 'Controllo temperature (Valori negativi)', moduleId: 'operational-checklist', completed: isC2 },
+                    { id: 'op-3', label: 'Evitare contaminazioni crociate', moduleId: 'operational-checklist', completed: isC1 },
+                    { id: 'op-4', label: 'Compilazione schede monitoraggio produzione', moduleId: 'operational-checklist', completed: isC2 || isAll }
                 ]
             },
             {
@@ -301,9 +322,9 @@ export class GeneralChecksViewComponent {
                 color: '#10b981',
                 items: [
                     { id: 'post-1', label: 'Pulizia e disinfezione ambienti di lavoro', moduleId: 'operational-checklist', completed: true },
-                    { id: 'post-2', label: 'Sanificazione attrezzature utilizzate', moduleId: 'operational-checklist', completed: true },
-                    { id: 'post-3', label: 'Adeguata conservazione prodotti finiti', moduleId: 'operational-checklist', completed: true },
-                    { id: 'post-4', label: 'Stoccaggio semilavorati e materie prime', moduleId: 'operational-checklist', completed: false }
+                    { id: 'post-2', label: 'Sanificazione attrezzature utilizzate', moduleId: 'operational-checklist', completed: isC1 || isAll },
+                    { id: 'post-3', label: 'Adeguata conservazione prodotti finiti', moduleId: 'operational-checklist', completed: isC2 || isAll },
+                    { id: 'post-4', label: 'Stoccaggio semilavorati e materie prime', moduleId: 'operational-checklist', completed: isC1 }
                 ]
             },
             {
@@ -312,8 +333,8 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-temperature-half',
                 color: '#06b6d4',
                 items: [
-                    { id: 'temp-1', label: 'Temperature Frigoriferi +4°C - +8°C', moduleId: 'temperatures', completed: true },
-                    { id: 'temp-2', label: 'Temperature Congelatori -18°C – -24°C', moduleId: 'temperatures', completed: true }
+                    { id: 'temp-1', label: 'Temperature Frigoriferi +4°C - +8°C', moduleId: 'temperatures', completed: isC1 || isAll },
+                    { id: 'temp-2', label: 'Temperature Congelatori -18°C – -24°C', moduleId: 'temperatures', completed: isC2 || isAll }
                 ]
             },
             {
@@ -322,20 +343,9 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-hands-bubbles',
                 color: '#8b5cf6',
                 items: [
-                    { id: 'hyg-1', label: 'Controllo divise e DPI', moduleId: 'staff-hygiene', completed: false },
+                    { id: 'hyg-1', label: 'Controllo divise e DPI', moduleId: 'staff-hygiene', completed: isC2 },
                     { id: 'hyg-2', label: 'Verifica igiene mani', moduleId: 'staff-hygiene', completed: true },
-                    { id: 'hyg-3', label: 'Controllo stato di salute operatori', moduleId: 'staff-hygiene', completed: false }
-                ]
-            },
-            {
-                id: 'traceability',
-                name: 'Rintracciabilità Alimenti',
-                icon: 'fa-barcode',
-                color: '#ec4899',
-                items: [
-                    { id: 'trace-1', label: 'Registrazione lotti in ingresso', moduleId: 'traceability', completed: true },
-                    { id: 'trace-2', label: 'Etichettatura prodotti preparati', moduleId: 'traceability', completed: false },
-                    { id: 'trace-3', label: 'Verifica scadenze materie prime', moduleId: 'traceability', completed: true }
+                    { id: 'hyg-3', label: 'Controllo stato di salute operatori', moduleId: 'staff-hygiene', completed: isC1 }
                 ]
             }
         ];

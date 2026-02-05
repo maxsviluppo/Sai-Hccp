@@ -2,6 +2,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService, SystemUser } from '../services/app-state.service';
+import { ToastService } from '../services/toast.service';
 
 interface CollaboratorActivity {
   userId: string;
@@ -182,27 +183,41 @@ interface SystemAlert {
           </div>
         </div>
 
-        <!-- Goods Receipt Status -->
-        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden group cursor-pointer"
-             (click)="state.setModule('goods-receipt')">
-          <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 group-hover:bg-emerald-50 transition-colors">
-            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-              <i class="fa-solid fa-truck-ramp-box text-emerald-500"></i> Ricezione Merce
+        <!-- Verification Report (Send via Email) -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-lg border border-slate-700 overflow-hidden relative group">
+           <div class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+           <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between bg-slate-800/50">
+            <h3 class="font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-envelope-open-text text-blue-400"></i> Report Verifiche
             </h3>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-600">Nessun Arrivo</span>
+            <span class="text-[10px] font-bold px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-tighter">PDF A4</span>
           </div>
-          <div class="p-6">
-            <div class="flex justify-between text-sm mb-2">
-              <span class="text-slate-500">Consegne Registrate</span>
-              <span class="font-bold text-slate-800">0</span>
-            </div>
-            <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
-               <div class="h-full bg-slate-300 w-0 rounded-full"></div>
-            </div>
-            <div class="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-               <i class="fa-solid fa-info-circle text-emerald-400"></i>
-               Nessuna consegna prevista per oggi
-            </div>
+          <div class="p-6 relative z-10">
+            <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+                Invia il report completo delle verifiche per la data <span class="text-blue-400 font-bold">{{ getCurrentDate() }}</span> all'amministrazione.
+            </p>
+            
+            @if (isSendingReport()) {
+                <div class="space-y-3 animate-pulse">
+                    <div class="flex justify-between items-center text-[10px] text-blue-300 uppercase font-bold">
+                        <span>Generazione PDF...</span>
+                        <span>75%</span>
+                    </div>
+                    <div class="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 w-[75%] rounded-full transition-all duration-700"></div>
+                    </div>
+                </div>
+            } @else {
+                <button (click)="sendDailyReport()"
+                        class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Invia Report via Email
+                </button>
+                <div class="mt-3 flex items-center gap-2 text-[10px] text-slate-500 justify-center">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Il report verrà inviato automaticamente a: {{ state.reportRecipientEmail() }}
+                </div>
+            }
           </div>
         </div>
       </div>
@@ -455,6 +470,19 @@ interface SystemAlert {
 })
 export class DashboardViewComponent {
   state = inject(AppStateService);
+  private toastService = inject(ToastService);
+
+  isSendingReport = signal(false);
+
+  sendDailyReport() {
+    this.isSendingReport.set(true);
+
+    // Simulating PDF generation and email sending
+    setTimeout(() => {
+      this.isSendingReport.set(false);
+      this.toastService.success('Report Inviato', `Il report delle verifiche per il ${this.getCurrentDate()} è stato inviato via email all'amministrazione.`);
+    }, 2000);
+  }
 
   // Filtered Users Logic
   filteredUsers = computed(() => {

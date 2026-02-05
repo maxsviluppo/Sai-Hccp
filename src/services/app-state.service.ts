@@ -3,15 +3,32 @@ import { ToastService } from './toast.service';
 
 export type UserRole = 'ADMIN' | 'COLLABORATOR' | null;
 
+export interface AdminCompany {
+  name: string;
+  piva: string;
+  address: string;
+  phone: string;
+  cellphone: string;
+  whatsapp: string;
+  email: string;
+  pec: string;
+  sdi: string;
+  licenseNumber: string;
+  logo?: string;
+}
+
 export interface ClientEntity {
   id: string;
   name: string;
   piva: string;
   address: string;
   phone: string;
+  cellphone?: string;
+  whatsapp?: string;
   email: string;
   licenseNumber: string;
   suspended: boolean; // Service suspension for non-payment
+  logo?: string;
 }
 
 export interface SystemUser {
@@ -85,6 +102,29 @@ export class AppStateService {
   // --- Global Filter State ---
   readonly filterCollaboratorId = signal<string>(''); // '' means All
   readonly filterDate = signal<string>(new Date().toISOString().split('T')[0]); // Default Today
+  readonly reportRecipientEmail = signal<string>('amministrazione@haccppro.it');
+
+  readonly currentLogo = computed(() => {
+    if (this.isAdmin()) {
+      return this.adminCompany().logo || '/logo.png';
+    }
+    return this.companyConfig().logo || '/logo.png';
+  });
+
+  // --- Admin Company / Master Data ---
+  readonly adminCompany = signal<AdminCompany>({
+    name: 'HACCP PRO - Sede Centrale',
+    piva: '01234567890',
+    address: 'Via dell\'Innovazione 10, Milano (MI)',
+    phone: '02 99887766',
+    cellphone: '333 1234567',
+    whatsapp: '333 1234567',
+    email: 'amministrazione@haccppro.it',
+    pec: 'haccppro@legalmail.it',
+    sdi: 'M5UXCR1',
+    licenseNumber: 'HQ-RE-2024-001',
+    logo: '/logo.png'
+  });
 
   // Editing Permission Logic
   readonly isContextEditable = computed(() => {
@@ -276,6 +316,7 @@ export class AppStateService {
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
+    { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false },
   ];
 
   loginWithCredentials(username: string, pass: string): boolean {
@@ -371,6 +412,16 @@ export class AppStateService {
 
   setDateFilter(date: string) {
     this.filterDate.set(date);
+  }
+
+  setReportRecipientEmail(email: string) {
+    this.reportRecipientEmail.set(email);
+    this.toastService.success('Indirizzo Aggiornato', `Il nuovo indirizzo per i report è: ${email}`);
+  }
+
+  updateAdminCompany(data: AdminCompany) {
+    this.adminCompany.set(data);
+    this.toastService.success('Anagrafica Salvata', 'I dati dell\'azienda amministratore sono stati aggiornati.');
   }
 
   // --- Data Access Methods ---
@@ -489,6 +540,14 @@ export class AppStateService {
 
   deleteSystemUser(id: string) {
     this.systemUsers.update(users => users.filter(u => u.id !== id));
+  }
+
+  updateCurrentCompany(updates: Partial<ClientEntity>) {
+    const currentId = this.companyConfig().id;
+    if (currentId) {
+      this.updateClient(currentId, updates);
+      this.toastService.success('Dati Aggiornati', 'Le informazioni della tua azienda sono state aggiornate.');
+    }
   }
 
   // --- Messaging Methods ---
