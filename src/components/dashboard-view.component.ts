@@ -71,7 +71,8 @@ interface SystemAlert {
 
       <!-- Enhanced KPI Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform"
+             (click)="state.setModule('general-checks')">
           <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
           <div class="relative z-10">
             <div class="flex items-center justify-between mb-3">
@@ -130,7 +131,8 @@ interface SystemAlert {
         </div>
       </div>
 
-      <!-- Critical Modules Status -->
+      <!-- Critical Modules Status (Hidden for Admin as they don't perform checks) -->
+      @if (!state.isAdmin()) {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Temperature Module Status -->
         <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden group cursor-pointer"
@@ -204,6 +206,7 @@ interface SystemAlert {
           </div>
         </div>
       </div>
+      }
 
       <!-- Collaborator Monitoring Section -->
       <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
@@ -365,41 +368,81 @@ interface SystemAlert {
 
       <!-- Quick Actions Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <button (click)="state.setModule('temperatures')" 
-                class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
-          <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
-            <i class="fa-solid fa-temperature-half text-blue-600 group-hover:text-white text-xl transition-colors"></i>
-          </div>
-          <h4 class="font-bold text-slate-800 mb-1">Controllo Temperature</h4>
-          <p class="text-xs text-slate-500">Registra nuova misurazione</p>
-        </button>
+        @if (state.isAdmin()) {
+          <!-- Admin Actions -->
+          <button (click)="state.setModule('general-checks')" 
+                  class="group bg-white hover:bg-emerald-50 p-6 rounded-xl border-2 border-slate-200 hover:border-emerald-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-emerald-100 group-hover:bg-emerald-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-list-check text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Controlli Generali</h4>
+            <p class="text-xs text-slate-500">Visualizza stato completo</p>
+          </button>
 
-        <button (click)="state.setModule('traceability')" 
-                class="group bg-white hover:bg-emerald-50 p-6 rounded-xl border-2 border-slate-200 hover:border-emerald-400 transition-all text-left">
-          <div class="w-12 h-12 rounded-full bg-emerald-100 group-hover:bg-emerald-500 flex items-center justify-center mb-3 transition-colors">
-            <i class="fa-solid fa-barcode text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
-          </div>
-          <h4 class="font-bold text-slate-800 mb-1">Rintracciabilità</h4>
-          <p class="text-xs text-slate-500">Gestisci prodotti</p>
-        </button>
+          <button (click)="state.setModule('accounting')" 
+                  class="group bg-white hover:bg-amber-50 p-6 rounded-xl border-2 border-slate-200 hover:border-amber-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-amber-100 group-hover:bg-amber-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-calculator text-amber-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Contabilità</h4>
+            <p class="text-xs text-slate-500">Gestisci pagamenti</p>
+          </button>
 
-        <button (click)="state.setModule('non-compliance')" 
-                class="group bg-white hover:bg-red-50 p-6 rounded-xl border-2 border-slate-200 hover:border-red-400 transition-all text-left">
-          <div class="w-12 h-12 rounded-full bg-red-100 group-hover:bg-red-500 flex items-center justify-center mb-3 transition-colors">
-            <i class="fa-solid fa-triangle-exclamation text-red-600 group-hover:text-white text-xl transition-colors"></i>
-          </div>
-          <h4 class="font-bold text-slate-800 mb-1">Non Conformità</h4>
-          <p class="text-xs text-slate-500">Segnala anomalia</p>
-        </button>
+          <button (click)="state.setModule('messages')" 
+                  class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-comments text-blue-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Messaggistica</h4>
+            <p class="text-xs text-slate-500">Comunicazioni aziende</p>
+          </button>
 
-        <button (click)="state.setModule('collaborators')" 
-                class="group bg-white hover:bg-purple-50 p-6 rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all text-left">
-          <div class="w-12 h-12 rounded-full bg-purple-100 group-hover:bg-purple-500 flex items-center justify-center mb-3 transition-colors">
-            <i class="fa-solid fa-users-gear text-purple-600 group-hover:text-white text-xl transition-colors"></i>
-          </div>
-          <h4 class="font-bold text-slate-800 mb-1">Gestione Struttura</h4>
-          <p class="text-xs text-slate-500">Aziende e Collaboratori</p>
-        </button>
+          <button (click)="state.setModule('collaborators')" 
+                  class="group bg-white hover:bg-purple-50 p-6 rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-purple-100 group-hover:bg-purple-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-users-gear text-purple-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Gestione Struttura</h4>
+            <p class="text-xs text-slate-500">Aziende e Collaboratori</p>
+          </button>
+        } @else {
+          <!-- Operational Actions -->
+          <button (click)="state.setModule('temperatures')" 
+                  class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-temperature-half text-blue-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Controllo Temperature</h4>
+            <p class="text-xs text-slate-500">Registra nuova misurazione</p>
+          </button>
+
+          <button (click)="state.setModule('traceability')" 
+                  class="group bg-white hover:bg-emerald-50 p-6 rounded-xl border-2 border-slate-200 hover:border-emerald-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-emerald-100 group-hover:bg-emerald-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-barcode text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Rintracciabilità</h4>
+            <p class="text-xs text-slate-500">Gestisci prodotti</p>
+          </button>
+
+          <button (click)="state.setModule('non-compliance')" 
+                  class="group bg-white hover:bg-red-50 p-6 rounded-xl border-2 border-slate-200 hover:border-red-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-red-100 group-hover:bg-red-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-triangle-exclamation text-red-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Non Conformità</h4>
+            <p class="text-xs text-slate-500">Segnala anomalia</p>
+          </button>
+
+          <button (click)="state.setModule('messages')" 
+                  class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-comments text-blue-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Messaggi</h4>
+            <p class="text-xs text-slate-500">Invia a Amministrazione</p>
+          </button>
+        }
       </div>
 
     </div>

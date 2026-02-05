@@ -67,10 +67,13 @@ export class AppComponent {
   }
 
   hasAccessToCategory(category: string): boolean {
-    if (this.state.isAdmin()) return true;
+    if (this.state.isAdmin()) {
+      // Admin sees management and communication, not operational checks
+      return ['dashboard', 'config', 'communication'].includes(category);
+    }
     // Collaborator restrictions:
-    // Can see Anagrafiche (Read Only mostly), Operativo, Normativa.
-    // Cannot see Config.
+    // Can see Anagrafiche, Operativo, Normativa, etc.
+    // Cannot see Config (Management).
     if (category === 'config') return false;
     return true;
   }

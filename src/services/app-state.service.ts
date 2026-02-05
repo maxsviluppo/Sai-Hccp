@@ -253,8 +253,8 @@ export class AppStateService {
     { id: 'operational-checklist', label: 'Controllo Pre/Post Op.', icon: 'fa-list-check', category: 'daily-checks' },
 
     // Anagrafiche
-    { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-graduation-cap', category: 'anagrafiche', adminOnly: true },
-    { id: 'suppliers', label: 'Elenco Fornitori', icon: 'fa-truck-field', category: 'anagrafiche', adminOnly: true },
+    { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-graduation-cap', category: 'anagrafiche' },
+    { id: 'suppliers', label: 'Elenco Fornitori', icon: 'fa-truck-field', category: 'anagrafiche' },
     { id: 'products-cleaning', label: 'Prodotti Pulizia', icon: 'fa-pump-soap', category: 'anagrafiche' },
     { id: 'equipment', label: 'Elenco Attrezzature', icon: 'fa-blender', category: 'anagrafiche' },
     { id: 'allergens-ue1169', label: 'Reg. U.E. 1169/2011', icon: 'fa-wheat-awn', category: 'anagrafiche' },
