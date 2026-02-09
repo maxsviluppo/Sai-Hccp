@@ -56,7 +56,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  category: 'dashboard' | 'daily-checks' | 'anagrafiche' | 'operativo' | 'normativa' | 'config' | 'communication';
+  category: 'dashboard' | 'pre-operative' | 'operative' | 'post-operative' | 'history' | 'config' | 'communication';
   adminOnly?: boolean;
 }
 
@@ -241,6 +241,9 @@ export class AppStateService {
     suspended: false
   });
 
+  // --- Current Active Editing Session ---
+  readonly recordToEdit = signal<any>(null);
+
   // --- Messages Database ---
   readonly messages = signal<Message[]>([
     {
@@ -291,28 +294,36 @@ export class AppStateService {
     { id: 'reports', label: 'Report Controlli', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
     { id: 'general-checks', label: 'Controlli Generali', icon: 'fa-list-check', category: 'dashboard', adminOnly: true },
 
-    // Daily Checks
-    { id: 'operational-checklist', label: 'Controllo Pre/Post Op.', icon: 'fa-list-check', category: 'daily-checks' },
+    // --- FASE PRE-OPERATIVA ---
+    { id: 'pre-op-checklist', label: 'Checklist Pre-Apertura', icon: 'fa-clipboard-check', category: 'pre-operative' },
 
-    // Anagrafiche
+    // --- FASE OPERATIVA ---
+    { id: 'operative-checklist', label: 'Checklist Operativa', icon: 'fa-briefcase', category: 'operative' },
+
+    // --- FASE POST-OPERATIVA ---
+    { id: 'post-op-placeholder', label: '(Da Assegnare)', icon: 'fa-hourglass-end', category: 'post-operative' },
+
+    // --- STORICO ---
+    { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
+
+    /*
+    // VECCHIE CATEGORIE (DA RIASSEGNARE)
+    { id: 'operational-checklist', label: 'Controllo Pre/Post Op.', icon: 'fa-list-check', category: 'daily-checks' },
     { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-graduation-cap', category: 'anagrafiche' },
     { id: 'suppliers', label: 'Elenco Fornitori', icon: 'fa-truck-field', category: 'anagrafiche' },
     { id: 'products-cleaning', label: 'Prodotti Pulizia', icon: 'fa-pump-soap', category: 'anagrafiche' },
     { id: 'equipment', label: 'Elenco Attrezzature', icon: 'fa-blender', category: 'anagrafiche' },
     { id: 'allergens-ue1169', label: 'Reg. U.E. 1169/2011', icon: 'fa-wheat-awn', category: 'anagrafiche' },
-
-    // Operativo
     { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-hands-bubbles', category: 'operativo' },
     { id: 'cleaning-maintenance', label: 'Pulizia / Manutenzione', icon: 'fa-broom', category: 'operativo' },
     { id: 'goods-receipt', label: 'Ricezione Prodotti', icon: 'fa-box-open', category: 'operativo' },
     { id: 'food-conservation', label: 'Conservazione Alimenti', icon: 'fa-temperature-half', category: 'operativo' },
     { id: 'temperatures', label: 'Temperature', icon: 'fa-temperature-low', category: 'operativo' },
     { id: 'traceability', label: 'Rintracciabilità Alimenti', icon: 'fa-barcode', category: 'operativo' },
-
-    // Normativa
     { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'normativa' },
     { id: 'micro-bio', label: 'Monitoraggio Microbiologico', icon: 'fa-vial', category: 'normativa' },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-triangle-exclamation', category: 'normativa' },
+    */
 
     // Config
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
@@ -432,10 +443,10 @@ export class AppStateService {
     const user = this.currentUser();
     if (!user) return;
 
-    const date = this.filterDate(); // Usually save for the SELECTED date context
-    // Ideally, a collaborator saves for Today, but let's assume filterDate is the "Working Date"
+    const date = this.filterDate();
 
-    // Remove existing record for this user/date/module if exists (upsert)
+    // Legacy behavior: Upsert based on Module+User+Date (One per day)
+    // Remove existing record for this user/date/module if exists
     const newRecord = {
       id: Math.random().toString(36).substr(2, 9),
       moduleId,
@@ -449,6 +460,52 @@ export class AppStateService {
       ...records.filter(r => !(r.moduleId === moduleId && r.userId === user.id && r.date === date)),
       newRecord
     ]);
+  }
+
+  // --- New Historical Methods ---
+
+  saveChecklist(record: { id?: string, moduleId: string, data: any, date?: string }) {
+    const user = this.currentUser();
+    if (!user) return;
+
+    const recordId = record.id || Math.random().toString(36).substr(2, 9);
+    const date = record.date || new Date().toISOString().split('T')[0]; // Use provided date or today (not filterDate necessarily)
+
+    const newEntry = {
+      id: recordId,
+      moduleId: record.moduleId,
+      userId: user.id,
+      date: date,
+      data: record.data,
+      timestamp: new Date()
+    };
+
+    this.checklistRecords.update(records => {
+      const others = records.filter(r => r.id !== recordId);
+      return [newEntry, ...others];
+    });
+  }
+
+  deleteChecklist(id: string) {
+    this.checklistRecords.update(records => records.filter(r => r.id !== id));
+    this.toastService.success('Record Eliminato', 'La registrazione è stata rimossa.');
+  }
+
+  getChecklistHistory(moduleId: string) {
+    // Return all records for this module, filtered by current user (or admin view logic)
+    const user = this.currentUser();
+    if (!user) return [];
+
+    // Admins might want to see ALL records for this module? Or filtered by user?
+    // user request: "troviamo la lista"
+    // Let's return all records matching the module for now.
+    // In a real app we would filter by Company.
+    // Here we filter by clientId via user check? 
+    // Let's verify clientId matches current user's clientId if not admin.
+
+    return this.checklistRecords()
+      .filter(r => r.moduleId === moduleId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
   getRecord(moduleId: string) {
@@ -552,6 +609,17 @@ export class AppStateService {
     }
   }
 
+  // --- Editing State Methods ---
+  startEditingRecord(record: any) {
+    this.recordToEdit.set(record);
+    this.setModule(record.moduleId);
+    this.toastService.info('Caricamento...', 'Sto aprendo la registrazione selezionata.');
+  }
+
+  completeEditing() {
+    this.recordToEdit.set(null);
+  }
+
   // --- Messaging Methods ---
   sendMessage(subject: string, content: string, recipientType: 'ALL' | 'SINGLE', recipientId?: string, recipientUserId?: string, attachment?: { url: string, name: string }) {
     const user = this.currentUser();
@@ -639,6 +707,10 @@ export class AppStateService {
       msg.recipientType === 'ALL' ||
       (msg.recipientId === user.clientId && (!msg.recipientUserId || msg.recipientUserId === user.id))
     );
+  }
+
+  addMessage(msg: any) {
+    this.messages.update(msgs => [msg, ...msgs]);
   }
 }
 

@@ -10,6 +10,8 @@ import { SettingsViewComponent } from './components/settings-view.component';
 import { CollaboratorsViewComponent } from './components/collaborators-view.component';
 import { AccountingViewComponent } from './components/accounting-view.component';
 import { OperationalChecklistComponent } from './components/operational-checklist.component';
+import { PreOperationalChecklistComponent } from './components/checklists/pre-operative.component';
+import { OperativeChecklistComponent } from './components/checklists/operative.component';
 import { StaffTrainingChecklistComponent } from './components/staff-training-checklist.component';
 import { SuppliersViewComponent } from './components/suppliers-view.component';
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
@@ -26,6 +28,7 @@ import { MicrobioMonitorViewComponent } from './components/microbio-monitor-view
 import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
 import { MessagesViewComponent } from './components/messages-view.component';
 import { ToastContainerComponent } from './components/toast-container.component';
+import { ChecklistHistoryComponent } from './components/checklist-history.component';
 
 @Component({
   selector: 'app-root',
@@ -40,6 +43,8 @@ import { ToastContainerComponent } from './components/toast-container.component'
     CollaboratorsViewComponent,
     AccountingViewComponent,
     OperationalChecklistComponent,
+    PreOperationalChecklistComponent,
+    OperativeChecklistComponent,
     StaffTrainingChecklistComponent,
     SuppliersViewComponent,
     CleaningProductsViewComponent,
@@ -55,7 +60,8 @@ import { ToastContainerComponent } from './components/toast-container.component'
     MicrobioMonitorViewComponent,
     StaffHygieneViewComponent,
     MessagesViewComponent,
-    ToastContainerComponent
+    ToastContainerComponent,
+    ChecklistHistoryComponent
   ],
   templateUrl: './app.component.html'
 })
@@ -69,7 +75,7 @@ export class AppComponent {
   hasAccessToCategory(category: string): boolean {
     if (this.state.isAdmin()) {
       // Admin sees management and communication, not operational checks
-      return ['dashboard', 'config', 'communication'].includes(category);
+      return ['dashboard', 'pre-operative', 'operative', 'post-operative', 'config', 'communication'].includes(category);
     }
     // Collaborator restrictions:
     // Can see Anagrafiche, Operativo, Normativa, and Config (Settings).
@@ -144,10 +150,9 @@ export class AppComponent {
 
   getCategoryLabel(category: string): string {
     const labels: Record<string, string> = {
-      'daily-checks': 'Controlli Giornalieri',
-      'anagrafiche': 'Anagrafiche',
-      'operativo': 'Operativo',
-      'normativa': 'Normativa & Controllo',
+      'pre-operative': 'Fase Pre-Operativa',
+      'operative': 'Fase Operativa',
+      'post-operative': 'Fase Post-Operativa',
       'config': 'Configurazione',
       'communication': 'Comunicazioni'
     };

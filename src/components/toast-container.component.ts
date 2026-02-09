@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ToastService } from '../services/toast.service';
 
 @Component({
-    selector: 'app-toast-container',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
-    <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+  selector: 'app-toast-container',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none print:hidden">
       @for (toast of toastService.toasts(); track toast.id) {
         <div class="pointer-events-auto animate-slide-in-right bg-white rounded-xl shadow-2xl border-l-4 overflow-hidden max-w-sm"
              [class.border-l-emerald-500]="toast.type === 'success'"
@@ -60,7 +60,7 @@ import { ToastService } from '../services/toast.service';
       }
     </div>
   `,
-    styles: [`
+  styles: [`
     @keyframes slideInRight {
       from { transform: translateX(400px); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -78,5 +78,5 @@ import { ToastService } from '../services/toast.service';
   `]
 })
 export class ToastContainerComponent {
-    toastService = inject(ToastService);
+  toastService = inject(ToastService);
 }
