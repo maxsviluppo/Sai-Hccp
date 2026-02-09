@@ -223,21 +223,45 @@ export class ReportsViewComponent {
     const clientsToShow = selectedClient ? [selectedClient] : this.state.clients();
 
     return clientsToShow.map(client => {
-      const users = this.state.systemUsers()
-        .filter(u => u.clientId === client.id && u.role !== 'ADMIN')
-        .map(u => ({
-          id: u.id,
-          name: u.name,
-          department: u.department || 'Generale',
-          checksCompleted: Math.floor(Math.random() * 15), // Mock data
-          checksTotal: 14,
-          lastActivity: this.getRandomTime()
-        }));
+      const allClientUsers = this.state.systemUsers().filter(u => u.clientId === client.id);
+      const userIds = allClientUsers.map(u => u.id);
+
+      // Fetch real records for this client and date
+      const clientRecords = this.state.checklistRecords().filter(r =>
+        userIds.includes(r.userId) && r.date === this.state.filterDate()
+      );
+
+      const users = allClientUsers
+        .filter(u => u.role !== 'ADMIN')
+        .map(u => {
+          const userRecords = clientRecords.filter(r => r.userId === u.id);
+          return {
+            id: u.id,
+            name: u.name,
+            department: u.department || 'Generale',
+            checksCompleted: userRecords.length,
+            checksTotal: 14, // Assuming 14 standard modules for now or based on menu
+            lastActivity: userRecords.length > 0 ?
+              new Date(userRecords[userRecords.length - 1].timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) :
+              'Nessuna'
+          };
+        });
 
       const totalChecks = users.reduce((acc, u) => acc + u.checksTotal, 0);
       const completedChecks = users.reduce((acc, u) => acc + u.checksCompleted, 0);
 
-      return { client, users, totalChecks, completedChecks };
+      const detailedChecks = clientRecords.map(r => {
+        const user = allClientUsers.find(u => u.id === r.userId);
+        const module = this.state.menuItems.find(m => m.id === r.moduleId);
+        return {
+          userName: user?.name || 'Utente',
+          moduleName: module?.label || r.moduleId,
+          timestamp: r.timestamp,
+          data: r.data
+        };
+      });
+
+      return { client, users, totalChecks, completedChecks, detailedChecks };
     });
   });
 
@@ -278,98 +302,175 @@ export class ReportsViewComponent {
     }
   }
 
-  generatePrintHTML(report: CompanyReport): string {
+  generatePrintHTML(report: any): string {
     const date = new Date(this.state.filterDate()).toLocaleDateString('it-IT', {
       day: '2-digit',
       month: 'long',
       year: 'numeric'
     });
+    const logo = report.client.logo || this.state.currentLogo();
 
     return `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Report Controlli - ${report.client.name}</title>
+        <title>Autocontrollo HACCP - ${report.client.name}</title>
         <style>
-          @page { size: A4; margin: 2cm; }
-          body { font-family: Arial, sans-serif; color: #1e293b; line-height: 1.6; }
-          .header { border-bottom: 3px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; }
-          .logo { font-size: 32px; font-weight: bold; color: #3b82f6; margin-bottom: 10px; }
-          .company-name { font-size: 24px; font-weight: bold; margin: 20px 0 10px; }
-          .meta { color: #64748b; font-size: 14px; margin-bottom: 5px; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th { background: #f1f5f9; padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #cbd5e1; }
-          td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
-          .progress { display: inline-block; width: 100px; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; vertical-align: middle; }
-          .progress-bar { height: 100%; background: #10b981; }
-          .progress-bar.incomplete { background: #f59e0b; }
-          .signature-area { margin-top: 60px; border-top: 2px solid #e2e8f0; padding-top: 30px; }
-          .signature-line { border-top: 1px solid #000; width: 300px; margin-top: 40px; padding-top: 5px; }
-          .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 12px; }
+          @page { size: A4; margin: 1.5cm; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.5; margin: 0; padding: 0; }
+          .a4-container { width: 100%; }
+          .header { border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start; }
+          .logo-container { display: flex; align-items: center; gap: 15px; }
+          .logo-img { width: 60px; height: 60px; border-radius: 12px; object-fit: contain; }
+          .brand-title { font-size: 24px; font-weight: 800; color: #0f172a; }
+          .header-meta { text-align: right; font-size: 12px; color: #64748b; }
+          
+          .report-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 15px; border: 1px solid #e2e8f0; }
+          .info-block h3 { font-size: 18px; margin: 0 0 5px; color: #0f172a; }
+          .info-block p { margin: 2px 0; font-size: 13px; color: #475569; }
+          
+          .section-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 10px; margin: 30px 0 15px; }
+          
+          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12px; }
+          th { background: #f1f5f9; padding: 10px; text-align: left; font-weight: 700; border-bottom: 1px solid #cbd5e1; color: #475569; }
+          td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+          
+          .check-detail { margin-bottom: 15px; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+          .check-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 11px; margin-bottom: 8px; color: #334155; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px; }
+          .check-body { font-size: 11px; color: #1e293b; }
+          .data-item { display: inline-block; margin-right: 20px; }
+          .data-label { color: #64748b; font-weight: normal; }
+          .data-value { font-weight: 600; }
+          
+          .signature-section { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+          .sig-box { border-top: 1px solid #94a3b8; padding-top: 10px; text-align: center; font-size: 11px; color: #64748b; }
+          
+          .footer { position: fixed; bottom: 1.5cm; left: 1.5cm; right: 1.5cm; font-size: 10px; text-align: center; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+          
+          @media print {
+            .no-print { display: none; }
+            body { margin: 0; }
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="logo">🛡️ HACCP Pro</div>
-          <div style="color: #64748b; font-size: 14px;">Sistema di Gestione Controlli Igienico-Sanitari</div>
-        </div>
+        <div class="a4-container">
+          <div class="header">
+            <div class="logo-container">
+              <img src="${logo}" class="logo-img">
+              <div>
+                <div class="brand-title">HACCP PRO</div>
+                <div style="font-size: 10px; color: #64748b;">Software di Gestione Sicurezza Alimentare</div>
+              </div>
+            </div>
+            <div class="header-meta">
+              <div>Documento: Registro Autocontrollo</div>
+              <div>Versione: 2.0.1</div>
+              <div>Data emissione: ${new Date().toLocaleDateString('it-IT')}</div>
+            </div>
+          </div>
 
-        <h1 class="company-name">${report.client.name}</h1>
-        <div class="meta">P.IVA: ${report.client.piva}</div>
-        <div class="meta">Indirizzo: ${report.client.address}</div>
-        <div class="meta">Data Report: ${date}</div>
+          <div class="report-info">
+            <div class="info-block">
+              <h3>${report.client.name}</h3>
+              <p>P.IVA: ${report.client.piva}</p>
+              <p>Indirizzo: ${report.client.address}</p>
+            </div>
+            <div style="text-align: right;">
+              <p><strong>DATA REGISTRAZIONE:</strong></p>
+              <p style="font-size: 20px; font-weight: 800; color: #3b82f6;">${date}</p>
+            </div>
+          </div>
 
-        <h2 style="margin-top: 30px; color: #3b82f6;">Riepilogo Controlli Giornalieri</h2>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>Operatore</th>
-              <th>Reparto</th>
-              <th>Controlli</th>
-              <th>Completamento</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${report.users.map(user => {
-      const percentage = (user.checksCompleted / user.checksTotal * 100);
-      const isComplete = percentage === 100;
-      return `
+          <div class="section-title">Riepilogo Avanzamento Giornaliero</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Operatore Responsabile</th>
+                <th>Reparto / Funzione</th>
+                <th>Check Eseguiti</th>
+                <th>Stato</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.users.map((user: any) => `
                 <tr>
                   <td><strong>${user.name}</strong></td>
                   <td>${user.department}</td>
                   <td>${user.checksCompleted} / ${user.checksTotal}</td>
                   <td>
-                    <div class="progress">
-                      <div class="progress-bar ${isComplete ? '' : 'incomplete'}" style="width: ${percentage}%"></div>
-                    </div>
-                    ${percentage.toFixed(0)}%
+                    <span style="color: ${user.checksCompleted === user.checksTotal ? '#10b981' : '#f59e0b'}; font-weight: 800;">
+                      ${user.checksCompleted === user.checksTotal ? 'COMPLETATO' : 'IN CORSO'}
+                    </span>
                   </td>
                 </tr>
-              `;
-    }).join('')}
-          </tbody>
-        </table>
+              `).join('')}
+            </tbody>
+          </table>
 
-        <div style="margin-top: 30px; padding: 15px; background: #f8fafc; border-left: 4px solid #3b82f6;">
-          <strong>Totale Controlli Completati:</strong> ${report.completedChecks} su ${report.totalChecks} 
-          (${((report.completedChecks / report.totalChecks * 100) || 0).toFixed(1)}%)
-        </div>
+          <div class="section-title">Registro Attività Dettagliato</div>
+          ${report.detailedChecks.length === 0 ? `
+            <p style="text-align: center; color: #94a3b8; padding: 20px;">Nessuna attività registrata per la data selezionata.</p>
+          ` : `
+            ${report.detailedChecks.map((check: any) => `
+              <div class="check-detail">
+                <div class="check-header">
+                  <span>MODULO: ${check.moduleName}</span>
+                  <span>ESECUTO DA: ${check.userName} • ORE: ${new Date(check.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div class="check-body">
+                  ${this.formatCheckData(check.data)}
+                </div>
+              </div>
+            `).join('')}
+          `}
 
-        <div class="signature-area">
-          <p><strong>Firma del Responsabile HACCP:</strong></p>
-          <div class="signature-line">
-            <div style="text-align: center; font-size: 12px; color: #64748b;">Firma e Timbro</div>
+          <div class="signature-section">
+            <div class="sig-box">
+              <p><strong>Firma Operatore Responsabile</strong></p>
+              <div style="height: 60px;"></div>
+            </div>
+            <div class="sig-box">
+              <p><strong>Visto del Responsabile HACCP</strong></p>
+              <div style="height: 60px;"></div>
+            </div>
           </div>
-        </div>
 
-        <div class="footer">
-          <p>Documento generato automaticamente da HACCP Pro - ${new Date().toLocaleString('it-IT')}</p>
-          <p>Questo documento costituisce attestazione dei controlli effettuati secondo il piano HACCP aziendale</p>
+          <div class="footer">
+             HACCP Pro - Documento generato elettronicamente conforme ai requisiti del Reg. CE 852/04. 
+             Pagina 1 di 1
+          </div>
         </div>
       </body>
       </html>
     `;
+  }
+
+  private formatCheckData(data: any): string {
+    if (!data) return 'Nessun dato';
+
+    // Handle array of check items (id, label, checked)
+    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && data[0].hasOwnProperty('label')) {
+      return data
+        .map((item: any) => {
+          const status = item.checked ? '✅ CONFORME' : '❌ NON CONFORME';
+          return `<span class="data-item"><span class="data-label">${item.label}:</span> <span class="data-value">${status}</span></span>`;
+        })
+        .join(' ');
+    }
+
+    // Default object handling
+    return Object.entries(data)
+      .map(([key, value]) => {
+        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        let formattedValue = value;
+        if (value === true) formattedValue = '✅ CONFORME';
+        if (value === false) formattedValue = '❌ NON CONFORME';
+        if (Array.isArray(value)) formattedValue = value.join(', ');
+
+        return `<span class="data-item"><span class="data-label">${label}:</span> <span class="data-value">${formattedValue}</span></span>`;
+      })
+      .join(' ');
   }
 }

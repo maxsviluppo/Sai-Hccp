@@ -66,6 +66,7 @@ export interface Message {
   senderName: string;
   recipientType: 'ALL' | 'SINGLE';
   recipientId?: string; // clientId if SINGLE
+  recipientUserId?: string; // specific userId if SINGLE
   subject: string;
   content: string;
   attachmentUrl?: string;
@@ -279,7 +280,8 @@ export class AppStateService {
       // Collaborator sees messages for their company or broadcast
       return !msg.read &&
         msg.senderId !== user.id &&
-        (msg.recipientType === 'ALL' || msg.recipientId === user.clientId);
+        (msg.recipientType === 'ALL' ||
+          (msg.recipientId === user.clientId && (!msg.recipientUserId || msg.recipientUserId === user.id)));
     }).length;
   });
 
@@ -551,7 +553,7 @@ export class AppStateService {
   }
 
   // --- Messaging Methods ---
-  sendMessage(subject: string, content: string, recipientType: 'ALL' | 'SINGLE', recipientId?: string, attachment?: { url: string, name: string }) {
+  sendMessage(subject: string, content: string, recipientType: 'ALL' | 'SINGLE', recipientId?: string, recipientUserId?: string, attachment?: { url: string, name: string }) {
     const user = this.currentUser();
     if (!user) return;
 
@@ -561,6 +563,7 @@ export class AppStateService {
       senderName: user.name,
       recipientType,
       recipientId,
+      recipientUserId,
       subject,
       content,
       attachmentUrl: attachment?.url,
@@ -579,7 +582,9 @@ export class AppStateService {
       this.toastService.success('Messaggio inviato', 'Inviato all\'Amministrazione');
     } else {
       const client = this.clients().find(c => c.id === recipientId);
-      this.toastService.success('Messaggio inviato', `Inviato a ${client?.name}`);
+      const recipientUser = this.systemUsers().find(u => u.id === recipientUserId);
+      const targetStr = recipientUser ? `${client?.name} (Attr: ${recipientUser.name})` : client?.name;
+      this.toastService.success('Messaggio inviato', `Inviato a ${targetStr}`);
     }
   }
 
@@ -627,11 +632,12 @@ export class AppStateService {
     // Collaborators see:
     // 1. Messages they sent
     // 2. Messages sent to everyone (broadcast)
-    // 3. Messages sent to their specific company
+    // 3. Messages sent to their specific company (if not targeted to someone else)
+    // 4. Messages sent specifically to them
     return this.messages().filter(msg =>
       msg.senderId === user.id ||
       msg.recipientType === 'ALL' ||
-      msg.recipientId === user.clientId
+      (msg.recipientId === user.clientId && (!msg.recipientUserId || msg.recipientUserId === user.id))
     );
   }
 }

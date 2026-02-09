@@ -104,8 +104,10 @@ interface SystemAlert {
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform"
-             (click)="state.setModule('collaborators')">
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group transition-transform"
+             [class.cursor-pointer]="state.isAdmin()"
+             [class.hover:scale-105]="state.isAdmin()"
+             (click)="state.isAdmin() ? state.setModule('collaborators') : null">
           <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
           <div class="relative z-10">
             <div class="flex items-center justify-between mb-3">
@@ -208,14 +210,21 @@ interface SystemAlert {
                     </div>
                 </div>
             } @else {
-                <button (click)="sendDailyReport()"
-                        class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Invia Report via Email
-                </button>
-                <div class="mt-3 flex items-center gap-2 text-[10px] text-slate-500 justify-center">
-                    <i class="fa-solid fa-circle-info"></i>
-                    Il report verrà inviato automaticamente a: {{ state.reportRecipientEmail() }}
+                <div class="flex flex-col gap-4">
+                    <button (click)="sendDailyReport()"
+                            class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 border border-white/20">
+                        <i class="fa-solid fa-paper-plane text-lg"></i>
+                        INVIA REPORT EMAIL
+                    </button>
+                    <button (click)="printDailyReport()"
+                            class="w-full py-4 bg-white hover:bg-slate-50 text-slate-900 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 border-2 border-slate-200">
+                        <i class="fa-solid fa-print text-lg text-blue-600"></i>
+                        STAMPA REGISTRO A4
+                    </button>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-[10px] text-slate-500 justify-center bg-slate-800/20 py-2 rounded-lg">
+                    <i class="fa-solid fa-circle-info text-blue-400"></i>
+                    Destinatario: <span class="text-slate-300">{{ state.reportRecipientEmail() }}</span>
                 </div>
             }
           </div>
@@ -235,7 +244,7 @@ interface SystemAlert {
               <p class="text-xs text-slate-500">Stato attività per il giorno {{ getCurrentDate() }}</p>
             </div>
           </div>
-          @if (!state.filterCollaboratorId()) {
+          @if (state.isAdmin() && !state.filterCollaboratorId()) {
             <button (click)="state.setModule('collaborators')" 
               class="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-bold">
               <i class="fa-solid fa-users-gear mr-2"></i> Gestisci Struttura
@@ -604,5 +613,213 @@ export class DashboardViewComponent {
 
   scrollToAlerts() {
     document.getElementById('alerts-section')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  printDailyReport() {
+    const currentCompanyId = this.state.companyConfig()?.id;
+    if (!currentCompanyId) return;
+
+    const client = this.state.clients().find(c => c.id === currentCompanyId);
+    if (!client) return;
+
+    const allClientUsers = this.state.systemUsers().filter(u => u.clientId === client.id);
+    const userIds = allClientUsers.map(u => u.id);
+
+    const clientRecords = this.state.checklistRecords().filter(r =>
+      userIds.includes(r.userId) && r.date === this.state.filterDate()
+    );
+
+    const users = allClientUsers
+      .filter(u => u.role !== 'ADMIN')
+      .map(u => {
+        const userRecords = clientRecords.filter(r => r.userId === u.id);
+        return {
+          id: u.id,
+          name: u.name,
+          department: u.department || 'Generale',
+          checksCompleted: userRecords.length,
+          checksTotal: 14,
+          lastActivity: userRecords.length > 0 ?
+            new Date(userRecords[userRecords.length - 1].timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) :
+            'Nessuna'
+        };
+      });
+
+    const detailedChecks = clientRecords.map(r => {
+      const user = allClientUsers.find(u => u.id === r.userId);
+      const module = this.state.menuItems.find(m => m.id === r.moduleId);
+      return {
+        userName: user?.name || 'Utente',
+        moduleName: module?.label || r.moduleId,
+        timestamp: r.timestamp,
+        data: r.data
+      };
+    });
+
+    const report = {
+      client,
+      users,
+      totalChecks: users.reduce((acc, u) => acc + u.checksTotal, 0),
+      completedChecks: users.reduce((acc, u) => acc + u.checksCompleted, 0),
+      detailedChecks
+    };
+
+    const printContent = this.generatePrintHTML(report);
+    const printWindow = window.open('', '_blank');
+
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  }
+
+  generatePrintHTML(report: any): string {
+    const date = new Date(this.state.filterDate()).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+    const logo = report.client.logo || this.state.currentLogo();
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Registro Autocontrollo - ${report.client.name}</title>
+        <style>
+          @page { size: A4; margin: 1.5cm; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.5; margin: 0; padding: 0; }
+          .a4-container { width: 100%; }
+          .header { border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start; }
+          .logo-container { display: flex; align-items: center; gap: 15px; }
+          .logo-img { width: 60px; height: 60px; border-radius: 12px; object-fit: contain; }
+          .brand-title { font-size: 24px; font-weight: 800; color: #0f172a; }
+          .header-meta { text-align: right; font-size: 12px; color: #64748b; }
+          
+          .report-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 15px; border: 1px solid #e2e8f0; }
+          .info-block h3 { font-size: 18px; margin: 0 0 5px; color: #0f172a; }
+          .info-block p { margin: 2px 0; font-size: 13px; color: #475569; }
+          
+          .section-title { font-size: 16px; font-weight: 800; text-transform: uppercase; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 10px; margin: 30px 0 15px; }
+          
+          table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12px; }
+          th { background: #f1f5f9; padding: 10px; text-align: left; font-weight: 700; border-bottom: 1px solid #cbd5e1; color: #475569; }
+          td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+          
+          .check-detail { margin-bottom: 15px; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+          .check-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 11px; margin-bottom: 8px; color: #334155; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px; }
+          .check-body { font-size: 11px; color: #1e293b; }
+          .data-item { display: inline-block; margin-right: 20px; }
+          .data-label { color: #64748b; font-weight: normal; }
+          .data-value { font-weight: 600; }
+          
+          .signature-section { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+          .sig-box { border-top: 1px solid #94a3b8; padding-top: 10px; text-align: center; font-size: 11px; color: #64748b; }
+          
+          .footer { position: fixed; bottom: 1.5cm; left: 1.5cm; right: 1.5cm; font-size: 10px; text-align: center; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+          
+          @media print {
+            .no-print { display: none; }
+            body { margin: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="a4-container">
+          <div class="header">
+            <div class="logo-container">
+              <img src="${logo}" class="logo-img">
+              <div>
+                <div class="brand-title">HACCP PRO</div>
+                <div style="font-size: 10px; color: #64748b;">Software di Gestione Sicurezza Alimentare</div>
+              </div>
+            </div>
+            <div class="header-meta">
+              <div>Documento: Registro Autocontrollo</div>
+              <div>Versione: 2.0.1</div>
+              <div>Data emissione: ${new Date().toLocaleDateString('it-IT')}</div>
+            </div>
+          </div>
+
+          <div class="report-info">
+            <div class="info-block">
+              <h3>${report.client.name}</h3>
+              <p>P.IVA: ${report.client.piva}</p>
+              <p>Indirizzo: ${report.client.address}</p>
+            </div>
+            <div style="text-align: right;">
+              <p><strong>DATA REGISTRAZIONE:</strong></p>
+              <p style="font-size: 20px; font-weight: 800; color: #3b82f6;">${date}</p>
+            </div>
+          </div>
+
+          <div class="section-title">Registro Attività Dettagliato</div>
+          ${report.detailedChecks.length === 0 ? `
+            <p style="text-align: center; color: #94a3b8; padding: 20px;">Nessuna attività registrata per la data odierna.</p>
+          ` : `
+            ${report.detailedChecks.map((check: any) => `
+              <div class="check-detail">
+                <div class="check-header">
+                  <span>MODULO: ${check.moduleName}</span>
+                  <span>ESECUTO DA: ${check.userName} • ORE: ${new Date(check.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div class="check-body">
+                  ${this.formatCheckData(check.data)}
+                </div>
+              </div>
+            `).join('')}
+          `}
+
+          <div class="signature-section">
+            <div class="sig-box">
+              <p><strong>Firma Operatore Responsabile</strong></p>
+              <div style="height: 60px;"></div>
+            </div>
+            <div class="sig-box">
+              <p><strong>Visto del Responsabile HACCP</strong></p>
+              <div style="height: 60px;"></div>
+            </div>
+          </div>
+
+          <div class="footer">
+             HACCP Pro - Documento generato elettronicamente conforme ai requisiti del Reg. CE 852/04.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private formatCheckData(data: any): string {
+    if (!data) return 'Nessun dato';
+
+    // Handle array of check items (id, label, checked) - Used by most check modules
+    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && data[0].hasOwnProperty('label')) {
+      return data
+        .map((item: any) => {
+          const status = item.checked ? '✅ CONFORME' : '❌ NON CONFORME';
+          return `<span class="data-item"><span class="data-label">${item.label}:</span> <span class="data-value">${status}</span></span>`;
+        })
+        .join(' ');
+    }
+
+    // Default object handling (key: value) - Used by Traceability and others
+    return Object.entries(data)
+      .map(([key, value]) => {
+        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        let formattedValue = value;
+        if (value === true) formattedValue = '✅ CONFORME';
+        if (value === false) formattedValue = '❌ NON CONFORME';
+        if (Array.isArray(value)) formattedValue = value.join(', ');
+        return `<span class="data-item"><span class="data-label">${label}:</span> <span class="data-value">${formattedValue}</span></span>`;
+      })
+      .join(' ');
   }
 }

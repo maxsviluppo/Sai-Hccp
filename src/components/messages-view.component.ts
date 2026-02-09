@@ -61,14 +61,31 @@ import { AppStateService, Message } from '../services/app-state.service';
 
                     <!-- Company Selection -->
                     @if (newMessage.recipientType === 'SINGLE') {
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Seleziona Azienda</label>
-                            <select [(ngModel)]="newMessage.recipientId" class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">-- Seleziona --</option>
-                                @for (client of state.clients(); track client.id) {
-                                    <option [value]="client.id">{{ client.name }}</option>
-                                }
-                            </select>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">Seleziona Azienda</label>
+                                <select [(ngModel)]="newMessage.recipientId" 
+                                        (change)="newMessage.recipientUserId = ''"
+                                        class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">-- Seleziona Azienda --</option>
+                                    @for (client of state.clients(); track client.id) {
+                                        <option [value]="client.id">{{ client.name }}</option>
+                                    }
+                                </select>
+                            </div>
+                            
+                            @if (newMessage.recipientId && newMessage.recipientId !== 'ADMIN_OFFICE') {
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Operaio / Referente (Opzionale)</label>
+                                    <select [(ngModel)]="newMessage.recipientUserId" 
+                                            class="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">-- Tutta l'Azienda --</option>
+                                        @for (user of getUsersForClient(newMessage.recipientId); track user.id) {
+                                            <option [value]="user.id">{{ user.name }} ({{ user.department }})</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                         </div>
                     }
                     } @else {
@@ -162,6 +179,10 @@ import { AppStateService, Message } from '../services/app-state.service';
                                 } @else {
                                     <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
                                         <i class="fa-solid fa-building mr-1"></i> {{ getClientName(message.recipientId) }}
+                                        @if (message.recipientUserId) {
+                                            <span class="ml-1 text-blue-400">•</span>
+                                            <i class="fa-solid fa-user-tag ml-1"></i> {{ getUserName(message.recipientUserId) }}
+                                        }
                                     </span>
                                 }
                             </div>
@@ -255,6 +276,7 @@ export class MessagesViewComponent {
     newMessage = {
         recipientType: 'ALL' as 'ALL' | 'SINGLE',
         recipientId: '',
+        recipientUserId: '',
         subject: '',
         content: '',
         attachmentUrl: '',
@@ -329,6 +351,7 @@ export class MessagesViewComponent {
             this.newMessage.content,
             this.newMessage.recipientType,
             this.newMessage.recipientId || undefined,
+            this.newMessage.recipientUserId || undefined,
             attachment
         );
 
@@ -341,6 +364,7 @@ export class MessagesViewComponent {
         this.newMessage = {
             recipientType: 'ALL',
             recipientId: '',
+            recipientUserId: '',
             subject: '',
             content: '',
             attachmentUrl: '',
@@ -398,5 +422,14 @@ export class MessagesViewComponent {
         if (!clientId) return '';
         if (clientId === 'ADMIN_OFFICE') return 'Amministrazione';
         return this.state.clients().find(c => c.id === clientId)?.name || 'Sconosciuto';
+    }
+
+    getUserName(userId?: string): string {
+        if (!userId) return '';
+        return this.state.systemUsers().find(u => u.id === userId)?.name || 'Utente';
+    }
+
+    getUsersForClient(clientId: string) {
+        return this.state.systemUsers().filter(u => u.clientId === clientId);
     }
 }

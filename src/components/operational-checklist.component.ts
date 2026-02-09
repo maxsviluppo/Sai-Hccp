@@ -339,10 +339,18 @@ export class OperationalChecklistComponent implements OnInit, OnDestroy {
 
       this.hasUnsavedChanges.set(false);
 
+      // Save to central state for reporting
+      const allChecks = this.sections().flatMap(s => s.items.map(i => ({
+        id: i.id,
+        label: `${s.title}: ${i.label}`,
+        checked: i.checked
+      })));
+      this.state.saveRecord('operational-checklist', allChecks);
+
       console.log(`Checklist saved (${mode}) to database:`, {
         date: this.state.filterDate(),
         user: this.state.currentUser()?.id,
-        data: this.sections(),
+        data: allChecks,
         mode: mode
       });
     }, 1500);
