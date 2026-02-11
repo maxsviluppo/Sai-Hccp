@@ -29,8 +29,42 @@
     }
 
     .glass-panel {
-      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
+    }
+
+    @media print {
+      @page {
+        margin: 0;
+        size: auto;
+      }
+
+      body {
+        margin: 1cm;
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      header,
+      aside,
+      nav,
+      .sidebar {
+        display: none !important;
+      }
+
+      html,
+      body,
+      #app,
+      main {
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* Hide specific elements if classes fail */
+      app-sidebar,
+      app-header {
+        display: none !important;
+      }
     }
   </style>
   <script type="importmap">
@@ -55,6 +89,6 @@
 
 <body class="bg-slate-50 text-slate-800 antialiased">
   <app-root></app-root>
-<script src="main-BZTONIXE.js" type="module"></script></body>
+<script src="main-3RSCCBHV.js" type="module"></script></body>
 
 </html>

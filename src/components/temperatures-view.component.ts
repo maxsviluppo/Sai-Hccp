@@ -14,28 +14,43 @@ interface CheckItem {
     imports: [CommonModule],
     template: `
     <div class="space-y-8 pb-10">
-        <!-- Premium Header Banner -->
-        <div class="bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-600 p-8 rounded-3xl shadow-xl border border-cyan-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <i class="fa-solid fa-thermometer text-9xl text-white"></i>
-            </div>
+        <!-- Enhanced UI Header -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
+            <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
             <div class="relative z-10">
-                <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-                    <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/30">
-                        <i class="fa-solid fa-thermometer"></i>
-                    </span>
-                    Temperature
-                </h2>
-                <p class="text-cyan-100 text-sm mt-2 font-medium ml-1">Controllo temperature attrezzature</p>
-            </div>
-            <div class="relative z-10 flex flex-col gap-2">
-                <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-                    <i class="fa-solid fa-temperature-three-quarters text-white text-lg"></i>
-                    <span class="text-white font-bold">{{ checkedCount() }} / {{ checks().length }}</span>
-                </div>
-                <div class="text-xs text-cyan-100 font-medium flex items-center gap-2">
-                    <i class="fa-regular fa-calendar"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}
-                    @if (getDisplayName()) { <span class="mx-1">•</span> <i class="fa-regular fa-user"></i> {{ getDisplayName() }} }
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg border border-white/10">
+                            <i class="fa-solid fa-temperature-three-quarters text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-black text-white">Temperature</h2>
+                            <p class="text-slate-400 text-sm font-medium">Monitoraggio catena del freddo</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                        <!-- Checked Indicator -->
+                        <div class="bg-white/5 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex-1 sm:flex-initial">
+                            <div class="flex justify-between items-end mb-1.5">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Verificati</span>
+                                <span class="text-sm font-black text-white">{{ checkedCount() }} / {{ checks().length }}</span>
+                            </div>
+                            <div class="w-40 h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full transition-all duration-700"
+                                     [style.width.%]="(checkedCount() / (checks().length || 1)) * 100"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-emerald-500/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-emerald-500/20 flex items-center gap-3">
+                            <div class="text-left">
+                                <div class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">Sistema</div>
+                                <div class="text-sm font-bold text-white flex items-center">
+                                    <i class="fa-solid fa-circle-check mr-2 text-emerald-400"></i> {{ canEdit() ? 'Operativo' : 'Sola Lettura' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -79,8 +94,10 @@ interface CheckItem {
     </div>
   `,
     styles: [`
-    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+    }
   `]
 })
 export class TemperaturesViewComponent {

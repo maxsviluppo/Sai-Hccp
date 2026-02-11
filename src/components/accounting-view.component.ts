@@ -51,26 +51,36 @@ interface Reminder {
   template: `
     <div class="space-y-6 pb-10">
       
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-xl border border-slate-700/50 relative overflow-hidden">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <i class="fa-solid fa-euro-sign text-9xl text-white"></i>
-        </div>
-
+      <!-- Enhanced UI Header -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
+        <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
         <div class="relative z-10">
-          <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-            <span class="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mr-4 shadow-lg border border-white/20">
-                <i class="fa-solid fa-calculator"></i>
-            </span>
-            Contabilità e Gestione Pagamenti
-          </h2>
-          <p class="text-indigo-200 text-sm mt-2 font-medium ml-1">
-            @if (selectedClient()) {
-              Gestione per: {{ selectedClient()?.name }}
-            } @else {
-              Panoramica Generale - Tutte le Aziende
-            }
-          </p>
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg border border-white/10">
+                <i class="fa-solid fa-euro-sign text-white text-2xl"></i>
+              </div>
+              <div>
+                <h2 class="text-3xl font-black text-white">Contabilità e Pagamenti</h2>
+                <p class="text-slate-400 text-sm font-medium">
+                  @if (selectedClient()) {
+                    Gestione per: {{ selectedClient()?.name }}
+                  } @else {
+                    Panoramica Generale - Tutte le Aziende
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20">
+                <div class="text-[10px] text-slate-300 uppercase font-bold">Stato Sistema</div>
+                <div class="text-sm font-bold text-emerald-400 flex items-center">
+                  <i class="fa-solid fa-circle-check mr-2"></i> Operativo
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -663,6 +673,9 @@ interface Reminder {
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
     }
   `]
 })

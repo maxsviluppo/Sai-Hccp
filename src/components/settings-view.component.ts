@@ -13,40 +13,44 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
       
       <!-- Admin View: System & Master Company Settings -->
       @if (state.isAdmin()) {
-        <!-- 1. Report Sending Settings -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-xl border border-blue-500/50 relative overflow-hidden">
-           <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <i class="fa-solid fa-envelope-circle-check text-9xl text-white"></i>
-           </div>
-           
-           <div class="relative z-10">
-              <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                 <div class="flex-1">
-                    <h2 class="text-2xl font-black text-white flex items-center">
-                        <i class="fa-solid fa-gears mr-3"></i>
-                        Configurazione Invio Report
-                    </h2>
-                    <p class="text-blue-100 mt-2 text-sm max-w-xl">
-                        Imposta l'indirizzo email a cui gli operatori invieranno i report giornalieri in formato PDF.
-                    </p>
-                 </div>
-                 
-                 <div class="w-full md:w-auto">
-                    <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
-                       <label class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-2 block">Email di Ricezione Report</label>
-                       <div class="flex gap-2">
-                          <input type="email" #newEmail [value]="state.reportRecipientEmail()"
-                                 class="bg-white/10 text-white border border-white/30 rounded-lg px-4 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[300px] placeholder-blue-300/50"
-                                 placeholder="esempio@dominio.it">
-                          <button (click)="state.setReportRecipientEmail(newEmail.value)"
-                                  class="px-6 py-2 bg-white text-blue-700 rounded-lg font-bold hover:bg-blue-50 transition-all shadow-lg active:scale-95 truncate">
-                              <i class="fa-solid fa-save mr-2"></i> Aggiorna
-                          </button>
-                       </div>
+        <!-- Enhanced Settings Header (Admin) -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden mb-6">
+            <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
+            <div class="relative z-10 font-sans">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg border border-white/10">
+                            <i class="fa-solid fa-gears text-white text-3xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">Configurazione Sistema</h2>
+                            <p class="text-cyan-200 text-sm font-medium">Gestione parametri globali e reportistica.</p>
+                        </div>
                     </div>
-                 </div>
-              </div>
-           </div>
+                </div>
+
+                <div class="mt-8 bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fa-solid fa-envelope-circle-check text-cyan-400 text-xl"></i>
+                                <h3 class="text-lg font-bold text-white">Email Reportistica</h3>
+                            </div>
+                            <p class="text-slate-400 text-sm">Indirizzo di ricezione per i report giornalieri inviati dagli operatori.</p>
+                        </div>
+                        
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <input type="email" #newEmail [value]="state.reportRecipientEmail()"
+                                    class="bg-slate-900/50 text-white border border-slate-600 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500 w-full md:min-w-[300px] placeholder-slate-500"
+                                    placeholder="email@esempio.it">
+                            <button (click)="state.setReportRecipientEmail(newEmail.value)"
+                                    class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-cyan-500/20 active:scale-95 whitespace-nowrap">
+                                <i class="fa-solid fa-save mr-2"></i> Salva
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 2. Master Company Anagraphic (Replacing the dynamic client list) -->
@@ -311,6 +315,9 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
   styles: [`
     .animate-fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+    }
   `]
 })
 export class SettingsViewComponent {

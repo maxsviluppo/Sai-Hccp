@@ -63,142 +63,127 @@ interface ChecklistItem {
           </div>
        </div>
       
-       <!-- UI HEADER (Hidden on print) -->
-       <div class="print:hidden bg-gradient-to-r from-indigo-600 to-blue-500 rounded-b-3xl p-6 shadow-xl mb-6 -mx-4 md:mx-0 md:rounded-3xl text-white relative overflow-hidden">
-         <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
-            <i class="fa-solid fa-briefcase text-9xl"></i>
+       <!-- Enhanced UI Header (Hidden on print) -->
+       <div class="print:hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 p-8 rounded-3xl shadow-xl border border-indigo-500/30 relative overflow-hidden mb-6">
+         <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+           <i class="fa-solid fa-briefcase text-9xl text-white"></i>
          </div>
-         
          <div class="relative z-10">
-           <h2 class="text-2xl font-black mb-1">Checklist Area 2</h2>
-           <p class="text-indigo-100 text-sm font-medium opacity-90 mb-4">
-             Gestione operativa, catena del freddo e rintracciabilità.
-           </p>
+           <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+             <div class="flex items-center gap-4">
+               <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
+                 <i class="fa-solid fa-briefcase text-white text-2xl"></i>
+               </div>
+               <div>
+                 <h2 class="text-3xl font-black text-white">Fase Operativa</h2>
+                 <p class="text-indigo-100 text-sm font-medium mt-1">Gestione catena del freddo e produzione</p>
+               </div>
+             </div>
 
-           <div class="flex items-center gap-3">
-              <div class="flex-1 h-3 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
-                 <div class="h-full bg-white rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                      [style.width.%]="progressPercentage()"></div>
-              </div>
-              <span class="text-xs font-bold">{{ completedCount() }}/{{ items().length }}</span>
+             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+               <!-- Progress Indicator -->
+               <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex-1 sm:flex-initial">
+                 <div class="flex justify-between items-end mb-1.5">
+                   <span class="text-[10px] text-indigo-100 uppercase font-bold tracking-wider">Avanzamento</span>
+                   <span class="text-sm font-black text-white">{{ completedCount() }}/{{ items().length }}</span>
+                 </div>
+                 <div class="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
+                   <div class="h-full bg-white rounded-full transition-all duration-700"
+                        [style.width.%]="progressPercentage()"></div>
+                 </div>
+               </div>
+
+               <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
+                 <div class="text-left">
+                   <div class="text-[10px] text-indigo-100 uppercase font-bold tracking-wider">Stato</div>
+                   <div class="text-sm font-bold text-white flex items-center">
+                     <i class="fa-solid fa-circle-check mr-2"></i> In Compilazione
+                   </div>
+                 </div>
+               </div>
+             </div>
            </div>
          </div>
        </div>
 
-       <!-- Date & Config Selector (Hidden on Print) -->
-       <div class="print:hidden space-y-3 mb-6">
-          <!-- Date Selector -->
-          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between mx-auto max-w-2xl relative z-20">
-             <div class="flex items-center gap-3 w-full">
-                <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                   <i class="fa-solid fa-calendar-day"></i>
-                </div>
-                <div class="flex-1">
-                   <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data di Registrazione</label>
-                   <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
-                          class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-base">
-                </div>
-             </div>
-          </div>
-
-       </div>
-
-       <!-- Quick Action Grid -->
-       <div class="print:hidden space-y-3 mb-24 md:mb-0">
-         @for (item of items(); track item.id) {
-           <!-- Separator for Section 2 -->
-           @if (item.id === 'sep-dynamic') {
-              <div class="py-4 px-2">
-                 <div class="flex items-center gap-3">
-                    <div class="h-px flex-1 bg-slate-200"></div>
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Verifica Temperature</span>
-                    <div class="h-px flex-1 bg-slate-200"></div>
-                 </div>
-                 <p class="text-[9px] text-center text-slate-400 font-bold mt-1 mb-4">(+4°C / +8°C / <= -18°C)</p>
-
-                 <!-- Units Counter Config (Only if not submitted) -->
-                 @if (!isSubmitted()) {
-                 <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-3 gap-3 animate-slide-up mb-2">
-                    <div class="flex flex-col items-center">
-                       <label class="text-[9px] font-black text-slate-400 uppercase mb-1">Frigoriferi</label>
-                       <div class="flex items-center gap-2 bg-slate-50 rounded-lg p-1 border border-slate-100">
-                          <button (click)="updateCount('frigo', -1)" class="w-6 h-6 flex items-center justify-center text-indigo-600 hover:bg-white hover:shadow-sm rounded transition-all">-</button>
-                          <span class="font-bold text-slate-700 w-4 text-center text-sm">{{ frigoCount() }}</span>
-                          <button (click)="updateCount('frigo', 1)" class="w-6 h-6 flex items-center justify-center text-indigo-600 hover:bg-white hover:shadow-sm rounded transition-all">+</button>
-                       </div>
-                    </div>
-                    <div class="flex flex-col items-center">
-                       <label class="text-[9px] font-black text-slate-400 uppercase mb-1">Congelatori</label>
-                       <div class="flex items-center gap-2 bg-slate-50 rounded-lg p-1 border border-slate-100">
-                          <button (click)="updateCount('congelatore', -1)" class="w-6 h-6 flex items-center justify-center text-indigo-600 hover:bg-white hover:shadow-sm rounded transition-all">-</button>
-                          <span class="font-bold text-slate-700 w-4 text-center text-sm">{{ congelatoreCount() }}</span>
-                          <button (click)="updateCount('congelatore', 1)" class="w-6 h-6 flex items-center justify-center text-indigo-600 hover:bg-white hover:shadow-sm rounded transition-all">+</button>
-                       </div>
-                    </div>
-                    <div class="flex flex-col items-center">
-                       <label class="text-[9px] font-black text-slate-400 uppercase mb-1">Pozzetti</label>
-                       <div class="flex items-center gap-2 bg-slate-50 rounded-lg p-1 border border-slate-100">
-                          <button (click)="updateCount('pozzetto', -1)" class="w-6 h-6 flex items-center justify-center text-indigo-600 hover:bg-white hover:shadow-sm rounded transition-all">-</button>
-                          <span class="font-bold text-slate-700 w-4 text-center text-sm">{{ pozzettoCount() }}</span>
-                          <button (click)="updateCount('pozzetto', 1)" class="w-6 h-6 flex items-center justify-center text-indigo-600 hover:bg-white hover:shadow-sm rounded transition-all">+</button>
-                       </div>
-                    </div>
-                 </div>
-                 }
+        <!-- Date Selector & Quick Actions (Hidden on Print) -->
+        <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-2xl relative z-20 -mt-4">
+           <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                 <i class="fa-solid fa-calendar-day"></i>
               </div>
-           } @else {
-              <div class="bg-white rounded-2xl shadow-sm border-2 transition-all duration-200 overflow-hidden relative"
-                   [class.border-slate-100]="item.status === 'pending'"
-                   [class.border-emerald-500]="item.status === 'ok'"
-                   [class.border-red-500]="item.status === 'issue'"
-                   [class.bg-emerald-50]="item.status === 'ok'"
-                   [class.bg-red-50]="item.status === 'issue'">
+              <div class="flex-1">
+                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data di Registrazione</label>
+                 <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
+                        class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-base">
+              </div>
+           </div>
+
+           <!-- Quick Set All Ok -->
+           <button (click)="setAllOk()" 
+                   class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-sm border border-emerald-100"
+                   title="Imposta tutto come Conforme">
+              <i class="fa-solid fa-check-double"></i>
+           </button>
+        </div>
+
+        <!-- Quick Action Grid -->
+        <div class="print:hidden space-y-3 mb-24 md:mb-0">
+          @for (item of items(); track item.id) {
+             <div class="bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden relative shadow-sm"
+                  [class.border-slate-100]="item.status === 'pending'"
+                  [class.border-emerald-500]="item.status === 'ok'"
+                  [class.border-red-500]="item.status === 'issue'"
+                  [class.bg-emerald-50/30]="item.status === 'ok'"
+                  [class.bg-red-50/30]="item.status === 'issue'">
                 
                 <div class="p-4 flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm transition-colors flex-shrink-0"
-                       [class.bg-slate-100]="item.status === 'pending'"
-                       [class.text-slate-400]="item.status === 'pending'"
-                       [class.bg-emerald-100]="item.status === 'ok'"
-                       [class.text-emerald-600]="item.status === 'ok'"
-                       [class.bg-red-100]="item.status === 'issue'"
-                       [class.text-red-600]="item.status === 'issue'">
-                    <i [class]="'fa-solid ' + item.icon"></i>
-                  </div>
-
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-slate-800 text-sm md:text-base pr-1"
-                        [class.text-emerald-900]="item.status === 'ok'"
-                        [class.text-red-900]="item.status === 'issue'">
-                      {{ item.label }}
-                    </h3>
-                  </div>
-
-                  @if (item.status === 'pending') {
-                    <div class="flex gap-2">
-                       <button (click)="setStatus(item.id, 'ok')" 
-                               class="w-10 h-10 rounded-full bg-slate-100 hover:bg-emerald-100 text-slate-300 hover:text-emerald-600 flex items-center justify-center transition-all border border-slate-200">
-                          <i class="fa-solid fa-check"></i>
-                       </button>
-                       <button (click)="openIssueModal(item)"
-                               class="w-10 h-10 rounded-full bg-slate-100 hover:bg-red-100 text-slate-300 hover:text-red-500 flex items-center justify-center transition-all border border-slate-200">
-                          <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                       </button>
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-sm transition-colors flex-shrink-0"
+                         [class.bg-slate-100]="item.status === 'pending'"
+                         [class.text-slate-400]="item.status === 'pending'"
+                         [class.bg-emerald-100]="item.status === 'ok'"
+                         [class.text-emerald-600]="item.status === 'ok'"
+                         [class.bg-red-100]="item.status === 'issue'"
+                         [class.text-red-600]="item.status === 'issue'">
+                        <i [class]="'fa-solid ' + item.icon"></i>
                     </div>
-                  } @else {
-                     <button (click)="setStatus(item.id, 'pending')" 
-                             class="w-8 h-8 rounded-full bg-white/50 hover:bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all border border-black/5 shadow-sm">
-                        <i class="fa-solid fa-rotate-left text-xs"></i>
-                     </button>
-                  }
-                </div>
 
-                @if (item.status === 'issue' && item.note) {
-                  <div class="px-4 pb-3 pt-0 text-xs text-red-700 italic border-t border-red-200/50 mt-1">
-                     "{{ item.note }}"
-                  </div>
-                }
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-slate-800 text-sm md:text-base">
+                            {{ item.label }}
+                        </h4>
+                        @if (item.status === 'issue' && item.note) {
+                          <p class="text-[10px] text-red-600 italic mt-0.5">Note: {{ item.note }}</p>
+                        } @else {
+                          <p class="text-[10px] uppercase tracking-wide font-black mt-0.5"
+                             [class.text-slate-400]="item.status === 'pending'"
+                             [class.text-emerald-600]="item.status === 'ok'"
+                             [class.text-red-600]="item.status === 'issue'">
+                              {{ item.status === 'pending' ? 'In Attesa' : (item.status === 'ok' ? 'Conforme' : 'Non Conforme') }}
+                          </p>
+                        }
+                    </div>
+
+                    <div class="flex gap-2">
+                      @if (item.status === 'pending') {
+                        <button (click)="setStatus(item.id, 'ok')" 
+                                class="w-10 h-10 rounded-full bg-slate-100 hover:bg-emerald-100 text-slate-300 hover:text-emerald-600 flex items-center justify-center transition-all border border-slate-200">
+                          <i class="fa-solid fa-check text-lg"></i>
+                        </button>
+                        <button (click)="openIssueModal(item)"
+                                class="w-10 h-10 rounded-full bg-slate-100 hover:bg-red-100 text-slate-300 hover:text-red-500 flex items-center justify-center transition-all border border-slate-200">
+                          <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                        </button>
+                      } @else {
+                        <button (click)="setStatus(item.id, 'pending')" 
+                                class="w-8 h-8 rounded-full bg-white/50 hover:bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all border border-black/5 shadow-sm">
+                          <i class="fa-solid fa-rotate-left text-xs"></i>
+                        </button>
+                      }
+                    </div>
+                 </div>
               </div>
-           }
+
          }
        </div>
 
@@ -290,8 +275,9 @@ interface ChecklistItem {
     </div>
   `,
    styles: [`
-    .animate-slide-up { animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+    }
   `]
 })
 export class OperativeChecklistComponent {
@@ -324,41 +310,14 @@ export class OperativeChecklistComponent {
    items = computed(() => {
       const s = this.statusMap();
 
-      const part1: ChecklistItem[] = [
-         { id: '1', label: 'Aspetto immobili', icon: 'fa-building', status: s['1']?.status || 'pending', note: s['1']?.note },
-         { id: '2', label: 'Catena del freddo (+4°C / +8°C / <= -18°C)', icon: 'fa-snowflake', status: s['2']?.status || 'pending', note: s['2']?.note },
-         { id: '3', label: 'Alimenti secchi (temp ambiente)', icon: 'fa-wheat-awn', status: s['3']?.status || 'pending', note: s['3']?.note },
-         { id: '4', label: 'Verifica tracciabilità', icon: 'fa-barcode', status: s['4']?.status || 'pending', note: s['4']?.note },
+      return [
+         { id: '1', label: 'Verifica temperature di lavorazione', icon: 'fa-temperature-half', status: s['1']?.status || 'pending', note: s['1']?.note },
+         { id: '2', label: 'Monitoraggio catena del freddo', icon: 'fa-snowflake', status: s['2']?.status || 'pending', note: s['2']?.note },
+         { id: '3', label: 'Controllo materie prime e semilavorati', icon: 'fa-box-open', status: s['3']?.status || 'pending', note: s['3']?.note },
+         { id: '4', label: 'Verifica tracciabilità di produzione', icon: 'fa-barcode', status: s['4']?.status || 'pending', note: s['4']?.note },
+         { id: '5', label: 'Gestione allergeni e separazione', icon: 'fa-triangle-exclamation', status: s['5']?.status || 'pending', note: s['5']?.note },
+         { id: '6', label: 'Rispetto tempistiche di ricettazione', icon: 'fa-clock', status: s['6']?.status || 'pending', note: s['6']?.note },
       ];
-
-      // Dynamic Section
-      const dynamic: ChecklistItem[] = [
-         { id: 'sep-dynamic', label: '', icon: '', status: 'ok' } // Hidden separator marker
-      ];
-
-      for (let i = 1; i <= this.frigoCount(); i++) {
-         const id = `frigo-${i}`;
-         dynamic.push({ id, label: `Frigorifero ${i}`, icon: 'fa-snowflake', status: s[id]?.status || 'pending', note: s[id]?.note });
-      }
-
-      for (let i = 1; i <= this.congelatoreCount(); i++) {
-         const id = `congelatore-${i}`;
-         dynamic.push({ id, label: `Congelatore ${i}`, icon: 'fa-ice-cream', status: s[id]?.status || 'pending', note: s[id]?.note });
-      }
-
-      for (let i = 1; i <= this.pozzettoCount(); i++) {
-         const id = `pozzetto-${i}`;
-         dynamic.push({ id, label: `Pozzetto ${i}`, icon: 'fa-box-archive', status: s[id]?.status || 'pending', note: s[id]?.note });
-      }
-
-      const part2: ChecklistItem[] = [
-         { id: '8', label: 'Camera fredda', icon: 'fa-door-closed', status: s['8']?.status || 'pending', note: s['8']?.note },
-         { id: '9', label: 'Sostanze allergene', icon: 'fa-triangle-exclamation', status: s['9']?.status || 'pending', note: s['9']?.note },
-         { id: '10', label: 'Rintracciabilità manufattura', icon: 'fa-industry', status: s['10']?.status || 'pending', note: s['10']?.note },
-         { id: '11', label: 'Libro ingredienti', icon: 'fa-book-open', status: s['11']?.status || 'pending', note: s['11']?.note },
-      ];
-
-      return [...part1, ...dynamic, ...part2];
    });
 
    completedCount = computed(() => this.items().filter(i => i.id !== 'sep-dynamic' && i.status !== 'pending').length);
@@ -380,6 +339,17 @@ export class OperativeChecklistComponent {
          ...map,
          [id]: { status, note: status === 'ok' ? undefined : map[id]?.note }
       }));
+   }
+
+   setAllOk() {
+      const newMap: Record<string, { status: ChecklistItem['status'], note?: string }> = {};
+      this.items().forEach(item => {
+         if (item.id !== 'sep-dynamic') {
+            newMap[item.id] = { status: 'ok' };
+         }
+      });
+      this.statusMap.set(newMap);
+      this.toast.info('Tutto Conforme', 'Tutte le voci sono state impostate come conformi.');
    }
 
    openIssueModal(item: ChecklistItem) {

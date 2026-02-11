@@ -25,45 +25,42 @@ interface CheckCategory {
     template: `
     <div class="space-y-6 pb-10">
       
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-xl border border-slate-700/50 relative overflow-hidden">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <i class="fa-solid fa-clipboard-list text-9xl text-white"></i>
-        </div>
-
-        <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-              <span class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mr-4 shadow-lg border border-white/20">
-                  <i class="fa-solid fa-list-check"></i>
-              </span>
-              Controlli Generali
-            </h2>
-            <p class="text-indigo-200 text-sm mt-2 font-medium ml-1">
-              Panoramica completa di tutti i controlli HACCP - Data: {{ state.filterDate() | date:'dd/MM/yyyy' }}
-            </p>
-          </div>
-
-          <!-- Company Filter -->
-          <div class="flex items-center gap-3">
-            <div class="bg-white/10 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20">
-              <label class="text-xs text-white/70 font-bold uppercase block mb-2">Filtra per Azienda</label>
-          <select [ngModel]="selectedCompanyId()" (ngModelChange)="selectedCompanyId.set($event)"
-                      class="bg-white/20 text-white border border-white/30 rounded-lg px-4 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[250px]">
-                <option value="" class="bg-slate-800">Tutte le Aziende</option>
-                @for (client of state.clients(); track client.id) {
-                  <option [value]="client.id" class="bg-slate-800">{{ client.name }}</option>
-                }
-              </select>
+      <!-- Enhanced UI Header -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
+        <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
+        <div class="relative z-10">
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg border border-white/10">
+                <i class="fa-solid fa-list-check text-white text-2xl"></i>
+              </div>
+              <div>
+                <h2 class="text-3xl font-black text-white">Controlli Generali</h2>
+                <p class="text-slate-400 text-sm font-medium">Panoramica completa stato HACCP</p>
+              </div>
             </div>
 
-            <!-- Print Button -->
-            <button (click)="printCompleteList()" 
-                    [disabled]="!selectedCompanyId()"
-                    class="px-5 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm">
-              <i class="fa-solid fa-print"></i>
-              Stampa Lista Completa
-            </button>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              <!-- Company Selector -->
+              <div class="bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex-1 sm:flex-initial">
+                <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Azienda Selezionata</label>
+                <select [ngModel]="selectedCompanyId()" (ngModelChange)="selectedCompanyId.set($event)"
+                        class="bg-transparent text-white font-bold focus:outline-none cursor-pointer border-none p-0 text-sm min-w-[200px]">
+                  <option value="" class="bg-slate-800">Tutte le Aziende</option>
+                  @for (client of state.clients(); track client.id) {
+                    <option [value]="client.id" class="bg-slate-800">{{ client.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Print Action -->
+              <button (click)="printCompleteList()" 
+                      [disabled]="!selectedCompanyId()"
+                      class="px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-30 disabled:grayscale shadow-lg backdrop-blur-sm">
+                <i class="fa-solid fa-print"></i>
+                <span class="hidden sm:inline">Stampa Report</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -240,8 +237,8 @@ interface CheckCategory {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .animate-slide-down {
-      animation: slideDown 0.2s ease-out forwards;
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
     }
   `]
 })
@@ -294,58 +291,37 @@ export class GeneralChecksViewComponent {
         return [
             {
                 id: 'pre-operative',
-                name: 'Fase Pre-Operativa',
+                name: 'Fase Pre-operativa',
                 icon: 'fa-eye',
                 color: '#3b82f6',
                 items: [
-                    { id: 'pre-1', label: 'Ispezione visiva degli ambienti di lavoro', moduleId: 'operational-checklist', completed: isC1 || isAll },
-                    { id: 'pre-2', label: 'Verifica integrità delle attrezzature', moduleId: 'operational-checklist', completed: isC1 || isC2 },
-                    { id: 'pre-3', label: 'Verifica pulizia superfici prima dell\'uso', moduleId: 'operational-checklist', completed: isC2 }
+                    { id: 'pre-1', label: 'Verifica igiene degli ambienti e attrezzature', moduleId: 'pre-op-checklist', completed: isC1 || isAll },
+                    { id: 'pre-2', label: 'Controllo stoccaggio e materie prime', moduleId: 'pre-op-checklist', completed: isC1 || isC2 },
+                    { id: 'pre-3', label: 'Verifica DPI e abbigliamento idoneo', moduleId: 'pre-op-checklist', completed: isC2 }
                 ]
             },
             {
                 id: 'operative',
                 name: 'Fase Operativa',
                 icon: 'fa-fire-burner',
-                color: '#f59e0b',
+                color: '#6366f1',
                 items: [
-                    { id: 'op-1', label: 'Controllo temperature (Valori positivi)', moduleId: 'operational-checklist', completed: isC1 || isAll },
-                    { id: 'op-2', label: 'Controllo temperature (Valori negativi)', moduleId: 'operational-checklist', completed: isC2 },
-                    { id: 'op-3', label: 'Evitare contaminazioni crociate', moduleId: 'operational-checklist', completed: isC1 },
-                    { id: 'op-4', label: 'Compilazione schede monitoraggio produzione', moduleId: 'operational-checklist', completed: isC2 || isAll }
+                    { id: 'op-1', label: 'Monitoraggio temperature di lavorazione', moduleId: 'operative-checklist', completed: isC1 || isAll },
+                    { id: 'op-2', label: 'Gestione separazione prodotti (Allergeni)', moduleId: 'operative-checklist', completed: isC2 },
+                    { id: 'op-3', label: 'Rispetto tempistiche di ricettazione', moduleId: 'operative-checklist', completed: isC1 },
+                    { id: 'op-4', label: 'Procedure di rintracciabilità operativa', moduleId: 'operative-checklist', completed: isC2 || isAll }
                 ]
             },
             {
                 id: 'post-operative',
-                name: 'Fase Post-Operativa',
+                name: 'Fase Post-operativa',
                 icon: 'fa-broom',
-                color: '#10b981',
-                items: [
-                    { id: 'post-1', label: 'Pulizia e disinfezione ambienti di lavoro', moduleId: 'operational-checklist', completed: true },
-                    { id: 'post-2', label: 'Sanificazione attrezzature utilizzate', moduleId: 'operational-checklist', completed: isC1 || isAll },
-                    { id: 'post-3', label: 'Adeguata conservazione prodotti finiti', moduleId: 'operational-checklist', completed: isC2 || isAll },
-                    { id: 'post-4', label: 'Stoccaggio semilavorati e materie prime', moduleId: 'operational-checklist', completed: isC1 }
-                ]
-            },
-            {
-                id: 'temperatures',
-                name: 'Controllo Temperature',
-                icon: 'fa-temperature-half',
-                color: '#06b6d4',
-                items: [
-                    { id: 'temp-1', label: 'Temperature Frigoriferi +4°C - +8°C', moduleId: 'temperatures', completed: isC1 || isAll },
-                    { id: 'temp-2', label: 'Temperature Congelatori -18°C – -24°C', moduleId: 'temperatures', completed: isC2 || isAll }
-                ]
-            },
-            {
-                id: 'hygiene',
-                name: 'Igiene Personale',
-                icon: 'fa-hands-bubbles',
                 color: '#8b5cf6',
                 items: [
-                    { id: 'hyg-1', label: 'Controllo divise e DPI', moduleId: 'staff-hygiene', completed: isC2 },
-                    { id: 'hyg-2', label: 'Verifica igiene mani', moduleId: 'staff-hygiene', completed: true },
-                    { id: 'hyg-3', label: 'Controllo stato di salute operatori', moduleId: 'staff-hygiene', completed: isC1 }
+                    { id: 'post-1', label: 'Sanificazione fine turno superfici di lavoro', moduleId: 'post-op-checklist', completed: true },
+                    { id: 'post-2', label: 'Rimozione scarti e rifiuti da produzione', moduleId: 'post-op-checklist', completed: isC1 || isAll },
+                    { id: 'post-3', label: 'Sigillatura e stoccaggio semilavorati', moduleId: 'post-op-checklist', completed: isC2 || isAll },
+                    { id: 'post-4', label: 'Spegnimento e messa in sicurezza attrezzature', moduleId: 'post-op-checklist', completed: isC1 }
                 ]
             }
         ];

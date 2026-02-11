@@ -9,26 +9,47 @@ import { AppStateService, Message } from '../services/app-state.service';
     imports: [CommonModule, FormsModule],
     template: `
     <div class="space-y-8 pb-10">
-        <!-- Premium Header Banner -->
-        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 rounded-3xl shadow-xl border border-blue-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+        <!-- Enhanced Messages Header -->
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-8 rounded-3xl shadow-xl border border-blue-500/30 relative overflow-hidden mb-6">
             <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <i class="fa-solid fa-comments text-9xl text-white"></i>
+              <i class="fa-solid fa-comments text-9xl text-white"></i>
             </div>
-            <div class="relative z-10">
-                <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-                    <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/30">
-                        <i class="fa-solid fa-comments"></i>
-                    </span>
-                    Messaggistica
-                </h2>
-                <p class="text-blue-100 text-sm mt-2 font-medium ml-1">Comunicazione diretta con le aziende</p>
-            </div>
-            <div class="relative z-10">
-                <button (click)="openNewMessageForm()" 
-                        class="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i>
-                    Nuovo Messaggio
-                </button>
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 relative">
+                        <i class="fa-solid fa-comments text-white text-3xl"></i>
+                        @if (state.unreadMessagesCount() > 0) {
+                            <div class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full border-4 border-blue-700 flex items-center justify-center">
+                                <div class="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">Messaggistica</h2>
+                        <p class="text-blue-200 text-sm font-medium">Centro comunicazioni e notifiche.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <div class="flex -space-x-3 items-center mr-4">
+                        @for (user of state.systemUsers().slice(0, 4); track user.id) {
+                            <img [src]="user.avatar" class="w-10 h-10 rounded-full border-2 border-slate-800 shadow-sm" [title]="user.name">
+                        }
+                        @if (state.systemUsers().length > 4) {
+                            <div class="w-10 h-10 rounded-full border-2 border-slate-800 bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">
+                                +{{ state.systemUsers().length - 4 }}
+                            </div>
+                        }
+                    </div>
+                    
+                    <button (click)="openNewMessageForm()" 
+                            class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-blue-500/25 flex items-center gap-2 group border border-white/10">
+                        <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </div>
+                        <span>Nuovo Messaggio</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -267,6 +288,9 @@ import { AppStateService, Message } from '../services/app-state.service';
     styles: [`
     .animate-fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+    }
     `]
 })
 export class MessagesViewComponent {

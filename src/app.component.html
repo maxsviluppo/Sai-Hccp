@@ -289,8 +289,10 @@
         <!-- Dynamic Content Loading -->
         @switch (state.currentModuleId()) {
         @case ('dashboard') { <app-dashboard-view /> }
+        @case ('operator-dashboard') { <app-operator-dashboard-view /> }
         @case ('reports') { <app-reports-view /> }
         @case ('general-checks') { <app-general-checks-view /> }
+        @case ('post-op-checklist') { <app-post-operative-checklist /> }
         @case ('pre-op-checklist') { <app-pre-operative-checklist /> }
         @case ('history') { <app-checklist-history /> }
         @case ('operative-checklist') { <app-operative-checklist /> }

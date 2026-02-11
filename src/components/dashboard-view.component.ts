@@ -34,54 +34,65 @@ interface SystemAlert {
     <div class="space-y-6 animate-fade-in">
       
       <!-- Enhanced Admin Header -->
-      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
-        <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
-        <div class="relative z-10">
-          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 p-8 rounded-3xl shadow-xl border border-indigo-500/30 relative overflow-hidden mb-6">
+        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+          <i class="fa-solid fa-shield-halved text-9xl text-white"></i>
+        </div>
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div class="flex items-center gap-6">
+            <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
+              <i class="fa-solid fa-shield-halved text-white text-3xl"></i>
+            </div>
             <div>
-              <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <i class="fa-solid fa-shield-halved text-white text-xl"></i>
-                </div>
-                <div>
-                  <h2 class="text-3xl font-black text-white">Centro di Controllo HACCP</h2>
-                  <p class="text-slate-300 text-sm">Amministrazione {{ state.currentUser()?.name }}</p>
-                  @if(state.filterCollaboratorId()) {
-                      <div class="mt-1 inline-flex items-center bg-indigo-500/30 px-2 py-0.5 rounded text-xs text-indigo-200 border border-indigo-500/50">
-                        <i class="fa-solid fa-filter mr-1"></i> Filtrato su Unità Selezionata
-                      </div>
-                  }
-                </div>
-              </div>
+              <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">Centro di Controllo</h2>
+              <p class="text-indigo-200 text-sm font-medium">Panoramica globale conformità HACCP.</p>
+              @if(state.filterCollaboratorId()) {
+                  <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-xs font-bold text-indigo-300">
+                    <i class="fa-solid fa-filter text-indigo-400"></i> 
+                    Filtro Attivo: Unità Selezionata
+                  </div>
+              }
             </div>
-            <div class="flex items-center gap-3">
-              <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20">
-                <div class="text-xs text-slate-300 uppercase font-bold">Data Selezionata</div>
-                <div class="text-lg font-bold text-white">{{ getCurrentDate() }}</div>
-              </div>
-              <div class="bg-emerald-500/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-emerald-400/30">
-                <div class="text-xs text-emerald-300 uppercase font-bold">Sistema</div>
-                <div class="text-lg font-bold text-emerald-400 flex items-center">
-                  <i class="fa-solid fa-circle-check mr-2"></i> Operativo
+          </div>
+
+          <div class="flex gap-3">
+             <div class="px-5 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                   <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Analisi</div>
+                   <div class="text-sm font-bold text-white">{{ getCurrentDate() }}</div>
                 </div>
-              </div>
-            </div>
+                <i class="fa-solid fa-calendar-day text-indigo-400 text-xl"></i>
+             </div>
+             
+             <div class="px-5 py-3 bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 rounded-xl flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                   <div class="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">Stato Sistema</div>
+                   <div class="text-sm font-bold text-emerald-400">Operativo</div>
+                </div>
+                <div class="relative">
+                   <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                     <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                   </span>
+                   <i class="fa-solid fa-server text-emerald-400 text-xl"></i>
+                </div>
+             </div>
           </div>
         </div>
       </div>
 
+      @if (state.isAdmin()) {
       <!-- Enhanced KPI Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform"
-             (click)="state.setModule('general-checks')">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group transition-transform">
           <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
           <div class="relative z-10">
             <div class="flex items-center justify-between mb-3">
               <i class="fa-solid fa-clipboard-check text-3xl opacity-80"></i>
               <span class="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">{{ getCurrentDateShort() }}</span>
             </div>
-            <p class="text-sm opacity-90 font-medium">Controlli Completati</p>
-            <p class="text-4xl font-black mt-2">{{ kpiData().completed }}/{{ kpiData().total }}</p>
+            <p class="text-sm opacity-90 font-medium">Pratica HACCP</p>
+            <p class="text-4xl font-black mt-2">{{ kpiData().completed }}/{{ kpiData().total }} Fasi</p>
             <div class="mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
               <div class="h-full bg-white rounded-full transition-all" [style.width.%]="(kpiData().completed / kpiData().total) * 100"></div>
             </div>
@@ -135,53 +146,90 @@ interface SystemAlert {
       </div>
 
       <!-- Critical Modules Status (Hidden for Admin as they don't perform checks) -->
-      @if (!state.isAdmin()) {
+      <!-- Real-time Phase Advancement Status -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Temperature Module Status -->
-        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden group cursor-pointer"
-             (click)="state.setModule('temperatures')">
-          <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 group-hover:bg-blue-50 transition-colors">
-            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-              <i class="fa-solid fa-temperature-half text-blue-500"></i> Temperature
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-indigo-500"></i> Avanzamento Processo HACCP
             </h3>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-700">OK</span>
+            <span class="text-[10px] font-black px-2 py-1 rounded bg-indigo-100 text-indigo-700 uppercase tracking-wider">Dati Reali di Oggi</span>
           </div>
-          <div class="p-6">
-            <div class="flex justify-between text-sm mb-2">
-              <span class="text-slate-500">Misurazioni Oggi</span>
-              <span class="font-bold text-slate-800">12 / 16</span>
+          
+          <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Phase 1 Progress -->
+            <div class="space-y-3">
+              <div class="flex justify-between items-end">
+                <div>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fase 1</p>
+                  <h4 class="text-sm font-black text-slate-700">Pre-operativa</h4>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-black text-slate-900">{{ phaseRecap().pre.count }}/{{ (filteredUsers() || []).length || 0 }}</span>
+                </div>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 transition-all duration-1000" [style.width.%]="phaseRecap().pre.pct"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded" 
+                      [class.bg-emerald-100]="phaseRecap().pre.issues === 0" [class.text-emerald-700]="phaseRecap().pre.issues === 0"
+                      [class.bg-red-100]="phaseRecap().pre.issues > 0" [class.text-red-700]="phaseRecap().pre.issues > 0">
+                  {{ phaseRecap().pre.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phaseRecap().pre.issues }}
+                </span>
+              </div>
             </div>
-            <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
-               <div class="h-full bg-blue-500 w-[75%] rounded-full"></div>
-            </div>
-            <div class="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-              <i class="fa-solid fa-clock text-blue-400"></i>
-              Ultima rilevazione: 45 min fa (Cella 1)
-            </div>
-          </div>
-        </div>
 
-        <!-- Cleaning Module Status -->
-        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden group cursor-pointer"
-             (click)="state.setModule('cleaning-maintenance')">
-          <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 group-hover:bg-purple-50 transition-colors">
-            <h3 class="font-bold text-slate-700 flex items-center gap-2">
-              <i class="fa-solid fa-broom text-purple-500"></i> Pulizie e Sanificazione
-            </h3>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-orange-100 text-orange-700">In Corso</span>
+            <!-- Phase 2 Progress -->
+            <div class="space-y-3 border-l border-slate-100 pl-6">
+              <div class="flex justify-between items-end">
+                <div>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fase 2</p>
+                  <h4 class="text-sm font-black text-slate-700">Operativa</h4>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-black text-slate-900">{{ phaseRecap().op.count }}/{{ (filteredUsers() || []).length || 0 }}</span>
+                </div>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 transition-all duration-1000" [style.width.%]="phaseRecap().op.pct"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded" 
+                      [class.bg-emerald-100]="phaseRecap().op.issues === 0" [class.text-emerald-700]="phaseRecap().op.issues === 0"
+                      [class.bg-red-100]="phaseRecap().op.issues > 0" [class.text-red-700]="phaseRecap().op.issues > 0">
+                  {{ phaseRecap().op.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phaseRecap().op.issues }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Phase 3 Progress -->
+            <div class="space-y-3 border-l border-slate-100 pl-6">
+              <div class="flex justify-between items-end">
+                <div>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fase 3</p>
+                  <h4 class="text-sm font-black text-slate-700">Post-operativa</h4>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-black text-slate-900">{{ phaseRecap().post.count }}/{{ (filteredUsers() || []).length || 0 }}</span>
+                </div>
+              </div>
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-purple-500 transition-all duration-1000" [style.width.%]="phaseRecap().post.pct"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded" 
+                      [class.bg-emerald-100]="phaseRecap().post.issues === 0" [class.text-emerald-700]="phaseRecap().post.issues === 0"
+                      [class.bg-red-100]="phaseRecap().post.issues > 0" [class.text-red-700]="phaseRecap().post.issues > 0">
+                  {{ phaseRecap().post.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phaseRecap().post.issues }}
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="p-6">
-            <div class="flex justify-between text-sm mb-2">
-              <span class="text-slate-500">Aree Sanificate</span>
-              <span class="font-bold text-slate-800">3 / 8</span>
-            </div>
-            <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
-               <div class="h-full bg-purple-500 w-[40%] rounded-full"></div>
-            </div>
-            <div class="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
-               <i class="fa-solid fa-check-double text-purple-400"></i>
-               Cucina: Da Completare
-            </div>
+          
+          <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2 text-[10px] text-slate-500">
+            <i class="fa-solid fa-circle-info text-indigo-400"></i>
+            I dati si riferiscono alle unità operative selezionate per il {{ getCurrentDate() }}.
           </div>
         </div>
 
@@ -286,8 +334,8 @@ interface SystemAlert {
                       
                       <div class="mt-3 space-y-2">
                         <div class="flex items-center justify-between text-xs">
-                          <span class="text-slate-600">Completati</span>
-                          <span class="font-bold text-emerald-600">{{ activity.tasksCompleted }}</span>
+                          <span class="text-slate-600">Fasi HACCP</span>
+                          <span class="font-bold text-emerald-600">{{ activity.tasksCompleted }}/3</span>
                         </div>
                         @if (activity.tasksPending > 0) {
                           <div class="flex items-center justify-between text-xs">
@@ -431,40 +479,40 @@ interface SystemAlert {
           </button>
         } @else {
           <!-- Operational Actions -->
-          <button (click)="state.setModule('temperatures')" 
+          <button (click)="state.setModule('pre-op-checklist')" 
                   class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
             <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-temperature-half text-blue-600 group-hover:text-white text-xl transition-colors"></i>
+              <i class="fa-solid fa-clipboard-check text-blue-600 group-hover:text-white text-xl transition-colors"></i>
             </div>
-            <h4 class="font-bold text-slate-800 mb-1">Controllo Temperature</h4>
-            <p class="text-xs text-slate-500">Registra nuova misurazione</p>
+            <h4 class="font-bold text-slate-800 mb-1">Fase Pre-operativa</h4>
+            <p class="text-xs text-slate-500">Controlli apertura</p>
           </button>
 
-          <button (click)="state.setModule('traceability')" 
+          <button (click)="state.setModule('operative-checklist')" 
+                  class="group bg-white hover:bg-indigo-50 p-6 rounded-xl border-2 border-slate-200 hover:border-indigo-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-briefcase text-indigo-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Fase Operativa</h4>
+            <p class="text-xs text-slate-500">Controlli operativi</p>
+          </button>
+
+          <button (click)="state.setModule('post-op-checklist')" 
+                  class="group bg-white hover:bg-purple-50 p-6 rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all text-left">
+            <div class="w-12 h-12 rounded-full bg-purple-100 group-hover:bg-purple-500 flex items-center justify-center mb-3 transition-colors">
+              <i class="fa-solid fa-hourglass-end text-purple-600 group-hover:text-white text-xl transition-colors"></i>
+            </div>
+            <h4 class="font-bold text-slate-800 mb-1">Fase Post-operativa</h4>
+            <p class="text-xs text-slate-500">Chiusura e pulizia</p>
+          </button>
+
+          <button (click)="state.setModule('history')" 
                   class="group bg-white hover:bg-emerald-50 p-6 rounded-xl border-2 border-slate-200 hover:border-emerald-400 transition-all text-left">
             <div class="w-12 h-12 rounded-full bg-emerald-100 group-hover:bg-emerald-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-barcode text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
+              <i class="fa-solid fa-clock-rotate-left text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
             </div>
-            <h4 class="font-bold text-slate-800 mb-1">Rintracciabilità</h4>
-            <p class="text-xs text-slate-500">Gestisci prodotti</p>
-          </button>
-
-          <button (click)="state.setModule('non-compliance')" 
-                  class="group bg-white hover:bg-red-50 p-6 rounded-xl border-2 border-slate-200 hover:border-red-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-red-100 group-hover:bg-red-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-triangle-exclamation text-red-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Non Conformità</h4>
-            <p class="text-xs text-slate-500">Segnala anomalia</p>
-          </button>
-
-          <button (click)="state.setModule('messages')" 
-                  class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-comments text-blue-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Messaggi</h4>
-            <p class="text-xs text-slate-500">Invia a Amministrazione</p>
+            <h4 class="font-bold text-slate-800 mb-1">Archivio Checklist</h4>
+            <p class="text-xs text-slate-500">Storico registrazioni</p>
           </button>
         }
       </div>
@@ -499,15 +547,20 @@ export class DashboardViewComponent {
     const currentFilterId = this.state.filterCollaboratorId();
     const currentCompanyId = this.state.companyConfig()?.id;
 
+    // 1. If NOT Admin, user only sees their own data
+    if (!this.state.isAdmin()) {
+      const currentUser = this.state.currentUser();
+      return currentUser ? [currentUser] : [];
+    }
+
     let users = allUsers;
 
-    // 1. If global unit filter is active, show ONLY that unit
+    // 2. If Admin and global unit filter is active, show ONLY that unit
     if (currentFilterId) {
       users = allUsers.filter(u => u.id === currentFilterId);
     }
-    // 2. If no filter but Viewing a Company (Admin or Collab), show users of that company
+    // 3. If Admin and no filter but Viewing a Company, show users of that company
     else if (currentCompanyId) {
-      // Exclude generic admins from the monitoring list if filtering by company
       users = allUsers.filter(u => u.clientId === currentCompanyId && u.role !== 'ADMIN');
     }
 
@@ -515,69 +568,130 @@ export class DashboardViewComponent {
   });
 
   collaboratorActivities = computed((): CollaboratorActivity[] => {
-    return this.filteredUsers().map(user => ({
-      userId: user.id,
-      userName: user.name,
-      avatar: user.avatar,
-      lastActivity: this.getRandomTime(),
-      tasksCompleted: Math.floor(Math.random() * 10),
-      tasksPending: Math.floor(Math.random() * 5),
-      status: user.active ? (Math.random() > 0.7 ? 'warning' : 'active') : 'inactive',
-      department: user.department || 'Generale'
-    }));
+    const allRecords = this.state.checklistRecords();
+    const currentDate = this.state.filterDate();
+
+    return this.filteredUsers().map(user => {
+      const phaseIds = ['pre-op-checklist', 'operative-checklist', 'post-op-checklist'];
+
+      // Filter records for this user and date that are phases
+      const userPhaseRecords = allRecords.filter(r =>
+        r.userId === user.id &&
+        r.date === currentDate &&
+        phaseIds.includes(r.moduleId)
+      );
+
+      // Count unique phases completed
+      const completedPhases = new Set(userPhaseRecords.map(r => r.moduleId)).size;
+      const totalPhases = 3;
+
+      // Status logic: if there are issues in any record, it's 'warning'
+      const hasIssues = userPhaseRecords.some(r => r.data.status === 'Non Conforme');
+      const latestRecord = userPhaseRecords.length > 0 ? userPhaseRecords[userPhaseRecords.length - 1] : null;
+
+      return {
+        userId: user.id,
+        userName: user.name,
+        avatar: user.avatar,
+        lastActivity: latestRecord ?
+          new Date(latestRecord.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) :
+          'Inattivo',
+        tasksCompleted: completedPhases,
+        tasksPending: totalPhases - completedPhases,
+        status: userPhaseRecords.length > 0 ? (hasIssues ? 'warning' : 'active') : 'inactive',
+        department: user.department || 'Generale'
+      };
+    });
   });
 
   // KPI Computeds based on Filtered Data
   kpiData = computed(() => {
     const activities = this.collaboratorActivities();
+    const currentDate = this.state.filterDate();
+    const currentUsers = this.filteredUsers();
+    const userIds = currentUsers.map(u => u.id);
+
+    // Count how many unique (User + Phase) combinations exist for today
+    const phaseIds = ['pre-op-checklist', 'operative-checklist', 'post-op-checklist'];
+
+    let completedCount = 0;
+
+    currentUsers.forEach(user => {
+      // Find phases completed by this user today
+      const userPhases = this.state.checklistRecords()
+        .filter(r => r.userId === user.id && r.date === currentDate && phaseIds.includes(r.moduleId))
+        .map(r => r.moduleId);
+
+      // Add unique phases count
+      completedCount += new Set(userPhases).size;
+    });
+
+    const totalExpectedPhases = currentUsers.length * 3; // 3 phases per user
+
     return {
-      completed: activities.reduce((acc, curr) => acc + curr.tasksCompleted, 0),
-      total: activities.reduce((acc, curr) => acc + curr.tasksCompleted + curr.tasksPending, 0) || 1, // Avoid /0
+      completed: completedCount,
+      total: totalExpectedPhases || 3, // Default to 3 if no users (context of 1 theoretical user)
       activeUsers: activities.filter(a => a.status !== 'inactive').length
     };
   });
 
   systemAlerts = computed((): SystemAlert[] => {
     const alerts: SystemAlert[] = [];
+    const allRecords = this.state.checklistRecords();
+    const currentDate = this.state.filterDate();
+    const users = this.filteredUsers();
+    const userIds = users.map(u => u.id);
 
-    // Alerts only for currently visible users/units
-    this.collaboratorActivities().forEach(activity => {
-      if (activity.tasksPending > 3) {
-        alerts.push({
-          id: `alert-${activity.userId}`,
-          type: 'warning',
-          title: 'Controlli Giornalieri Non Completati',
-          message: `${activity.userName} ha ${activity.tasksPending} controlli in attesa.`,
-          userId: activity.userId,
-          userName: activity.userName,
-          timestamp: '2 ore fa',
-          actionable: true
-        });
-      }
+    // Filtered records for selected date and units
+    const relevantRecords = allRecords.filter(r =>
+      userIds.includes(r.userId) &&
+      r.date === currentDate
+    );
 
-      if (activity.status === 'inactive') {
+    // 1. Alert for "Non Conforme" statuses
+    relevantRecords.forEach(record => {
+      if (record.data.status === 'Non Conforme') {
+        const user = users.find(u => u.id === record.userId);
+        const moduleName = this.getModuleName(record.moduleId);
+
         alerts.push({
-          id: `inactive-${activity.userId}`,
+          id: `nc-${record.id}`,
           type: 'error',
-          title: 'Unità Inattiva',
-          message: `${activity.userName} non ha effettuato l'accesso per la data selezionata.`,
-          userId: activity.userId,
-          userName: activity.userName,
-          timestamp: activity.lastActivity,
+          title: `Anomalia in ${moduleName}`,
+          message: record.data.summary || 'Rilevata non conformità durante l\'ispezione.',
+          userId: record.userId,
+          userName: user?.name,
+          timestamp: new Date(record.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
           actionable: true
         });
       }
     });
 
-    // Add generic system alerts only if viewing multiple units or specific company
-    // For simplicity, always show generic anomaly example
-    alerts.push({
-      id: 'temp-anomaly',
-      type: 'warning',
-      title: 'Temperatura Fuori Range',
-      message: 'Cella frigorifera #2 ha registrato 8°C. Limite: 4°C',
-      timestamp: '30 min fa',
-      actionable: false
+    // 2. Alert for missing phases
+    users.forEach(user => {
+      const userRecords = relevantRecords.filter(r => r.userId === user.id);
+      const phasesMissing = [];
+
+      const hasPre = userRecords.some(r => r.moduleId === 'pre-op-checklist');
+      const hasOp = userRecords.some(r => r.moduleId === 'operative-checklist');
+      const hasPost = userRecords.some(r => r.moduleId === 'post-op-checklist');
+
+      if (!hasPre) phasesMissing.push('Pre-operativa');
+      if (!hasOp) phasesMissing.push('Operativa');
+      if (!hasPost) phasesMissing.push('Post-operativa');
+
+      if (phasesMissing.length > 0 && phasesMissing.length < 3) {
+        alerts.push({
+          id: `missing-${user.id}`,
+          type: 'warning',
+          title: 'Fasi Mancanti',
+          message: `${user.name} deve completare: ${phasesMissing.join(', ')}`,
+          userId: user.id,
+          userName: user.name,
+          timestamp: 'Oggi',
+          actionable: true
+        });
+      }
     });
 
     return alerts;
@@ -586,6 +700,36 @@ export class DashboardViewComponent {
   criticalAlerts = computed(() =>
     this.systemAlerts().filter(a => a.type === 'error')
   );
+
+  phaseRecap = computed(() => {
+    const allRecords = this.state.checklistRecords();
+    const currentDate = this.state.filterDate();
+    const users = this.filteredUsers();
+    const userCount = users.length || 1;
+
+    const getPhaseStats = (moduleId: string) => {
+      const records = allRecords.filter(r =>
+        r.moduleId === moduleId &&
+        r.date === currentDate &&
+        users.some(u => u.id === r.userId)
+      );
+
+      const uniqueCompletedUsers = new Set(records.map(r => r.userId)).size;
+      const issues = records.filter(r => r.data.status === 'Non Conforme').length;
+
+      return {
+        pct: userCount > 0 ? Math.min(100, (uniqueCompletedUsers / userCount) * 100) : 0,
+        count: uniqueCompletedUsers,
+        issues
+      };
+    };
+
+    return {
+      pre: getPhaseStats('pre-op-checklist'),
+      op: getPhaseStats('operative-checklist'),
+      post: getPhaseStats('post-op-checklist')
+    };
+  });
 
   getCurrentDate(): string {
     const d = this.state.filterDate(); // Use Global Date
@@ -599,6 +743,18 @@ export class DashboardViewComponent {
 
   getCurrentDateShort(): string {
     return new Date(this.state.filterDate()).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+  }
+
+  getModuleName(id: string) {
+    switch (id) {
+      case 'pre-op-checklist':
+      case 'pre-operative': return 'Fase Pre-operativa';
+      case 'operative-checklist':
+      case 'operative': return 'Fase Operativa';
+      case 'post-op-checklist':
+      case 'post-operative': return 'Fase Post-operativa';
+      default: return id;
+    }
   }
 
   getRandomTime(): string {

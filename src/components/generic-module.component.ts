@@ -19,37 +19,44 @@ interface MockData {
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="space-y-6 pb-10">
-      <!-- Premium Header with Gradient -->
-      <div class="bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700 p-8 rounded-3xl shadow-2xl border border-slate-600/20 relative overflow-hidden">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <i [class]="'fa-solid ' + (moduleInfo()?.icon || 'fa-folder') + ' text-9xl text-white'"></i>
-        </div>
-
-        <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-xs font-bold uppercase tracking-wider text-white/60 bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm border border-white/20">
-                {{ moduleInfo()?.category }}
-              </span>
+      <!-- Enhanced Generic Header -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
+        <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
+        <div class="relative z-10 font-sans">
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-300 backdrop-blur-md">
+                  {{ moduleInfo()?.category }}
+                </span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-bold text-emerald-400">Modulo Attivo</span>
+              </div>
+              
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center shadow-lg border border-white/10 group-hover:scale-110 transition-transform duration-300">
+                  <i [class]="'fa-solid ' + (moduleInfo()?.icon || 'fa-folder') + ' text-white text-2xl'"></i>
+                </div>
+                <div>
+                  <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">
+                    {{ moduleInfo()?.label }}
+                  </h2>
+                  <p class="text-slate-400 text-sm font-medium">Gestione operativa e archivio digitale</p>
+                </div>
+              </div>
             </div>
-            <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-              <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mr-4 shadow-lg border border-white/30">
-                  <i [class]="'fa-solid ' + (moduleInfo()?.icon || 'fa-folder') + ' text-white'"></i>
-              </span>
-              {{ moduleInfo()?.label }}
-            </h2>
-            <p class="text-slate-200 text-sm mt-2 font-medium ml-1">
-              Gestione operativa e archivio digitale
-            </p>
-          </div>
-          
-          <div class="flex gap-3">
-            <button class="px-5 py-3 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-xl hover:bg-white/20 transition-all shadow-lg font-bold">
-              <i class="fa-solid fa-download mr-2"></i> Export PDF
-            </button>
-            <button (click)="openModal()" class="px-5 py-3 bg-white text-slate-700 rounded-xl hover:bg-slate-50 transition-all shadow-xl font-bold">
-              <i class="fa-solid fa-plus mr-2"></i> Nuovo Record
-            </button>
+            
+            <div class="flex flex-wrap gap-3">
+              <button class="px-5 py-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-xl font-bold transition-all flex items-center gap-2 backdrop-blur-sm shadow-lg group">
+                <i class="fa-solid fa-file-export group-hover:-translate-y-1 transition-transform"></i>
+                <span class="hidden sm:inline">Export Dati</span>
+              </button>
+              
+              <button (click)="openModal()" class="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-blue-500/25 flex items-center gap-2 group border border-white/10">
+                <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform"></i>
+                <span>Nuova Registrazione</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -183,7 +190,12 @@ interface MockData {
         </div>
       }
     </div>
-  `
+  `,
+  styles: [`
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+    }
+  `]
 })
 export class GenericModuleComponent {
   state = inject(AppStateService);

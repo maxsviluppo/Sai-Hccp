@@ -49,6 +49,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatar: string;
+  department?: string;
   clientId?: string;
 }
 
@@ -56,8 +57,9 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  category: 'dashboard' | 'pre-operative' | 'operative' | 'post-operative' | 'history' | 'config' | 'communication';
+  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication';
   adminOnly?: boolean;
+  operatorOnly?: boolean;
 }
 
 export interface Message {
@@ -132,8 +134,18 @@ export class AppStateService {
     // If not admin (Operator via login), they can always edit their current view (which is their own)
     if (!this.isAdmin()) return true;
 
-    // If Admin, they can ONLY edit if they have selected a specific target context (Collaborator/Unit)
-    return !!this.filterCollaboratorId();
+    // For Admin:
+    // If we are in 'monitoring' category modules, they can edit IF they selected a collaborator
+    // This allows them to "feedback" or correct values.
+    const activeMod = this.currentModuleId();
+    const menuItem = this.menuItems.find(m => m.id === activeMod);
+
+    if (menuItem?.category === 'monitoring' || menuItem?.category === 'operations') {
+      return !!this.filterCollaboratorId();
+    }
+
+    // Default: Admin cannot edit global modules directly
+    return false;
   });
 
   // Services
@@ -290,40 +302,20 @@ export class AppStateService {
 
   // --- Menu Definitions ---
   readonly menuItems: MenuItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', adminOnly: true },
+    { id: 'operator-dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', operatorOnly: true },
     { id: 'reports', label: 'Report Controlli', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
     { id: 'general-checks', label: 'Controlli Generali', icon: 'fa-list-check', category: 'dashboard', adminOnly: true },
 
-    // --- FASE PRE-OPERATIVA ---
-    { id: 'pre-op-checklist', label: 'Checklist Pre-Apertura', icon: 'fa-clipboard-check', category: 'pre-operative' },
-
-    // --- FASE OPERATIVA ---
-    { id: 'operative-checklist', label: 'Checklist Operativa', icon: 'fa-briefcase', category: 'operative' },
-
-    // --- FASE POST-OPERATIVA ---
-    { id: 'post-op-placeholder', label: '(Da Assegnare)', icon: 'fa-hourglass-end', category: 'post-operative' },
+    // --- REGISTRI E FASI OPERATIVE ---
+    { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations' },
+    { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
+    { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
 
     // --- STORICO ---
     { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
 
-    /*
-    // VECCHIE CATEGORIE (DA RIASSEGNARE)
-    { id: 'operational-checklist', label: 'Controllo Pre/Post Op.', icon: 'fa-list-check', category: 'daily-checks' },
-    { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-graduation-cap', category: 'anagrafiche' },
-    { id: 'suppliers', label: 'Elenco Fornitori', icon: 'fa-truck-field', category: 'anagrafiche' },
-    { id: 'products-cleaning', label: 'Prodotti Pulizia', icon: 'fa-pump-soap', category: 'anagrafiche' },
-    { id: 'equipment', label: 'Elenco Attrezzature', icon: 'fa-blender', category: 'anagrafiche' },
-    { id: 'allergens-ue1169', label: 'Reg. U.E. 1169/2011', icon: 'fa-wheat-awn', category: 'anagrafiche' },
-    { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-hands-bubbles', category: 'operativo' },
-    { id: 'cleaning-maintenance', label: 'Pulizia / Manutenzione', icon: 'fa-broom', category: 'operativo' },
-    { id: 'goods-receipt', label: 'Ricezione Prodotti', icon: 'fa-box-open', category: 'operativo' },
-    { id: 'food-conservation', label: 'Conservazione Alimenti', icon: 'fa-temperature-half', category: 'operativo' },
-    { id: 'temperatures', label: 'Temperature', icon: 'fa-temperature-low', category: 'operativo' },
-    { id: 'traceability', label: 'Rintracciabilità Alimenti', icon: 'fa-barcode', category: 'operativo' },
-    { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'normativa' },
-    { id: 'micro-bio', label: 'Monitoraggio Microbiologico', icon: 'fa-vial', category: 'normativa' },
-    { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-triangle-exclamation', category: 'normativa' },
-    */
+    // --- CONSUMABILI E MESSAGGI ---
 
     // Config
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
@@ -370,7 +362,14 @@ export class AppStateService {
 
   loginAsUser(user: SystemUser) {
     if (user.active) {
-      this.currentUser.set({ id: user.id, name: user.name, role: user.role, avatar: user.avatar, clientId: user.clientId });
+      this.currentUser.set({
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar,
+        clientId: user.clientId,
+        department: user.department
+      });
 
       // Determine company config (Admin -> First or demo, Collab -> Their Client)
       if (user.role === 'ADMIN') {
@@ -380,7 +379,7 @@ export class AppStateService {
         if (clientConfig) this.companyConfig.set(clientConfig);
       }
 
-      this.currentModuleId.set('dashboard');
+      this.currentModuleId.set(user.role === 'ADMIN' ? 'dashboard' : 'operator-dashboard');
     }
   }
 
@@ -396,7 +395,14 @@ export class AppStateService {
       // Login as the first active collaborator found for demo
       const collabUser = this.systemUsers().find(u => u.role === 'COLLABORATOR' && u.active);
       if (collabUser) {
-        this.currentUser.set({ id: collabUser.id, name: collabUser.name, role: 'COLLABORATOR', avatar: collabUser.avatar, clientId: collabUser.clientId });
+        this.currentUser.set({
+          id: collabUser.id,
+          name: collabUser.name,
+          role: 'COLLABORATOR',
+          avatar: collabUser.avatar,
+          clientId: collabUser.clientId,
+          department: collabUser.department
+        });
 
         // LOAD THE SPECIFIC CLIENT CONFIG FOR THIS USER
         const clientConfig = this.clients().find(c => c.id === collabUser.clientId);
@@ -405,7 +411,7 @@ export class AppStateService {
         }
       }
     }
-    this.currentModuleId.set('dashboard');
+    this.currentModuleId.set(role === 'ADMIN' ? 'dashboard' : 'operator-dashboard');
   }
 
   logout() {
@@ -444,22 +450,68 @@ export class AppStateService {
     if (!user) return;
 
     const date = this.filterDate();
+    const targetUserId = (this.isAdmin() && this.filterCollaboratorId())
+      ? this.filterCollaboratorId()
+      : user.id;
 
-    // Legacy behavior: Upsert based on Module+User+Date (One per day)
-    // Remove existing record for this user/date/module if exists
+    // Check if record exists for this day/user/module
+    const existingIndex = this.checklistRecords().findIndex(r =>
+      r.moduleId === moduleId &&
+      r.userId === targetUserId &&
+      r.date === date
+    );
+
     const newRecord = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: existingIndex >= 0 ? this.checklistRecords()[existingIndex].id : Math.random().toString(36).substr(2, 9),
       moduleId,
-      userId: user.id,
+      userId: targetUserId,
       date,
       data,
       timestamp: new Date()
     };
 
-    this.checklistRecords.update(records => [
-      ...records.filter(r => !(r.moduleId === moduleId && r.userId === user.id && r.date === date)),
-      newRecord
-    ]);
+    this.checklistRecords.update(records => {
+      if (existingIndex >= 0) {
+        // Overwrite existing
+        const updated = [...records];
+        updated[existingIndex] = newRecord;
+        return updated;
+      } else {
+        // Add new
+        return [...records, newRecord];
+      }
+    });
+
+    // Notify user
+    if (existingIndex >= 0) {
+      this.toastService.info('Dati Aggiornati', 'La registrazione precedente per questa data è stata sovrascritta.');
+    }
+
+    // Feed to Operator if Admin is editing
+    if (this.isAdmin() && this.filterCollaboratorId()) {
+      const targetUser = this.systemUsers().find(u => u.id === targetUserId);
+      const menuItem = this.menuItems.find(m => m.id === moduleId);
+
+      this.toastService.success(
+        'Feedback Inviato',
+        `Le modifiche al modulo "${menuItem?.label}" sono state salvate e notificate a ${targetUser?.name}.`
+      );
+
+      // Optionally we could add a system message to their chat
+      this.addMessage({
+        id: Date.now().toString(),
+        senderId: user.id,
+        senderName: 'Amministrazione (Revisione)',
+        recipientType: 'SINGLE',
+        recipientId: targetUser?.clientId,
+        recipientUserId: targetUserId,
+        subject: `Aggiornamento: ${menuItem?.label}`,
+        content: `L'amministratore ha revisionato e aggiornato i dati inseriti in data ${date} per il modulo ${menuItem?.label}.`,
+        timestamp: new Date(),
+        read: false,
+        replies: []
+      });
+    }
   }
 
   // --- New Historical Methods ---

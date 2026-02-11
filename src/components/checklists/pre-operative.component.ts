@@ -61,33 +61,53 @@ interface ChecklistItem {
           </div>
        </div>
       
-      <!-- UI HEADER (Hidden on print) -->
-      <div class="print:hidden bg-gradient-to-r from-blue-600 to-cyan-500 rounded-b-3xl p-6 shadow-xl mb-6 -mx-4 md:mx-0 md:rounded-3xl text-white relative overflow-hidden">
-        <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
-           <i class="fa-solid fa-list-check text-9xl"></i>
+      <!-- Enhanced UI Header (Hidden on print) -->
+      <div class="print:hidden bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 p-8 rounded-3xl shadow-xl border border-blue-500/30 relative overflow-hidden mb-6">
+        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+          <i class="fa-solid fa-clipboard-check text-9xl text-white"></i>
         </div>
-        
         <div class="relative z-10">
-          <h2 class="text-2xl font-black mb-1">Fase Pre-Operativa</h2>
-          <p class="text-blue-100 text-sm font-medium opacity-90 mb-4">
-            Esegui i controlli preliminari prima dell'apertura o inizio turno.
-          </p>
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
+                <i class="fa-solid fa-clipboard-check text-white text-2xl"></i>
+              </div>
+              <div>
+                <h2 class="text-3xl font-black text-white">Fase Pre-Operativa</h2>
+                <p class="text-blue-100 text-sm font-medium mt-1">Controlli preliminari e apertura turno</p>
+              </div>
+            </div>
 
-          <!-- Progress Bar -->
-          <div class="flex items-center gap-3">
-             <div class="flex-1 h-3 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
-                <div class="h-full bg-white rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                     [style.width.%]="progressPercentage()"></div>
-             </div>
-             <span class="text-xs font-bold">{{ completedCount() }}/{{ items().length }}</span>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+              <!-- Progress Indicator -->
+              <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex-1 sm:flex-initial">
+                <div class="flex justify-between items-end mb-1.5">
+                  <span class="text-[10px] text-blue-100 uppercase font-bold tracking-wider">Avanzamento</span>
+                  <span class="text-sm font-black text-white">{{ completedCount() }}/{{ items().length }}</span>
+                </div>
+                <div class="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div class="h-full bg-white rounded-full transition-all duration-700"
+                       [style.width.%]="progressPercentage()"></div>
+                </div>
+              </div>
+
+              <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
+                <div class="text-left">
+                  <div class="text-[10px] text-blue-100 uppercase font-bold tracking-wider">Stato</div>
+                  <div class="text-sm font-bold text-white flex items-center">
+                    <i class="fa-solid fa-circle-check mr-2"></i> In Compilazione
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
 
-      <!-- Date Selector (Hidden on Print) -->
+      <!-- Date Selector & Quick Actions (Hidden on Print) -->
       <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-2xl relative z-20 -mt-4">
-         <div class="flex items-center gap-3 w-full">
+         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                <i class="fa-solid fa-calendar-day"></i>
             </div>
@@ -97,6 +117,13 @@ interface ChecklistItem {
                       class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-base">
             </div>
          </div>
+
+         <!-- Quick Set All Ok -->
+         <button (click)="setAllOk()" 
+                 class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-sm border border-emerald-100"
+                 title="Imposta tutto come Conforme">
+            <i class="fa-solid fa-check-double"></i>
+         </button>
       </div>
 
       <!-- Quick Action Grid (Hidden on Print) -->
@@ -283,8 +310,9 @@ interface ChecklistItem {
    styles: [`
     .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .animate-bounce-short { animation: bounceShort 1s infinite; }
-    @keyframes bounceShort { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    .bg-grid-slate-700\/25 {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+    }
   `]
 })
 export class PreOperationalChecklistComponent {
@@ -304,8 +332,8 @@ export class PreOperationalChecklistComponent {
    // --- STATE ---
    items = signal<ChecklistItem[]>([
       { id: '1', label: 'Regolarità documentazione', icon: 'fa-file-signature', status: 'pending' },
-      { id: '2', label: 'Igiene personale', icon: 'fa-hands-bubbles', status: 'pending' },
-      { id: '3', label: 'Prodotti pulizia e sanificazione', icon: 'fa-pump-soap', status: 'pending' },
+      { id: '2', label: 'Sanificazione piani e attrezzature', icon: 'fa-soap', status: 'pending' },
+      { id: '3', label: 'Verifica DPI e abbigliamento idoneo', icon: 'fa-shirt', status: 'pending' },
       { id: '4', label: 'Cucina e sale', icon: 'fa-utensils', status: 'pending' },
       { id: '5', label: 'Area lavaggio', icon: 'fa-sink', status: 'pending' },
       { id: '6', label: 'Deposito', icon: 'fa-boxes-stacked', status: 'pending' },
@@ -350,10 +378,13 @@ export class PreOperationalChecklistComponent {
       return new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
    }
 
-   setStatus(id: string, status: 'pending' | 'ok' | 'issue') {
-      this.items.update(items =>
-         items.map(i => i.id === id ? { ...i, status, note: status === 'ok' ? undefined : i.note } : i)
-      );
+   setStatus(id: string, status: 'ok' | 'issue' | 'pending') {
+      this.items.update(items => items.map(i => i.id === id ? { ...i, status } : i));
+   }
+
+   setAllOk() {
+      this.items.update(items => items.map(i => ({ ...i, status: 'ok' })));
+      this.toast.info('Tutto Conforme', 'Tutti i controlli sono stati impostati come conformi.');
    }
 
    openIssueModal(item: ChecklistItem) {

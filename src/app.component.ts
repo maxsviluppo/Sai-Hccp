@@ -3,6 +3,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService, MenuItem } from './services/app-state.service';
 import { DashboardViewComponent } from './components/dashboard-view.component';
+import { OperatorDashboardViewComponent } from './components/operator-dashboard-view.component';
 import { ReportsViewComponent } from './components/reports-view.component';
 import { GeneralChecksViewComponent } from './components/general-checks-view.component';
 import { GenericModuleComponent } from './components/generic-module.component';
@@ -12,6 +13,7 @@ import { AccountingViewComponent } from './components/accounting-view.component'
 import { OperationalChecklistComponent } from './components/operational-checklist.component';
 import { PreOperationalChecklistComponent } from './components/checklists/pre-operative.component';
 import { OperativeChecklistComponent } from './components/checklists/operative.component';
+import { PostOperationalChecklistComponent } from './components/checklists/post-operative.component';
 import { StaffTrainingChecklistComponent } from './components/staff-training-checklist.component';
 import { SuppliersViewComponent } from './components/suppliers-view.component';
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
@@ -36,6 +38,7 @@ import { ChecklistHistoryComponent } from './components/checklist-history.compon
   imports: [
     CommonModule,
     DashboardViewComponent,
+    OperatorDashboardViewComponent,
     ReportsViewComponent,
     GeneralChecksViewComponent,
     GenericModuleComponent,
@@ -45,6 +48,7 @@ import { ChecklistHistoryComponent } from './components/checklist-history.compon
     OperationalChecklistComponent,
     PreOperationalChecklistComponent,
     OperativeChecklistComponent,
+    PostOperationalChecklistComponent,
     StaffTrainingChecklistComponent,
     SuppliersViewComponent,
     CleaningProductsViewComponent,
@@ -74,12 +78,11 @@ export class AppComponent {
 
   hasAccessToCategory(category: string): boolean {
     if (this.state.isAdmin()) {
-      // Admin sees management and communication, not operational checks
-      return ['dashboard', 'pre-operative', 'operative', 'post-operative', 'config', 'communication'].includes(category);
+      // Admin sees management, monitoring and communication, not operational checklists
+      return ['dashboard', 'monitoring', 'history', 'config', 'communication'].includes(category);
     }
-    // Collaborator restrictions:
-    // Can see Anagrafiche, Operativo, Normativa, and Config (Settings).
-    return true;
+    // Collaborator sees operational stuff, history, and config/comm
+    return ['dashboard', 'operations', 'history', 'config', 'communication'].includes(category);
   }
   loginMode = signal<'SELECT' | 'ADMIN' | 'OPERATOR'>('SELECT');
   loginUsername = signal('');
@@ -89,7 +92,7 @@ export class AppComponent {
 
   visibleMenuItems = computed(() => {
     return this.state.menuItems.filter(item =>
-      this.shouldShowMenuItem(item.category, item.adminOnly)
+      this.shouldShowMenuItem(item)
     );
   });
 
@@ -143,18 +146,20 @@ export class AppComponent {
 
   // --- Template Helpers ---
 
-  shouldShowMenuItem(category: string, adminOnly?: boolean): boolean {
-    if (adminOnly && !this.state.isAdmin()) return false;
-    return this.hasAccessToCategory(category);
+  shouldShowMenuItem(item: MenuItem): boolean {
+    if (item.adminOnly && !this.state.isAdmin()) return false;
+    if (item.operatorOnly && this.state.isAdmin()) return false;
+    return this.hasAccessToCategory(item.category);
   }
 
   getCategoryLabel(category: string): string {
     const labels: Record<string, string> = {
-      'pre-operative': 'Fase Pre-Operativa',
-      'operative': 'Fase Operativa',
-      'post-operative': 'Fase Post-Operativa',
+      'operations': 'Registri Operativi',
+      'monitoring': 'Monitoraggio Operatori',
+      'history': 'Archivio Storico',
       'config': 'Configurazione',
-      'communication': 'Comunicazioni'
+      'communication': 'Comunicazioni',
+      'dashboard': 'Panoramica'
     };
     return labels[category] || category;
   }
@@ -162,6 +167,6 @@ export class AppComponent {
   getDataboardTitle(): string {
     const modId = this.state.currentModuleId();
     const item = this.state.menuItems.find(i => i.id === modId);
-    return item ? item.label : (modId === 'dashboard' ? 'Dashboard' : modId);
+    return item ? item.label : (modId === 'dashboard' ? 'Dashboard Admin' : (modId === 'operator-dashboard' ? 'Centro Operativo' : modId));
   }
 }
