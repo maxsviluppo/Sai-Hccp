@@ -1,508 +1,840 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/app-state.service';
 import { ToastService } from '../../services/toast.service';
 
-interface ChecklistItem {
-   id: string;
-   label: string;
-   icon: string; // FontAwesome icon class
-   status: 'pending' | 'ok' | 'issue';
-   note?: string;
-   photo?: string; // Placeholder for future photo evidence
+interface AreaChecklist {
+    id: string;
+    label: string;
+    icon: string;
+    steps: { id: string; label: string; icon: string; status: 'pending' | 'ok' | 'issue' }[];
+    expanded: boolean;
 }
 
 @Component({
-   selector: 'app-pre-operative-checklist',
-   standalone: true,
-   imports: [CommonModule],
-   template: `
-    <div class="pb-20 animate-fade-in relative max-w-2xl mx-auto">
-
-       <!-- PRINT ONLY HEADER & TABLE -->
-       <div class="hidden print:block font-sans text-black p-4">
-          <div class="border-b-2 border-slate-800 pb-4 mb-6">
-             <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
-             <h2 class="text-xl font-light text-slate-600">Checklist Pre-Operativa</h2>
-             <div class="flex justify-between mt-4 text-sm text-slate-500">
+    selector: 'app-pre-operative-checklist',
+    standalone: true,
+    imports: [CommonModule],
+    template: `
+    <!-- PRINT ONLY HEADER & TABLE -->
+    <div class="hidden print:block font-sans text-black p-4">
+        <div class="border-b-2 border-slate-800 pb-4 mb-6">
+            <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
+            <h2 class="text-xl font-light text-slate-600">Fase Pre-operativa (Ispezione e Avvio)</h2>
+            <div class="flex justify-between mt-4 text-sm text-slate-500">
                 <span><span class="font-bold">Data:</span> {{ getFormattedDate() }}</span>
-                <span><span class="font-bold">Responsabile:</span> {{ state.currentUser()?.name || 'Operatore' }}</span>
-             </div>
-          </div>
+                <span><span class="font-bold">Operatore:</span> {{ state.currentUser()?.name || 'Operatore' }}</span>
+            </div>
+        </div>
 
-          <table class="w-full text-left text-sm border-collapse">
-             <thead>
+        <table class="w-full text-left text-sm border-collapse">
+            <thead>
                 <tr class="border-b border-slate-400">
-                   <th class="py-2 font-bold w-1/2">Controllo</th>
-                   <th class="py-2 font-bold w-1/4">Esito</th>
-                   <th class="py-2 font-bold w-1/4">Note / Non Conformità</th>
+                    <th class="py-2 font-bold w-1/2">Area / Operazione</th>
+                    <th class="py-2 font-bold w-1/4">Esito</th>
+                    <th class="py-2 font-bold w-1/4">Note / Verifica</th>
                 </tr>
-             </thead>
-             <tbody>
-                @for (item of items(); track item.id) {
-                <tr class="border-b border-slate-100">
-                   <td class="py-3 pr-2 font-medium">{{ item.label }}</td>
-                   <td class="py-3">
-                      @if(item.status === 'ok') { <span class="font-bold">CONFORME</span> }
-                      @if(item.status === 'issue') { <span class="font-bold">NON CONFORME</span> }
-                      @if(item.status === 'pending') { <span>NON ESEGUITO</span> }
-                   </td>
-                   <td class="py-3 italic text-slate-600">
-                      {{ item.note || '-' }}
-                   </td>
-                </tr>
+            </thead>
+            <tbody>
+                <!-- Global Checks -->
+                @for (item of globalItems(); track item.id) {
+                    <tr class="border-b border-slate-100 italic bg-blue-50/20">
+                        <td class="py-2 font-bold">{{ item.label }}</td>
+                        <td class="py-2 font-bold">{{ item.status === 'ok' ? 'CONFORME' : (item.status === 'issue' ? 'NON CONFORME' : 'NON ESEGUITO') }}</td>
+                        <td class="py-2">{{ item.note || '-' }}</td>
+                    </tr>
                 }
-             </tbody>
-          </table>
 
-          <div class="mt-8 pt-4 border-t border-slate-300 flex justify-between text-xs text-slate-400">
-             <span>Documento generato da HACCP Pro</span>
-             <span>Firma: ________________________</span>
-          </div>
-       </div>
-      
-      <!-- Enhanced UI Header (Hidden on print) -->
-      <div class="print:hidden bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 p-8 rounded-3xl shadow-xl border border-blue-500/30 relative overflow-hidden mb-6">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <i class="fa-solid fa-clipboard-check text-9xl text-white"></i>
-        </div>
-        <div class="relative z-10">
-          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div class="flex items-center gap-4">
-              <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
-                <i class="fa-solid fa-clipboard-check text-white text-2xl"></i>
-              </div>
-              <div>
-                <h2 class="text-3xl font-black text-white">Fase Pre-Operativa</h2>
-                <p class="text-blue-100 text-sm font-medium mt-1">Controlli preliminari e apertura turno</p>
-              </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-              <!-- Progress Indicator -->
-              <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex-1 sm:flex-initial">
-                <div class="flex justify-between items-end mb-1.5">
-                  <span class="text-[10px] text-blue-100 uppercase font-bold tracking-wider">Avanzamento</span>
-                  <span class="text-sm font-black text-white">{{ completedCount() }}/{{ items().length }}</span>
-                </div>
-                <div class="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div class="h-full bg-white rounded-full transition-all duration-700"
-                       [style.width.%]="progressPercentage()"></div>
-                </div>
-              </div>
-
-              <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
-                <div class="text-left">
-                  <div class="text-[10px] text-blue-100 uppercase font-bold tracking-wider">Stato</div>
-                  <div class="text-sm font-bold text-white flex items-center">
-                    <i class="fa-solid fa-circle-check mr-2"></i> In Compilazione
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-      <!-- Date Selector & Quick Actions (Hidden on Print) -->
-      <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-2xl relative z-20 -mt-4">
-         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-               <i class="fa-solid fa-calendar-day"></i>
-            </div>
-            <div class="flex-1">
-               <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data di Registrazione</label>
-               <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
-                      class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-base">
-            </div>
-         </div>
-
-         <!-- Quick Set All Ok -->
-         <button (click)="setAllOk()" 
-                 class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-sm border border-emerald-100"
-                 title="Imposta tutto come Conforme">
-            <i class="fa-solid fa-check-double"></i>
-         </button>
-      </div>
-
-      <!-- Quick Action Grid (Hidden on Print) -->
-      <div class="print:hidden grid grid-cols-1 sm:grid-cols-2 gap-3 px-1 md:px-0 mb-24 md:mb-0">
-        @for (item of items(); track item.id) {
-          <div class="bg-white rounded-2xl shadow-sm border-2 transition-all duration-200 overflow-hidden relative"
-               [class.border-slate-100]="item.status === 'pending'"
-               [class.border-emerald-500]="item.status === 'ok'"
-               [class.border-red-500]="item.status === 'issue'"
-               [class.bg-emerald-50]="item.status === 'ok'"
-               [class.bg-red-50]="item.status === 'issue'"
-               [class.shadow-md]="item.status !== 'pending'"
-               [class.shadow-md]="item.status !== 'pending'">
-            
-            <div class="p-4 flex items-center gap-4">
-              <!-- Icon Container -->
-              <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-sm transition-colors flex-shrink-0"
-                   [class.bg-slate-100]="item.status === 'pending'"
-                   [class.text-slate-400]="item.status === 'pending'"
-                   [class.bg-emerald-100]="item.status === 'ok'"
-                   [class.text-emerald-600]="item.status === 'ok'"
-                   [class.bg-red-100]="item.status === 'issue'"
-                   [class.text-red-600]="item.status === 'issue'">
-                <i [class]="'fa-solid ' + item.icon"></i>
-              </div>
-
-              <!-- Label -->
-              <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-slate-800 text-sm md:text-base pr-1"
-                    [class.text-emerald-900]="item.status === 'ok'"
-                    [class.text-red-900]="item.status === 'issue'">
-                  {{ item.label }}
-                </h3>
-                <p class="text-[10px] uppercase tracking-wide font-bold mt-0.5"
-                   [class.text-slate-400]="item.status === 'pending'"
-                   [class.text-emerald-600]="item.status === 'ok'"
-                   [class.text-red-600]="item.status === 'issue'">
-                   @if(item.status === 'pending') { In Attesa }
-                   @if(item.status === 'ok') { Conforme }
-                   @if(item.status === 'issue') { Non Conforme }
-                </p>
-              </div>
-
-              <!-- Actions (Tap Areas) -->
-              <!-- Actions (Tap Areas) -->
-                  @if (item.status === 'pending') {
-                    <div class="flex gap-2">
-                       <!-- OK Button -->
-                       <button (click)="setStatus(item.id, 'ok')" 
-                               class="w-10 h-10 rounded-full bg-slate-100 hover:bg-emerald-100 text-slate-300 hover:text-emerald-600 flex items-center justify-center transition-all active:scale-95 border border-slate-200">
-                          <i class="fa-solid fa-check text-lg"></i>
-                       </button>
-                       <!-- KO Button -->
-                       <button (click)="openIssueModal(item)"
-                               class="w-10 h-10 rounded-full bg-slate-100 hover:bg-red-100 text-slate-300 hover:text-red-500 flex items-center justify-center transition-all active:scale-95 border border-slate-200">
-                          <i class="fa-solid fa-triangle-exclamation text-sm"></i>
-                       </button>
-                    </div>
-                  } @else {
-                     <!-- Undo Button if already set -->
-                     <button (click)="setStatus(item.id, 'pending')" 
-                             class="w-8 h-8 rounded-full bg-white/50 hover:bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all border border-black/5 shadow-sm">
-                        <i class="fa-solid fa-rotate-left text-xs"></i>
-                     </button>
-                  }
-            </div>
-
-            <!-- Issue Note Indicator -->
-            @if (item.status === 'issue' && item.note) {
-              <div class="px-4 pb-3 pt-0 text-xs text-red-700 italic border-t border-red-200/50 mt-1">
-                 "{{ item.note }}"
-              </div>
-            }
-          </div>
-        }
-      </div>
-
-      <!-- Footer Actions: Submit OR Post-Actions -->
-      <div class="print:hidden fixed bottom-6 right-6 z-30 md:absolute md:bottom-0 md:right-0 md:relative md:mt-8 md:text-right w-full md:w-auto">
-        
-        @if (!isSubmitted()) {
-            @if (isAllCompleted()) {
-               <button (click)="submitChecklist()" 
-                       class="ml-auto bg-emerald-600 text-white rounded-2xl px-6 py-4 shadow-2xl shadow-emerald-500/40 font-bold text-lg flex items-center gap-3 hover:bg-emerald-700 hover:scale-105 transition-all animate-bounce-short">
-                  <div>
-                     <div class="leading-none text-[10px] uppercase opacity-80 text-left">Checklist Completa</div>
-                     <div class="flex items-center">REGISTRA ORA <i class="fa-solid fa-check-double ml-2"></i></div>
-                  </div>
-               </button>
-            } @else {
-               <div class="bg-slate-800 text-white rounded-full px-5 py-3 shadow-lg text-xs font-bold opacity-80 backdrop-blur-md float-right">
-                  {{ items().length - completedCount() }} Rimanenti
-               </div>
-            }
-        } @else {
-            <!-- Post Submission Status (Moved Out) -->
-            <div class="mb-4 flex justify-center animate-slide-up">
-                 <div class="bg-white/90 backdrop-blur rounded-full px-6 py-2 shadow-lg border border-slate-200 flex items-center gap-3 select-none"
-                      [class.border-emerald-500]="!hasIssues()"
-                      [class.border-red-500]="hasIssues()">
-                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-colors duration-300"
-                          [class.bg-emerald-500]="!hasIssues()"
-                          [class.bg-red-500]="hasIssues()">
-                         @if(!hasIssues()) { <i class="fa-solid fa-check text-sm"></i> }
-                         @else { <i class="fa-solid fa-triangle-exclamation text-sm"></i> }
-                     </div>
-                     <div class="font-bold uppercase text-sm"
-                          [class.text-emerald-600]="!hasIssues()"
-                          [class.text-red-600]="hasIssues()">
-                          {{ hasIssues() ? 'Non Conforme' : 'Conforme' }}
-                     </div>
-                 </div>
-            </div>
-
-            <!-- Action Bar (Centered) -->
-            <div class="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-3 rounded-2xl shadow-2xl animate-slide-up mx-4 md:mx-0">
-                <div class="flex flex-wrap items-center justify-center gap-2">
-                    <button (click)="submitChecklist()" class="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-2 border border-emerald-400/50 ring-2 ring-emerald-500/20">
-                        <i class="fa-solid fa-floppy-disk"></i> Salva
-                    </button>
-
-                    <div class="w-px h-8 bg-white/20 mx-1 hidden sm:block"></div>
-
-                    <button (click)="printReport()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10" title="Stampa">
-                        <i class="fa-solid fa-print text-white"></i> <span class="hidden sm:inline">Stampa</span>
-                    </button>
-                    <button (click)="sendEmail()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10" title="Email">
-                        <i class="fa-solid fa-envelope text-white"></i> <span class="hidden sm:inline">Email</span>
-                    </button>
-                    <button (click)="sendInternalMessage()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10" title="Chat">
-                        <i class="fa-solid fa-comments text-white"></i> <span class="hidden sm:inline">Chat</span>
-                    </button>
-                    
-                    <div class="w-px h-8 bg-white/20 mx-1 hidden sm:block"></div>
-
-                    <button (click)="startNewChecklist()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-blue-100 hover:text-white transition-colors border border-white/10 flex items-center justify-center gap-2 backdrop-blur-sm whitespace-nowrap" title="Nuova Compilazione">
-                        <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Nuova</span>
-                    </button>
-                </div>
-            </div>
-        }
-      </div>
-
-
-
-      <!-- Modal for Issues -->
-      @if (isModalOpen()) {
-         <div class="print:hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
-            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
-            
-            <div class="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
-               <div class="px-6 py-4 bg-red-50 border-b border-red-100 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0">
-                     <i [class]="'fa-solid ' + currentItem()?.icon"></i>
-                  </div>
-                  <div>
-                     <h3 class="font-black text-red-900 leading-none">Segnala Problema</h3>
-                     <p class="text-xs text-red-700 mt-1 font-medium">{{ currentItem()?.label }}</p>
-                  </div>
-               </div>
-
-               <div class="p-6 space-y-4">
-                  <div>
-                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Descrizione Non Conformità</label>
-                     <textarea #issueInput class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium focus:ring-2 focus:ring-red-500 focus:outline-none resize-none h-24 capitalize" placeholder="Es. Pavimento sporco, maniglia rotta..."></textarea>
-                  </div>
-                  
-                  <div class="flex gap-2">
-                     <button class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors" (click)="closeModal()">
-                        Annulla
-                     </button>
-                     <button class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-colors" 
-                             (click)="confirmIssue(issueInput.value)">
-                        Conferma
-                     </button>
-                  </div>
-               </div>
-            </div>
-         </div>
-      }
-
+                @for (area of areas(); track area.id) {
+                    <tr class="border-b border-slate-100 bg-slate-50/50">
+                        <td class="py-2 pr-2 font-bold uppercase text-[11px]">{{ area.label }}</td>
+                        <td class="py-2">
+                             @if(getAreaStatusLabel(area.id) === 'Conforme') { 
+                                 <span class="font-bold text-emerald-800">CONFORME</span> 
+                             } @else if(getAreaStatusLabel(area.id) === 'Rilevate Anomalie') { 
+                                 <span class="font-bold text-red-800">NON CONFORME</span> 
+                             } @else { 
+                                 <span class="text-slate-400">NON ESEGUITO</span> 
+                             }
+                        </td>
+                        <td class="py-2 italic text-slate-400 text-[10px]">Verifica Area completata</td>
+                    </tr>
+                    @for (step of area.steps; track step.id) {
+                        @if(step.status === 'issue') {
+                            <tr class="border-b border-slate-100 bg-red-50/30">
+                                <td class="py-1 pl-6 pr-2 text-red-800 font-medium text-[10px]">Anomalia: {{ step.label }}</td>
+                                <td class="py-1 text-[10px] font-bold text-red-700">NON CONFORME</td>
+                                <td class="py-1 italic text-red-600 text-[9px]">Azione correttiva richiesta</td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
     </div>
-  `,
-   styles: [`
+
+    <!-- UI CONTENT (Hidden on print) -->
+    <div class="print:hidden pb-20 animate-fade-in relative max-w-3xl mx-auto px-4">
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-8 rounded-3xl shadow-xl border border-blue-500/30 relative overflow-hidden mb-8 mt-4">
+            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <i class="fa-solid fa-eye text-9xl text-white"></i>
+            </div>
+            <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 text-white text-2xl">
+                        <i class="fa-solid fa-eye"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white">Fase Pre-Operativa</h2>
+                        <p class="text-blue-100 text-sm font-medium mt-1">Ispezione e avvio attività</p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                    <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20">
+                        <div class="flex justify-between items-end mb-1.5">
+                            <span class="text-[10px] text-blue-100 uppercase font-bold tracking-wider">Progresso</span>
+                            <span class="text-sm font-black text-white">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
+                        </div>
+                        <div class="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
+                            <div class="h-full bg-white rounded-full transition-all duration-700" [style.width.%]="progressPercentage()"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3 shadow-lg">
+                        <div class="text-left">
+                            <div class="text-[10px] text-blue-100 uppercase font-bold tracking-wider leading-none mb-1">Stato</div>
+                            <div class="text-sm font-black text-white flex items-center gap-2">
+                                <i class="fa-solid fa-circle text-[8px] animate-pulse" [class.text-emerald-400]="isSubmitted()" [class.text-amber-400]="!isSubmitted()"></i>
+                                {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Items first -->
+        <div class="bg-blue-50/50 p-6 rounded-3xl border-2 border-blue-100 mb-6 space-y-3">
+            <h3 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-shield-virus"></i> Controlli Generali Avvio
+            </h3>
+            @for (item of globalItems(); track item.id) {
+                <div class="bg-white rounded-2xl border-2 p-4 flex items-center justify-between transition-all"
+                     [class.border-blue-500]="item.status === 'ok'"
+                     [class.border-red-500]="item.status === 'issue'"
+                     [class.border-slate-100]="item.status === 'pending'">
+                    <div class="flex items-center gap-4 flex-1">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <i [class]="'fa-solid ' + item.icon"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-800 leading-tight">{{ item.label }}</span>
+                            @if (item.id === 'g_docs') {
+                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Gestione Archivio Digitale</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- Action Button -->
+                        <button (click)="openDocModal(item.id)" 
+                                class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold border border-slate-200">
+                             <i [class]="'fa-solid ' + (item.id === 'g_docs' ? 'fa-file-pdf' : 'fa-list-check')"></i>
+                             <span class="hidden sm:inline">{{ item.id === 'g_docs' ? 'DOCUMENTI' : 'CENSIMENTO' }}</span>
+                             <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]" *ngIf="getItemBadgeCount(item.id) > 0">
+                                {{ getItemBadgeCount(item.id) }}
+                             </div>
+                        </button>
+
+                        <div class="w-px h-8 bg-slate-100 mx-1"></div>
+
+                        <div class="flex items-center gap-2">
+                            <button (click)="setGlobalStatus(item.id, 'ok')" 
+                                    class="w-10 h-10 rounded-full flex items-center justify-center transition-all border-2"
+                                    [class.bg-emerald-500]="item.status === 'ok'"
+                                    [class.text-white]="item.status === 'ok'"
+                                    [class.border-emerald-500]="item.status === 'ok'"
+                                    [class.bg-white]="item.status !== 'ok'"
+                                    [class.text-emerald-400]="item.status !== 'ok'"
+                                    [class.border-emerald-100]="item.status !== 'ok'"
+                                    [class.shadow-lg]="item.status === 'ok'"
+                                    [class.shadow-emerald-100]="item.status === 'ok'">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            
+                            <button (click)="setGlobalStatus(item.id, 'issue')" 
+                                    class="w-10 h-10 rounded-full flex items-center justify-center transition-all border-2"
+                                    [class.bg-red-500]="item.status === 'issue'"
+                                    [class.text-white]="item.status === 'issue'"
+                                    [class.border-red-500]="item.status === 'issue'"
+                                    [class.bg-white]="item.status !== 'issue'"
+                                    [class.text-red-400]="item.status !== 'issue'"
+                                    [class.border-red-100]="item.status !== 'issue'"
+                                    [class.shadow-lg]="item.status === 'issue'"
+                                    [class.shadow-red-100]="item.status === 'issue'">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- DOCUMENT MANAGEMENT MODAL -->
+        @if (isDocModalOpen()) {
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeDocModal()"></div>
+                <div class="relative bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+                    <!-- Modal Header -->
+                    <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shadow-inner">
+                                <i class="fa-solid fa-folder-tree text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black">{{ selectedDocCategory() === 'g_docs' ? 'Archivio Regolarità Documentale' : 'Censimento Attrezzature Cucina' }}</h3>
+                                <p class="text-xs text-indigo-100 font-medium opacity-80 uppercase tracking-widest">{{ selectedDocCategory() === 'g_docs' ? 'Caricamento PDF, JPG, PNG' : 'Selezione macchinari e area operativa' }}</p>
+                            </div>
+                        </div>
+                        <button (click)="closeDocModal()" class="w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 overflow-y-auto bg-slate-50 flex-1">
+                        @if (selectedDocCategory() === 'g_docs') {
+                            <div class="space-y-4">
+                                @for (def of docDefinitions; track def.id) {
+                                    <div class="bg-white p-5 rounded-[32px] border-2 transition-all group relative overflow-hidden"
+                                         [class.border-slate-100]="!disabledDocs()[def.id]"
+                                         [class.opacity-60]="disabledDocs()[def.id]"
+                                         [class.border-amber-400]="disabledDocs()[def.id]">
+                                        
+                                        <!-- Header with label and Switch -->
+                                        <div class="flex items-start justify-between gap-4 mb-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 flex items-center justify-center transition-all shadow-inner">
+                                                    <i [class]="'fa-solid ' + def.icon + ' text-xl'"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="font-black text-slate-800 text-sm block leading-tight">{{ def.label }}</span>
+                                                    <span class="text-[9px] font-bold uppercase tracking-widest" [class.text-amber-600]="disabledDocs()[def.id]" [class.text-slate-400]="!disabledDocs()[def.id]">
+                                                        {{ disabledDocs()[def.id] ? 'Escluso dalla verifica' : 'Documento Obbligatorio' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex flex-col items-end gap-2">
+                                                <button (click)="toggleDocExclusion(def.id)" 
+                                                        class="w-10 h-5 rounded-full transition-all relative shadow-inner"
+                                                        [class.bg-amber-500]="disabledDocs()[def.id]"
+                                                        [class.bg-slate-200]="!disabledDocs()[def.id]">
+                                                    <div class="absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm"
+                                                         [style.left]="disabledDocs()[def.id] ? '24px' : '3px'"></div>
+                                                </button>
+                                                
+                                                @if (!disabledDocs()[def.id]) {
+                                                    <label class="cursor-pointer">
+                                                        <input type="file" class="hidden" 
+                                                               (change)="handleFileSelect($event, def.id)"
+                                                               [accept]="'.pdf,.jpg,.jpeg,.png'">
+                                                        <div class="px-3 py-1 bg-indigo-600 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95">
+                                                            CARICA
+                                                        </div>
+                                                    </label>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Expiry for PEC -->
+                                        @if (def.hasExpiry && !disabledDocs()[def.id]) {
+                                            <div class="mb-4 px-4 py-2.5 bg-amber-50/50 rounded-2xl border border-amber-100 flex items-center gap-4">
+                                                <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                                                    <i class="fa-solid fa-calendar-clock"></i>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <label class="block text-[9px] font-black text-amber-700 uppercase tracking-tighter">Data di Scadenza documento</label>
+                                                    <input type="date" 
+                                                           [value]="getExpiryDate(def.id)"
+                                                           (change)="updateExpiryDate(def.id, $event)"
+                                                           class="bg-transparent border-none p-0 text-sm font-black text-amber-900 focus:outline-none w-full">
+                                                </div>
+                                            </div>
+                                        }
+
+                                        <!-- List of uploaded files -->
+                                        @if (!disabledDocs()[def.id]) {
+                                            <div class="space-y-2.5">
+                                                @for (doc of getDocsByType(def.id); track doc.id) {
+                                                    <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100 shadow-sm transition-all hover:border-indigo-100 group/file">
+                                                        <div class="flex items-center gap-3 flex-1 truncate">
+                                                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                                                <i class="fa-solid fa-file-pdf"></i>
+                                                            </div>
+                                                            <div class="flex flex-col truncate">
+                                                                <span class="text-xs font-black text-slate-700 truncate">{{ doc.fileName }}</span>
+                                                                <span class="text-[9px] text-slate-400 font-bold uppercase">{{ doc.uploadDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="flex items-center gap-1.5 opacity-0 group-hover/file:opacity-100 transition-opacity">
+                                                            <button (click)="downloadDoc(doc)" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center justify-center" title="Scarica Documento">
+                                                                <i class="fa-solid fa-download text-[10px]"></i>
+                                                            </button>
+                                                            <button (click)="shareDoc(doc)" class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center justify-center" title="Condividi via Email/WhatsApp">
+                                                                <i class="fa-solid fa-share-nodes text-[10px]"></i>
+                                                            </button>
+                                                            <div class="w-px h-5 bg-slate-100 mx-1"></div>
+                                                            <button (click)="askDeleteDoc(doc)" class="w-8 h-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-sm flex items-center justify-center" title="Elimina Definitivamente">
+                                                                <i class="fa-solid fa-trash-alt text-[10px]"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                } @empty {
+                                                    <div class="text-center py-3 border-2 border-dashed border-slate-100 rounded-2xl group-hover:border-indigo-50 transition-colors">
+                                                        <span class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">In attesa di caricamento</span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        } @else {
+                                            <div class="flex flex-col items-center justify-center py-4 bg-amber-50/30 rounded-2xl border border-dashed border-amber-200">
+                                                <i class="fa-solid fa-eye-slash text-amber-400 text-lg mb-1"></i>
+                                                <span class="text-[9px] text-amber-600 font-black uppercase tracking-tighter">Documentazione non richiesta per questa attività</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        } @else if (selectedDocCategory() === 'g_cleaning_sanit') {
+                            <!-- EQUIPMENT SELECTION SYSTEM -->
+                            <div class="space-y-6">
+                                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-[32px]">
+                                    <h4 class="text-xs font-black text-indigo-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <i class="fa-solid fa-plus-circle"></i> Aggiungi Attrezzatura Area Cucina
+                                    </h4>
+                                    
+                                    <div class="grid grid-cols-1 gap-3">
+                                        <select #equipSelector 
+                                                (change)="addEquipment(equipSelector.value); equipSelector.value = ''"
+                                                class="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:outline-none shadow-sm transition-all appearance-none cursor-pointer">
+                                            <option value="" disabled selected>Fai una scelta dal selettore...</option>
+                                            @for (group of masterEquipmentList; track group.area) {
+                                                <optgroup [label]="group.area">
+                                                    @for (item of group.items; track item) {
+                                                        <option [value]="group.area + '|' + item">{{ item }}</option>
+                                                    }
+                                                </optgroup>
+                                            }
+                                        </select>
+                                        <p class="text-[10px] text-indigo-400 font-bold px-2 uppercase tracking-tight">L'attrezzatura selezionata verrà aggiunta automaticamente alla lista sottostante.</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Elenco Attrezzature Censite</h4>
+                                    @for (eq of selectedEquipment(); track eq.id) {
+                                        <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group animate-slide-up">
+                                            <div class="flex items-center gap-4">
+                                                <div class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                                    <i class="fa-solid fa-microchip text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="block font-black text-slate-800 text-sm leading-tight">{{ eq.name }}</span>
+                                                    <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter">{{ eq.area }}</span>
+                                                </div>
+                                            </div>
+                                            <button (click)="removeEquipment(eq.id)" 
+                                                    class="w-10 h-10 rounded-xl bg-red-50 text-red-400 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center shadow-sm">
+                                                <i class="fa-solid fa-trash-can text-xs"></i>
+                                            </button>
+                                        </div>
+                                    } @empty {
+                                        <div class="flex flex-col items-center justify-center py-12 bg-slate-100/50 rounded-[40px] border-2 border-dashed border-slate-200">
+                                            <div class="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm">
+                                                <i class="fa-solid fa-list-check text-2xl text-slate-200"></i>
+                                            </div>
+                                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Nessuna attrezzatura selezionata</p>
+                                            <p class="text-[10px] text-slate-400 mt-1 italic">Usa il selettore sopra per censire i macchinari</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="p-6 bg-white border-t border-slate-100 text-right">
+                        <button (click)="closeDocModal()" class="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all">
+                            CHIUDI ARCHIVIO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- CUSTOM DELETE CONFIRMATION MODAL (APP STYLE) -->
+        @if (isDeleteModalOpen()) {
+            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" (click)="isDeleteModalOpen.set(false)"></div>
+                <div class="relative bg-white w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden p-8 animate-slide-up text-center">
+                    <div class="w-20 h-20 rounded-3xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-red-100/50">
+                        <i class="fa-solid fa-trash-can-arrow-up text-3xl"></i>
+                    </div>
+                    
+                    <h3 class="text-xl font-black text-slate-800 mb-2">Elimina Documento?</h3>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed mb-8">
+                        Sei sicuro di voler rimuovere <span class="text-slate-800 font-bold">"{{ docToDelete()?.fileName }}"</span>? <br>L'azione è definitiva e non può essere annullata.
+                    </p>
+
+                    <div class="space-y-3">
+                        <button (click)="confirmDelete()" 
+                                class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200">
+                            SÌ, ELIMINA DEFINITIVAMENTE
+                        </button>
+                        <button (click)="isDeleteModalOpen.set(false)" 
+                                class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                            ANNULLA OPERAZIONE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="space-y-4 mb-24">
+            @for (area of areas(); track area.id) {
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300"
+                     [class.ring-2]="area.expanded" [class.ring-blue-500/20]="area.expanded">
+                    <div class="p-5 flex items-center gap-4">
+                        <div (click)="toggleArea(area.id)" class="flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors flex-1 -m-5 p-5 rounded-3xl">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm transition-colors flex-shrink-0"
+                                 [class.bg-blue-100]="isAreaComplete(area.id)" [class.text-blue-600]="isAreaComplete(area.id)"
+                                 [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-400]="!isAreaComplete(area.id)">
+                                <i [class]="'fa-solid ' + area.icon"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-black text-slate-800 text-lg">{{ area.label }}</h3>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter" [class.bg-emerald-100]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-emerald-700]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.bg-red-100]="hasAreaIssues(area.id)" [class.text-red-700]="hasAreaIssues(area.id)" [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-500]="!isAreaComplete(area.id)">{{ getAreaStatusLabel(area.id) }}</span>
+                                    <span class="text-[10px] text-slate-400 font-medium">{{ getCompletedStepsInArea(area.id) }} di {{ area.steps.length }} ok</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down transition-transform duration-300" [class.rotate-180]="area.expanded"></i>
+                        </div>
+                        <div class="flex gap-2 ml-2" (click)="$event.stopPropagation()">
+                            <button (click)="setAllStepsInArea(area.id, 'ok')" class="w-10 h-10 rounded-full border-2 border-emerald-300 text-emerald-600 hover:bg-emerald-50"><i class="fa-solid fa-check"></i></button>
+                        </div>
+                    </div>
+                    @if (area.expanded) {
+                        <div class="px-5 pb-6 pt-2 border-t border-slate-50 bg-slate-50/50">
+                            <div class="grid grid-cols-1 gap-3">
+                                @for (step of area.steps; track step.id) {
+                                    <div class="bg-white rounded-2xl border-2 p-4 flex items-center justify-between"
+                                         [class.border-emerald-500]="step.status === 'ok'"
+                                         [class.border-red-500]="step.status === 'issue'"
+                                         [class.border-slate-100]="step.status === 'pending'">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400"
+                                                 [class.bg-emerald-100]="step.status === 'ok'" [class.text-emerald-600]="step.status === 'ok'"
+                                                 [class.bg-red-100]="step.status === 'issue'" [class.text-red-600]="step.status === 'issue'">
+                                                <i [class]="'fa-solid ' + step.icon"></i>
+                                            </div>
+                                            <span class="text-sm font-bold text-slate-700">{{ step.label }}</span>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            @if (step.status === 'pending') {
+                                                <button (click)="setStepStatus(areaId(area), step.id, 'ok')" class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 hover:bg-emerald-100 transition-colors"><i class="fa-solid fa-check text-xs"></i></button>
+                                                <button (click)="setStepStatus(areaId(area), step.id, 'issue')" class="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center border border-red-100 hover:bg-red-100 transition-colors"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
+                                            } @else {
+                                                <button (click)="setStepStatus(areaId(area), step.id, 'pending')" class="text-[10px] font-bold text-slate-400 hover:text-slate-600">Annulla</button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="fixed bottom-6 right-6 z-30 md:absolute md:bottom-0 md:right-0 md:relative md:mt-8 w-full md:w-auto">
+            @if (!isSubmitted()) {
+                <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
+                        class="ml-auto bg-blue-600 text-white rounded-2xl px-6 py-4 shadow-xl font-bold flex items-center gap-3 disabled:opacity-50 disabled:grayscale transition-all active:scale-95">
+                    REGISTRA FASE PRE-OPERATIVA <i class="fa-solid fa-check-double text-xl"></i>
+                </button>
+            } @else {
+                <div class="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-4 rounded-3xl shadow-2xl flex items-center justify-center gap-4 animate-slide-up">
+                    <span class="font-black mr-4 border-r border-white/20 pr-4">REGISTRATO!</span>
+                    <button (click)="printReport()" class="bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 flex items-center gap-2 font-bold text-sm transition-colors border border-white/10 shadow-lg"><i class="fa-solid fa-print"></i> Stampa</button>
+                    <button (click)="startNewChecklist()" class="bg-blue-500/30 px-4 py-2 rounded-xl hover:bg-blue-500/50 flex items-center gap-2 font-bold text-sm transition-colors border border-blue-400/30 shadow-lg"><i class="fa-solid fa-rotate-right"></i> Nuova</button>
+                </div>
+            }
+        </div>
+    </div>
+    `,
+    styles: [`
+    .animate-bounce-short { animation: bounceShort 2s infinite; }
+    @keyframes bounceShort { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(-3px); } }
     .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .bg-grid-slate-700\/25 {
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
-    }
-  `]
+    `]
 })
 export class PreOperationalChecklistComponent {
-   state = inject(AppStateService);
-   toast = inject(ToastService);
+    state = inject(AppStateService);
+    toast = inject(ToastService);
 
-   constructor() {
-      effect(() => {
-         const record = this.state.recordToEdit();
-         if (record && (record.moduleId === 'pre-operative' || record.moduleId === 'pre-op-checklist')) {
-            this.loadRecord(record);
-            setTimeout(() => this.state.completeEditing(), 100);
-         }
-      });
-   }
+    isSubmitted = signal(false);
+    currentRecordId = signal<string | null>(null);
 
-   // --- STATE ---
-   items = signal<ChecklistItem[]>([
-      { id: '1', label: 'Regolarità documentazione', icon: 'fa-file-signature', status: 'pending' },
-      { id: '2', label: 'Sanificazione piani e attrezzature', icon: 'fa-soap', status: 'pending' },
-      { id: '3', label: 'Verifica DPI e abbigliamento idoneo', icon: 'fa-shirt', status: 'pending' },
-      { id: '4', label: 'Cucina e sale', icon: 'fa-utensils', status: 'pending' },
-      { id: '5', label: 'Area lavaggio', icon: 'fa-sink', status: 'pending' },
-      { id: '6', label: 'Deposito', icon: 'fa-boxes-stacked', status: 'pending' },
-      { id: '7', label: 'Spogliatoio', icon: 'fa-shirt', status: 'pending' },
-      { id: '8', label: 'Antibagno e bagno personale', icon: 'fa-restroom', status: 'pending' },
-      { id: '9', label: 'Bagno clienti', icon: 'fa-people-arrows', status: 'pending' },
-      { id: '10', label: 'Pavimenti', icon: 'fa-table-cells', status: 'pending' },
-      { id: '11', label: 'Pareti', icon: 'fa-border-all', status: 'pending' },
-      { id: '12', label: 'Soffitto', icon: 'fa-cloud', status: 'pending' },
-      { id: '13', label: 'Infissi', icon: 'fa-door-closed', status: 'pending' },
-      { id: '14', label: 'Anti-intrusione', icon: 'fa-shield-cat', status: 'pending' },
-   ]);
+    // Document Management state
+    isDocModalOpen = signal(false);
+    selectedDocType = signal<string | null>(null);
+    expiryDateInput = signal<string>('');
+    disabledDocs = signal<Record<string, boolean>>({}); // Map doc ID to disabled boolean
 
-   isModalOpen = signal(false);
-   currentItem = signal<ChecklistItem | null>(null);
-   selectedDate = signal(new Date().toISOString().split('T')[0]);
+    // Delete confirmation state
+    isDeleteModalOpen = signal(false);
+    docToDelete = signal<any>(null);
 
-   isSubmitted = signal(false);
-   currentRecordId = signal<string | undefined>(undefined);
+    // Equipment Selection state
+    selectedEquipment = signal<{ id: string; name: string; area: string }[]>([]);
 
-   // History Computed
-   history = computed(() => this.state.checklistRecords()
-      .filter(r => r.moduleId === 'pre-op-checklist' || r.moduleId === 'pre-operative')
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-   );
+    masterEquipmentList = [
+        { area: 'Area Lavaggio', items: ['Mobile pensile', 'Lavello n.1', 'Lavello n.2', 'Tavolo da lavoro'] },
+        { area: 'Area Passe 1 e 2', items: ['Frigo n.1', 'Frigo n.2', 'Frigo n.3'] },
+        { area: 'Area Somministrazione', items: ['Congelatore', 'Piano cottura'] },
+        { area: 'Area Laboratorio', items: ['Frigo n.1', 'Frigo n.2', 'Frigo n.3', 'Griglie', 'Banchi lavori', 'Forno a legna', 'Lavello', 'Lavabicchieri', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante'] },
+        { area: 'Area Deposito', items: ['Frigo n.1', 'Frigo n.2', 'Cella frigorifero'] },
+        { area: 'Area Spogliatoi', items: ['Armadietto n.1', 'Armadietto n.2', 'Armadietto n.3', 'Armadietto n.4', 'Microonde'] }
+    ];
 
-   // --- COMPUTED ---
-   completedCount = computed(() => this.items().filter(i => i.status !== 'pending').length);
+    docDefinitions = [
+        { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot' },
+        { id: 'camerale', label: 'Camerale', icon: 'fa-building-columns' },
+        { id: 'haccp_plan', label: 'Piano autocontrollo sistema HACCP', icon: 'fa-file-shield' },
+        { id: 'osa', label: 'Attestato OSA', icon: 'fa-user-graduate' },
+        { id: 'pec', label: 'PEC (Posta Elettronica Certificata)', icon: 'fa-envelope-circle-check', hasExpiry: true },
+        { id: 'firma_digitale', label: 'Firma digitale', icon: 'fa-signature' },
+        { id: 'registro_personale', label: 'Registro del personale', icon: 'fa-users-rectangle' },
+        { id: 'inps_inail', label: 'Iscrizione INPS / INAIL', icon: 'fa-stamp' },
+        { id: 'messa_terra', label: 'DM 37/08 messa a terra DPR 462/01', icon: 'fa-bolt' },
+        { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation' },
+        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney' }
+    ];
 
-   progressPercentage = computed(() => {
-      if (this.items().length === 0) return 0;
-      return (this.completedCount() / this.items().length) * 100;
-   });
+    globalItems = signal<{ id: string; label: string; icon: string; status: 'pending' | 'ok' | 'issue'; note?: string }[]>([
+        { id: 'g_docs', label: 'Regolarità documentazione', icon: 'fa-folder-open', status: 'pending' },
+        { id: 'g_cleaning_sanit', label: 'Prodotti pulizia e sanificazione', icon: 'fa-spray-can-sparkles', status: 'pending' }
+    ]);
 
-   isAllCompleted = computed(() => this.items().every(i => i.status !== 'pending'));
+    stepDefinitions = [
+        { id: 'ispezione', label: 'Ispezione visiva', icon: 'fa-eye' },
+        { id: 'integrita', label: 'Integrità attrezzature', icon: 'fa-screwdriver-wrench' },
+        { id: 'pulizia', label: 'Assenza di residui', icon: 'fa-broom' },
+        { id: 'materiali', label: 'Disponibilità materiali', icon: 'fa-box' },
+        { id: 'funzionalita', label: 'Funzionalità scarichi/luci', icon: 'fa-lightbulb' }
+    ];
 
-   hasIssues = computed(() => this.items().some(i => i.status === 'issue'));
+    areas = signal<AreaChecklist[]>([
+        { id: 'igiene-personale', label: 'Igiene Personale', icon: 'fa-hands-bubbles', steps: this.getInitialSteps(), expanded: false },
+        { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps(), expanded: false },
+        { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps(), expanded: false },
+        { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps(), expanded: false },
+        { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: this.getInitialSteps(), expanded: false },
+        { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: this.getInitialSteps(), expanded: false },
+        { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: this.getInitialSteps(), expanded: false },
+        { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps(), expanded: false },
+        { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps(), expanded: false },
+        { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps(), expanded: false },
+        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps(), expanded: false },
+        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: this.getInitialSteps(), expanded: false },
+    ]);
 
-   // --- ACTIONS ---
+    getInitialSteps() {
+        return this.stepDefinitions.map(def => ({ ...def, status: 'pending' as const }));
+    }
 
-   getTodayDate(): string {
-      return new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-   }
+    constructor() {
+        effect(() => {
+            this.state.filterDate();
+            this.loadData();
+        }, { allowSignalWrites: true });
 
-   setStatus(id: string, status: 'ok' | 'issue' | 'pending') {
-      this.items.update(items => items.map(i => i.id === id ? { ...i, status } : i));
-   }
+        // Auto-update g_docs status based on document availability
+        effect(() => {
+            const docs = this.state.documents();
+            const disabled = this.disabledDocs();
+            const clientId = this.state.currentUser()?.clientId || 'demo';
 
-   setAllOk() {
-      this.items.update(items => items.map(i => ({ ...i, status: 'ok' })));
-      this.toast.info('Tutto Conforme', 'Tutti i controlli sono stati impostati come conformi.');
-   }
+            // Filter only required and active doc types
+            const requiredTypes = this.docDefinitions.filter(def => !disabled[def.id]);
+            const uploadedTypes = new Set(docs.filter(d => d.clientId === clientId && d.category === 'regolarita-documentazione').map(d => d.type));
 
-   openIssueModal(item: ChecklistItem) {
-      this.currentItem.set(item);
-      this.isModalOpen.set(true);
-   }
+            const allPresent = requiredTypes.every(def => uploadedTypes.has(def.id));
 
-   closeModal() {
-      this.isModalOpen.set(false);
-      this.currentItem.set(null);
-   }
+            this.globalItems.update(items => items.map(item => {
+                if (item.id === 'g_docs') {
+                    return { ...item, status: allPresent ? 'ok' : 'issue' };
+                }
+                return item;
+            }));
+        }, { allowSignalWrites: true });
+    }
 
-   confirmIssue(note: string) {
-      if (this.currentItem()) {
-         const id = this.currentItem()!.id;
-         this.items.update(items =>
-            items.map(i => i.id === id ? { ...i, status: 'issue', note: note || 'Non conformità generica' } : i)
-         );
-      }
-      this.closeModal();
-   }
+    loadData() {
+        const historyRecord = this.state.getRecord('pre-op-checklist');
 
-   submitChecklist() {
-      // Collect all issues for report
-      const issues = this.items().filter(i => i.status === 'issue');
-      const isClean = issues.length === 0;
+        if (historyRecord && historyRecord.areas) {
+            this.areas.set(JSON.parse(JSON.stringify(historyRecord.areas)));
+            this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.globalItems || [])));
+            this.isSubmitted.set(true);
+        } else {
+            this.isSubmitted.set(false);
+            this.resetForm();
+        }
+    }
 
-      const recordId = this.currentRecordId() || Math.random().toString(36).substr(2, 9);
-      this.currentRecordId.set(recordId);
+    areaId(area: AreaChecklist) { return area.id; }
 
-      // Save to App State (Historical)
-      this.state.saveChecklist({
-         id: recordId,
-         moduleId: 'pre-op-checklist',
-         date: this.selectedDate(),
-         data: {
-            items: this.items(),
-            status: isClean ? 'Conforme' : 'Non Conforme',
-            summary: isClean ? 'Tutto Conforme' : `Rilevate ${issues.length} non conformità`
-         }
-      });
+    toggleArea(id: string) {
+        this.areas.update(areas => areas.map(a => a.id === id ? { ...a, expanded: !a.expanded } : a));
+    }
 
-      this.toast.success(
-         'Checklist Registrata',
-         'I dati sono stati salvati nello storico.'
-      );
+    setStepStatus(areaId: string, stepId: string, status: 'pending' | 'ok' | 'issue') {
+        this.areas.update(areas => areas.map(a => {
+            if (a.id === areaId) {
+                return { ...a, steps: a.steps.map(s => s.id === stepId ? { ...s, status } : s) };
+            }
+            return a;
+        }));
+    }
 
-      this.isSubmitted.set(true);
-   }
+    setGlobalStatus(id: string, status: 'pending' | 'ok' | 'issue') {
+        this.globalItems.update(items => items.map(item => {
+            if (item.id === id) {
+                const newStatus = item.status === status ? 'pending' : status;
+                return { ...item, status: newStatus };
+            }
+            return item;
+        }));
+    }
 
-   // --- POST SUBMISSION ACTIONS ---
+    setAllStepsInArea(areaId: string, status: 'ok' | 'issue') {
+        this.areas.update(areas => areas.map(a => {
+            if (a.id === areaId) {
+                return { ...a, steps: a.steps.map(s => ({ ...s, status })), expanded: true };
+            }
+            return a;
+        }));
+    }
 
-   printReport() {
-      window.print();
-   }
+    isAreaComplete(id: string) {
+        const area = this.areas().find(a => a.id === id);
+        return area?.steps.every(s => s.status !== 'pending') || false;
+    }
 
-   sendEmail() {
-      const adminEmail = this.state.adminCompany().email || 'amministrazione@haccp-pro.it';
-      // In a real app, this would call a backend API
-      this.toast.success('Email Inviata', `Il report PDF è stato inviato a ${adminEmail}`);
-   }
+    hasAreaIssues(id: string) {
+        const area = this.areas().find(a => a.id === id);
+        return area?.steps.some(s => s.status === 'issue') || false;
+    }
 
-   sendInternalMessage() {
-      const issuesCount = this.items().filter(i => i.status === 'issue').length;
-      const statusText = issuesCount === 0 ? 'Tutto Conforme' : `Rilevate ${issuesCount} Non Conformità`;
+    getCompletedStepsInArea(id: string) {
+        const area = this.areas().find(a => a.id === id);
+        return area?.steps.filter(s => s.status === 'ok').length || 0;
+    }
 
-      // Simulate sending a message
-      const newMessage = {
-         id: Date.now().toString(),
-         senderId: this.state.currentUser()?.id || 'unknown',
-         senderName: this.state.currentUser()?.name || 'Operatore',
-         content: `Report Pre-Operativo di oggi completato. Esito: ${statusText}. Vedi allegato.`,
-         timestamp: new Date(),
-         isRead: false,
-         attachments: ['Report_PreOp_' + new Date().toLocaleDateString().replace(/\//g, '-') + '.pdf']
-      };
+    getAreaStatusLabel(id: string) {
+        if (!this.isAreaComplete(id)) return 'In corso';
+        return this.hasAreaIssues(id) ? 'Rilevate Anomalie' : 'Conforme';
+    }
 
-      this.state.addMessage(newMessage);
-      this.toast.success('Messaggio Inviato', 'Il report è stato allegato alla messaggistica interna.');
-   }
+    totalStepsCount() { return (this.areas().length * this.stepDefinitions.length) + this.globalItems().length; }
 
-   startNewChecklist() {
-      this.resetForm();
-      this.isSubmitted.set(false);
-      this.currentRecordId.set(undefined);
-      this.selectedDate.set(new Date().toISOString().split('T')[0]);
-   }
+    completedStepsCount() {
+        const areaDone = this.areas().reduce((acc, a) => acc + a.steps.filter(s => s.status !== 'pending').length, 0);
+        const globalDone = this.globalItems().filter(i => i.status !== 'pending').length;
+        return areaDone + globalDone;
+    }
 
-   loadRecord(record: any) {
-      this.currentRecordId.set(record.id);
-      this.selectedDate.set(record.date);
-      // Deep copy to avoid mutating state directly
-      const loadedItems = JSON.parse(JSON.stringify(record.data.items));
-      this.items.set(loadedItems);
-      this.isSubmitted.set(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      this.toast.info('Record Caricato', 'Puoi modificare e registrare nuovamente.');
-   }
+    progressPercentage() {
+        const total = this.totalStepsCount();
+        return total > 0 ? (this.completedStepsCount() / total) * 100 : 0;
+    }
 
-   deleteRecord(id: string) {
-      if (confirm('Sei sicuro di voler eliminare questa registrazione?')) {
-         this.state.deleteChecklist(id);
-         if (this.currentRecordId() === id) {
-            this.startNewChecklist();
-         }
-      }
-   }
+    isAllCompleted() { return this.completedStepsCount() === this.totalStepsCount(); }
 
-   resetForm() {
-      this.items.update(items => items.map(i => ({ ...i, status: 'pending', note: undefined })));
-   }
+    submitChecklist() {
+        this.state.saveChecklist({
+            moduleId: 'pre-op-checklist',
+            date: this.state.filterDate(),
+            data: {
+                areas: this.areas(),
+                globalItems: this.globalItems(),
+                status: (this.areas().some(a => a.steps.some(s => s.status === 'issue')) || this.globalItems().some(i => i.status === 'issue')) ? 'Non Conforme' : 'Conforme'
+            }
+        });
+        this.isSubmitted.set(true);
+        this.toast.success('Registrato', 'Fase Pre-Operativa salvata.');
+    }
 
-   getFormattedDate() {
-      if (!this.selectedDate()) return '';
-      const parts = this.selectedDate().split('-');
-      if (parts.length === 3) {
-         return `${parts[2]}/${parts[1]}/${parts[0]}`;
-      }
-      return this.selectedDate();
-   }
+    resetForm() {
+        this.areas.update(areas => areas.map(a => ({
+            ...a,
+            steps: this.getInitialSteps(),
+            expanded: a.id === 'cucina-sala'
+        })));
+        this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' })));
+    }
+
+    startNewChecklist() {
+        this.isSubmitted.set(false);
+        this.resetForm();
+    }
+
+    printReport() { window.print(); }
+    getFormattedDate() { return new Date(this.state.filterDate()).toLocaleDateString('it-IT'); }
+
+    // --- Document Management Methods ---
+    selectedDocCategory = signal<string | null>(null);
+
+    openDocModal(categoryId: string) {
+        this.selectedDocCategory.set(categoryId);
+        this.isDocModalOpen.set(true);
+    }
+
+    closeDocModal() {
+        this.isDocModalOpen.set(false);
+        this.selectedDocCategory.set(null);
+    }
+
+    getDocsByType(type: string) {
+        const clientId = this.state.currentUser()?.clientId || 'demo';
+        return this.state.documents().filter(d => d.clientId === clientId && d.type === type);
+    }
+
+    getItemBadgeCount(categoryId: string) {
+        if (categoryId === 'g_docs') {
+            const clientId = this.state.currentUser()?.clientId || 'demo';
+            return this.state.documents().filter(d => d.clientId === clientId && d.category === 'regolarita-documentazione').length;
+        }
+        if (categoryId === 'g_cleaning_sanit') {
+            return this.selectedEquipment().length;
+        }
+        return 0;
+    }
+
+    handleFileSelect(event: any, type: string) {
+        const files: FileList = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const clientId = this.state.currentUser()?.clientId || 'demo';
+        const category = this.selectedDocCategory() === 'g_docs' ? 'regolarita-documentazione' : 'prodotti-pulizia';
+
+        Array.from(files).forEach(file => {
+            this.state.saveDocument({
+                clientId,
+                category,
+                type,
+                fileName: file.name,
+                fileType: file.type,
+                fileData: 'BASE64_PLACE_HOLDER'
+            });
+        });
+    }
+
+    getExpiryDate(type: string) {
+        const docs = this.getDocsByType(type);
+        return docs.length > 0 ? docs[0].expiryDate : '';
+    }
+
+    updateExpiryDate(type: string, event: any) {
+        const expiryDate = event.target.value;
+        const docs = this.getDocsByType(type);
+        if (docs.length > 0) {
+            // Update existing doc metadata
+            this.state.documents.update(allDocs => allDocs.map(d => {
+                if (d.id === docs[0].id) return { ...d, expiryDate };
+                return d;
+            }));
+            this.toast.success('Scadenza salvata', 'Data di scadenza aggiornata correttamente.');
+        } else {
+            this.toast.info('Attenzione', 'Carica prima il documento per poter impostare la data di scadenza.');
+        }
+    }
+
+    toggleDocExclusion(docId: string) {
+        this.disabledDocs.update(prev => ({
+            ...prev,
+            [docId]: !prev[docId]
+        }));
+
+        const isExcluding = this.disabledDocs()[docId];
+        this.toast.info(isExcluding ? 'Documento Escluso' : 'Documento Riabilitato',
+            isExcluding ? 'L\'elemento non sarà conteggiato nella verifica.' : 'L\'elemento è ora obbligatorio per la conformità.');
+    }
+
+    downloadDoc(doc: any) {
+        this.toast.info('Download in corso', `Il file ${doc.fileName} sta per essere scaricato.`);
+
+        // Real download simulation using Blob
+        const mockContent = 'Dati del documento ' + doc.fileName;
+        const blob = new Blob([mockContent], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.toast.success('Completato', 'Download terminato con successo.');
+    }
+
+    shareDoc(doc: any) {
+        this.toast.info('Condivisione Documento', `Scegli come condividere ${doc.fileName}`);
+
+        // Mocking a share menu with a toast sequence for now
+        setTimeout(() => {
+            this.toast.success('Inviato', 'Il documento è stato correttamente condiviso via Email e WhatsApp.');
+        }, 800);
+    }
+
+    askDeleteDoc(doc: any) {
+        // Open app-style custom confirmation modal
+        this.docToDelete.set(doc);
+        this.isDeleteModalOpen.set(true);
+    }
+
+    confirmDelete() {
+        const doc = this.docToDelete();
+        if (doc) {
+            this.state.deleteDocument(doc.id);
+            this.isDeleteModalOpen.set(false);
+            this.docToDelete.set(null);
+            // Success toast is already called by state.deleteDocument
+        }
+    }
+
+    deleteDoc(id: string) {
+        this.state.deleteDocument(id);
+    }
+
+    addEquipment(value: string) {
+        if (!value) return;
+        const [area, name] = value.split('|');
+        const id = Math.random().toString(36).substring(2, 9);
+
+        this.selectedEquipment.update(list => [...list, { id, area, name }]);
+        this.toast.success('Aggiunto', `${name} inserito in ${area}.`);
+    }
+
+    removeEquipment(id: string) {
+        const item = this.selectedEquipment().find(e => e.id === id);
+        this.selectedEquipment.update(list => list.filter(e => e.id !== id));
+        if (item) {
+            this.toast.info('Rimosso', `${item.name} rimosso dall'elenco.`);
+        }
+    }
 }

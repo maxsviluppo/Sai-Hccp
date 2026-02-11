@@ -88,6 +88,18 @@ export interface MessageReply {
   timestamp: Date;
 }
 
+export interface AppDocument {
+  id: string;
+  clientId: string;
+  category: string; // e.g., 'regolarita-documentazione'
+  type: string; // e.g., 'scia', 'camerale', etc.
+  fileName: string;
+  fileType: string;
+  fileData?: string; // base64
+  uploadDate: Date;
+  expiryDate?: string; // For PEE
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -161,6 +173,8 @@ export class AppStateService {
     data: any;
     timestamp: Date;
   }[]>([]);
+
+  readonly documents = signal<AppDocument[]>([]);
 
   // --- Clients / Companies Database (New) ---
   readonly clients = signal<ClientEntity[]>([
@@ -659,6 +673,31 @@ export class AppStateService {
       this.updateClient(currentId, updates);
       this.toastService.success('Dati Aggiornati', 'Le informazioni della tua azienda sono state aggiornate.');
     }
+  }
+
+  saveDocument(doc: Omit<AppDocument, 'id' | 'uploadDate'>) {
+    const newDoc: AppDocument = {
+      ...doc,
+      id: Math.random().toString(36).substring(2, 9),
+      uploadDate: new Date()
+    };
+    this.documents.update(docs => [...docs, newDoc]);
+    this.toastService.success('Documento salvato', `${doc.fileName} è stato archiviato.`);
+  }
+
+  deleteDocument(id: string) {
+    this.documents.update(docs => docs.filter(d => d.id !== id));
+    this.toastService.success('Documento eliminato', 'Il file è stato rimosso dall\'archivio.');
+  }
+
+  getDocumentsByClient(clientId: string, category?: string) {
+    return computed(() => {
+      let docs = this.documents().filter(d => d.clientId === clientId);
+      if (category) {
+        docs = docs.filter(d => d.category === category);
+      }
+      return docs;
+    });
   }
 
   // --- Editing State Methods ---
