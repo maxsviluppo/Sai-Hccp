@@ -136,60 +136,13 @@ interface ChecklistItem {
             </div>
             <div class="h-0.5 w-full bg-slate-200 mb-6"></div>
 
-            <!-- 3 Counter Boxes for Machinery -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <!-- Frigo -->
-                <div class="bg-white p-5 rounded-[32px] border-2 border-slate-100 shadow-sm transition-all hover:bg-slate-50 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                            <i class="fa-solid fa-snowflake text-lg"></i>
-                        </div>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Frigo</span>
-                    </div>
-                    <div class="flex items-center justify-between px-2 py-1 bg-slate-100 rounded-2xl">
-                        <button (click)="updateCount('frigo', -1)" class="w-10 h-10 rounded-xl bg-white text-slate-800 shadow-sm hover:bg-white/50 active:scale-90 font-black">-</button>
-                        <span class="text-2xl font-black text-slate-950">{{ frigoCount() }}</span>
-                        <button (click)="updateCount('frigo', 1)" class="w-10 h-10 rounded-xl bg-white text-slate-800 shadow-sm hover:bg-white/50 active:scale-90 font-black">+</button>
-                    </div>
-                </div>
-                
-                <!-- Congelatore -->
-                <div class="bg-white p-5 rounded-[32px] border-2 border-slate-100 shadow-sm transition-all hover:bg-slate-50 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                            <i class="fa-solid fa-icicles text-lg"></i>
-                        </div>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Congelatore</span>
-                    </div>
-                    <div class="flex items-center justify-between px-2 py-1 bg-slate-100 rounded-2xl">
-                        <button (click)="updateCount('congelatore', -1)" class="w-10 h-10 rounded-xl bg-white text-slate-800 shadow-sm hover:bg-white/50 active:scale-90 font-black">-</button>
-                        <span class="text-2xl font-black text-slate-950">{{ congelatoreCount() }}</span>
-                        <button (click)="updateCount('congelatore', 1)" class="w-10 h-10 rounded-xl bg-white text-slate-800 shadow-sm hover:bg-white/50 active:scale-90 font-black">+</button>
-                    </div>
-                </div>
-                
-                <!-- Pozzetto -->
-                <div class="bg-white p-5 rounded-[32px] border-2 border-slate-100 shadow-sm transition-all hover:bg-slate-50 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-500 flex items-center justify-center transition-transform group-hover:scale-110">
-                            <i class="fa-solid fa-box-archive text-lg"></i>
-                        </div>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Pozzetto</span>
-                    </div>
-                    <div class="flex items-center justify-between px-2 py-1 bg-slate-100 rounded-2xl">
-                        <button (click)="updateCount('pozzetto', -1)" class="w-10 h-10 rounded-xl bg-white text-slate-800 shadow-sm hover:bg-white/50 active:scale-90 font-black">-</button>
-                        <span class="text-2xl font-black text-slate-950">{{ pozzettoCount() }}</span>
-                        <button (click)="updateCount('pozzetto', 1)" class="w-10 h-10 rounded-xl bg-white text-slate-800 shadow-sm hover:bg-white/50 active:scale-90 font-black">+</button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Dynamic & Final List -->
             <div class="space-y-4">
                 @for (item of group2Items(); track item.id) {
                     <ng-container *ngTemplateOutlet="checklistCard; context: { $implicit: item }"></ng-container>
                 }
             </div>
+
         </div>
 
         <!-- REUSABLE CARD TEMPLATE -->
@@ -351,10 +304,6 @@ export class OperativeChecklistComponent {
    state = inject(AppStateService);
    toast = inject(ToastService);
 
-   frigoCount = signal(0);
-   congelatoreCount = signal(0);
-   pozzettoCount = signal(0);
-
    isModalOpen = signal(false);
    currentItem = signal<ChecklistItem | null>(null);
    selectedDate = signal(new Date().toISOString().split('T')[0]);
@@ -362,6 +311,10 @@ export class OperativeChecklistComponent {
    currentRecordId = signal<string | undefined>(undefined);
 
    statusMap = signal<Record<string, { status: ChecklistItem['status'], note?: string }>>({});
+
+   frigoCount = signal(0);
+   congelatoreCount = signal(0);
+   pozzettoCount = signal(0);
 
    constructor() {
       effect(() => {
@@ -383,36 +336,33 @@ export class OperativeChecklistComponent {
       const s = this.statusMap();
       return [
          { id: 'op-1', label: 'Aspetto imballi e merce', icon: 'fa-box', status: s['op-1']?.status || 'pending', note: s['op-1']?.note },
-         { id: 'op-2', label: 'Catena del freddo temp. +4°C; +8°C; minore o uguale a -18°C', icon: 'fa-temperature-low', status: s['op-2']?.status || 'pending', note: s['op-2']?.note },
-         { id: 'op-3', label: 'Alimenti secchi temp ambiente', icon: 'fa-box-open', status: s['op-3']?.status || 'pending', note: s['op-3']?.note },
-         { id: 'op-4', label: 'Verifica tracciabilità', icon: 'fa-barcode', status: s['op-4']?.status || 'pending', note: s['op-4']?.note }
+         { id: 'op-2', label: 'Catena del freddo temp. +4°C; +8°C; ≤ -18°C', icon: 'fa-temperature-low', status: s['op-2']?.status || 'pending', note: s['op-2']?.note },
+         { id: 'op-3', label: 'Alimenti secchi temp ambiente', icon: 'fa-box-open', status: s['op-3']?.status || 'pending', note: s['op-3']?.note }
       ];
    });
 
-   // GROUP 2: Dynamic Machines + Final Items
+   // GROUP 2: Dynamic Machines (from Census) + Final Items
    group2Items = computed(() => {
       const s = this.statusMap();
       const list: ChecklistItem[] = [];
+      const census = this.state.selectedEquipment();
 
-      // Loop for Frigo
-      for (let i = 1; i <= this.frigoCount(); i++) {
-         const id = `f-${i}`;
-         list.push({ id, label: `Frigorifero #${i}`, icon: 'fa-snowflake', status: s[id]?.status || 'pending', note: s[id]?.note });
-      }
-      // Loop for Congelatore
-      for (let i = 1; i <= this.congelatoreCount(); i++) {
-         const id = `c-${i}`;
-         list.push({ id, label: `Congelatore #${i}`, icon: 'fa-icicles', status: s[id]?.status || 'pending', note: s[id]?.note });
-      }
-      // Loop for Pozzetto
-      for (let i = 1; i <= this.pozzettoCount(); i++) {
-         const id = `p-${i}`;
-         list.push({ id, label: `Pozzetto #${i}`, icon: 'fa-box-archive', status: s[id]?.status || 'pending', note: s[id]?.note });
-      }
+      // For each equipment in census
+      census.forEach(eq => {
+         const icon = eq.name.toLowerCase().includes('congelatore') ? 'fa-icicles' :
+            (eq.name.toLowerCase().includes('pozzetto') ? 'fa-box-archive' : 'fa-snowflake');
+         list.push({
+            id: `eq-${eq.id}`,
+            label: `${eq.name} (${eq.area})`,
+            icon: icon,
+            status: s[`eq-${eq.id}`]?.status || 'pending',
+            note: s[`eq-${eq.id}`]?.note
+         });
+      });
 
       // Final Required Items
       list.push({ id: 'op-5', label: 'Sostanze allergene', icon: 'fa-triangle-exclamation', status: s['op-5']?.status || 'pending', note: s['op-5']?.note });
-      list.push({ id: 'op-6', label: 'Rintracciabilità e fatture', icon: 'fa-file-invoice-dollar', status: s['op-6']?.status || 'pending', note: s['op-6']?.note });
+      list.push({ id: 'op-6', label: 'Rintracciabilità ed etichette', icon: 'fa-file-invoice-dollar', status: s['op-6']?.status || 'pending', note: s['op-6']?.note });
       list.push({ id: 'op-7', label: 'Libro ingredienti', icon: 'fa-book-open', status: s['op-7']?.status || 'pending', note: s['op-7']?.note });
 
       return list;
@@ -427,11 +377,6 @@ export class OperativeChecklistComponent {
    });
    isAllCompleted = computed(() => this.items().length > 0 && this.items().every(i => i.status !== 'pending'));
 
-   updateCount(type: 'frigo' | 'congelatore' | 'pozzetto', delta: number) {
-      if (type === 'frigo') this.frigoCount.update(c => Math.max(0, c + delta));
-      if (type === 'congelatore') this.congelatoreCount.update(c => Math.max(0, c + delta));
-      if (type === 'pozzetto') this.pozzettoCount.update(c => Math.max(0, c + delta));
-   }
 
    setStatus(id: string, status: ChecklistItem['status']) {
       this.statusMap.update(map => ({

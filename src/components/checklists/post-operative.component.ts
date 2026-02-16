@@ -388,7 +388,7 @@ export class PostOperationalChecklistComponent {
         { id: 'risciaquo2', label: 'Risciacquo finale', icon: 'fa-water' }
     ];
 
-    areas = signal<AreaChecklist[]>([
+    staticAreas: AreaChecklist[] = [
         { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps(), expanded: true },
         { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps(), expanded: false },
         { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps(), expanded: false },
@@ -400,7 +400,9 @@ export class PostOperationalChecklistComponent {
         { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps(), expanded: false },
         { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps(), expanded: false },
         { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: this.getInitialSteps(), expanded: false },
-    ]);
+    ];
+
+    areas = signal<AreaChecklist[]>([]);
 
     isSubmitted = signal(false);
     currentRecordId = signal<string | null>(null);
@@ -443,16 +445,30 @@ export class PostOperationalChecklistComponent {
 
         // 2. Otherwise check for a draft (autosave)
         const savedData = this.state.getRecord('post-op-checklist');
+
+        // Prepare current area list (Static + Equipment Census)
+        const equipment = this.state.selectedEquipment();
+        const equipmentAreas: AreaChecklist[] = equipment.map(eq => ({
+            id: `eq-${eq.id}`,
+            label: `Lavaggio: ${eq.name}`,
+            icon: 'fa-soap',
+            steps: this.getInitialSteps(),
+            expanded: false
+        }));
+
+        const currentAreas = [...this.staticAreas, ...equipmentAreas];
+
         if (savedData && savedData.areas) {
-            this.areas.set(JSON.parse(JSON.stringify(savedData.areas)));
+            // Merge saved steps with current structure (in case equipment changed)
+            const merged = currentAreas.map(a => {
+                const saved = savedData.areas.find((sa: any) => sa.id === a.id);
+                return saved ? { ...a, steps: saved.steps, expanded: saved.expanded } : a;
+            });
+            this.areas.set(merged);
             this.isSubmitted.set(false);
             this.currentRecordId.set(null);
         } else {
-            this.areas.update(areas => areas.map(a => ({
-                ...a,
-                steps: this.getInitialSteps(),
-                expanded: a.id === 'cucina-sala'
-            })));
+            this.areas.set(currentAreas);
             this.isSubmitted.set(false);
             this.currentRecordId.set(null);
         }
@@ -550,7 +566,7 @@ export class PostOperationalChecklistComponent {
     }
 
     totalStepsCount() {
-        return this.areas().length * 5;
+        return this.areas().length * this.stepDefinitions.length;
     }
 
     completedStepsCount() {

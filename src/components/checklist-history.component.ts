@@ -167,12 +167,17 @@ import { ToastService } from '../services/toast.service';
                           <td class="py-4">
                              <div class="flex flex-col gap-1">
                                 <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1 w-fit"
-                                      [class.bg-emerald-100]="record.data.status === 'Conforme'"
-                                      [class.text-emerald-700]="record.data.status === 'Conforme'"
-                                      [class.bg-red-100]="record.data.status !== 'Conforme'"
-                                      [class.text-red-700]="record.data.status !== 'Conforme'">
-                                   <i class="fa-solid" [class.fa-check]="record.data.status === 'Conforme'" [class.fa-triangle-exclamation]="record.data.status !== 'Conforme'"></i>
-                                   {{ record.data.status || 'Completata' }}
+                                      [class.bg-emerald-100]="getRecordStatus(record) === 'Conforme'"
+                                      [class.text-emerald-700]="getRecordStatus(record) === 'Conforme'"
+                                      [class.bg-red-100]="getRecordStatus(record) === 'Non Conforme'"
+                                      [class.text-red-700]="getRecordStatus(record) === 'Non Conforme'"
+                                      [class.bg-slate-100]="getRecordStatus(record) === 'Completata'"
+                                      [class.text-slate-600]="getRecordStatus(record) === 'Completata'">
+                                   <i class="fa-solid" 
+                                      [class.fa-check]="getRecordStatus(record) === 'Conforme'" 
+                                      [class.fa-triangle-exclamation]="getRecordStatus(record) === 'Non Conforme'"
+                                      [class.fa-circle-check]="getRecordStatus(record) === 'Completata'"></i>
+                                   {{ getRecordStatus(record) }}
                                 </span>
                                 @if (record.data.summary) {
                                    <span class="text-[10px] text-slate-400 font-medium ml-1 italic">{{ record.data.summary }}</span>
@@ -249,6 +254,42 @@ export class ChecklistHistoryComponent {
          case 'post-operative': return 'Fase Post-operativa';
          default: return id;
       }
+   }
+
+   getRecordStatus(record: any): string {
+      const data = record.data;
+      if (!data) return 'N.D.';
+
+      // Extract items array if it exists (either directly array or inside items prop)
+      let items: any[] = [];
+      if (Array.isArray(data)) {
+         items = data;
+      } else if (data.items && Array.isArray(data.items)) {
+         items = data.items;
+      }
+
+      // If we found items, calculate based on user logic
+      if (items.length > 0) {
+         const hasNonConformity = items.some(item => {
+            // Check for common non-conformity patterns:
+            // 1. checked === false (for simple checklists)
+            // 2. status === 'issue' or status === 'pending' (for advanced checklists)
+            if (Object.prototype.hasOwnProperty.call(item, 'checked')) {
+               return !item.checked;
+            }
+            if (Object.prototype.hasOwnProperty.call(item, 'status')) {
+               return item.status !== 'ok';
+            }
+            return false;
+         });
+
+         return hasNonConformity ? 'Non Conforme' : 'Conforme';
+      }
+
+      // Fallback: use explicit status if available
+      if (data.status) return data.status;
+
+      return 'Completata';
    }
 
    toast = inject(ToastService);

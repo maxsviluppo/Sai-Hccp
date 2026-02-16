@@ -134,15 +134,24 @@ interface AreaChecklist {
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <!-- Action Button -->
-                        <button (click)="openDocModal(item.id)" 
-                                class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold border border-slate-200">
-                             <i [class]="'fa-solid ' + (item.id === 'g_docs' ? 'fa-file-pdf' : 'fa-list-check')"></i>
-                             <span class="hidden sm:inline">{{ item.id === 'g_docs' ? 'DOCUMENTI' : 'CENSIMENTO' }}</span>
-                             <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]" *ngIf="getItemBadgeCount(item.id) > 0">
-                                {{ getItemBadgeCount(item.id) }}
-                             </div>
-                        </button>
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-2">
+                            @if (item.id === 'g_docs') {
+                                <button (click)="state.setModule('documentation')" 
+                                        class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold border border-slate-200">
+                                     <i class="fa-solid fa-folder-tree"></i>
+                                     <span class="hidden sm:inline uppercase">Gestione Archivio</span>
+                                </button>
+                            } @else {
+                                <button (click)="showCleaningInfo.set(true)" 
+                                        class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-black hover:text-white transition-all text-xs font-black border border-indigo-100 shadow-sm group"
+                                        *ngIf="item.id === 'g_cleaning_sanit'"
+                                        title="Informazioni Tecniche Protocollo">
+                                    <i class="fa-solid fa-circle-info text-lg group-hover:scale-110 transition-transform"></i>
+                                    <span class="hidden sm:inline">INFO PROTOCOLLO</span>
+                                </button>
+                            }
+                        </div>
 
                         <div class="w-px h-8 bg-slate-100 mx-1"></div>
 
@@ -331,7 +340,7 @@ interface AreaChecklist {
 
                                 <div class="space-y-3">
                                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Elenco Attrezzature Censite</h4>
-                                    @for (eq of selectedEquipment(); track eq.id) {
+                                    @for (eq of state.selectedEquipment(); track eq.id) {
                                         <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group animate-slide-up">
                                             <div class="flex items-center gap-4">
                                                 <div class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
@@ -342,7 +351,7 @@ interface AreaChecklist {
                                                     <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter">{{ eq.area }}</span>
                                                 </div>
                                             </div>
-                                            <button (click)="removeEquipment(eq.id)" 
+                                            <button (click)="state.removeEquipment(eq.id)"
                                                     class="w-10 h-10 rounded-xl bg-red-50 text-red-400 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center shadow-sm">
                                                 <i class="fa-solid fa-trash-can text-xs"></i>
                                             </button>
@@ -371,6 +380,63 @@ interface AreaChecklist {
             </div>
         }
 
+        @if (showCleaningInfo()) {
+            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showCleaningInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                    <!-- Header -->
+                    <div class="p-8 bg-gradient-to-br from-indigo-700 to-indigo-900 text-white relative flex-shrink-0">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
+                            <i class="fa-solid fa-flask-vial text-8xl"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <h3 class="text-2xl font-black mb-1">Sanificazione</h3>
+                            <p class="text-indigo-200 text-[10px] font-black uppercase tracking-[0.2em]">Standard HACCP Pro</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                        <!-- Sezione Pulizia -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-broom text-xs"></i> 01. Cos'è la Pulizia
+                            </h4>
+                            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                <p class="text-sm font-bold text-slate-700 leading-relaxed italic">
+                                    "La pulizia consiste nell'eliminare lo sporco mediante utensili specifici o sistemi automatici."
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Detergenti -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-soap text-xs"></i> 02. Azione Detergenti
+                            </h4>
+                            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                                    Sostanze e miscele atte a rimuovere sporco e grasso da tutte le superfici, attrezzature e utensili.
+                                </p>
+                                <div class="mt-4 p-3 bg-white rounded-xl border border-indigo-100 flex gap-3 items-start shadow-sm">
+                                    <i class="fa-solid fa-vial text-indigo-500 text-sm mt-0.5"></i>
+                                    <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
+                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+                        <button (click)="showCleaningInfo.set(false)"
+                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
+                            HO PRESO VISIONE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- CUSTOM DELETE CONFIRMATION MODAL (APP STYLE) -->
         @if (isDeleteModalOpen()) {
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -379,18 +445,18 @@ interface AreaChecklist {
                     <div class="w-20 h-20 rounded-3xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-red-100/50">
                         <i class="fa-solid fa-trash-can-arrow-up text-3xl"></i>
                     </div>
-                    
+
                     <h3 class="text-xl font-black text-slate-800 mb-2">Elimina Documento?</h3>
                     <p class="text-sm text-slate-500 font-medium leading-relaxed mb-8">
                         Sei sicuro di voler rimuovere <span class="text-slate-800 font-bold">"{{ docToDelete()?.fileName }}"</span>? <br>L'azione è definitiva e non può essere annullata.
                     </p>
 
                     <div class="space-y-3">
-                        <button (click)="confirmDelete()" 
+                        <button (click)="confirmDelete()"
                                 class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200">
                             SÌ, ELIMINA DEFINITIVAMENTE
                         </button>
-                        <button (click)="isDeleteModalOpen.set(false)" 
+                        <button (click)="isDeleteModalOpen.set(false)"
                                 class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
                             ANNULLA OPERAZIONE
                         </button>
@@ -487,6 +553,9 @@ export class PreOperationalChecklistComponent {
     isSubmitted = signal(false);
     currentRecordId = signal<string | null>(null);
 
+    // Info modal state
+    showCleaningInfo = signal(false);
+
     // Document Management state
     isDocModalOpen = signal(false);
     selectedDocType = signal<string | null>(null);
@@ -496,18 +565,6 @@ export class PreOperationalChecklistComponent {
     // Delete confirmation state
     isDeleteModalOpen = signal(false);
     docToDelete = signal<any>(null);
-
-    // Equipment Selection state
-    selectedEquipment = signal<{ id: string; name: string; area: string }[]>([]);
-
-    masterEquipmentList = [
-        { area: 'Area Lavaggio', items: ['Mobile pensile', 'Lavello n.1', 'Lavello n.2', 'Tavolo da lavoro'] },
-        { area: 'Area Passe 1 e 2', items: ['Frigo n.1', 'Frigo n.2', 'Frigo n.3'] },
-        { area: 'Area Somministrazione', items: ['Congelatore', 'Piano cottura'] },
-        { area: 'Area Laboratorio', items: ['Frigo n.1', 'Frigo n.2', 'Frigo n.3', 'Griglie', 'Banchi lavori', 'Forno a legna', 'Lavello', 'Lavabicchieri', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante'] },
-        { area: 'Area Deposito', items: ['Frigo n.1', 'Frigo n.2', 'Cella frigorifero'] },
-        { area: 'Area Spogliatoi', items: ['Armadietto n.1', 'Armadietto n.2', 'Armadietto n.3', 'Armadietto n.4', 'Microonde'] }
-    ];
 
     docDefinitions = [
         { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot' },
@@ -719,7 +776,7 @@ export class PreOperationalChecklistComponent {
             return this.state.documents().filter(d => d.clientId === clientId && d.category === 'regolarita-documentazione').length;
         }
         if (categoryId === 'g_cleaning_sanit') {
-            return this.selectedEquipment().length;
+            return this.state.selectedEquipment().length;
         }
         return 0;
     }
@@ -819,22 +876,5 @@ export class PreOperationalChecklistComponent {
 
     deleteDoc(id: string) {
         this.state.deleteDocument(id);
-    }
-
-    addEquipment(value: string) {
-        if (!value) return;
-        const [area, name] = value.split('|');
-        const id = Math.random().toString(36).substring(2, 9);
-
-        this.selectedEquipment.update(list => [...list, { id, area, name }]);
-        this.toast.success('Aggiunto', `${name} inserito in ${area}.`);
-    }
-
-    removeEquipment(id: string) {
-        const item = this.selectedEquipment().find(e => e.id === id);
-        this.selectedEquipment.update(list => list.filter(e => e.id !== id));
-        if (item) {
-            this.toast.info('Rimosso', `${item.name} rimosso dall'elenco.`);
-        }
     }
 }

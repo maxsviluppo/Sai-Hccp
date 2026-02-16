@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { ToastService } from './toast.service';
 
 export type UserRole = 'ADMIN' | 'COLLABORATOR' | null;
@@ -57,7 +57,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication';
+  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication' | 'production';
   adminOnly?: boolean;
   operatorOnly?: boolean;
 }
@@ -98,6 +98,27 @@ export interface AppDocument {
   fileData?: string; // base64
   uploadDate: Date;
   expiryDate?: string; // For PEE
+}
+
+export interface ProductionIngredient {
+  id: string;
+  name: string;
+  packingDate: string;
+  expiryDate: string;
+  lotto: string; // or invoice ref
+  photo?: string; // base64 jpg
+}
+
+export interface ProductionRecord {
+  id: string;
+  recordedDate: string; // day of record (archive date)
+  mainProductName: string;
+  packagingDate: string;
+  expiryDate: string;
+  lotto: string;
+  ingredients: ProductionIngredient[];
+  userId: string;
+  clientId: string;
 }
 
 
@@ -163,6 +184,47 @@ export class AppStateService {
   // Services
   private toastService = inject(ToastService);
 
+  constructor() {
+    this.loadState();
+
+    // Auto-save State when critical data changes
+    effect(() => {
+      this.saveState();
+    });
+  }
+
+  private saveState() {
+    const state = {
+      documents: this.documents(),
+      selectedEquipment: this.selectedEquipment(),
+      checklistRecords: this.checklistRecords(),
+      productionRecords: this.productionRecords()
+    };
+    localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
+  }
+
+  private loadState() {
+    const saved = localStorage.getItem('haccp_pro_persistence');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data.documents) this.documents.set(data.documents);
+        if (data.selectedEquipment) this.selectedEquipment.set(data.selectedEquipment);
+        if (data.checklistRecords) {
+          // Restore dates correctly
+          const restoredRecords = data.checklistRecords.map((r: any) => ({
+            ...r,
+            timestamp: new Date(r.timestamp)
+          }));
+          this.checklistRecords.set(restoredRecords);
+        }
+        if (data.productionRecords) this.productionRecords.set(data.productionRecords);
+      } catch (e) {
+        console.error('Failed to load local state', e);
+      }
+    }
+  }
+
   // --- Data Store (Mock Database) ---
   // Stores all checks from all users
   readonly checklistRecords = signal<{
@@ -175,6 +237,8 @@ export class AppStateService {
   }[]>([]);
 
   readonly documents = signal<AppDocument[]>([]);
+  readonly selectedEquipment = signal<{ id: string; name: string; area: string }[]>([]);
+  readonly productionRecords = signal<ProductionRecord[]>([]);
 
   // --- Clients / Companies Database (New) ---
   readonly clients = signal<ClientEntity[]>([
@@ -329,9 +393,14 @@ export class AppStateService {
     // --- STORICO ---
     { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
 
+    // --- PRODUZIONE E RINTRACCIABILITA ---
+    { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-boxes-packing', category: 'production' },
+
     // --- CONSUMABILI E MESSAGGI ---
 
     // Config
+    { id: 'documentation', label: 'Documentazione', icon: 'fa-folder-tree', category: 'config' },
+    { id: 'equipment-census', label: 'Censimento Attrezzature', icon: 'fa-microchip', category: 'config' },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
@@ -686,8 +755,18 @@ export class AppStateService {
   }
 
   deleteDocument(id: string) {
-    this.documents.update(docs => docs.filter(d => d.id !== id));
-    this.toastService.success('Documento eliminato', 'Il file è stato rimosso dall\'archivio.');
+    this.documents.update(docs => docs.filter(doc => doc.id !== id));
+    this.toastService.success('Eliminato', 'Documento rimosso permanentemente.');
+  }
+
+  // --- Equipment Census Methods ---
+  addEquipment(area: string, name: string) {
+    const id = Math.random().toString(36).substring(2, 9);
+    this.selectedEquipment.update(list => [...list, { id, area, name }]);
+  }
+
+  removeEquipment(id: string) {
+    this.selectedEquipment.update(list => list.filter(e => e.id !== id));
   }
 
   getDocumentsByClient(clientId: string, category?: string) {

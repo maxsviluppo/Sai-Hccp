@@ -29,6 +29,9 @@ import { CleaningMaintenanceViewComponent } from './components/cleaning-maintena
 import { MicrobioMonitorViewComponent } from './components/microbio-monitor-view.component';
 import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
 import { MessagesViewComponent } from './components/messages-view.component';
+import { DocumentationViewComponent } from './components/documentation-view.component';
+import { EquipmentCensusViewComponent } from './components/equipment-census-view.component';
+import { ProductionLogViewComponent } from './components/production-log-view.component';
 import { ToastContainerComponent } from './components/toast-container.component';
 import { ChecklistHistoryComponent } from './components/checklist-history.component';
 
@@ -64,6 +67,9 @@ import { ChecklistHistoryComponent } from './components/checklist-history.compon
     MicrobioMonitorViewComponent,
     StaffHygieneViewComponent,
     MessagesViewComponent,
+    DocumentationViewComponent,
+    EquipmentCensusViewComponent,
+    ProductionLogViewComponent,
     ToastContainerComponent,
     ChecklistHistoryComponent
   ],
@@ -79,10 +85,10 @@ export class AppComponent {
   hasAccessToCategory(category: string): boolean {
     if (this.state.isAdmin()) {
       // Admin sees management, monitoring and communication, not operational checklists
-      return ['dashboard', 'monitoring', 'history', 'config', 'communication'].includes(category);
+      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication'].includes(category);
     }
     // Collaborator sees operational stuff, history, and config/comm
-    return ['dashboard', 'operations', 'history', 'config', 'communication'].includes(category);
+    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication'].includes(category);
   }
   loginMode = signal<'SELECT' | 'ADMIN' | 'OPERATOR'>('SELECT');
   loginUsername = signal('');
@@ -157,6 +163,7 @@ export class AppComponent {
       'operations': 'Registri Operativi',
       'monitoring': 'Monitoraggio Operatori',
       'history': 'Archivio Storico',
+      'production': 'Rintracciabilità Prodotti',
       'config': 'Configurazione',
       'communication': 'Comunicazioni',
       'dashboard': 'Panoramica'
