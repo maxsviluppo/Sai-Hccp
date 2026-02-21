@@ -28,9 +28,16 @@ interface CheckItem {
                     </span>
                     Prodotti Pulizia
                 </h2>
-                <p class="text-cyan-100 text-sm mt-2 font-medium ml-1">
-                    Elenco prodotti detergenti e sanificanti autorizzati
-                </p>
+                <div class="flex items-center gap-4 mt-2">
+                    <p class="text-cyan-100 text-sm font-medium ml-1">
+                        Elenco prodotti detergenti e sanificanti autorizzati
+                    </p>
+                    <button (click)="showStandardInfo.set(true)" 
+                            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white text-white hover:text-teal-700 transition-all text-[10px] font-black border border-white/30 shadow-md group">
+                        <i class="fa-solid fa-circle-info text-sm group-hover:scale-110 transition-transform"></i>
+                        <span>INFO PROTOCOLLO</span>
+                    </button>
+                </div>
             </div>
             
             <div class="relative z-10 flex flex-col gap-2">
@@ -106,16 +113,124 @@ interface CheckItem {
                 </p>
             </div>
         }
+
+        <!-- Informational Modal (Standard HACCP Pro) -->
+        @if (showStandardInfo()) {
+            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showStandardInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                    <!-- Header -->
+                    <div class="p-8 bg-gradient-to-br from-teal-700 to-teal-900 text-white relative flex-shrink-0">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
+                            <i class="fa-solid fa-flask-vial text-8xl"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <h3 class="text-2xl font-black mb-1">Sanificazione</h3>
+                            <p class="text-teal-200 text-[10px] font-black uppercase tracking-[0.2em]">Standard HACCP Pro</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                        <!-- Sezione Pulizia -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-broom text-xs"></i> 01. Cos'è la Pulizia
+                            </h4>
+                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100">
+                                <p class="text-sm font-bold text-slate-700 leading-relaxed italic">
+                                    "La pulizia consiste nell'eliminare lo sporco mediante utensili specifici o sistemi automatici."
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Detergenti -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-soap text-xs"></i> 02. Azione Detergenti
+                            </h4>
+                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                                    Sostanze e miscele atte a rimuovere sporco e grasso da tutte le superfici, attrezzature e utensili.
+                                </p>
+                                <div class="mt-4 p-3 bg-white rounded-xl border border-teal-100 flex gap-3 items-start shadow-sm">
+                                    <i class="fa-solid fa-vial text-teal-500 text-sm mt-0.5"></i>
+                                    <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
+                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Disinfettante -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-virus-slash text-xs"></i> 03. Azione Disinfettante
+                            </h4>
+                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium mb-3">
+                                    I disinfettanti mirano alla eliminazione dei microorganismi patogeni ed alla riduzione della carica microbica totale (batteri, muffe, lieviti, virus).
+                                </p>
+                                <div class="p-3 bg-white rounded-xl border border-teal-100 space-y-2 shadow-sm">
+                                    <div class="flex gap-3 items-center">
+                                        <i class="fa-solid fa-shield-virus text-teal-500 text-xs"></i>
+                                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Meccanismi d'azione:</p>
+                                    </div>
+                                    <ul class="text-[10px] text-slate-600 font-medium space-y-1 ml-6 list-disc">
+                                        <li>Denaturazione delle proteine (es. Alcool)</li>
+                                        <li>Azione ossidante (es. Cloro / Ipoclorito)</li>
+                                        <li>Disattivazione enzimatica e strutturale</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Sanificazione -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-sparkles text-xs"></i> 04. Azione Sanificante
+                            </h4>
+                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                                    La sanificazione è un <strong>intervento globale</strong> che comprende sia la pulizia meccanica/chimica che la successiva disinfezione.
+                                </p>
+                                <div class="mt-4 p-4 bg-teal-600 text-white rounded-2xl shadow-lg border border-teal-400 flex gap-4 items-center">
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                                        <i class="fa-solid fa-certificate"></i>
+                                    </div>
+                                    <p class="text-[11px] font-bold leading-tight uppercase tracking-tight">
+                                        Risultato: Ambiente visivamente pulito e carica microbica entro i limiti di sicurezza.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+                        <button (click)="showStandardInfo.set(false)"
+                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
+                            HO PRESO VISIONE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
   `,
     styles: [`
     .animate-fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   `]
 })
 export class CleaningProductsViewComponent {
     state = inject(AppStateService);
     moduleId = 'products-cleaning';
+
+    showStandardInfo = signal(false);
 
     checks = signal<CheckItem[]>([
         { id: 'detergent', label: 'DETERGENTE SGRASSANTE SUPERFICI', checked: false },

@@ -381,25 +381,25 @@ export class PostOperationalChecklistComponent {
     toast = inject(ToastService);
 
     readonly stepDefinitions = [
-        { id: 'pulizia', label: 'Pulizia', icon: 'fa-broom' },
-        { id: 'detersione', label: 'Detersione', icon: 'fa-pump-soap' },
-        { id: 'risciaquo1', label: 'Risciacquo', icon: 'fa-droplet' },
-        { id: 'disinfezione', label: 'Disinfezione', icon: 'fa-spray-can' },
-        { id: 'risciaquo2', label: 'Risciacquo finale', icon: 'fa-water' }
+        { id: 'ispezione', label: 'Ispezione visiva', icon: 'fa-eye' },
+        { id: 'integrita', label: 'Integrità attrezzature', icon: 'fa-screwdriver-wrench' },
+        { id: 'pulizia', label: 'Assenza di sporco', icon: 'fa-broom' },
+        { id: 'materiali', label: 'Disponibilità prodotti (alimenti e non)', icon: 'fa-box' }
     ];
 
     staticAreas: AreaChecklist[] = [
-        { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps(), expanded: true },
-        { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps(), expanded: false },
-        { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps(), expanded: false },
-        { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: this.getInitialSteps(), expanded: false },
-        { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: this.getInitialSteps(), expanded: false },
-        { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: this.getInitialSteps(), expanded: false },
-        { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps(), expanded: false },
-        { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps(), expanded: false },
-        { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps(), expanded: false },
-        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps(), expanded: false },
-        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: this.getInitialSteps(), expanded: false },
+        { id: 'igiene-personale', label: 'Igiene Personale', icon: 'fa-hands-bubbles', steps: [], expanded: false },
+        { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: [], expanded: true },
+        { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: [], expanded: false },
+        { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: [], expanded: false },
+        { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: [], expanded: false },
+        { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: [], expanded: false },
+        { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: [], expanded: false },
+        { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: [], expanded: false },
+        { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: [], expanded: false },
+        { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: [], expanded: false },
+        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: [], expanded: false },
+        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: [], expanded: false },
     ];
 
     areas = signal<AreaChecklist[]>([]);
@@ -407,13 +407,48 @@ export class PostOperationalChecklistComponent {
     isSubmitted = signal(false);
     currentRecordId = signal<string | null>(null);
 
-    getInitialSteps(): StepStatus[] {
-        return this.stepDefinitions.map(def => ({
-            id: def.id,
-            label: def.label,
-            icon: def.icon,
-            status: 'pending'
-        }));
+    getInitialSteps(areaId: string): StepStatus[] {
+        return this.stepDefinitions
+            .filter(def => {
+                if (areaId === 'area-lavaggio' && def.id === 'integrita') return false;
+                if ((areaId === 'deposito' || areaId === 'spogliatoio' || areaId === 'pavimenti') && def.id === 'materiali') return false;
+                if (areaId === 'pareti' && (def.id === 'integrita' || def.id === 'pulizia' || def.id === 'materiali')) return false;
+                if (areaId === 'soffitto' && (def.id === 'integrita' || def.id === 'materiali')) return false;
+                if (areaId === 'infissi' && (def.id === 'integrita' || def.id === 'materiali')) return false;
+                if (areaId === 'reti-antiintrusione' && def.id !== 'ispezione') return false;
+                return true;
+            })
+            .map(def => {
+                let label = def.label;
+                if (areaId === 'area-lavaggio' && def.id === 'materiali') {
+                    label = 'Disponibilità prodotti di pulizia e sanificazione';
+                }
+                if ((areaId === 'deposito' || areaId === 'spogliatoio') && def.id === 'integrita') {
+                    label = 'Integrità materiali';
+                }
+                if (areaId === 'antibagno-bagno-personale' || areaId === 'bagno-clienti') {
+                    if (def.id === 'ispezione') label = 'Ispezione lavabo, tazza, rubinetteria';
+                    if (def.id === 'materiali') label = 'Disponibilità prodotti di pulizia e sanificazione e presenza di acqua calda';
+                }
+                if (areaId === 'pavimenti') {
+                    if (def.id === 'ispezione') label = 'ispezione integrità della pavimentazione';
+                    if (def.id === 'pulizia') label = 'assenza di trasporto';
+                }
+                if (areaId === 'pareti' && def.id === 'ispezione') {
+                    label = 'Ispezione integrità delle pareti';
+                }
+                if (areaId === 'soffitto') {
+                    if (def.id === 'ispezione') label = 'ispezione integrità soffitto';
+                    if (def.id === 'pulizia') label = 'assenza di ragnatele';
+                }
+                if (areaId === 'infissi' && def.id === 'ispezione') {
+                    label = 'ispezione pulizia';
+                }
+                if (areaId === 'reti-antiintrusione' && def.id === 'ispezione') {
+                    label = 'verifica assenza di polvere e sporco';
+                }
+                return { ...def, label, status: 'pending' as const };
+            });
     }
 
     constructor() {
@@ -436,33 +471,50 @@ export class PostOperationalChecklistComponent {
             r.userId === this.state.currentUser()?.id
         );
 
+        // Initialize static areas with correct steps
+        const currentAreas = this.staticAreas.map(a => ({
+            ...a,
+            steps: this.getInitialSteps(a.id)
+        }));
+
+        const savedData = this.state.getRecord('post-op-checklist');
+
         if (historyRecord) {
-            this.areas.set(JSON.parse(JSON.stringify(historyRecord.data.areas)));
+            const relabeledAreas = historyRecord.data.areas.map((area: any) => {
+                const currentStepsDef = this.getInitialSteps(area.id);
+                const updatedSteps = area.steps.map((step: any) => {
+                    const def = currentStepsDef.find(d => d.id === step.id);
+                    return { ...step, label: def?.label || step.label };
+                });
+                const currentIds = new Set(currentStepsDef.map(d => d.id));
+                const filtered = updatedSteps.filter((s: any) => currentIds.has(s.id));
+                const existingIds = new Set(filtered.map((s: any) => s.id));
+                const missing = currentStepsDef.filter(d => !existingIds.has(d.id));
+                return { ...area, steps: [...filtered, ...missing] };
+            });
+
+            this.areas.set(relabeledAreas);
             this.currentRecordId.set(historyRecord.id);
             this.isSubmitted.set(true);
             return;
         }
 
-        // 2. Otherwise check for a draft (autosave)
-        const savedData = this.state.getRecord('post-op-checklist');
-
-        // Prepare current area list (Static + Equipment Census)
-        const equipment = this.state.selectedEquipment();
-        const equipmentAreas: AreaChecklist[] = equipment.map(eq => ({
-            id: `eq-${eq.id}`,
-            label: `Lavaggio: ${eq.name}`,
-            icon: 'fa-soap',
-            steps: this.getInitialSteps(),
-            expanded: false
-        }));
-
-        const currentAreas = [...this.staticAreas, ...equipmentAreas];
-
         if (savedData && savedData.areas) {
-            // Merge saved steps with current structure (in case equipment changed)
+            // Merge saved steps with current structure
             const merged = currentAreas.map(a => {
                 const saved = savedData.areas.find((sa: any) => sa.id === a.id);
-                return saved ? { ...a, steps: saved.steps, expanded: saved.expanded } : a;
+                if (!saved) return a;
+
+                // Re-apply labels even to draft data
+                const currentStepsDef = this.getInitialSteps(a.id);
+                const updatedSteps = saved.steps.map((step: any) => {
+                    const def = currentStepsDef.find(d => d.id === step.id);
+                    return { ...step, label: def?.label || step.label };
+                });
+                const currentIds = new Set(currentStepsDef.map(d => d.id));
+                const filtered = updatedSteps.filter((s: any) => currentIds.has(s.id));
+
+                return { ...a, steps: filtered, expanded: saved.expanded };
             });
             this.areas.set(merged);
             this.isSubmitted.set(false);
@@ -635,7 +687,7 @@ export class PostOperationalChecklistComponent {
         this.isSubmitted.set(false);
         this.areas.update(areas => areas.map(a => ({
             ...a,
-            steps: this.getInitialSteps(),
+            steps: this.getInitialSteps(a.id),
             expanded: a.id === 'cucina-sala'
         })));
     }

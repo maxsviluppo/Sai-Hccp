@@ -335,9 +335,8 @@ export class OperativeChecklistComponent {
    group1Items = computed(() => {
       const s = this.statusMap();
       return [
-         { id: 'op-1', label: 'Aspetto imballi e merce', icon: 'fa-box', status: s['op-1']?.status || 'pending', note: s['op-1']?.note },
-         { id: 'op-2', label: 'Catena del freddo temp. +4°C; +8°C; ≤ -18°C', icon: 'fa-temperature-low', status: s['op-2']?.status || 'pending', note: s['op-2']?.note },
-         { id: 'op-3', label: 'Alimenti secchi temp ambiente', icon: 'fa-box-open', status: s['op-3']?.status || 'pending', note: s['op-3']?.note }
+         { id: 'op-1', label: 'Ricezione merci, verificare aspetto imballi che siano privi di polvere e di ammaccature', icon: 'fa-box', status: s['op-1']?.status || 'pending', note: s['op-1']?.note },
+         { id: 'op-2', label: 'Verifica il rispetto della catena del freddo dei prodotti in ricezione: temperatura da +4° a +8°C. Per i prodotti congelati ≤ -18°C. La catena del caldo deve avere la temperatura ≥ 65°C', icon: 'fa-temperature-low', status: s['op-2']?.status || 'pending', note: s['op-2']?.note }
       ];
    });
 

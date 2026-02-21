@@ -425,6 +425,49 @@ interface AreaChecklist {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Sezione Disinfettante (NEW) -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-virus-slash text-xs"></i> 03. Azione Disinfettante
+                            </h4>
+                            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium mb-3">
+                                    I disinfettanti mirano alla eliminazione dei microorganismi patogeni ed alla riduzione della carica microbica totale (batteri, muffe, lieviti, virus).
+                                </p>
+                                <div class="p-3 bg-white rounded-xl border border-indigo-100 space-y-2 shadow-sm">
+                                    <div class="flex gap-3 items-center">
+                                        <i class="fa-solid fa-shield-virus text-indigo-500 text-xs"></i>
+                                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Meccanismi d'azione:</p>
+                                    </div>
+                                    <ul class="text-[10px] text-slate-600 font-medium space-y-1 ml-6 list-disc">
+                                        <li>Denaturazione delle proteine (es. Alcool)</li>
+                                        <li>Azione ossidante (es. Cloro / Ipoclorito)</li>
+                                        <li>Disattivazione enzimatica e strutturale</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Sanificazione (NEW) -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-sparkles text-xs"></i> 04. Azione Sanificante
+                            </h4>
+                            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                                    La sanificazione è un <strong>intervento globale</strong> che comprende sia la pulizia meccanica/chimica che la successiva disinfezione.
+                                </p>
+                                <div class="mt-4 p-4 bg-indigo-600 text-white rounded-2xl shadow-lg border border-indigo-400 flex gap-4 items-center">
+                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                                        <i class="fa-solid fa-certificate"></i>
+                                    </div>
+                                    <p class="text-[11px] font-bold leading-tight uppercase tracking-tight">
+                                        Risultato: Ambiente visivamente pulito e carica microbica entro i limiti di sicurezza.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
@@ -588,28 +631,79 @@ export class PreOperationalChecklistComponent {
     stepDefinitions = [
         { id: 'ispezione', label: 'Ispezione visiva', icon: 'fa-eye' },
         { id: 'integrita', label: 'Integrità attrezzature', icon: 'fa-screwdriver-wrench' },
-        { id: 'pulizia', label: 'Assenza di residui', icon: 'fa-broom' },
-        { id: 'materiali', label: 'Disponibilità materiali', icon: 'fa-box' },
-        { id: 'funzionalita', label: 'Funzionalità scarichi/luci', icon: 'fa-lightbulb' }
+        { id: 'pulizia', label: 'Assenza di sporco', icon: 'fa-broom' },
+        { id: 'materiali', label: 'Disponibilità prodotti (alimenti e non)', icon: 'fa-box' }
     ];
 
     areas = signal<AreaChecklist[]>([
-        { id: 'igiene-personale', label: 'Igiene Personale', icon: 'fa-hands-bubbles', steps: this.getInitialSteps(), expanded: false },
-        { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps(), expanded: false },
-        { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps(), expanded: false },
-        { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps(), expanded: false },
-        { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: this.getInitialSteps(), expanded: false },
-        { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: this.getInitialSteps(), expanded: false },
-        { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: this.getInitialSteps(), expanded: false },
-        { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps(), expanded: false },
-        { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps(), expanded: false },
-        { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps(), expanded: false },
-        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps(), expanded: false },
-        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: this.getInitialSteps(), expanded: false },
+        { id: 'igiene-personale', label: 'Igiene Personale', icon: 'fa-hands-bubbles', steps: this.getInitialSteps('igiene-personale'), expanded: false },
+        { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps('cucina-sala'), expanded: false },
+        { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps('area-lavaggio'), expanded: false },
+        { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps('deposito'), expanded: false },
+        { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: this.getInitialSteps('spogliatoio'), expanded: false },
+        { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: this.getInitialSteps('antibagno-bagno-personale'), expanded: false },
+        { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: this.getInitialSteps('bagno-clienti'), expanded: false },
+        { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps('pavimenti'), expanded: false },
+        { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps('pareti'), expanded: false },
+        { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps('soffitto'), expanded: false },
+        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps('infissi'), expanded: false },
+        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: this.getInitialSteps('reti-antiintrusione'), expanded: false },
     ]);
 
-    getInitialSteps() {
-        return this.stepDefinitions.map(def => ({ ...def, status: 'pending' as const }));
+    getInitialSteps(areaId: string) {
+        return this.stepDefinitions
+            .filter(def => {
+                // Area Lavaggio: elimina Integrità attrezzature
+                if (areaId === 'area-lavaggio' && def.id === 'integrita') return false;
+                // Deposito, Spogliatoio e Pavimenti: elimina Disponibilità prodotti
+                if ((areaId === 'deposito' || areaId === 'spogliatoio' || areaId === 'pavimenti') && def.id === 'materiali') return false;
+                // Pareti: elimina integrità, pulizia e materiali
+                if (areaId === 'pareti' && (def.id === 'integrita' || def.id === 'pulizia' || def.id === 'materiali')) return false;
+                // Soffitto and Infissi: elimina integrità e materiali
+                if ((areaId === 'soffitto' || areaId === 'infissi') && (def.id === 'integrita' || def.id === 'materiali')) return false;
+                // Reti Anti-intrusione: elimina tutto tranne ispezione
+                if (areaId === 'reti-antiintrusione' && def.id !== 'ispezione') return false;
+                return true;
+            })
+            .map(def => {
+                let label = def.label;
+                // Area Lavaggio: sostituisci Disponibilità prodotti
+                if (areaId === 'area-lavaggio' && def.id === 'materiali') {
+                    label = 'Disponibilità prodotti di pulizia e sanificazione';
+                }
+                // Deposito e Spogliatoio: integrità attrezzature con integrità materiali
+                if ((areaId === 'deposito' || areaId === 'spogliatoio') && def.id === 'integrita') {
+                    label = 'Integrità materiali';
+                }
+                // Antibagno/Bagno Personale e Bagno Clienti: ispezione e disponibilità prodotti
+                if (areaId === 'antibagno-bagno-personale' || areaId === 'bagno-clienti') {
+                    if (def.id === 'ispezione') label = 'Ispezione lavabo, tazza, rubinetteria';
+                    if (def.id === 'materiali') label = 'Disponibilità prodotti di pulizia e sanificazione e presenza di acqua calda';
+                }
+                // Pavimenti: ispezione e pulizia
+                if (areaId === 'pavimenti') {
+                    if (def.id === 'ispezione') label = 'ispezione integrità della pavimentazione';
+                    if (def.id === 'pulizia') label = 'assenza di trasporto';
+                }
+                // Pareti: ispezione
+                if (areaId === 'pareti' && def.id === 'ispezione') {
+                    label = 'Ispezione integrità delle pareti';
+                }
+                // Soffitto: ispezione e pulizia
+                if (areaId === 'soffitto') {
+                    if (def.id === 'ispezione') label = 'ispezione integrità soffitto';
+                    if (def.id === 'pulizia') label = 'assenza di ragnatele';
+                }
+                // Infissi: ispezione
+                if (areaId === 'infissi' && def.id === 'ispezione') {
+                    label = 'ispezione pulizia';
+                }
+                // Reti Anti-intrusione: ispezione
+                if (areaId === 'reti-antiintrusione' && def.id === 'ispezione') {
+                    label = 'verifica assenza di polvere e sporco';
+                }
+                return { ...def, label, status: 'pending' as const };
+            });
     }
 
     constructor() {
@@ -643,7 +737,26 @@ export class PreOperationalChecklistComponent {
         const historyRecord = this.state.getRecord('pre-op-checklist');
 
         if (historyRecord && historyRecord.areas) {
-            this.areas.set(JSON.parse(JSON.stringify(historyRecord.areas)));
+            // Re-apply updated labels to the saved data
+            const relabeledAreas = historyRecord.areas.map((area: any) => {
+                const updatedSteps = area.steps.map((step: any) => {
+                    // Find the current definition label for this area
+                    const currentDefinition = this.getInitialSteps(area.id).find(d => d.id === step.id);
+                    return { ...step, label: currentDefinition?.label || step.label };
+                });
+
+                // Also handle cases where steps might have been removed or added (filter by current definition)
+                const currentStepIds = new Set(this.getInitialSteps(area.id).map(d => d.id));
+                const filteredSteps = updatedSteps.filter((s: any) => currentStepIds.has(s.id));
+
+                // Add missing steps if any (though unlikely if definitions are stable)
+                const existingIds = new Set(filteredSteps.map((s: any) => s.id));
+                const missingSteps = this.getInitialSteps(area.id).filter(d => !existingIds.has(d.id));
+
+                return { ...area, steps: [...filteredSteps, ...missingSteps] };
+            });
+
+            this.areas.set(relabeledAreas);
             this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.globalItems || [])));
             this.isSubmitted.set(true);
         } else {
@@ -738,7 +851,7 @@ export class PreOperationalChecklistComponent {
     resetForm() {
         this.areas.update(areas => areas.map(a => ({
             ...a,
-            steps: this.getInitialSteps(),
+            steps: this.getInitialSteps(a.id),
             expanded: a.id === 'cucina-sala'
         })));
         this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' })));
