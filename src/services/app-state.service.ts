@@ -394,7 +394,7 @@ export class AppStateService {
     { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
 
     // --- PRODUZIONE E RINTRACCIABILITA ---
-    { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-boxes-packing', category: 'production' },
+
 
     // --- CONSUMABILI E MESSAGGI ---
 

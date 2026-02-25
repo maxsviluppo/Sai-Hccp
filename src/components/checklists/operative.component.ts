@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../../services/app-state.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -9,12 +10,14 @@ interface ChecklistItem {
    icon: string;
    status: 'pending' | 'ok' | 'issue';
    note?: string;
+   temperature?: string;
+   hasTemperature?: boolean;
 }
 
 @Component({
    selector: 'app-operative-checklist',
    standalone: true,
-   imports: [CommonModule],
+   imports: [CommonModule, FormsModule],
    template: `
     <div class="pb-20 animate-fade-in relative max-w-2xl mx-auto">
 
@@ -29,6 +32,26 @@ interface ChecklistItem {
              </div>
           </div>
 
+          <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+             <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-rose-800">Informativa Sostanze Allergeniche (Reg. UE 1169/2011)</h3>
+             <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[9px]">
+                <div>1. Cereali contenenti glutine</div>
+                <div>2. Crostacei e derivati</div>
+                <div>3. Uova e derivati</div>
+                <div>4. Pesce e derivati</div>
+                <div>5. Arachidi e derivati</div>
+                <div>6. Soia e derivati</div>
+                <div>7. Latte e derivati</div>
+                <div>8. Frutta a guscio</div>
+                <div>9. Sedano e derivati</div>
+                <div>10. Senape e derivati</div>
+                <div>11. Semi di sesamo e derivati</div>
+                <div>12. Anidride solforosa e solfiti</div>
+                <div>13. Lupini e derivati</div>
+                <div>14. Molluschi e derivati</div>
+             </div>
+          </div>
+
           <table class="w-full text-left text-sm border-collapse">
              <thead>
                 <tr class="border-b border-slate-400 bg-slate-50">
@@ -40,7 +63,12 @@ interface ChecklistItem {
              <tbody>
                 @for (item of items(); track item.id) {
                     <tr class="border-b border-slate-100">
-                       <td class="py-3 px-3 font-medium">{{ item.label }}</td>
+                       <td class="py-3 px-3">
+                          <div class="font-medium">{{ item.label }}</div>
+                          @if (item.temperature) {
+                             <div class="text-[10px] text-slate-500 font-bold mt-0.5">Temperatura: {{ item.temperature }}°C</div>
+                          }
+                       </td>
                        <td class="py-3 px-3 font-bold uppercase">
                           {{ item.status === 'ok' ? 'Conforme' : (item.status === 'issue' ? 'Non Conforme' : 'N.E.') }}
                        </td>
@@ -62,10 +90,16 @@ interface ChecklistItem {
                <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
                  <i class="fa-solid fa-briefcase text-white text-2xl"></i>
                </div>
-               <div>
-                 <h2 class="text-3xl font-black text-white">Fase Operativa</h2>
-                 <p class="text-indigo-100 text-sm font-medium mt-1">Gestione Ricezione e Stoccaggio</p>
-               </div>
+                <div>
+                  <h2 class="text-3xl font-black text-white">Fase Operativa</h2>
+                  <div class="flex items-center gap-3 mt-1">
+                    <p class="text-indigo-100 text-sm font-medium">Gestione Ricezione e Stoccaggio</p>
+                    <button (click)="state.setModule('production-log')" 
+                            class="px-3 py-1 bg-white/20 hover:bg-white/40 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-white/30 ml-2">
+                        <i class="fa-solid fa-boxes-packing"></i> Rintracciabilità
+                    </button>
+                  </div>
+                </div>
              </div>
 
              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
@@ -92,7 +126,81 @@ interface ChecklistItem {
              </div>
            </div>
          </div>
-       </div>
+        </div>
+
+        <!-- Allergens Informative Banner -->
+        <div class="print:hidden bg-rose-50 border-2 border-rose-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-rose-900/5 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                <i class="fa-solid fa-triangle-exclamation text-7xl text-rose-900"></i>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-inner border border-rose-200/50">
+                <i class="fa-solid fa-circle-info text-2xl"></i>
+            </div>
+            <div class="space-y-3 relative z-10 w-full">
+                <div class="flex items-center gap-3">
+                   <h3 class="text-sm font-black text-rose-900 uppercase tracking-widest">Elenco delle Sostanze Allergeniche</h3>
+                   <span class="bg-rose-200/50 text-rose-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Informativa Reg. UE 1169/2011</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Cereali contenenti glutine (grano, segale, orzo, avena, farro, kamut)</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Crostacei e prodotti a base di crostacei</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Uova e prodotti a base di uova</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">4</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Pesce e prodotti a base di pesce</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">5</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Arachidi e prodotti a base di arachidi</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">6</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Soia e prodotti a base di soia</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">7</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Latte e prodotti a base di latte</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">8</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Frutta a guscio (mandorle, nocciole, noci, acagiù, pecan, Brasile, pistacchi)</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">9</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Sedano e prodotti a base di sedano</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">10</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Senape e prodotti a base di senape</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">11</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Semi di sesamo e prodotti a base di sesamo</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">12</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Anidride solforosa e solfiti (> 10 mg/kg)</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">13</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Lupini e prodotti a base di lupini</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">14</span>
+                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Molluschi e prodotti a base di molluschi</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Date Selector & Quick Actions (Hidden on Print) -->
         <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-2xl relative z-20 -mt-4">
@@ -170,6 +278,22 @@ interface ChecklistItem {
                         <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight">
                             {{ item.label }}
                         </h4>
+                        @if (item.hasTemperature && !isSubmitted()) {
+                           <div class="mt-2 flex items-center gap-2">
+                             <div class="relative flex-1 max-w-[120px]">
+                                <input type="number" 
+                                       [ngModel]="statusMap()[item.id]?.temperature"
+                                       (ngModelChange)="updateTemperature(item.id, $event)"
+                                       placeholder="Temp."
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                <span class="absolute right-2 top-1.5 text-[10px] font-bold text-slate-400">°C</span>
+                             </div>
+                           </div>
+                        } @else if (item.hasTemperature && isSubmitted() && statusMap()[item.id]?.temperature) {
+                           <p class="text-[11px] font-bold text-indigo-600 mt-1 flex items-center gap-1">
+                              <i class="fa-solid fa-temperature-half"></i> Temp: {{ statusMap()[item.id]?.temperature }}°C
+                           </p>
+                        }
                         @if (item.status === 'issue' && item.note) {
                           <p class="text-[11px] text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded mt-1.5 inline-block">Nota: {{ item.note }}</p>
                         } @else {
@@ -310,7 +434,7 @@ export class OperativeChecklistComponent {
    isSubmitted = signal(false);
    currentRecordId = signal<string | undefined>(undefined);
 
-   statusMap = signal<Record<string, { status: ChecklistItem['status'], note?: string }>>({});
+   statusMap = signal<Record<string, { status: ChecklistItem['status'], note?: string, temperature?: string }>>({});
 
    frigoCount = signal(0);
    congelatoreCount = signal(0);
@@ -348,20 +472,28 @@ export class OperativeChecklistComponent {
 
       // For each equipment in census
       census.forEach(eq => {
-         const icon = eq.name.toLowerCase().includes('congelatore') ? 'fa-icicles' :
-            (eq.name.toLowerCase().includes('pozzetto') ? 'fa-box-archive' : 'fa-snowflake');
+         const nameLower = eq.name.toLowerCase();
+         const isColdStorage = nameLower.includes('frigo') ||
+            nameLower.includes('congelatore') ||
+            nameLower.includes('cella') ||
+            nameLower.includes('pozzetto');
+
+         const icon = nameLower.includes('congelatore') ? 'fa-icicles' :
+            (nameLower.includes('pozzetto') ? 'fa-box-archive' : 'fa-snowflake');
+
          list.push({
             id: `eq-${eq.id}`,
             label: `${eq.name} (${eq.area})`,
             icon: icon,
             status: s[`eq-${eq.id}`]?.status || 'pending',
-            note: s[`eq-${eq.id}`]?.note
+            note: s[`eq-${eq.id}`]?.note,
+            temperature: s[`eq-${eq.id}`]?.temperature,
+            hasTemperature: isColdStorage
          });
       });
 
       // Final Required Items
       list.push({ id: 'op-5', label: 'Sostanze allergene', icon: 'fa-triangle-exclamation', status: s['op-5']?.status || 'pending', note: s['op-5']?.note });
-      list.push({ id: 'op-6', label: 'Rintracciabilità ed etichette', icon: 'fa-file-invoice-dollar', status: s['op-6']?.status || 'pending', note: s['op-6']?.note });
       list.push({ id: 'op-7', label: 'Libro ingredienti', icon: 'fa-book-open', status: s['op-7']?.status || 'pending', note: s['op-7']?.note });
 
       return list;
@@ -380,14 +512,21 @@ export class OperativeChecklistComponent {
    setStatus(id: string, status: ChecklistItem['status']) {
       this.statusMap.update(map => ({
          ...map,
-         [id]: { status, note: status === 'ok' ? undefined : map[id]?.note }
+         [id]: { ...map[id], status, note: status === 'ok' ? undefined : map[id]?.note }
+      }));
+   }
+
+   updateTemperature(id: string, temperature: string) {
+      this.statusMap.update(map => ({
+         ...map,
+         [id]: { ...map[id], temperature, status: map[id]?.status || 'ok' }
       }));
    }
 
    setAllOk() {
       const newMap: Record<string, any> = {};
       this.items().forEach(item => {
-         newMap[item.id] = { status: 'ok' };
+         newMap[item.id] = { ...this.statusMap()[item.id], status: 'ok' };
       });
       this.statusMap.set(newMap);
       this.toast.info('HACCP OK', 'Tutte le voci impostate come conformi.');
@@ -408,7 +547,7 @@ export class OperativeChecklistComponent {
          const id = this.currentItem()!.id;
          this.statusMap.update(map => ({
             ...map,
-            [id]: { status: 'issue', note: note || 'Anomalia riscontrata' }
+            [id]: { ...map[id], status: 'issue', note: note || 'Anomalia riscontrata' }
          }));
       }
       this.closeModal();
@@ -423,7 +562,10 @@ export class OperativeChecklistComponent {
          moduleId: 'operative-checklist',
          date: this.selectedDate(),
          data: {
-            items: this.items(),
+            items: this.items().map(i => ({
+               ...i,
+               temperature: this.statusMap()[i.id]?.temperature
+            })),
             counts: {
                frigo: this.frigoCount(),
                congelatore: this.congelatoreCount(),
@@ -471,7 +613,7 @@ export class OperativeChecklistComponent {
 
       const map: Record<string, any> = {};
       data.items?.forEach((item: any) => {
-         map[item.id] = { status: item.status, note: item.note };
+         map[item.id] = { status: item.status, note: item.note, temperature: item.temperature };
       });
       this.statusMap.set(map);
       this.isSubmitted.set(true);

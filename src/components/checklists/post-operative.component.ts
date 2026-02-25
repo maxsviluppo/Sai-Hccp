@@ -182,7 +182,7 @@ interface AreaChecklist {
                                         {{ getAreaStatusLabel(area.id) }}
                                     </span>
                                     <span class="text-[10px] text-slate-400 font-medium">
-                                        {{ getCompletedStepsInArea(area.id) }} di 5 completati
+                                        {{ getCompletedStepsInArea(area.id) }} di {{ area.steps.length }} completati
                                     </span>
                                 </div>
                             </div>
@@ -388,7 +388,7 @@ export class PostOperationalChecklistComponent {
     ];
 
     staticAreas: AreaChecklist[] = [
-        { id: 'igiene-personale', label: 'Igiene Personale', icon: 'fa-hands-bubbles', steps: [], expanded: false },
+
         { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: [], expanded: true },
         { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: [], expanded: false },
         { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: [], expanded: false },
@@ -416,6 +416,8 @@ export class PostOperationalChecklistComponent {
                 if (areaId === 'soffitto' && (def.id === 'integrita' || def.id === 'materiali')) return false;
                 if (areaId === 'infissi' && (def.id === 'integrita' || def.id === 'materiali')) return false;
                 if (areaId === 'reti-antiintrusione' && def.id !== 'ispezione') return false;
+                // For equipment added from census: only inspect integrity and cleanliness
+                if (areaId.startsWith('eq-') && (def.id === 'materiali')) return false;
                 return true;
             })
             .map(def => {
@@ -447,16 +449,22 @@ export class PostOperationalChecklistComponent {
                 if (areaId === 'reti-antiintrusione' && def.id === 'ispezione') {
                     label = 'verifica assenza di polvere e sporco';
                 }
+                if (areaId.startsWith('eq-')) {
+                    if (def.id === 'ispezione') label = `Ispezione visiva attrezzatura`;
+                    if (def.id === 'pulizia') label = `Pulizia e sanificazione macchinario`;
+                    if (def.id === 'integrita') label = `Verifica integrità e funzionamento`;
+                }
                 return { ...def, label, status: 'pending' as const };
             });
     }
 
     constructor() {
         effect(() => {
-            // Re-load data when global filters change
+            // Re-load data when global filters change or equipment changes
             this.state.filterDate();
             this.state.filterCollaboratorId();
             this.state.currentUser();
+            this.state.selectedEquipment();
             this.loadData();
         }, { allowSignalWrites: true });
     }
@@ -471,8 +479,19 @@ export class PostOperationalChecklistComponent {
             r.userId === this.state.currentUser()?.id
         );
 
-        // Initialize static areas with correct steps
-        const currentAreas = this.staticAreas.map(a => ({
+        // Census equipment to be added as areas
+        const census = this.state.selectedEquipment();
+        const equipmentAreas: AreaChecklist[] = census.map(eq => ({
+            id: `eq-${eq.id}`,
+            label: `${eq.name} (${eq.area})`,
+            icon: eq.name.toLowerCase().includes('congelatore') ? 'fa-icicles' :
+                (eq.name.toLowerCase().includes('pozzetto') ? 'fa-box-archive' : 'fa-snowflake'),
+            steps: [], // filled below
+            expanded: false
+        }));
+
+        // Initialize static + equipment areas with correct steps
+        const currentAreas = [...this.staticAreas, ...equipmentAreas].map(a => ({
             ...a,
             steps: this.getInitialSteps(a.id)
         }));
@@ -618,7 +637,7 @@ export class PostOperationalChecklistComponent {
     }
 
     totalStepsCount() {
-        return this.areas().length * this.stepDefinitions.length;
+        return this.areas().reduce((acc, area) => acc + area.steps.length, 0);
     }
 
     completedStepsCount() {
@@ -628,7 +647,8 @@ export class PostOperationalChecklistComponent {
     }
 
     progressPercentage() {
-        return (this.completedStepsCount() / this.totalStepsCount()) * 100;
+        const total = this.totalStepsCount();
+        return total > 0 ? (this.completedStepsCount() / total) * 100 : 0;
     }
 
     isAllCompleted() {

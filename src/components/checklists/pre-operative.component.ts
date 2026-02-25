@@ -27,6 +27,18 @@ interface AreaChecklist {
             </div>
         </div>
 
+        <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1">Norme di Igiene Comportamentale (Promemoria)</h3>
+            <ul class="text-[10px] grid grid-cols-2 gap-x-8 gap-y-1 list-none">
+                <li>• Abbigliamento sempre perfettamente pulito</li>
+                <li>• Scarpe diverse da quelle che si usano all'esterno</li>
+                <li>• Lavare frequentemente le mani con sapone germicida</li>
+                <li>• Indossare idoneo copricapo (Addetti lavorazione)</li>
+                <li>• Proteggere eventuali ferite in maniera appropriata</li>
+                <li>• Evitare di fumare e manipolare correttamente gli alimenti</li>
+            </ul>
+        </div>
+
         <table class="w-full text-left text-sm border-collapse">
             <thead>
                 <tr class="border-b border-slate-400">
@@ -107,6 +119,47 @@ interface AreaChecklist {
                                 {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Hygiene Behavioral Notes Banner -->
+        <div class="bg-amber-50 border-2 border-amber-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-amber-900/5 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                <i class="fa-solid fa-user-shield text-7xl text-amber-900"></i>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 shadow-inner border border-amber-200/50">
+                <i class="fa-solid fa-clipboard-check text-2xl"></i>
+            </div>
+            <div class="space-y-3 relative z-10">
+                <div class="flex items-center gap-3">
+                   <h3 class="text-sm font-black text-amber-900 uppercase tracking-widest">Norme di Igiene Comportamentale</h3>
+                   <span class="bg-amber-200/50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Promemoria Operativo</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
+                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Abbigliamento sempre perfettamente pulito</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
+                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Scarpe diverse da quelle che si usano all'esterno</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
+                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Lavare frequentemente le mani con sapone germicida</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
+                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Indossare idoneo copricapo (Addetti lavorazione)</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
+                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Proteggere eventuali ferite in maniera appropriata</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
+                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Evitare di fumare e manipolare correttamente gli alimenti</span>
                     </div>
                 </div>
             </div>
@@ -636,7 +689,7 @@ export class PreOperationalChecklistComponent {
     ];
 
     areas = signal<AreaChecklist[]>([
-        { id: 'igiene-personale', label: 'Igiene Personale', icon: 'fa-hands-bubbles', steps: this.getInitialSteps('igiene-personale'), expanded: false },
+
         { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps('cucina-sala'), expanded: false },
         { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps('area-lavaggio'), expanded: false },
         { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps('deposito'), expanded: false },
