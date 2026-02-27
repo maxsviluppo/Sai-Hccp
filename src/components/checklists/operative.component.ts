@@ -32,6 +32,17 @@ interface ChecklistItem {
              </div>
           </div>
 
+          <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+             <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-slate-800">Informativa Libro Ingredienti</h3>
+             <div class="space-y-1 text-[9px] font-bold text-slate-700">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> LIBRO INGREDIENTI:Denominazione alimenti</div>
+                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> ELENCO INGREDIENTI CON il numero di lotto</div>
+                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Data di preparazione E Scadenza</div>
+                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> PRESENTA DI ALLERGENI</div>
+                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Modalità di conservazione</div>
+             </div>
+          </div>
+
           <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
              <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-rose-800">Informativa Sostanze Allergeniche (Reg. UE 1169/2011)</h3>
              <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[9px]">
@@ -202,7 +213,44 @@ interface ChecklistItem {
             </div>
         </div>
 
-        <!-- Date Selector & Quick Actions (Hidden on Print) -->
+        <!-- Libro Ingredienti Informative Banner -->
+        <div class="print:hidden bg-blue-50 border-2 border-blue-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-blue-900/5 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                <i class="fa-solid fa-book-open text-7xl text-blue-900"></i>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-inner border border-blue-200/50">
+                <i class="fa-solid fa-circle-info text-2xl"></i>
+            </div>
+            <div class="space-y-3 relative z-10 w-full">
+                <div class="flex items-center gap-3">
+                   <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">Informativa Libro Ingredienti</h3>
+                   <span class="bg-blue-200/50 text-blue-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Requisiti Obbligatori</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
+                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">LIBRO INGREDIENTI:Denominazione alimenti</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
+                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">ELENCO INGREDIENTI CON il numero di lotto</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
+                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">Data di preparazione E Scadenza</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
+                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">PRESENTA DI ALLERGENI</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
+                        <span class="text-xs font-bold text-blue-800 leading-tight tracking-tight italic">Modalità di conservazione</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-2xl relative z-20 -mt-4">
            <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
@@ -478,8 +526,16 @@ export class OperativeChecklistComponent {
             nameLower.includes('cella') ||
             nameLower.includes('pozzetto');
 
-         const icon = nameLower.includes('congelatore') ? 'fa-icicles' :
-            (nameLower.includes('pozzetto') ? 'fa-box-archive' : 'fa-snowflake');
+         let icon = 'fa-microchip';
+         if (nameLower.includes('congelatore')) {
+            icon = 'fa-icicles';
+         } else if (nameLower.includes('pozzetto')) {
+            icon = 'fa-box-archive';
+         } else if (isColdStorage) {
+            icon = 'fa-snowflake';
+         } else if (nameLower.includes('piano cottura') || nameLower.includes('forno') || nameLower.includes('griglie')) {
+            icon = 'fa-fire';
+         }
 
          list.push({
             id: `eq-${eq.id}`,
@@ -494,7 +550,6 @@ export class OperativeChecklistComponent {
 
       // Final Required Items
       list.push({ id: 'op-5', label: 'Sostanze allergene', icon: 'fa-triangle-exclamation', status: s['op-5']?.status || 'pending', note: s['op-5']?.note });
-      list.push({ id: 'op-7', label: 'Libro ingredienti', icon: 'fa-book-open', status: s['op-7']?.status || 'pending', note: s['op-7']?.note });
 
       return list;
    });

@@ -28,7 +28,7 @@ interface AreaChecklist {
         </div>
 
         <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-            <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1">Norme di Igiene Comportamentale (Promemoria)</h3>
+            <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1">Igiene del personale (Promemoria)</h3>
             <ul class="text-[10px] grid grid-cols-2 gap-x-8 gap-y-1 list-none">
                 <li>• Abbigliamento sempre perfettamente pulito</li>
                 <li>• Scarpe diverse da quelle che si usano all'esterno</li>
@@ -133,7 +133,7 @@ interface AreaChecklist {
             </div>
             <div class="space-y-3 relative z-10">
                 <div class="flex items-center gap-3">
-                   <h3 class="text-sm font-black text-amber-900 uppercase tracking-widest">Norme di Igiene Comportamentale</h3>
+                   <h3 class="text-sm font-black text-amber-900 uppercase tracking-widest">Igiene del personale</h3>
                    <span class="bg-amber-200/50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Promemoria Operativo</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
