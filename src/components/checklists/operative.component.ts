@@ -34,13 +34,12 @@ interface ChecklistItem {
 
           <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
              <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-slate-800">Informativa Libro Ingredienti</h3>
-             <div class="space-y-1 text-[9px] font-bold text-slate-700">
-                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> LIBRO INGREDIENTI:Denominazione alimenti</div>
+              <div class="space-y-1 text-[9px] font-bold text-slate-700">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> LIBRO INGREDIENTI: Denominazione alimento/preparazione</div>
                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> ELENCO INGREDIENTI CON il numero di lotto</div>
                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Data di preparazione E Scadenza</div>
-                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> PRESENTA DI ALLERGENI</div>
                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Modalità di conservazione</div>
-             </div>
+              </div>
           </div>
 
           <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
@@ -62,6 +61,8 @@ interface ChecklistItem {
                 <div>14. Molluschi e derivati</div>
              </div>
           </div>
+
+
 
           <table class="w-full text-left text-sm border-collapse">
              <thead>
@@ -138,6 +139,8 @@ interface ChecklistItem {
            </div>
          </div>
         </div>
+
+
 
         <!-- Allergens Informative Banner -->
         <div class="print:hidden bg-rose-50 border-2 border-rose-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-rose-900/5 relative overflow-hidden group">
@@ -229,7 +232,7 @@ interface ChecklistItem {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
-                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">LIBRO INGREDIENTI:Denominazione alimenti</span>
+                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">LIBRO INGREDIENTI: Denominazione alimento/preparazione</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
@@ -238,10 +241,6 @@ interface ChecklistItem {
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
                         <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">Data di preparazione E Scadenza</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
-                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">PRESENTA DI ALLERGENI</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
@@ -548,9 +547,7 @@ export class OperativeChecklistComponent {
          });
       });
 
-      // Final Required Items
-      list.push({ id: 'op-5', label: 'Sostanze allergene', icon: 'fa-triangle-exclamation', status: s['op-5']?.status || 'pending', note: s['op-5']?.note });
-
+      // Final Required Items removed as per request
       return list;
    });
 

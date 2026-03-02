@@ -452,11 +452,11 @@ interface AreaChecklist {
                         <!-- Sezione Pulizia -->
                         <div class="space-y-3">
                             <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-broom text-xs"></i> 01. Cos'è la Pulizia
+                                <i class="fa-solid fa-broom text-xs"></i> 01. Azione Scopatura
                             </h4>
                             <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
                                 <p class="text-sm font-bold text-slate-700 leading-relaxed italic">
-                                    "La pulizia consiste nell'eliminare lo sporco mediante utensili specifici o sistemi automatici."
+                                    "Per una corretta scopatura utilizzare movimenti brevi, partendo dai bordi e angoli verso il centro, usare una scopa a setole morbide e un panno umido per evitare di sollevare il pulviscolo. Pulire periodicamente la scopa."
                                 </p>
                             </div>
                         </div>
@@ -473,7 +473,9 @@ interface AreaChecklist {
                                 <div class="mt-4 p-3 bg-white rounded-xl border border-indigo-100 flex gap-3 items-start shadow-sm">
                                     <i class="fa-solid fa-vial text-indigo-500 text-sm mt-0.5"></i>
                                     <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
-                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo.
+                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo. 
+                                        Per rimuovere lo sporco dalle superfici utilizzare prodotti anionici (leggere la composizione chimica) che hanno un elevato potere lavante e schiumogeno. 
+                                        Per ottenere un effetto disinfettante, utilizzare prodotti cationici. Per ottenere un effetto sgrassante utilizzare prodotti non ionici.
                                     </p>
                                 </div>
                             </div>

@@ -155,7 +155,9 @@ interface CheckItem {
                                 <div class="mt-4 p-3 bg-white rounded-xl border border-teal-100 flex gap-3 items-start shadow-sm">
                                     <i class="fa-solid fa-vial text-teal-500 text-sm mt-0.5"></i>
                                     <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
-                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo.
+                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo. 
+                                        Per rimuovere lo sporco dalle superfici utilizzare prodotti anionici (leggere la composizione chimica) che hanno un elevato potere lavante e schiumogeno. 
+                                        Per ottenere un effetto disinfettante, utilizzare prodotti cationici. Per ottenere un effetto sgrassante utilizzare prodotti non ionici.
                                     </p>
                                 </div>
                             </div>
