@@ -444,7 +444,7 @@ interface AreaChecklist {
                         </div>
                         <div class="relative z-10">
                             <h3 class="text-2xl font-black mb-1">Sanificazione</h3>
-                            <p class="text-indigo-200 text-[10px] font-black uppercase tracking-[0.2em]">Standard HACCP Pro</p>
+                            <p class="text-indigo-200 text-[11px] font-bold leading-tight italic max-w-[280px]">"La sanificazione è un intervento globale che comprende sia la pulizia meccanica/chimica che la successiva disinfezione."</p>
                         </div>
                     </div>
                     
@@ -500,26 +500,6 @@ interface AreaChecklist {
                                         <li>Azione ossidante (es. Cloro / Ipoclorito)</li>
                                         <li>Disattivazione enzimatica e strutturale</li>
                                     </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sezione Sanificazione (NEW) -->
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-sparkles text-xs"></i> 04. Azione Sanificante
-                            </h4>
-                            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
-                                    La sanificazione è un <strong>intervento globale</strong> che comprende sia la pulizia meccanica/chimica che la successiva disinfezione.
-                                </p>
-                                <div class="mt-4 p-4 bg-indigo-600 text-white rounded-2xl shadow-lg border border-indigo-400 flex gap-4 items-center">
-                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                                        <i class="fa-solid fa-certificate"></i>
-                                    </div>
-                                    <p class="text-[11px] font-bold leading-tight uppercase tracking-tight">
-                                        Risultato: Ambiente visivamente pulito e carica microbica entro i limiti di sicurezza.
-                                    </p>
                                 </div>
                             </div>
                         </div>

@@ -205,6 +205,7 @@ interface CheckItem {
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
                     <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">

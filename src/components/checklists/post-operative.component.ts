@@ -381,10 +381,9 @@ export class PostOperationalChecklistComponent {
     toast = inject(ToastService);
 
     readonly stepDefinitions = [
-        { id: 'ispezione', label: 'Ispezione visiva', icon: 'fa-eye' },
-        { id: 'integrita', label: 'Integrità attrezzature', icon: 'fa-screwdriver-wrench' },
-        { id: 'pulizia', label: 'Assenza di sporco', icon: 'fa-broom' },
-        { id: 'materiali', label: 'Disponibilità prodotti (alimenti e non)', icon: 'fa-box' }
+        { id: 'scopatura', label: 'Scopatura', icon: 'fa-broom' },
+        { id: 'detersione', label: 'Detersione', icon: 'fa-soap' },
+        { id: 'disinfezione', label: 'Disinfezione', icon: 'fa-virus-slash' }
     ];
 
     staticAreas: AreaChecklist[] = [
@@ -408,54 +407,21 @@ export class PostOperationalChecklistComponent {
     currentRecordId = signal<string | null>(null);
 
     getInitialSteps(areaId: string): StepStatus[] {
-        return this.stepDefinitions
-            .filter(def => {
-                if (areaId === 'area-lavaggio' && def.id === 'integrita') return false;
-                if ((areaId === 'deposito' || areaId === 'spogliatoio' || areaId === 'pavimenti') && def.id === 'materiali') return false;
-                if (areaId === 'pareti' && (def.id === 'integrita' || def.id === 'pulizia' || def.id === 'materiali')) return false;
-                if (areaId === 'soffitto' && (def.id === 'integrita' || def.id === 'materiali')) return false;
-                if (areaId === 'infissi' && (def.id === 'integrita' || def.id === 'materiali')) return false;
-                if (areaId === 'reti-antiintrusione' && def.id !== 'ispezione') return false;
-                // For equipment added from census: only inspect integrity and cleanliness
-                if (areaId.startsWith('eq-') && (def.id === 'materiali')) return false;
-                return true;
-            })
-            .map(def => {
-                let label = def.label;
-                if (areaId === 'area-lavaggio' && def.id === 'materiali') {
-                    label = 'Disponibilità prodotti di pulizia e sanificazione';
-                }
-                if ((areaId === 'deposito' || areaId === 'spogliatoio') && def.id === 'integrita') {
-                    label = 'Integrità materiali';
-                }
-                if (areaId === 'antibagno-bagno-personale' || areaId === 'bagno-clienti') {
-                    if (def.id === 'ispezione') label = 'Ispezione lavabo, tazza, rubinetteria';
-                    if (def.id === 'materiali') label = 'Disponibilità prodotti di pulizia e sanificazione e presenza di acqua calda';
-                }
-                if (areaId === 'pavimenti') {
-                    if (def.id === 'ispezione') label = 'ispezione integrità della pavimentazione';
-                    if (def.id === 'pulizia') label = 'assenza di trasporto';
-                }
-                if (areaId === 'pareti' && def.id === 'ispezione') {
-                    label = 'Ispezione integrità delle pareti';
-                }
-                if (areaId === 'soffitto') {
-                    if (def.id === 'ispezione') label = 'ispezione integrità soffitto';
-                    if (def.id === 'pulizia') label = 'assenza di ragnatele';
-                }
-                if (areaId === 'infissi' && def.id === 'ispezione') {
-                    label = 'ispezione pulizia';
-                }
-                if (areaId === 'reti-antiintrusione' && def.id === 'ispezione') {
-                    label = 'verifica assenza di polvere e sporco';
-                }
-                if (areaId.startsWith('eq-')) {
-                    if (def.id === 'ispezione') label = `Ispezione visiva attrezzatura`;
-                    if (def.id === 'pulizia') label = `Pulizia e sanificazione macchinario`;
-                    if (def.id === 'integrita') label = `Verifica integrità e funzionamento`;
-                }
-                return { ...def, label, status: 'pending' as const };
-            });
+        const isEquipment = areaId.startsWith('eq-');
+        const noScopaturaAreas = ['soffitto', 'infissi', 'reti-antiintrusione', 'pareti'];
+
+        if (isEquipment || noScopaturaAreas.includes(areaId)) {
+            return [
+                { id: 'detersione', label: 'Detersione', icon: 'fa-soap', status: 'pending' },
+                { id: 'disinfezione', label: 'Disinfezione', icon: 'fa-virus-slash', status: 'pending' }
+            ];
+        }
+
+        return [
+            { id: 'scopatura', label: 'Scopatura', icon: 'fa-broom', status: 'pending' },
+            { id: 'detersione', label: 'Detersione', icon: 'fa-soap', status: 'pending' },
+            { id: 'disinfezione', label: 'Disinfezione', icon: 'fa-virus-slash', status: 'pending' }
+        ];
     }
 
     constructor() {
