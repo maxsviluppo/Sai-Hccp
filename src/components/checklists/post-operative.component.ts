@@ -446,15 +446,25 @@ export class PostOperationalChecklistComponent {
         );
 
         // Census equipment to be added as areas
-        const census = this.state.selectedEquipment();
-        const equipmentAreas: AreaChecklist[] = census.map(eq => ({
-            id: `eq-${eq.id}`,
-            label: `${eq.name} (${eq.area})`,
-            icon: eq.name.toLowerCase().includes('congelatore') ? 'fa-icicles' :
-                (eq.name.toLowerCase().includes('pozzetto') ? 'fa-box-archive' : 'fa-snowflake'),
-            steps: [], // filled below
-            expanded: false
-        }));
+        const census = this.state.groupedEquipment();
+        const equipmentAreas: AreaChecklist[] = census.map(eq => {
+            const nameLower = eq.name.toLowerCase();
+            let icon = 'fa-snowflake';
+            if (nameLower.includes('congelatore')) icon = 'fa-icicles';
+            else if (nameLower.includes('pozzetto')) icon = 'fa-box-archive';
+            else if (nameLower.includes('forno')) icon = 'fa-fire';
+            else if (nameLower.includes('frigo')) icon = 'fa-snowflake';
+            else if (nameLower.includes('lavello')) icon = 'fa-sink';
+            else icon = 'fa-microchip';
+
+            return {
+                id: `eq-${eq.id}`,
+                label: `${eq.name}`,
+                icon: icon,
+                steps: [],
+                expanded: false
+            };
+        });
 
         // Initialize static + equipment areas with correct steps
         const currentAreas = [...this.staticAreas, ...equipmentAreas].map(a => ({
@@ -465,9 +475,14 @@ export class PostOperationalChecklistComponent {
         const savedData = this.state.getRecord('post-op-checklist');
 
         if (historyRecord) {
-            const relabeledAreas = historyRecord.data.areas.map((area: any) => {
-                const currentStepsDef = this.getInitialSteps(area.id);
-                const updatedSteps = area.steps.map((step: any) => {
+            const savedAreas = historyRecord.data.areas || [];
+            // Merge: take everything in currentAreas, if it was in savedAreas use saved status
+            const merged = currentAreas.map(a => {
+                const saved = savedAreas.find((sa: any) => sa.id === a.id);
+                if (!saved) return a;
+
+                const currentStepsDef = this.getInitialSteps(a.id);
+                const updatedSteps = saved.steps.map((step: any) => {
                     const def = currentStepsDef.find(d => d.id === step.id);
                     return { ...step, label: def?.label || step.label };
                 });
@@ -475,10 +490,11 @@ export class PostOperationalChecklistComponent {
                 const filtered = updatedSteps.filter((s: any) => currentIds.has(s.id));
                 const existingIds = new Set(filtered.map((s: any) => s.id));
                 const missing = currentStepsDef.filter(d => !existingIds.has(d.id));
-                return { ...area, steps: [...filtered, ...missing] };
+
+                return { ...a, steps: [...filtered, ...missing], expanded: saved.expanded };
             });
 
-            this.areas.set(relabeledAreas);
+            this.areas.set(merged);
             this.currentRecordId.set(historyRecord.id);
             this.isSubmitted.set(true);
             return;
@@ -490,7 +506,6 @@ export class PostOperationalChecklistComponent {
                 const saved = savedData.areas.find((sa: any) => sa.id === a.id);
                 if (!saved) return a;
 
-                // Re-apply labels even to draft data
                 const currentStepsDef = this.getInitialSteps(a.id);
                 const updatedSteps = saved.steps.map((step: any) => {
                     const def = currentStepsDef.find(d => d.id === step.id);
@@ -498,8 +513,10 @@ export class PostOperationalChecklistComponent {
                 });
                 const currentIds = new Set(currentStepsDef.map(d => d.id));
                 const filtered = updatedSteps.filter((s: any) => currentIds.has(s.id));
+                const existingIds = new Set(filtered.map((s: any) => s.id));
+                const missing = currentStepsDef.filter(d => !existingIds.has(d.id));
 
-                return { ...a, steps: filtered, expanded: saved.expanded };
+                return { ...a, steps: [...filtered, ...missing], expanded: saved.expanded };
             });
             this.areas.set(merged);
             this.isSubmitted.set(false);

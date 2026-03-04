@@ -25,7 +25,7 @@ interface CheckCategory {
     template: `
     <div class="space-y-6 pb-10">
       
-      <!-- Enhanced UI Header -->
+      <!-- Premium Header Banner -->
       <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
         <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
         <div class="relative z-10">
@@ -36,7 +36,14 @@ interface CheckCategory {
               </div>
               <div>
                 <h2 class="text-3xl font-black text-white">Controlli Generali</h2>
-                <p class="text-slate-400 text-sm font-medium">Panoramica completa stato HACCP</p>
+                <div class="flex items-center gap-4 mt-2">
+                    <p class="text-slate-400 text-sm font-medium">Panoramica completa stato HACCP</p>
+                    <button (click)="showStandardInfo.set(true)" 
+                            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all text-[10px] font-black border border-white/10 shadow-md group">
+                        <i class="fa-solid fa-circle-info text-sm group-hover:scale-110 transition-transform"></i>
+                        <span>INFO PROTOCOLLO</span>
+                    </button>
+                </div>
               </div>
             </div>
 
@@ -64,6 +71,65 @@ interface CheckCategory {
           </div>
         </div>
       </div>
+
+      <!-- Informational Modal -->
+      @if (showStandardInfo()) {
+            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showStandardInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                    <div class="p-8 bg-gradient-to-br from-slate-700 to-slate-900 text-white relative flex-shrink-0">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
+                            <i class="fa-solid fa-list-check text-8xl"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <h3 class="text-2xl font-black mb-1">Controlli HACCP</h3>
+                            <p class="text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">Standard HACCP Pro</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-shield-check text-xs"></i> 01. Obiettivo
+                            </h4>
+                            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                                    Monitorare costantemente l'attuazione delle procedure di autocontrollo previste dal piano HACCP aziendale.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-flask-vial text-xs"></i> 02. Protocollo Sanificazione
+                            </h4>
+                            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                                <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
+                                    "La sanificazione comprende pulizia meccanica/chimica e successiva disinfezione." 
+                                    Utilizzare prodotti anionici per il lavaggio e cationici per la disinfezione.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-xs"></i> 03. Segnalazione
+                            </h4>
+                            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 text-[10px] font-bold text-slate-500 italic">
+                                Le non conformità rilevate devono essere registrate tempestivamente con le relative azioni correttive intraprese nel registro specifico.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-50 border-t border-slate-100">
+                        <button (click)="showStandardInfo.set(false)"
+                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95">
+                            HO PRESO VISIONE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
 
       <!-- Summary Stats -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -237,6 +303,13 @@ interface CheckCategory {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .bg-grid-slate-700\/25 {
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
     }
@@ -244,7 +317,7 @@ interface CheckCategory {
 })
 export class GeneralChecksViewComponent {
     state = inject(AppStateService);
-
+    showStandardInfo = signal(false);
     expandedCategoryIds = signal<Set<string>>(new Set());
 
     // Injecting effect to handle global sync
@@ -373,8 +446,7 @@ export class GeneralChecksViewComponent {
             'temperatures': 'Temperature',
             'staff-hygiene': 'Igiene Personale',
             'traceability': 'Rintracciabilità',
-            'cleaning-maintenance': 'Pulizia/Manutenzione',
-            'pest-control': 'Controllo Infestanti'
+            'cleaning-maintenance': 'Pulizia/Manutenzione'
         };
         return moduleNames[moduleId] || moduleId;
     }
@@ -498,3 +570,4 @@ export class GeneralChecksViewComponent {
         `;
     }
 }
+

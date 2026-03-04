@@ -238,7 +238,33 @@ export class AppStateService {
 
   readonly documents = signal<AppDocument[]>([]);
   readonly selectedEquipment = signal<{ id: string; name: string; area: string }[]>([]);
+  readonly groupedEquipment = computed(() => {
+    const raw = this.selectedEquipment();
+    const uniqueMap = new Map<string, { id: string; name: string; area: string }>();
+    raw.forEach(e => {
+      // Clean name: remove " n.1", " 1", etc.
+      const cleaned = e.name.replace(/\s+n\.\d+/i, '').replace(/\s+\d+$/i, '').trim();
+      if (!uniqueMap.has(cleaned)) {
+        uniqueMap.set(cleaned, { ...e, name: cleaned });
+      }
+    });
+    return Array.from(uniqueMap.values());
+  });
   readonly productionRecords = signal<ProductionRecord[]>([]);
+
+  getEquipmentIcon(name: string): string {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('congelatore')) return 'fa-icicles';
+    if (nameLower.includes('pozzetto')) return 'fa-box-archive';
+    if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('snowflake')) return 'fa-snowflake';
+    if (nameLower.includes('piano cottura') || nameLower.includes('forno') || nameLower.includes('griglie') || nameLower.includes('fuochi') || nameLower.includes('friggitrice')) return 'fa-fire';
+    if (nameLower.includes('lavello') || nameLower.includes('lavastoviglie')) return 'fa-sink';
+    if (nameLower.includes('cappa')) return 'fa-fan';
+    if (nameLower.includes('tavolo') || nameLower.includes('piano lavoro')) return 'fa-table';
+    if (nameLower.includes('affettatrice')) return 'fa-shredder'; // or fa-circle-notch
+    if (nameLower.includes('bilancia')) return 'fa-weight-hanging';
+    return 'fa-microchip';
+  }
 
   // --- Clients / Companies Database (New) ---
   readonly clients = signal<ClientEntity[]>([
@@ -390,33 +416,23 @@ export class AppStateService {
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
 
-    { id: 'temperatures', label: 'Controllo Temperature', icon: 'fa-temperature-half', category: 'operations' },
-    { id: 'cleaning-maintenance', label: 'Piano Lavaggi', icon: 'fa-broom', category: 'operations' },
-    { id: 'pest-control', icon: 'fa-bug', label: 'Pest Control', category: 'operations' },
-    { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-hand-sparkles', category: 'operations' },
+    { id: 'cleaning-maintenance', label: 'Manutenzione', icon: 'fa-screwdriver-wrench', category: 'operations' },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations' },
     { id: 'micro-bio', label: 'Monitoraggio Microbio', icon: 'fa-vial-virus', category: 'operations' },
 
     // --- STORICO ---
     { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
 
-    // --- PRODUZIONE E RINTRACCIABILITA ---
-    { id: 'goods-receipt', label: 'Ricezione Prodotti', icon: 'fa-box-open', category: 'production' },
+    // --- Rintracciabilità ---
     { id: 'production-log', label: 'Registri Produzione', icon: 'fa-barcode', category: 'production' },
-    { id: 'traceability', label: 'Schede Tracciabilità', icon: 'fa-boxes-packing', category: 'production' },
-    { id: 'food-conservation', label: 'Conservazione Cibo', icon: 'fa-snowflake', category: 'production' },
 
     // --- CONSUMABILI E MESSAGGI ---
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
 
     // Config
     { id: 'documentation', label: 'Documentazione', icon: 'fa-folder-tree', category: 'config' },
-    { id: 'equipment-census', label: 'Censimento Attrezzature', icon: 'fa-microchip', category: 'config' },
-    { id: 'equipment', label: 'Monitoraggio Attrezzature', icon: 'fa-screwdriver-wrench', category: 'config' },
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config' },
-    { id: 'products-cleaning', label: 'Prodotti Chimici', icon: 'fa-vial', category: 'config' },
     { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config' },
-    { id: 'allergens-ue1169', label: 'Allergeni UE1169', icon: 'fa-wheat-awn-circle-exclamation', category: 'config' },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
     { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false },

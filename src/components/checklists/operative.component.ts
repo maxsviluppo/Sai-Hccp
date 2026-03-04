@@ -515,7 +515,7 @@ export class OperativeChecklistComponent {
    group2Items = computed(() => {
       const s = this.statusMap();
       const list: ChecklistItem[] = [];
-      const census = this.state.selectedEquipment();
+      const census = this.state.groupedEquipment();
 
       // For each equipment in census
       census.forEach(eq => {
@@ -534,11 +534,13 @@ export class OperativeChecklistComponent {
             icon = 'fa-snowflake';
          } else if (nameLower.includes('piano cottura') || nameLower.includes('forno') || nameLower.includes('griglie')) {
             icon = 'fa-fire';
+         } else if (nameLower.includes('lavello')) {
+            icon = 'fa-sink';
          }
 
          list.push({
             id: `eq-${eq.id}`,
-            label: `${eq.name} (${eq.area})`,
+            label: `${eq.name}`,
             icon: icon,
             status: s[`eq-${eq.id}`]?.status || 'pending',
             note: s[`eq-${eq.id}`]?.note,

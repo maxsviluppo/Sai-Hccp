@@ -16,7 +16,6 @@ interface CheckItem {
     <div class="space-y-8 pb-10">
         <!-- Premium Header Banner -->
         <div class="bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 p-8 rounded-3xl shadow-xl border border-teal-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-            <!-- Background Decoration -->
             <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                 <i class="fa-solid fa-pump-soap text-9xl text-white"></i>
             </div>
@@ -29,9 +28,7 @@ interface CheckItem {
                     Prodotti Pulizia
                 </h2>
                 <div class="flex items-center gap-4 mt-2">
-                    <p class="text-cyan-100 text-sm font-medium ml-1">
-                        Elenco prodotti detergenti e sanificanti autorizzati
-                    </p>
+                    <p class="text-cyan-100 text-sm font-medium ml-1">Elenco prodotti detergenti e sanificanti autorizzati</p>
                     <button (click)="showStandardInfo.set(true)" 
                             class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white text-white hover:text-teal-700 transition-all text-[10px] font-black border border-white/30 shadow-md group">
                         <i class="fa-solid fa-circle-info text-sm group-hover:scale-110 transition-transform"></i>
@@ -46,56 +43,41 @@ interface CheckItem {
                     <span class="text-white font-bold">{{ checkedCount() }} / {{ checks().length }}</span>
                 </div>
                 <div class="text-xs text-cyan-100 font-medium flex items-center gap-2">
-                    <i class="fa-regular fa-calendar"></i>
-                    {{ state.filterDate() | date:'dd/MM/yyyy' }}
+                    <i class="fa-regular fa-calendar"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}
+                    @if (getDisplayName()) {
+                        <span class="mx-1">•</span>
+                        <i class="fa-regular fa-user"></i>
+                        {{ getDisplayName() }}
+                    }
                 </div>
             </div>
         </div>
 
-        <!-- Products Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @for (check of checks(); track check.id) {
                 <div class="bg-white p-6 rounded-2xl shadow-sm border-2 transition-all duration-300 group"
-                     [class.cursor-pointer]="canEdit()"
-                     [class.cursor-not-allowed]="!canEdit()"
-                     [class.opacity-60]="!canEdit()"
-                     [class.border-teal-200]="!check.checked"
-                     [class.border-teal-500]="check.checked"
-                     [class.bg-teal-50]="check.checked"
-                     [class.shadow-lg]="check.checked"
-                     [class.shadow-teal-200/50]="check.checked"
+                     [class.cursor-pointer]="canEdit()" [class.cursor-not-allowed]="!canEdit()" [class.opacity-60]="!canEdit()"
+                     [class.border-teal-100]="!check.checked" [class.border-teal-500]="check.checked"
+                     [class.bg-teal-50]="check.checked" [class.shadow-lg]="check.checked" [class.shadow-teal-200/50]="check.checked"
                      (click)="toggleCheck(check.id)">
                     
                     <div class="flex items-start gap-4">
-                        <!-- Status Icon -->
                         <div class="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300"
-                             [class.bg-teal-500]="check.checked"
-                             [class.text-white]="check.checked"
-                             [class.shadow-lg]="check.checked"
-                             [class.shadow-teal-200]="check.checked"
-                             [class.bg-slate-100]="!check.checked"
-                             [class.text-slate-400]="!check.checked">
-                            <i class="fa-solid text-2xl"
-                               [class.fa-check-circle]="check.checked"
-                               [class.fa-circle-dashed]="!check.checked"></i>
+                             [class.bg-teal-500]="check.checked" [class.text-white]="check.checked" [class.shadow-lg]="check.checked"
+                             [class.shadow-teal-200]="check.checked" [class.bg-slate-100]="!check.checked" [class.text-slate-400]="!check.checked">
+                            <i class="fa-solid text-2xl" [class.fa-check-circle]="check.checked" [class.fa-circle-dashed]="!check.checked"></i>
                         </div>
                         
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-slate-800 text-base leading-tight mb-2">
-                                {{ check.label }}
-                            </h3>
-                            
-                            <!-- Status Badge -->
+                            <h3 class="font-bold text-slate-800 text-base leading-tight mb-2">{{ check.label }}</h3>
                             <div class="flex items-center gap-2">
                                 @if (check.checked) {
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-500 text-white text-xs font-bold rounded-full">
-                                        <i class="fa-solid fa-circle-check"></i>
-                                        VERIFICATO
+                                        <i class="fa-solid fa-circle-check"></i> VERIFICATO
                                     </span>
                                 } @else {
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 text-slate-600 text-xs font-bold rounded-full">
-                                        <i class="fa-regular fa-circle"></i>
-                                        DA VERIFICARE
+                                        <i class="fa-regular fa-circle"></i> DA VERIFICARE
                                     </span>
                                 }
                             </div>
@@ -108,19 +90,16 @@ interface CheckItem {
         @if (!canEdit()) {
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
                 <i class="fa-solid fa-lock text-yellow-600 mt-0.5"></i>
-                <p class="text-sm text-yellow-800 font-medium">
-                    Modalità di sola lettura. Seleziona un'unità operativa per modificare i dati.
-                </p>
+                <p class="text-sm text-yellow-800 font-medium">Modalità di sola lettura. Seleziona un'unità operativa per modificare i dati.</p>
             </div>
         }
 
-        <!-- Informational Modal (Standard HACCP Pro) -->
+        <!-- Informational Modal -->
         @if (showStandardInfo()) {
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showStandardInfo.set(false)"></div>
                 <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
-                    <!-- Header -->
-                    <div class="p-8 bg-gradient-to-br from-teal-700 to-teal-900 text-white relative flex-shrink-0">
+                    <div class="p-8 bg-gradient-to-br from-teal-700 to-blue-900 text-white relative flex-shrink-0">
                         <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
                             <i class="fa-solid fa-flask-vial text-8xl"></i>
                         </div>
@@ -131,7 +110,6 @@ interface CheckItem {
                     </div>
                     
                     <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-                        <!-- Sezione Pulizia -->
                         <div class="space-y-3">
                             <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fa-solid fa-broom text-xs"></i> 01. Cos'è la Pulizia
@@ -143,7 +121,6 @@ interface CheckItem {
                             </div>
                         </div>
 
-                        <!-- Sezione Detergenti -->
                         <div class="space-y-3">
                             <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fa-solid fa-soap text-xs"></i> 02. Azione Detergenti
@@ -152,65 +129,22 @@ interface CheckItem {
                                 <p class="text-xs text-slate-700 leading-relaxed font-medium">
                                     Sostanze e miscele atte a rimuovere sporco e grasso da tutte le superfici, attrezzature e utensili.
                                 </p>
-                                <div class="mt-4 p-3 bg-white rounded-xl border border-teal-100 flex gap-3 items-start shadow-sm">
-                                    <i class="fa-solid fa-vial text-teal-500 text-sm mt-0.5"></i>
-                                    <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
-                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo. 
-                                        Per rimuovere lo sporco dalle superfici utilizzare prodotti anionici (leggere la composizione chimica) che hanno un elevato potere lavante e schiumogeno. 
-                                        Per ottenere un effetto disinfettante, utilizzare prodotti cationici. Per ottenere un effetto sgrassante utilizzare prodotti non ionici.
-                                    </p>
-                                </div>
                             </div>
                         </div>
 
-                        <!-- Sezione Disinfettante -->
                         <div class="space-y-3">
                             <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-virus-slash text-xs"></i> 03. Azione Disinfettante
+                                <i class="fa-solid fa-sparkles text-xs"></i> 03. Sanificazione
                             </h4>
-                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100">
-                                <p class="text-xs text-slate-700 leading-relaxed font-medium mb-3">
-                                    I disinfettanti mirano alla eliminazione dei microorganismi patogeni ed alla riduzione della carica microbica totale (batteri, muffe, lieviti, virus).
-                                </p>
-                                <div class="p-3 bg-white rounded-xl border border-teal-100 space-y-2 shadow-sm">
-                                    <div class="flex gap-3 items-center">
-                                        <i class="fa-solid fa-shield-virus text-teal-500 text-xs"></i>
-                                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Meccanismi d'azione:</p>
-                                    </div>
-                                    <ul class="text-[10px] text-slate-600 font-medium space-y-1 ml-6 list-disc">
-                                        <li>Denaturazione delle proteine (es. Alcool)</li>
-                                        <li>Azione ossidante (es. Cloro / Ipoclorito)</li>
-                                        <li>Disattivazione enzimatica e strutturale</li>
-                                    </ul>
-                                </div>
+                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100 text-[10px] font-bold text-slate-500 italic">
+                                La sanificazione è un intervento globale che comprende sia la pulizia meccanica/chimica che la successiva disinfezione.
                             </div>
                         </div>
-
-                        <!-- Sezione Sanificazione -->
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-sparkles text-xs"></i> 04. Azione Sanificante
-                            </h4>
-                            <div class="bg-teal-50/50 p-5 rounded-2xl border border-teal-100">
-                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
-                                    La sanificazione è un <strong>intervento globale</strong> che comprende sia la pulizia meccanica/chimica che la successiva disinfezione.
-                                </p>
-                                <div class="mt-4 p-4 bg-teal-600 text-white rounded-2xl shadow-lg border border-teal-400 flex gap-4 items-center">
-                                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                                        <i class="fa-solid fa-certificate"></i>
-                                    </div>
-                                    <p class="text-[11px] font-bold leading-tight uppercase tracking-tight">
-                                        Risultato: Ambiente visivamente pulito e carica microbica entro i limiti di sicurezza.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
 
-                    <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+                    <div class="p-6 bg-slate-50 border-t border-slate-100">
                         <button (click)="showStandardInfo.set(false)"
-                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
+                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95">
                             HO PRESO VISIONE
                         </button>
                     </div>
@@ -218,7 +152,7 @@ interface CheckItem {
             </div>
         }
     </div>
-  `,
+    `,
     styles: [`
     .animate-fade-in { animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -232,7 +166,6 @@ interface CheckItem {
 export class CleaningProductsViewComponent {
     state = inject(AppStateService);
     moduleId = 'products-cleaning';
-
     showStandardInfo = signal(false);
 
     checks = signal<CheckItem[]>([
@@ -274,6 +207,13 @@ export class CleaningProductsViewComponent {
         return this.state.isContextEditable();
     }
 
+    getDisplayName() {
+        if (this.state.filterCollaboratorId()) {
+            return this.state.systemUsers().find(u => u.id === this.state.filterCollaboratorId())?.name;
+        }
+        return this.state.currentUser()?.name;
+    }
+
     toggleCheck(id: string) {
         if (!this.canEdit()) return;
         this.checks.update(items =>
@@ -282,3 +222,4 @@ export class CleaningProductsViewComponent {
         this.state.saveRecord(this.moduleId, this.checks());
     }
 }
+

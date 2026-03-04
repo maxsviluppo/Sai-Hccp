@@ -123,43 +123,52 @@ interface AreaChecklist {
                 </div>
             </div>
         </div>
-        <!-- Hygiene Behavioral Notes Banner -->
-        <div class="bg-amber-50 border-2 border-amber-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-amber-900/5 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                <i class="fa-solid fa-user-shield text-7xl text-amber-900"></i>
+        <!-- Protocol Box -->
+        <div class="bg-indigo-50 border-2 border-indigo-200 rounded-[40px] p-8 mb-8 relative overflow-hidden group shadow-xl shadow-indigo-900/5">
+            <div class="absolute top-0 right-0 p-8 opacity-5 pointer-events-none -rotate-12 translate-x-4">
+                <i class="fa-solid fa-flask-vial text-9xl text-indigo-900"></i>
             </div>
-            <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 shadow-inner border border-amber-200/50">
-                <i class="fa-solid fa-clipboard-check text-2xl"></i>
-            </div>
-            <div class="space-y-3 relative z-10">
-                <div class="flex items-center gap-3">
-                   <h3 class="text-sm font-black text-amber-900 uppercase tracking-widest">Igiene del personale</h3>
-                   <span class="bg-amber-200/50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Promemoria Operativo</span>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-inner border border-indigo-200/50">
+                        <i class="fa-solid fa-clipboard-check text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-indigo-900 uppercase tracking-widest leading-none">Protocollo di Sicurezza</h3>
+                        <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-tighter mt-1 italic">Linee guida operative HACCP Pro</p>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
-                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Abbigliamento sempre perfettamente pulito</span>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Sezione Pulizia -->
+                    <div class="space-y-2">
+                        <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-broom text-xs"></i> 01. Sanificazione
+                        </h4>
+                        <p class="text-[11px] font-bold text-indigo-800/80 leading-relaxed italic">
+                            "Azione globale che comprende pulizia meccanica/chimica e disinfezione profonda."
+                        </p>
                     </div>
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
-                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Scarpe diverse da quelle che si usano all'esterno</span>
+
+                    <!-- Sezione Detergenti -->
+                    <div class="space-y-2">
+                        <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-soap text-xs"></i> 02. Detergenza
+                        </h4>
+                        <p class="text-[11px] font-bold text-indigo-800/80 leading-relaxed italic">
+                            "Uso di prodotti anionici (pulizia) e cationici (disinfezione) per eliminare sporco e germi."
+                        </p>
                     </div>
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
-                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Lavare frequentemente le mani con sapone germicida</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
-                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Indossare idoneo copricapo (Addetti lavorazione)</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
-                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Proteggere eventuali ferite in maniera appropriata</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <i class="fa-solid fa-circle-check text-amber-500 text-[10px] mt-1 shrink-0"></i>
-                        <span class="text-[11px] font-bold text-amber-800 leading-tight tracking-tight italic">Evitare di fumare e manipolare correttamente gli alimenti</span>
+
+                    <!-- Sezione Meccanismi -->
+                    <div class="space-y-2">
+                        <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-virus-slash text-xs"></i> 03. Bio-Sicurezza
+                        </h4>
+                        <p class="text-[11px] font-bold text-indigo-800/80 leading-relaxed italic">
+                            "Eradicazione microorganismi patogeni e riduzione carica microbica totale."
+                        </p>
                     </div>
                 </div>
             </div>
@@ -195,13 +204,19 @@ interface AreaChecklist {
                                      <i class="fa-solid fa-folder-tree"></i>
                                      <span class="hidden sm:inline uppercase">Gestione Archivio</span>
                                 </button>
-                            } @else {
+                            } @else if (item.id === 'g_cleaning_sanit') {
                                 <button (click)="showCleaningInfo.set(true)" 
                                         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-black hover:text-white transition-all text-xs font-black border border-indigo-100 shadow-sm group"
-                                        *ngIf="item.id === 'g_cleaning_sanit'"
                                         title="Informazioni Tecniche Protocollo">
                                     <i class="fa-solid fa-circle-info text-lg group-hover:scale-110 transition-transform"></i>
                                     <span class="hidden sm:inline">INFO PROTOCOLLO</span>
+                                </button>
+                            } @else if (item.id === 'g_pest_control') {
+                                <button (click)="showPestInfo.set(true)" 
+                                        class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 text-amber-600 hover:bg-black hover:text-white transition-all text-xs font-black border border-amber-100 shadow-sm group"
+                                        title="Informazioni Tecniche Protocollo Infestanti">
+                                    <i class="fa-solid fa-circle-info text-lg group-hover:scale-110 transition-transform"></i>
+                                    <span class="hidden sm:inline uppercase">Info Protocollo Infestanti</span>
                                 </button>
                             }
                         </div>
@@ -393,7 +408,7 @@ interface AreaChecklist {
 
                                 <div class="space-y-3">
                                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Elenco Attrezzature Censite</h4>
-                                    @for (eq of state.selectedEquipment(); track eq.id) {
+                                    @for (eq of state.groupedEquipment(); track eq.id) {
                                         <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group animate-slide-up">
                                             <div class="flex items-center gap-4">
                                                 <div class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
@@ -507,6 +522,67 @@ interface AreaChecklist {
 
                     <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
                         <button (click)="showCleaningInfo.set(false)"
+                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
+                            HO PRESO VISIONE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (showPestInfo()) {
+            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showPestInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                    <!-- Header -->
+                    <div class="p-8 bg-gradient-to-br from-amber-600 to-amber-800 text-white relative flex-shrink-0">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
+                            <i class="fa-solid fa-bug-slash text-8xl"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <h3 class="text-2xl font-black mb-1">Piano Infestanti</h3>
+                            <p class="text-amber-100 text-[11px] font-bold leading-tight italic max-w-[280px]">"Il controllo degli infestanti previene la contaminazione biologica degli alimenti mediante monitoraggio costante."</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                        <!-- Sezione Monitoraggio -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i> 01. Monitoraggio
+                            </h4>
+                            <div class="bg-amber-50/50 p-5 rounded-2xl border border-amber-100">
+                                <p class="text-sm font-bold text-slate-700 leading-relaxed italic">
+                                    "Ispezionare visivamente le trappole (collanti, esche) e le aree critiche. Verificare l'assenza di tracce (escrementi, rosicchiature)."
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Prevenzione -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-xs"></i> 02. Prevenzione
+                            </h4>
+                            <div class="bg-amber-50/50 p-5 rounded-2xl border border-amber-100">
+                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                                    Mantenere le soglie sigillate, le finestre dotate di zanzariere integre e i pozzetti di scarico protetti. Non lasciare residui di cibo.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Sezione Intervento -->
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-phone-flip text-xs"></i> 03. Segnalazione
+                            </h4>
+                            <div class="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 text-[10px] font-bold text-slate-500 italic">
+                                In caso di avvistamento o infestazione sospetta, contattare immediatamente la ditta specializzata e annotare nel registro.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+                        <button (click)="showPestInfo.set(false)"
                                 class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
                             HO PRESO VISIONE
                         </button>
@@ -633,6 +709,7 @@ export class PreOperationalChecklistComponent {
 
     // Info modal state
     showCleaningInfo = signal(false);
+    showPestInfo = signal(false);
 
     // Document Management state
     isDocModalOpen = signal(false);
@@ -643,6 +720,13 @@ export class PreOperationalChecklistComponent {
     // Delete confirmation state
     isDeleteModalOpen = signal(false);
     docToDelete = signal<any>(null);
+
+    masterEquipmentList = [
+        { area: 'Area Lavaggio', items: ['Mobile pensile', 'Lavello', 'Tavolo da lavoro'] },
+        { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Banchi lavori', 'Forno a legna', 'Lavello', 'Lavabicchieri', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante'] },
+        { area: 'Deposito', items: ['Frigo', 'Cella frigorifero'] },
+        { area: 'Spogliatoi', items: ['Armadietto', 'Microonde'] }
+    ];
 
     docDefinitions = [
         { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot' },
@@ -660,7 +744,8 @@ export class PreOperationalChecklistComponent {
 
     globalItems = signal<{ id: string; label: string; icon: string; status: 'pending' | 'ok' | 'issue'; note?: string }[]>([
         { id: 'g_docs', label: 'Regolarità documentazione', icon: 'fa-folder-open', status: 'pending' },
-        { id: 'g_cleaning_sanit', label: 'Prodotti pulizia e sanificazione', icon: 'fa-spray-can-sparkles', status: 'pending' }
+        { id: 'g_cleaning_sanit', label: 'Prodotti pulizia e sanificazione', icon: 'fa-spray-can-sparkles', status: 'pending' },
+        { id: 'g_pest_control', label: 'Controllo Infestanti (Monitoraggio)', icon: 'fa-bug-slash', status: 'pending' }
     ]);
 
     stepDefinitions = [
@@ -681,8 +766,7 @@ export class PreOperationalChecklistComponent {
         { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps('pavimenti'), expanded: false },
         { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps('pareti'), expanded: false },
         { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps('soffitto'), expanded: false },
-        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps('infissi'), expanded: false },
-        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: this.getInitialSteps('reti-antiintrusione'), expanded: false },
+        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps('infissi'), expanded: false }
     ]);
 
     getInitialSteps(areaId: string) {
@@ -924,9 +1008,16 @@ export class PreOperationalChecklistComponent {
             return this.state.documents().filter(d => d.clientId === clientId && d.category === 'regolarita-documentazione').length;
         }
         if (categoryId === 'g_cleaning_sanit') {
-            return this.state.selectedEquipment().length;
+            return this.state.groupedEquipment().length;
         }
         return 0;
+    }
+
+    addEquipment(val: string) {
+        if (!val) return;
+        const [area, name] = val.split('|');
+        this.state.addEquipment(area, name);
+        this.toast.success('Attrezzatura aggiunta', name);
     }
 
     handleFileSelect(event: any, type: string) {

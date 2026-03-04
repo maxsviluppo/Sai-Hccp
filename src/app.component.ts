@@ -163,7 +163,7 @@ export class AppComponent {
       'operations': 'Registri Operativi',
       'monitoring': 'Monitoraggio Operatori',
       'history': 'Archivio Storico',
-      'production': 'Rintracciabilità Prodotti',
+      'production': 'Rintracciabilità',
       'config': 'Configurazione',
       'communication': 'Comunicazioni',
       'dashboard': 'Panoramica'
