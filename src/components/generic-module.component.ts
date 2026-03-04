@@ -21,7 +21,7 @@ interface MockData {
     <div class="space-y-6 pb-10">
       <!-- Enhanced Generic Header -->
       <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
-        <div class="absolute inset-0 bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
+        <div class="absolute inset-0 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
         <div class="relative z-10 font-sans">
           <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
@@ -192,9 +192,6 @@ interface MockData {
     </div>
   `,
   styles: [`
-    .bg-grid-slate-700\/25 {
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(51 65 85 / 0.25)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
-    }
   `]
 })
 export class GenericModuleComponent {

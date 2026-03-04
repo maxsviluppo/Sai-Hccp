@@ -14,8 +14,6 @@ interface CheckItem {
     imports: [CommonModule],
     template: `
     <div class="space-y-8 pb-10">
-        </div>
-
         <div class="bg-indigo-50 border-2 border-indigo-200 rounded-[40px] p-8 mb-8 relative overflow-hidden group shadow-xl shadow-indigo-900/5">
             <div class="absolute top-0 right-0 p-8 opacity-5 pointer-events-none -rotate-12 translate-x-4">
                 <i class="fa-solid fa-file-signature text-9xl text-indigo-900"></i>

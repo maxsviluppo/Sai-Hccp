@@ -10,30 +10,20 @@ import { GenericModuleComponent } from './components/generic-module.component';
 import { SettingsViewComponent } from './components/settings-view.component';
 import { CollaboratorsViewComponent } from './components/collaborators-view.component';
 import { AccountingViewComponent } from './components/accounting-view.component';
-import { OperationalChecklistComponent } from './components/operational-checklist.component';
 import { PreOperationalChecklistComponent } from './components/checklists/pre-operative.component';
 import { OperativeChecklistComponent } from './components/checklists/operative.component';
 import { PostOperationalChecklistComponent } from './components/checklists/post-operative.component';
 import { StaffTrainingChecklistComponent } from './components/staff-training-checklist.component';
 import { SuppliersViewComponent } from './components/suppliers-view.component';
-import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
-import { EquipmentViewComponent } from './components/equipment-view.component';
-import { GoodsReceiptViewComponent } from './components/goods-receipt-view.component';
-import { FoodConservationViewComponent } from './components/food-conservation-view.component';
-import { TemperaturesViewComponent } from './components/temperatures-view.component';
-import { TraceabilityViewComponent } from './components/traceability-view.component';
-import { PestControlViewComponent } from './components/pest-control-view.component';
 import { NonComplianceViewComponent } from './components/non-compliance-view.component';
-import { AllergensConfigViewComponent } from './components/allergens-config-view.component';
 import { CleaningMaintenanceViewComponent } from './components/cleaning-maintenance-view.component';
 import { MicrobioMonitorViewComponent } from './components/microbio-monitor-view.component';
-import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
 import { MessagesViewComponent } from './components/messages-view.component';
 import { DocumentationViewComponent } from './components/documentation-view.component';
-import { EquipmentCensusViewComponent } from './components/equipment-census-view.component';
 import { ProductionLogViewComponent } from './components/production-log-view.component';
 import { ToastContainerComponent } from './components/toast-container.component';
 import { ChecklistHistoryComponent } from './components/checklist-history.component';
+import { TemperaturesViewComponent } from './components/temperatures-view.component';
 
 @Component({
   selector: 'app-root',
@@ -48,30 +38,20 @@ import { ChecklistHistoryComponent } from './components/checklist-history.compon
     SettingsViewComponent,
     CollaboratorsViewComponent,
     AccountingViewComponent,
-    OperationalChecklistComponent,
     PreOperationalChecklistComponent,
     OperativeChecklistComponent,
     PostOperationalChecklistComponent,
     StaffTrainingChecklistComponent,
     SuppliersViewComponent,
-    CleaningProductsViewComponent,
-    EquipmentViewComponent,
-    GoodsReceiptViewComponent,
-    FoodConservationViewComponent,
-    TemperaturesViewComponent,
-    TraceabilityViewComponent,
-    PestControlViewComponent,
     NonComplianceViewComponent,
-    AllergensConfigViewComponent,
     CleaningMaintenanceViewComponent,
     MicrobioMonitorViewComponent,
-    StaffHygieneViewComponent,
     MessagesViewComponent,
     DocumentationViewComponent,
-    EquipmentCensusViewComponent,
     ProductionLogViewComponent,
     ToastContainerComponent,
-    ChecklistHistoryComponent
+    ChecklistHistoryComponent,
+    TemperaturesViewComponent
   ],
   templateUrl: './app.component.html'
 })
