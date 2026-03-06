@@ -85,44 +85,46 @@ interface AreaChecklist {
     </div>
 
     <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 animate-fade-in relative max-w-3xl mx-auto px-4">
-        <!-- Enhanced UI Header (Hidden on print) -->
-        <div class="print:hidden bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 p-8 rounded-3xl shadow-xl border border-purple-500/30 relative overflow-hidden mb-8 mt-4">
-            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <i class="fa-solid fa-hourglass-end text-9xl text-white"></i>
-            </div>
-            <div class="relative z-10">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
-                            <i class="fa-solid fa-hourglass-end text-white text-2xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-3xl font-black text-white">Fase Post-Operativa</h2>
-                            <p class="text-purple-100 text-sm font-medium mt-1">Pulizia e disinfezione fine turno</p>
+    <!-- UI CONTENT (Hidden on print) -->
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+        
+        <!-- Premium Hero Header -->
+        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
+            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-pink-600/15 blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-purple-600/10 blur-3xl"></div>
+            
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-600 to-purple-700 shadow-lg shadow-pink-500/20 ring-1 ring-white/20">
+                        <i class="fa-solid fa-hourglass-end text-3xl text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-4xl font-black tracking-tight text-white mb-1">Fase <span class="text-pink-400">Post-Operativa</span></h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
+                                <i class="fa-solid fa-circle text-[9px] animate-pulse" [class.text-emerald-400]="isSubmitted()" [class.text-amber-400]="!isSubmitted()"></i>
+                                {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
+                            </span>
+                            <span class="flex items-center gap-2 rounded-full bg-pink-500/10 px-4 py-1.5 text-sm font-black text-pink-400 border border-pink-500/20">
+                                <i class="fa-solid fa-user-check text-xs"></i> {{ state.currentUser()?.name }}
+                            </span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-                        <!-- Progress Indicator -->
-                        <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex-1 sm:flex-initial">
-                            <div class="flex justify-between items-end mb-1.5">
-                                <span class="text-[10px] text-purple-100 uppercase font-bold tracking-wider">Avanzamento</span>
-                                <span class="text-sm font-black text-white">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
-                            </div>
-                            <div class="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
-                                <div class="h-full bg-white rounded-full transition-all duration-700"
-                                    [style.width.%]="progressPercentage()"></div>
+                <div class="flex flex-wrap gap-3">
+                    <div class="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-md">
+                        <div class="text-left">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Avanzamento</p>
+                            <div class="flex items-center gap-3">
+                                <div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div class="h-full bg-pink-500 rounded-full transition-all duration-1000" [style.width.%]="progressPercentage()"></div>
+                                </div>
+                                <span class="text-xl font-black text-white whitespace-nowrap">{{ completedStepsCount() }} / {{ totalStepsCount() }}</span>
                             </div>
                         </div>
-
-                        <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
-                            <div class="text-left">
-                                <div class="text-[10px] text-purple-100 uppercase font-bold tracking-wider">Stato</div>
-                                <div class="text-sm font-bold text-white flex items-center">
-                                    <i class="fa-solid fa-circle-check mr-2"></i> In Compilazione
-                                </div>
-                            </div>
+                        <div class="h-10 w-10 flex items-center justify-center bg-pink-500/20 rounded-xl text-pink-400">
+                            <i class="fa-solid fa-chart-pie text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -130,188 +132,116 @@ interface AreaChecklist {
         </div>
 
         <!-- Date Selector & Quick Actions (Hidden on Print) -->
-        <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-3xl relative z-20 -mt-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
-                    <i class="fa-solid fa-calendar-check"></i>
+        <div class="print:hidden bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between relative z-20">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100 shadow-sm">
+                    <i class="fa-solid fa-calendar-check text-lg"></i>
                 </div>
                 <div>
-                   <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data Post-Operativa</label>
+                   <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Data Post-Operativa</label>
                    <input type="date" [value]="state.filterDate()" (change)="state.filterDate.set($any($event.target).value)" 
-                          class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-base">
+                          class="w-full font-black text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-lg leading-none">
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
                 <!-- Quick Set All Ok -->
                 <button (click)="setAllOk()" 
-                        class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-sm border border-emerald-100"
+                        class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-all shadow-md border border-emerald-100 active:scale-95"
                         title="Imposta tutto come Conforme">
-                   <i class="fa-solid fa-check-double"></i>
+                   <i class="fa-solid fa-check-double text-xl"></i>
                 </button>
             </div>
         </div>
 
         <!-- Areas Checklist Expansion Panels -->
-        <div class="space-y-4 mb-24">
-            @for (area of areas(); track area.id) {
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300"
-                     [class.ring-2]="area.expanded" [class.ring-purple-500/20]="area.expanded">
-                    
-                    <!-- Header -->
-                    <div class="p-5 flex items-center gap-4">
-                        <div (click)="toggleArea(area.id)" class="flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors flex-1 -m-5 p-5 rounded-3xl">
-                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm transition-colors flex-shrink-0"
-                                 [class.bg-purple-100]="isAreaComplete(area.id)"
-                                 [class.text-purple-600]="isAreaComplete(area.id)"
-                                 [class.bg-slate-100]="!isAreaComplete(area.id)"
-                                 [class.text-slate-400]="!isAreaComplete(area.id)">
-                                <i [class]="'fa-solid ' + area.icon"></i>
-                            </div>
-                            
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-black text-slate-800 text-lg">{{ area.label }}</h3>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter"
-                                          [class.bg-emerald-100]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" 
-                                          [class.text-emerald-700]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                          [class.bg-red-100]="hasAreaIssues(area.id)"
-                                          [class.text-red-700]="hasAreaIssues(area.id)"
-                                          [class.bg-slate-100]="!isAreaComplete(area.id)" 
-                                          [class.text-slate-500]="!isAreaComplete(area.id)">
-                                        {{ getAreaStatusLabel(area.id) }}
-                                    </span>
-                                    <span class="text-[10px] text-slate-400 font-medium">
-                                        {{ getCompletedStepsInArea(area.id) }} di {{ area.steps.length }} completati
-                                    </span>
+        <div class="mb-24">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest px-4 mb-4">Aree di Ispezione Post-Operativa</h3>
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="divide-y divide-slate-100">
+                        @for (area of areas(); track area.id) {
+                            <div class="flex flex-col">
+                                <!-- Area Header -->
+                                <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                                     (click)="toggleArea(area.id)">
+                                    <div class="flex items-center gap-4 flex-1">
+                                        <div class="h-10 w-10 rounded-xl flex items-center justify-center text-lg transition-all shadow-inner"
+                                             [class.bg-purple-100]="isAreaComplete(area.id)" [class.text-purple-600]="isAreaComplete(area.id)"
+                                             [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-500]="!isAreaComplete(area.id)">
+                                            <i [class]="'fa-solid ' + area.icon"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 text-base leading-tight">{{ area.label }}</h3>
+                                            <div class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-[9px] font-black uppercase tracking-widest"
+                                                      [class.text-emerald-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" 
+                                                      [class.text-red-600]="hasAreaIssues(area.id)"
+                                                      [class.text-slate-400]="!isAreaComplete(area.id)">
+                                                    {{ getAreaStatusLabel(area.id) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-3 shrink-0">
+                                        <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
+                                                class="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center border border-emerald-100" title="Imposta tutti conformi">
+                                            <i class="fa-solid fa-check-double text-xs"></i>
+                                        </button>
+                                        <i class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300 ml-2" [class.rotate-180]="area.expanded"></i>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <i class="fa-solid transition-transform duration-300 transform" 
-                               [class.fa-chevron-down]="!area.expanded" 
-                               [class.fa-chevron-up]="area.expanded"
-                               [class.rotate-180]="area.expanded"></i>
-                        </div>
-
-                        <!-- Quick Action Buttons -->
-                        <div class="flex gap-2 ml-2" (click)="$event.stopPropagation()">
-                            <button (click)="setAllStepsInArea(area.id, 'ok')"
-                                    class="w-10 h-10 rounded-full transition-all flex items-center justify-center border-2 shadow-sm hover:scale-110 active:scale-95"
-                                    [class.bg-emerald-600]="hasAreaOk(area.id)" 
-                                    [class.text-white]="hasAreaOk(area.id)"
-                                    [class.border-emerald-500]="hasAreaOk(area.id)"
-                                    [class.bg-white]="!hasAreaOk(area.id)"
-                                    [class.text-emerald-600]="!hasAreaOk(area.id)"
-                                    [class.border-emerald-300]="!hasAreaOk(area.id)"
-                                    [class.hover:border-emerald-400]="!hasAreaOk(area.id)"
-                                    title="Segna tutto come conforme">
-                                <i class="fa-solid fa-check text-lg"></i>
-                            </button>
-
-                            <button (click)="setAllStepsInArea(area.id, 'issue')"
-                                    class="w-10 h-10 rounded-full transition-all flex items-center justify-center border-2 shadow-sm hover:scale-110 active:scale-95"
-                                    [class.bg-red-600]="hasAreaIssues(area.id)" 
-                                    [class.text-white]="hasAreaIssues(area.id)"
-                                    [class.border-red-500]="hasAreaIssues(area.id)"
-                                    [class.bg-white]="!hasAreaIssues(area.id)"
-                                    [class.text-red-600]="!hasAreaIssues(area.id)"
-                                    [class.border-red-300]="!hasAreaIssues(area.id)"
-                                    [class.hover:border-red-400]="!hasAreaIssues(area.id)"
-                                    title="Segna tutto come non conforme">
-                                <i class="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                        </div>
-                    </div>
 
                     <!-- Steps Content (Expanded) -->
                     @if (area.expanded) {
-                        <div class="px-5 pb-6 pt-2 border-t border-slate-50 bg-slate-50/50 animate-slide-down">
-                            <div class="grid grid-cols-1 gap-3">
-                                @for (step of area.steps; track step.id) {
-                                    <div class="bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden relative shadow-sm"
-                                         [class.border-slate-100]="step.status === 'pending'"
-                                         [class.border-emerald-500]="step.status === 'ok'"
-                                         [class.border-red-500]="step.status === 'issue'"
-                                         [class.bg-emerald-50]="step.status === 'ok'"
-                                         [class.bg-red-50]="step.status === 'issue'">
-                                        
-                                        <div class="p-4 flex items-center gap-4">
-                                            <!-- Step Icon -->
-                                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-sm transition-colors flex-shrink-0"
-                                                 [class.bg-slate-100]="step.status === 'pending'"
-                                                 [class.text-slate-400]="step.status === 'pending'"
-                                                 [class.bg-emerald-100]="step.status === 'ok'"
-                                                 [class.text-emerald-600]="step.status === 'ok'"
-                                                 [class.bg-red-100]="step.status === 'issue'"
-                                                 [class.text-red-600]="step.status === 'issue'">
-                                                <i [class]="'fa-solid ' + step.icon"></i>
-                                            </div>
-
-                                            <!-- Step Label -->
-                                            <div class="flex-1 min-w-0">
-                                                <h4 class="font-bold text-slate-800 text-sm md:text-base"
-                                                    [class.text-emerald-900]="step.status === 'ok'"
-                                                    [class.text-red-900]="step.status === 'issue'">
-                                                    {{ step.label }}
-                                                </h4>
-                                                <p class="text-[10px] uppercase tracking-wide font-bold mt-0.5"
-                                                   [class.text-slate-400]="step.status === 'pending'"
-                                                   [class.text-emerald-600]="step.status === 'ok'"
-                                                   [class.text-red-600]="step.status === 'issue'">
-                                                    @if(step.status === 'pending') { In Attesa }
-                                                    @if(step.status === 'ok') { Conforme }
-                                                    @if(step.status === 'issue') { Non Conforme }
-                                                </p>
-                                            </div>
-
-                                            <!-- Action Buttons -->
-                                            @if (step.status === 'pending') {
-                                                <div class="flex gap-2">
-                                                    <!-- OK Button -->
-                                                    <button (click)="setStepStatus(area.id, step.id, 'ok')" 
-                                                            class="w-10 h-10 rounded-full bg-slate-100 hover:bg-emerald-100 text-slate-300 hover:text-emerald-600 flex items-center justify-center transition-all active:scale-95 border border-slate-200">
-                                                        <i class="fa-solid fa-check text-lg"></i>
-                                                    </button>
-                                                    <!-- KO Button -->
-                                                    <button (click)="setStepStatus(area.id, step.id, 'issue')"
-                                                            class="w-10 h-10 rounded-full bg-slate-100 hover:bg-red-100 text-slate-300 hover:text-red-500 flex items-center justify-center transition-all active:scale-95 border border-slate-200">
-                                                        <i class="fa-solid fa-triangle-exclamation text-sm"></i>
-                                                    </button>
-                                                </div>
-                                            } @else {
-                                                <!-- Undo Button if already set -->
-                                                <button (click)="setStepStatus(area.id, step.id, 'pending')" 
-                                                        class="w-8 h-8 rounded-full bg-white/50 hover:bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all border border-black/5 shadow-sm">
-                                                    <i class="fa-solid fa-rotate-left text-xs"></i>
-                                                </button>
-                                            }
-                                        </div>
+                        <div class="bg-slate-50/50 border-t border-slate-100 px-4 py-2 divide-y divide-slate-100/50 select-none shadow-inner animate-slide-down">
+                            @for (step of area.steps; track step.id; let i = $index) {
+                                <div class="py-3 flex items-center justify-between gap-4 group/step">
+                                    <div class="flex items-center gap-3 flex-1">
+                                        <span class="text-[9px] font-black text-slate-400 w-5 h-5 rounded bg-white hover:bg-white flex items-center justify-center border border-slate-200 shadow-sm shrink-0 leading-none">
+                                            {{ i + 1 }}
+                                        </span>
+                                        <span class="text-sm font-medium text-slate-700 leading-tight transition-colors"
+                                              [class.text-emerald-700]="step.status === 'ok'"
+                                              [class.text-red-700]="step.status === 'issue'">
+                                            {{ step.label }}
+                                        </span>
                                     </div>
-                                }
-                            </div>
+                                    <div class="flex gap-2 shrink-0">
+                                        @if (step.status === 'pending') {
+                                            <button (click)="setStepStatus(area.id, step.id, 'ok')" class="w-8 h-8 rounded-full border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-check text-xs"></i></button>
+                                            <button (click)="setStepStatus(area.id, step.id, 'issue')" class="w-8 h-8 rounded-full border border-red-200 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
+                                        } @else {
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[9px] font-black uppercase tracking-widest px-2"
+                                                      [class.text-emerald-600]="step.status === 'ok'"
+                                                      [class.text-red-600]="step.status === 'issue'">
+                                                    {{ step.status === 'ok' ? 'Conforme' : 'Anomalia' }}
+                                                </span>
+                                                <button (click)="setStepStatus(area.id, step.id, 'pending')" class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-500 hover:bg-slate-800 hover:border-slate-800 hover:text-white transition-all flex items-center justify-center shadow-sm"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
                         </div>
                     }
                 </div>
             }
+                        </div>
+                    </div>
+                </div>
         </div>
 
-        <!-- Footer Actions: Submit OR Post-Actions -->
-        <div class="print:hidden fixed bottom-6 right-6 z-30 md:absolute md:bottom-0 md:right-0 md:relative md:mt-8 md:text-right w-full md:w-auto">
-            
+        <!-- Footer Actions -->
+        <div class="fixed bottom-6 right-6 z-50">
             @if (!isSubmitted()) {
-                @if (isAllCompleted()) {
-                    <button (click)="submitChecklist()" 
-                            class="ml-auto bg-emerald-600 text-white rounded-2xl px-6 py-4 shadow-2xl shadow-emerald-500/40 font-bold text-lg flex items-center gap-3 hover:bg-emerald-700 hover:scale-105 transition-all animate-bounce-short">
-                        <div>
-                            <div class="leading-none text-[10px] uppercase opacity-80 text-left">Checklist Completa</div>
-                            <div class="flex items-center">REGISTRA ORA <i class="fa-solid fa-check-double ml-2"></i></div>
-                        </div>
-                    </button>
-                } @else {
-                    <div class="bg-slate-800 text-white rounded-full px-5 py-3 shadow-lg text-xs font-bold opacity-80 backdrop-blur-md float-right">
-                        {{ totalStepsCount() - completedStepsCount() }} Rimanenti
-                    </div>
-                }
+                <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
+                        class="bg-slate-900 text-white rounded-2xl px-10 py-5 shadow-2xl font-black text-sm uppercase tracking-[0.2em] flex items-center gap-5 disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 active:scale-95 group border-2 border-white/10">
+                    REGISTRA OPERAZIONI 
+                    <i class="fa-solid fa-check-double text-xl text-pink-400 group-hover:rotate-12 transition-transform"></i>
+                </button>
             } @else {
                 <!-- Post Submission Status (Moved Out) -->
                 <div class="mb-4 flex justify-center animate-slide-up">
@@ -333,28 +263,28 @@ interface AreaChecklist {
                 </div>
 
                 <!-- Action Bar (Centered) -->
-                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-2xl shadow-2xl animate-slide-up mx-4 md:mx-0">
-                    <div class="flex flex-wrap items-center justify-center gap-2">
-                        <button (click)="submitChecklist()" class="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-2 border border-emerald-400/50 ring-2 ring-emerald-500/20">
-                            <i class="fa-solid fa-floppy-disk"></i> Salva
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-5 rounded-[2.5rem] shadow-2xl animate-slide-up mx-4 md:mx-0 border border-white/20">
+                    <div class="flex flex-wrap items-center justify-center gap-4">
+                        <button (click)="submitChecklist()" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-black text-base transition-all shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-3 border border-emerald-400/50 ring-4 ring-emerald-500/20">
+                            <i class="fa-solid fa-floppy-disk text-lg"></i> Salva
                         </button>
 
-                        <div class="w-px h-8 bg-white/20 mx-1 hidden sm:block"></div>
+                        <div class="w-px h-10 bg-white/20 mx-2 hidden sm:block"></div>
 
-                        <button (click)="printReport()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10" title="Stampa">
-                            <i class="fa-solid fa-print text-white"></i> <span class="hidden sm:inline">Stampa</span>
+                        <button (click)="printReport()" class="px-6 py-4 bg-white/10 hover:bg-white/20 rounded-2xl font-black text-base transition-colors flex items-center justify-center gap-3 backdrop-blur-sm border border-white/10" title="Stampa">
+                            <i class="fa-solid fa-print text-white text-lg"></i> <span class="hidden sm:inline">Stampa</span>
                         </button>
-                        <button (click)="sendEmail()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10" title="Email">
-                            <i class="fa-solid fa-envelope text-white"></i> <span class="hidden sm:inline">Email</span>
+                        <button (click)="sendEmail()" class="px-6 py-4 bg-white/10 hover:bg-white/20 rounded-2xl font-black text-base transition-colors flex items-center justify-center gap-3 backdrop-blur-sm border border-white/10" title="Email">
+                            <i class="fa-solid fa-envelope text-white text-lg"></i> <span class="hidden sm:inline">Email</span>
                         </button>
-                        <button (click)="sendInternalMessage()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10" title="Chat">
-                            <i class="fa-solid fa-comments text-white"></i> <span class="hidden sm:inline">Chat</span>
+                        <button (click)="sendInternalMessage()" class="px-6 py-4 bg-white/10 hover:bg-white/20 rounded-2xl font-black text-base transition-colors flex items-center justify-center gap-3 backdrop-blur-sm border border-white/10" title="Chat">
+                            <i class="fa-solid fa-comments text-white text-lg"></i> <span class="hidden sm:inline">Chat</span>
                         </button>
                         
-                        <div class="w-px h-8 bg-white/20 mx-1 hidden sm:block"></div>
+                        <div class="w-px h-10 bg-white/20 mx-2 hidden sm:block"></div>
 
-                        <button (click)="startNewChecklist()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-purple-100 hover:text-white transition-colors border border-white/10 flex items-center justify-center gap-2 backdrop-blur-sm whitespace-nowrap" title="Nuova Compilazione">
-                            <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Nuova</span>
+                        <button (click)="startNewChecklist()" class="px-6 py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-purple-100 hover:text-white font-black text-base transition-colors border border-white/10 flex items-center justify-center gap-3 backdrop-blur-sm whitespace-nowrap" title="Nuova Compilazione">
+                            <i class="fa-solid fa-rotate-right text-lg"></i> <span class="hidden sm:inline">Nuova</span>
                         </button>
                     </div>
                 </div>

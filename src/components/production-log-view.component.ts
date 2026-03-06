@@ -9,20 +9,30 @@ import { FormsModule } from '@angular/forms';
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="animate-fade-in p-6 max-w-7xl mx-auto pb-24">
-        <!-- Header -->
-        <div class="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-[40px] p-10 mb-8 border border-white/10 shadow-2xl relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-10 opacity-10 pointer-events-none rotate-12">
-                <i class="fa-solid fa-boxes-packing text-9xl text-white"></i>
-            </div>
-            <div class="relative z-10">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 truncate shadow-inner">
-                         <i class="fa-solid fa-barcode text-white text-3xl"></i>
+    <!-- UI CONTENT (Hidden on print) -->
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+        
+        <!-- Premium Hero Header -->
+        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
+            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-teal-600/15 blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-emerald-600/10 blur-3xl"></div>
+            
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
+                        <i class="fa-solid fa-barcode text-3xl text-white"></i>
                     </div>
                     <div>
-                        <h2 class="text-4xl font-black text-white">Rintracciabilità Prodotti</h2>
-                        <p class="text-emerald-100 font-black uppercase tracking-[0.2em] text-[10px]">Registro Permanente Produzione e Trasformazione</p>
+                        <h2 class="text-4xl font-black tracking-tight text-white mb-1"><span class="text-teal-400">Rintracciabilità</span> Prodotti</h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
+                                <i class="fa-solid fa-circle text-[9px] animate-pulse text-teal-400"></i>
+                                Registro Produzione
+                            </span>
+                            <span class="flex items-center gap-2 rounded-full bg-teal-500/10 px-4 py-1.5 text-sm font-black text-teal-400 border border-teal-500/20">
+                                <i class="fa-solid fa-user-check text-xs"></i> {{ state.currentUser()?.name }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

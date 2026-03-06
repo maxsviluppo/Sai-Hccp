@@ -31,329 +31,253 @@ interface SystemAlert {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-6 animate-fade-in">
+    <div class="space-y-8 animate-fade-in p-2">
       
-      <!-- Enhanced Admin Header -->
-      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 p-8 rounded-3xl shadow-xl border border-indigo-500/30 relative overflow-hidden mb-6">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <i class="fa-solid fa-shield-halved text-9xl text-white"></i>
-        </div>
-        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div class="flex items-center gap-6">
-            <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
-              <i class="fa-solid fa-shield-halved text-white text-3xl"></i>
+      <!-- Premium Hero Header -->
+      <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
+        <!-- Decor Elements -->
+        <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-blue-600/15 blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-indigo-600/10 blur-3xl"></div>
+        
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="flex items-center gap-5">
+            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg shadow-blue-500/20 ring-1 ring-white/20">
+              <i class="fa-solid fa-shield-halved text-3xl text-white"></i>
             </div>
             <div>
-              <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">Centro di Controllo</h2>
-              <p class="text-indigo-200 text-sm font-medium">Panoramica globale conformità HACCP.</p>
-              @if(state.filterCollaboratorId()) {
-                  <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-xs font-bold text-indigo-300">
-                    <i class="fa-solid fa-filter text-indigo-400"></i> 
-                    Filtro Attivo: Unità Selezionata
-                  </div>
-              }
+              <h2 class="text-4xl font-black tracking-tight text-white mb-1">Control <span class="text-blue-400">Hub</span></h2>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10 uppercase tracking-widest">
+                  <i class="fa-solid fa-circle text-[9px] animate-pulse text-emerald-400"></i>
+                  Sistema Online
+                </span>
+                @if(state.filterCollaboratorId()) {
+                  <span class="flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-1.5 text-sm font-black text-blue-400 border border-blue-500/20 uppercase tracking-widest">
+                    <i class="fa-solid fa-filter text-xs"></i> {{ state.filterCollaboratorId() }}
+                  </span>
+                }
+              </div>
             </div>
           </div>
 
-          <div class="flex gap-3">
-             <div class="px-5 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                   <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Analisi</div>
-                   <div class="text-sm font-bold text-white">{{ getCurrentDate() }}</div>
+          <div class="flex flex-wrap gap-3">
+            <!-- Date Card - Matched with Phases Style -->
+            <div class="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-md">
+              <div class="text-left">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Periodo Attività</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 rounded-full w-full"></div>
+                    </div>
+                    <span class="text-xl font-black text-white whitespace-nowrap">{{ getCurrentDate() }}</span>
                 </div>
-                <i class="fa-solid fa-calendar-day text-indigo-400 text-xl"></i>
-             </div>
-             
-             <div class="px-5 py-3 bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 rounded-xl flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                   <div class="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">Stato Sistema</div>
-                   <div class="text-sm font-bold text-emerald-400">Operativo</div>
-                </div>
-                <div class="relative">
-                   <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                     <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                   </span>
-                   <i class="fa-solid fa-server text-emerald-400 text-xl"></i>
-                </div>
-             </div>
+              </div>
+              <div class="h-10 w-10 flex items-center justify-center bg-blue-500/20 rounded-xl text-blue-400">
+                <i class="fa-solid fa-calendar-day text-xl"></i>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Live KPI Matrix -->
       @if (state.isAdmin()) {
-      <!-- Enhanced KPI Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group transition-transform">
-          <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-3">
-              <i class="fa-solid fa-clipboard-check text-3xl opacity-80"></i>
-              <span class="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">{{ getCurrentDateShort() }}</span>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <!-- Card: HACCP Progress -->
+        <div class="group relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300">
+          <div class="mb-6 flex items-center justify-between">
+            <div class="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform shadow-sm">
+              <i class="fa-solid fa-clipboard-list text-2xl"></i>
             </div>
-            <p class="text-sm opacity-90 font-medium">Pratica HACCP</p>
-            <p class="text-4xl font-black mt-2">{{ kpiData().completed }}/{{ kpiData().total }} Fasi</p>
-            <div class="mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div class="h-full bg-white rounded-full transition-all" [style.width.%]="(kpiData().completed / kpiData().total) * 100"></div>
-            </div>
+            <span class="rounded-full bg-blue-100 px-4 py-1.5 text-xs font-black text-blue-700 uppercase tracking-widest">{{ getCurrentDateShort() }}</span>
+          </div>
+          <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">Pratica HACCP</p>
+          <h3 class="text-4xl font-black text-slate-900">{{ kpiData().completed }} <span class="text-slate-300">/</span> {{ kpiData().total }}</h3>
+          <div class="mt-6 h-3 rounded-full bg-slate-100 overflow-hidden shadow-inner">
+            <div class="h-full bg-blue-600 transition-all duration-1000" [style.width.%]="(kpiData().completed / kpiData().total) * 100"></div>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform"
-             (click)="scrollToAlerts()">
-          <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-3">
-              <i class="fa-solid fa-bell text-3xl opacity-80 animate-pulse"></i>
-              @if (criticalAlerts().length > 0) {
-                <span class="bg-red-500 px-2 py-1 rounded-full text-xs font-bold animate-bounce">{{ criticalAlerts().length }}</span>
-              }
+        <!-- Card: Active Alerts -->
+        <div (click)="scrollToAlerts()" class="group relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 cursor-pointer">
+          <div class="mb-6 flex items-center justify-between">
+            <div class="h-14 w-14 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform shadow-sm">
+              <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
             </div>
-            <p class="text-sm opacity-90 font-medium">Avvisi Attivi</p>
-            <p class="text-4xl font-black mt-2">{{ systemAlerts().length }}</p>
-            <p class="text-xs mt-2 opacity-80">{{ criticalAlerts().length }} critici per la data odierna</p>
+            @if (criticalAlerts().length > 0) {
+              <span class="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-sm font-black text-white animate-bounce shadow-lg shadow-red-200">{{ criticalAlerts().length }}</span>
+            }
           </div>
+          <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">Avvisi Attivi</p>
+          <h3 class="text-4xl font-black text-slate-900">{{ systemAlerts().length }}</h3>
+          <p class="mt-3 text-sm font-bold text-red-500 uppercase tracking-tight">{{ criticalAlerts().length }} criticità rilevate</p>
         </div>
 
-        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group transition-transform"
-             [class.cursor-pointer]="state.isAdmin()"
-             [class.hover:scale-105]="state.isAdmin()"
-             (click)="state.isAdmin() ? state.setModule('collaborators') : null">
-          <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-3">
-              <i class="fa-solid fa-users text-3xl opacity-80"></i>
-              <span class="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">{{ kpiData().activeUsers }} attivi</span>
+        <!-- Card: Active Units -->
+        <div (click)="state.setModule('collaborators')" class="group relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 cursor-pointer">
+          <div class="mb-6 flex items-center justify-between">
+            <div class="h-14 w-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform shadow-sm">
+              <i class="fa-solid fa-building-user text-2xl"></i>
             </div>
-            <p class="text-sm opacity-90 font-medium">Unità Operative</p>
-            <p class="text-4xl font-black mt-2">{{ collaboratorActivities().length }}</p>
-            <p class="text-xs mt-2 opacity-80">Visualizzati in elenco</p>
+            <span class="rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-black text-emerald-700 uppercase tracking-widest">{{ kpiData().activeUsers }} Online</span>
           </div>
+          <p class="text-sm font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">Unità Operative</p>
+          <h3 class="text-4xl font-black text-slate-900">{{ collaboratorActivities().length }}</h3>
+          <p class="mt-3 text-sm font-bold text-slate-400 uppercase tracking-tight">Infrastruttura Attiva</p>
         </div>
 
-        <div class="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform">
-          <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-3">
-              <i class="fa-solid fa-chart-line text-3xl opacity-80"></i>
-              <span class="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">+12%</span>
+        <!-- Card: Average Compliance -->
+        <div class="group relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 shadow-2xl border border-slate-800 transition-all duration-300">
+          <div class="mb-6 flex items-center justify-between">
+            <div class="h-14 w-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 shadow-inner">
+              <i class="fa-solid fa-chart-line text-2xl"></i>
             </div>
-            <p class="text-sm opacity-90 font-medium">Conformità Media</p>
-            <p class="text-4xl font-black mt-2">98.5%</p>
-            <p class="text-xs mt-2 opacity-80">vs 86.5% mese scorso</p>
+            <span class="rounded-full bg-blue-500/20 px-4 py-1.5 text-xs font-black text-blue-400 border border-blue-500/30 uppercase tracking-widest">+12%</span>
           </div>
+          <p class="text-sm font-bold text-slate-400 uppercase tracking-[0.15em] mb-2 text-left">Conformità Media</p>
+          <h3 class="text-4xl font-black text-white">98.5%</h3>
+          <p class="mt-3 text-sm font-bold text-indigo-400 uppercase tracking-tight">Target Mensile Raggiunto</p>
         </div>
       </div>
 
-      <!-- Critical Modules Status (Hidden for Admin as they don't perform checks) -->
-      <!-- Real-time Phase Advancement Status -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-list-check text-indigo-500"></i> Avanzamento Processo HACCP
+      <!-- Advanced Operations Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Process Flow Monitor -->
+        <div class="lg:col-span-2 rounded-[3rem] bg-white p-10 shadow-sm border border-slate-100">
+          <div class="flex items-center justify-between mb-10">
+            <h3 class="text-2xl font-black text-slate-900 flex items-center gap-4">
+              <span class="h-10 w-2.5 bg-indigo-600 rounded-full"></span>
+              Timeline Avanzamento HACCP
             </h3>
-            <span class="text-[10px] font-black px-2 py-1 rounded bg-indigo-100 text-indigo-700 uppercase tracking-wider">Dati Reali di Oggi</span>
-          </div>
-          
-          <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Phase 1 Progress -->
-            <div class="space-y-3">
-              <div class="flex justify-between items-end">
-                <div>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fase 1</p>
-                  <h4 class="text-sm font-black text-slate-700">Pre-operativa</h4>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-black text-slate-900">{{ phaseRecap().pre.count }}/{{ (filteredUsers() || []).length || 0 }}</span>
-                </div>
-              </div>
-              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-500 transition-all duration-1000" [style.width.%]="phaseRecap().pre.pct"></div>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded" 
-                      [class.bg-emerald-100]="phaseRecap().pre.issues === 0" [class.text-emerald-700]="phaseRecap().pre.issues === 0"
-                      [class.bg-red-100]="phaseRecap().pre.issues > 0" [class.text-red-700]="phaseRecap().pre.issues > 0">
-                  {{ phaseRecap().pre.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phaseRecap().pre.issues }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Phase 2 Progress -->
-            <div class="space-y-3 border-l border-slate-100 pl-6">
-              <div class="flex justify-between items-end">
-                <div>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fase 2</p>
-                  <h4 class="text-sm font-black text-slate-700">Operativa</h4>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-black text-slate-900">{{ phaseRecap().op.count }}/{{ (filteredUsers() || []).length || 0 }}</span>
-                </div>
-              </div>
-              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full bg-indigo-500 transition-all duration-1000" [style.width.%]="phaseRecap().op.pct"></div>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded" 
-                      [class.bg-emerald-100]="phaseRecap().op.issues === 0" [class.text-emerald-700]="phaseRecap().op.issues === 0"
-                      [class.bg-red-100]="phaseRecap().op.issues > 0" [class.text-red-700]="phaseRecap().op.issues > 0">
-                  {{ phaseRecap().op.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phaseRecap().op.issues }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Phase 3 Progress -->
-            <div class="space-y-3 border-l border-slate-100 pl-6">
-              <div class="flex justify-between items-end">
-                <div>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fase 3</p>
-                  <h4 class="text-sm font-black text-slate-700">Post-operativa</h4>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-black text-slate-900">{{ phaseRecap().post.count }}/{{ (filteredUsers() || []).length || 0 }}</span>
-                </div>
-              </div>
-              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full bg-purple-500 transition-all duration-1000" [style.width.%]="phaseRecap().post.pct"></div>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded" 
-                      [class.bg-emerald-100]="phaseRecap().post.issues === 0" [class.text-emerald-700]="phaseRecap().post.issues === 0"
-                      [class.bg-red-100]="phaseRecap().post.issues > 0" [class.text-red-700]="phaseRecap().post.issues > 0">
-                  {{ phaseRecap().post.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phaseRecap().post.issues }}
-                </span>
-              </div>
+            <div class="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100">
+               <span class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+               <span class="text-xs font-black text-slate-500 uppercase tracking-[0.1em]">Live Update</span>
             </div>
           </div>
-          
-          <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2 text-[10px] text-slate-500">
-            <i class="fa-solid fa-circle-info text-indigo-400"></i>
-            I dati si riferiscono alle unità operative selezionate per il {{ getCurrentDate() }}.
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Phase Blocks -->
+            @for (phase of [
+              {id: 'pre', label: 'Pre-Operativa', data: phaseRecap().pre, color: 'blue'},
+              {id: 'op', label: 'Operativa', data: phaseRecap().op, color: 'indigo'},
+              {id: 'post', label: 'Post-Operativa', data: phaseRecap().post, color: 'purple'}
+            ]; track phase.id) {
+              <div class="relative">
+                <div class="mb-5">
+                  <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{{ phase.label }}</p>
+                  <div class="flex items-end justify-between">
+                    <h4 class="text-3xl font-black text-slate-900 leading-tight">{{ phase.data.count }} <span class="text-base text-slate-400 font-bold">/ {{ (filteredUsers() || []).length }}</span></h4>
+                    <span class="text-sm font-black" [class]="'text-' + phase.color + '-600'">{{ (phase.data.pct | number:'1.0-0') }}%</span>
+                  </div>
+                </div>
+                <div class="h-4 rounded-full bg-slate-100 overflow-hidden mb-4 shadow-inner">
+                  <div class="h-full transition-all duration-1000 shadow-sm" [style.width.%]="phase.data.pct" [class]="'bg-' + phase.color + '-600'"></div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="rounded-xl px-4 py-1.5 text-xs font-black uppercase tracking-widest shadow-sm"
+                        [class.bg-emerald-100]="phase.data.issues === 0" [class.text-emerald-700]="phase.data.issues === 0"
+                        [class.bg-red-100]="phase.data.issues > 0" [class.text-red-700]="phase.data.issues > 0">
+                    {{ phase.data.issues === 0 ? 'STATUS: OK' : 'ANOMALIE: ' + phase.data.issues }}
+                  </span>
+                </div>
+              </div>
+            }
           </div>
         </div>
 
-        <!-- Verification Report (Send via Email) -->
-        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-lg border border-slate-700 overflow-hidden relative group">
-           <div class="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-           <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between bg-slate-800/50">
-            <h3 class="font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-envelope-open-text text-blue-400"></i> Report Verifiche
-            </h3>
-            <span class="text-[10px] font-bold px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-tighter">PDF A4</span>
-          </div>
-          <div class="p-6 relative z-10">
-            <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-                Invia il report completo delle verifiche per la data <span class="text-blue-400 font-bold">{{ getCurrentDate() }}</span> all'amministrazione.
-            </p>
+        <!-- Premium Report Card -->
+        <div class="rounded-[3rem] bg-indigo-700 p-10 shadow-2xl relative overflow-hidden group">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-blue-800 opacity-90 transition-opacity group-hover:opacity-100"></div>
+          <div class="absolute -right-10 -bottom-10 h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
+          
+          <div class="relative z-10 h-full flex flex-col">
+            <div class="mb-8 flex items-center justify-between">
+              <i class="fa-solid fa-file-invoice text-5xl text-white/50"></i>
+              <span class="rounded-xl bg-white/20 px-4 py-2 text-xs font-black text-white border border-white/20 uppercase tracking-[0.15em] shadow-lg">Esportazione A4</span>
+            </div>
             
-            @if (isSendingReport()) {
+            <h3 class="text-3xl font-black text-white mb-5 leading-tight">Genera Report<br>Certificato</h3>
+            <p class="text-indigo-100 text-base mb-10 font-medium opacity-90 leading-relaxed">Raccogli tutti i dati validati del {{ getCurrentDateShort() }} in un unico documento PDF ufficiale.</p>
+
+            <div class="mt-auto space-y-4">
+              @if (isSendingReport()) {
                 <div class="space-y-3 animate-pulse">
-                    <div class="flex justify-between items-center text-[10px] text-blue-300 uppercase font-bold">
-                        <span>Generazione PDF...</span>
-                        <span>75%</span>
-                    </div>
-                    <div class="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500 w-[75%] rounded-full transition-all duration-700"></div>
-                    </div>
+                  <div class="h-2.5 rounded-full bg-white/20 overflow-hidden">
+                    <div class="h-full bg-white w-2/3 transition-all duration-500"></div>
+                  </div>
+                  <p class="text-xs text-center font-black text-white/70 uppercase tracking-widest">Elaborazione file...</p>
                 </div>
-            } @else {
-                <div class="flex flex-col gap-4">
-                    <button (click)="sendDailyReport()"
-                            class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 border border-white/20">
-                        <i class="fa-solid fa-paper-plane text-lg"></i>
-                        INVIA REPORT EMAIL
-                    </button>
-                    <button (click)="printDailyReport()"
-                            class="w-full py-4 bg-white hover:bg-slate-50 text-slate-900 rounded-2xl font-black text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 border-2 border-slate-200">
-                        <i class="fa-solid fa-print text-lg text-blue-600"></i>
-                        STAMPA REGISTRO A4
-                    </button>
-                </div>
-                <div class="mt-4 flex items-center gap-2 text-[10px] text-slate-500 justify-center bg-slate-800/20 py-2 rounded-lg">
-                    <i class="fa-solid fa-circle-info text-blue-400"></i>
-                    Destinatario: <span class="text-slate-300">{{ state.reportRecipientEmail() }}</span>
-                </div>
-            }
+              } @else {
+                <button (click)="sendDailyReport()" class="w-full rounded-[1.5rem] bg-white py-5 text-base font-black text-indigo-900 shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4">
+                  <i class="fa-solid fa-paper-plane text-lg"></i> INVIA VIA PEC
+                </button>
+                <button (click)="printDailyReport()" class="w-full rounded-[1.5rem] bg-indigo-600/50 py-5 text-base font-black text-white border border-white/20 hover:bg-white/10 transition-all flex items-center justify-center gap-4">
+                  <i class="fa-solid fa-print text-lg"></i> ANTEPRIMA STAMPA
+                </button>
+              }
+            </div>
           </div>
         </div>
       </div>
       }
 
-      <!-- Collaborator Monitoring Section -->
-      <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-              <i class="fa-solid fa-user-clock text-indigo-600"></i>
+      <!-- Collaborator Radar -->
+      <div class="rounded-[3rem] bg-white shadow-sm border border-slate-100 overflow-hidden">
+        <div class="border-b border-slate-100 bg-slate-50/50 p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div class="flex items-center gap-6">
+            <div class="h-14 w-14 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-700">
+              <i class="fa-solid fa-user-clock text-2xl"></i>
             </div>
             <div>
-              <h3 class="font-bold text-slate-800 text-lg">Monitoraggio Unità Operative</h3>
-              <p class="text-xs text-slate-500">Stato attività per il giorno {{ getCurrentDate() }}</p>
+              <h3 class="text-2xl font-black text-slate-900">Radar Collaboratori</h3>
+              <p class="text-sm font-bold text-slate-500 uppercase tracking-widest">{{ getCurrentDate() }}</p>
             </div>
           </div>
-          @if (state.isAdmin() && !state.filterCollaboratorId()) {
-            <button (click)="state.setModule('collaborators')" 
-              class="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-bold">
-              <i class="fa-solid fa-users-gear mr-2"></i> Gestisci Struttura
-            </button>
-          }
+          <button (click)="state.setModule('collaborators')" class="rounded-2xl bg-slate-900 px-8 py-4 text-base font-black text-white hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+             Gestisci Struttura <i class="fa-solid fa-arrow-right ml-3 text-sm opacity-50"></i>
+          </button>
         </div>
 
-        <div class="p-6">
+        <div class="p-10">
           @if (collaboratorActivities().length === 0) {
-            <div class="text-center py-12">
-              <i class="fa-solid fa-filter-circle-xmark text-slate-300 text-5xl mb-4"></i>
-              <p class="text-slate-400 font-medium">Nessuna unità operativa trovata per i filtri selezionati.</p>
+            <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+              <i class="fa-solid fa-user-slash text-6xl mb-6 opacity-20"></i>
+              <p class="text-lg font-bold uppercase tracking-widest">Nessun operatore attivo al momento</p>
             </div>
           } @else {
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               @for (activity of collaboratorActivities(); track activity.userId) {
-                <div class="group relative bg-slate-50 hover:bg-white border-2 rounded-xl p-4 transition-all cursor-pointer"
-                     [class.border-emerald-200]="activity.status === 'active'"
-                     [class.border-orange-200]="activity.status === 'warning'"
-                     [class.border-slate-200]="activity.status === 'inactive'"
-                     (click)="openUserProfile(activity.userId)">
+                <div (click)="openUserProfile(activity.userId)" class="group relative rounded-[2.5rem] bg-slate-50 p-8 border-2 border-transparent hover:border-blue-200 hover:bg-white hover:shadow-xl transition-all duration-300 cursor-pointer">
                   
-                  <!-- Status Indicator -->
-                  <div class="absolute top-3 right-3">
-                    @if (activity.status === 'active') {
-                      <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-                    } @else if (activity.status === 'warning') {
-                      <div class="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
-                    } @else {
-                      <div class="w-3 h-3 bg-slate-300 rounded-full"></div>
-                    }
-                  </div>
-
-                  <div class="flex items-start gap-3">
-                    <img [src]="activity.avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-md">
-                    <div class="flex-1 min-w-0">
-                      <h4 class="font-bold text-slate-800 truncate">{{ activity.userName }}</h4>
-                      <p class="text-xs text-slate-500">{{ activity.department }}</p>
-                      
-                      <div class="mt-3 space-y-2">
-                        <div class="flex items-center justify-between text-xs">
-                          <span class="text-slate-600">Fasi HACCP</span>
-                          <span class="font-bold text-emerald-600">{{ activity.tasksCompleted }}/3</span>
-                        </div>
-                        @if (activity.tasksPending > 0) {
-                          <div class="flex items-center justify-between text-xs">
-                            <span class="text-slate-600">In Attesa</span>
-                            <span class="font-bold text-orange-600">{{ activity.tasksPending }}</span>
-                          </div>
+                  <div class="mb-6 flex items-start justify-between">
+                    <div class="relative">
+                      <img [src]="activity.avatar" class="h-20 w-20 rounded-2xl object-cover ring-2 ring-white shadow-md">
+                      <div class="absolute -right-1 -bottom-1 h-5 w-5 rounded-full border-2 border-white shadow-sm"
+                           [class.bg-emerald-500]="activity.status === 'active'"
+                           [class.bg-orange-500]="activity.status === 'warning'"
+                           [class.bg-slate-300]="activity.status === 'inactive'">
+                        @if (activity.status !== 'inactive') {
+                          <span class="absolute inset-0 rounded-full bg-current animate-ping opacity-75"></span>
                         }
                       </div>
-
-                      <div class="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
-                        <span class="text-[10px] text-slate-400">Ultimo accesso</span>
-                        <span class="text-[10px] font-medium text-slate-600">{{ activity.lastActivity }}</span>
-                      </div>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-xs font-black text-slate-400 uppercase tracking-widest block mb-1">{{ activity.department }}</span>
+                      <span class="text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">{{ activity.lastActivity }}</span>
                     </div>
                   </div>
 
-                  <!-- Hover Action -->
-                  <div class="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/5 rounded-xl transition-colors pointer-events-none"></div>
+                  <h4 class="text-xl font-black text-slate-800 truncate mb-6">{{ activity.userName }}</h4>
+                  
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-black text-slate-500 uppercase tracking-widest">Fasi HACCP Completate</span>
+                      <span class="text-sm font-black text-emerald-600">{{ activity.tasksCompleted }} / 3</span>
+                    </div>
+                    <div class="h-2 rounded-full bg-slate-200 overflow-hidden shadow-inner">
+                      <div class="h-full bg-emerald-500 transition-all duration-1000 shadow-sm" [style.width.%]="(activity.tasksCompleted / 3) * 100"></div>
+                    </div>
+                  </div>
                 </div>
               }
             </div>
@@ -361,72 +285,64 @@ interface SystemAlert {
         </div>
       </div>
 
-      <!-- System Alerts & Anomalies -->
-      <div id="alerts-section" class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-red-50 to-orange-50 px-6 py-4 border-b border-red-100 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-              <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+      <!-- Alerts System -->
+      <div id="alerts-section" class="rounded-[3rem] bg-white shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-red-50 p-10 border-b border-red-100 flex items-center justify-between">
+          <div class="flex items-center gap-6">
+            <div class="h-14 w-14 rounded-2xl bg-white shadow-sm border border-red-200 flex items-center justify-center text-red-600">
+              <i class="fa-solid fa-bell text-2xl"></i>
             </div>
             <div>
-              <h3 class="font-bold text-slate-800 text-lg">Avvisi di Sistema & Anomalie</h3>
-              <p class="text-xs text-slate-500">Notifiche per l'unità selezionata in data {{ getCurrentDate() }}</p>
+              <h3 class="text-2xl font-black text-slate-900">Centro Notifiche Anomalie</h3>
+              <p class="text-sm font-bold text-red-500 uppercase tracking-widest">{{ systemAlerts().length }} segnalazioni attive</p>
             </div>
           </div>
-          @if (systemAlerts().length > 0) {
-            <span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-              {{ systemAlerts().length }} attivi
-            </span>
-          }
         </div>
 
-        <div class="p-6">
-          @if (systemAlerts().length === 0) {
-            <div class="text-center py-12">
-              <i class="fa-solid fa-check-circle text-emerald-300 text-5xl mb-4"></i>
-              <p class="text-slate-400 font-medium">Nessun avviso attivo per questa selezione. Tutto in regola!</p>
+        <div class="p-10">
+           @if (systemAlerts().length === 0) {
+            <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+              <div class="h-24 w-24 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 mb-6 border border-emerald-100 shadow-sm">
+                <i class="fa-solid fa-check text-4xl"></i>
+              </div>
+              <p class="text-lg font-bold text-emerald-700">Tutti i parametri sono conformi</p>
+              <p class="text-sm text-slate-400 uppercase font-bold tracking-[0.2em] mt-2">Nessuna anomalia oggi</p>
             </div>
           } @else {
-            <div class="space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               @for (alert of systemAlerts(); track alert.id) {
-                <div class="flex items-start gap-4 p-4 rounded-xl border-2 transition-all hover:shadow-md"
-                     [class.bg-red-50]="alert.type === 'error'"
-                     [class.border-red-200]="alert.type === 'error'"
-                     [class.bg-orange-50]="alert.type === 'warning'"
-                     [class.border-orange-200]="alert.type === 'warning'"
-                     [class.bg-blue-50]="alert.type === 'info'"
-                     [class.border-blue-200]="alert.type === 'info'">
-                  
-                  <div class="flex-shrink-0 mt-1">
-                    @if (alert.type === 'error') {
-                      <i class="fa-solid fa-circle-xmark text-red-600 text-xl"></i>
-                    } @else if (alert.type === 'warning') {
-                      <i class="fa-solid fa-triangle-exclamation text-orange-600 text-xl"></i>
-                    } @else {
-                      <i class="fa-solid fa-info-circle text-blue-600 text-xl"></i>
-                    }
+                <div class="flex items-start gap-6 p-6 rounded-[2.5rem] border-2 transition-all hover:bg-slate-50"
+                     [class.bg-red-50/30]="alert.type === 'error'"
+                     [class.border-red-100]="alert.type === 'error'"
+                     [class.bg-orange-50/30]="alert.type === 'warning'"
+                     [class.border-orange-100]="alert.type === 'warning'"
+                     [class.bg-blue-50/30]="alert.type === 'info'"
+                     [class.border-blue-100]="alert.type === 'info'">
+                   
+                  <div class="flex-shrink-0">
+                    <div class="h-14 w-14 rounded-2xl bg-white flex items-center justify-center shadow-md ring-1 ring-black/5"
+                         [class.text-red-600]="alert.type === 'error'"
+                         [class.text-orange-600]="alert.type === 'warning'"
+                         [class.text-blue-600]="alert.type === 'info'">
+                      <i class="fa-solid text-xl" [class.fa-circle-xmark]="alert.type === 'error'" [class.fa-triangle-exclamation]="alert.type === 'warning'" [class.fa-info-circle]="alert.type === 'info'"></i>
+                    </div>
                   </div>
 
                   <div class="flex-1 min-w-0">
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="flex-1">
-                        <h4 class="font-bold text-slate-800 mb-1">{{ alert.title }}</h4>
-                        <p class="text-sm text-slate-600 mb-2">{{ alert.message }}</p>
-                        
-                        @if (alert.userName) {
-                          <div class="flex items-center gap-2 text-xs text-slate-500">
-                            <i class="fa-solid fa-user"></i>
-                            <span>{{ alert.userName }}</span>
-                            <span class="text-slate-300">•</span>
-                            <span>{{ alert.timestamp }}</span>
-                          </div>
-                        }
+                    <div class="flex items-start justify-between gap-6 mb-3">
+                      <h4 class="text-lg font-black text-slate-800 leading-tight">{{ alert.title }}</h4>
+                      <span class="text-xs font-black text-slate-400 uppercase whitespace-nowrap bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-sm">{{ alert.timestamp }}</span>
+                    </div>
+                    <p class="text-base text-slate-600 mb-6 italic leading-relaxed">{{ alert.message }}</p>
+                    
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-user-tag text-sm text-slate-400"></i>
+                        <span class="text-sm font-bold text-slate-500">{{ alert.userName }}</span>
                       </div>
-
-                      @if (alert.actionable && alert.userId) {
-                        <button (click)="openUserProfile(alert.userId)" 
-                                class="flex-shrink-0 px-3 py-1.5 bg-white border-2 border-slate-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all text-xs font-bold text-slate-700 hover:text-indigo-700">
-                          <i class="fa-solid fa-arrow-right mr-1"></i> Visualizza
+                      @if (alert.actionable) {
+                        <button (click)="openUserProfile(alert.userId || '')" class="text-sm font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-transform">
+                          Vedi Dettagli <i class="fa-solid fa-arrow-right text-xs"></i>
                         </button>
                       }
                     </div>
@@ -438,81 +354,26 @@ interface SystemAlert {
         </div>
       </div>
 
-      <!-- Quick Actions Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        @if (state.isAdmin()) {
-          <!-- Admin Actions -->
-          <button (click)="state.setModule('general-checks')" 
-                  class="group bg-white hover:bg-emerald-50 p-6 rounded-xl border-2 border-slate-200 hover:border-emerald-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-emerald-100 group-hover:bg-emerald-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-list-check text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
+      <!-- Footer Actions Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        @for (action of [
+          {id: 'general-checks', label: 'Checklist Generali', icon: 'fa-tasks', color: 'emerald', sub: 'Audit globale'},
+          {id: 'accounting', label: 'Gestione Fatture', icon: 'fa-piggy-bank', color: 'amber', sub: 'Documenti contabili'},
+          {id: 'messages', label: 'Centro Messagi', icon: 'fa-at', color: 'blue', sub: 'Inbox aziendale'},
+          {id: 'collaborators', label: 'Staff & Team', icon: 'fa-users', color: 'purple', sub: 'Ruoli ed accessi'}
+        ]; track action.id) {
+          <button (click)="state.setModule(action.id)" 
+                  class="group relative overflow-hidden rounded-[2rem] bg-white p-8 border-2 border-slate-100 hover:border-blue-400 hover:bg-blue-50/30 transition-all text-left shadow-sm hover:shadow-lg">
+            <div class="flex items-center gap-6">
+              <div class="h-14 w-14 rounded-2xl flex items-center justify-center transition-colors shadow-sm bg-slate-50"
+                   [class]="'text-' + action.color + '-600 group-hover:bg-' + action.color + '-500 group-hover:text-white'">
+                <i class="fa-solid {{ action.icon }} text-2xl"></i>
+              </div>
+              <div>
+                <h4 class="text-lg font-black text-slate-800 leading-tight mb-1 group-hover:text-blue-900">{{ action.label }}</h4>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.1em]">{{ action.sub }}</p>
+              </div>
             </div>
-            <h4 class="font-bold text-slate-800 mb-1">Controlli Generali</h4>
-            <p class="text-xs text-slate-500">Visualizza stato completo</p>
-          </button>
-
-          <button (click)="state.setModule('accounting')" 
-                  class="group bg-white hover:bg-amber-50 p-6 rounded-xl border-2 border-slate-200 hover:border-amber-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-amber-100 group-hover:bg-amber-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-calculator text-amber-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Contabilità</h4>
-            <p class="text-xs text-slate-500">Gestisci pagamenti</p>
-          </button>
-
-          <button (click)="state.setModule('messages')" 
-                  class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-comments text-blue-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Messaggistica</h4>
-            <p class="text-xs text-slate-500">Comunicazioni aziende</p>
-          </button>
-
-          <button (click)="state.setModule('collaborators')" 
-                  class="group bg-white hover:bg-purple-50 p-6 rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-purple-100 group-hover:bg-purple-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-users-gear text-purple-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Gestione Struttura</h4>
-            <p class="text-xs text-slate-500">Aziende e Collaboratori</p>
-          </button>
-        } @else {
-          <!-- Operational Actions -->
-          <button (click)="state.setModule('pre-op-checklist')" 
-                  class="group bg-white hover:bg-blue-50 p-6 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-clipboard-check text-blue-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Fase Pre-operativa</h4>
-            <p class="text-xs text-slate-500">Controlli apertura</p>
-          </button>
-
-          <button (click)="state.setModule('operative-checklist')" 
-                  class="group bg-white hover:bg-indigo-50 p-6 rounded-xl border-2 border-slate-200 hover:border-indigo-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-indigo-100 group-hover:bg-indigo-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-briefcase text-indigo-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Fase Operativa</h4>
-            <p class="text-xs text-slate-500">Controlli operativi</p>
-          </button>
-
-          <button (click)="state.setModule('post-op-checklist')" 
-                  class="group bg-white hover:bg-purple-50 p-6 rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-purple-100 group-hover:bg-purple-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-hourglass-end text-purple-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Fase Post-operativa</h4>
-            <p class="text-xs text-slate-500">Chiusura e pulizia</p>
-          </button>
-
-          <button (click)="state.setModule('history')" 
-                  class="group bg-white hover:bg-emerald-50 p-6 rounded-xl border-2 border-slate-200 hover:border-emerald-400 transition-all text-left">
-            <div class="w-12 h-12 rounded-full bg-emerald-100 group-hover:bg-emerald-500 flex items-center justify-center mb-3 transition-colors">
-              <i class="fa-solid fa-clock-rotate-left text-emerald-600 group-hover:text-white text-xl transition-colors"></i>
-            </div>
-            <h4 class="font-bold text-slate-800 mb-1">Archivio Checklist</h4>
-            <p class="text-xs text-slate-500">Storico registrazioni</p>
           </button>
         }
       </div>

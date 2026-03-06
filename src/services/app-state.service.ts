@@ -57,7 +57,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication' | 'production';
+  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication' | 'production' | 'documentation';
   adminOnly?: boolean;
   operatorOnly?: boolean;
 }
@@ -197,6 +197,7 @@ export class AppStateService {
     const state = {
       documents: this.documents(),
       selectedEquipment: this.selectedEquipment(),
+      disabledDocs: this.disabledDocs(),
       checklistRecords: this.checklistRecords(),
       productionRecords: this.productionRecords()
     };
@@ -210,6 +211,7 @@ export class AppStateService {
         const data = JSON.parse(saved);
         if (data.documents) this.documents.set(data.documents);
         if (data.selectedEquipment) this.selectedEquipment.set(data.selectedEquipment);
+        if (data.disabledDocs) this.disabledDocs.set(data.disabledDocs);
         if (data.checklistRecords) {
           // Restore dates correctly
           const restoredRecords = data.checklistRecords.map((r: any) => ({
@@ -237,6 +239,7 @@ export class AppStateService {
   }[]>([]);
 
   readonly documents = signal<AppDocument[]>([]);
+  readonly disabledDocs = signal<Record<string, boolean>>({}); // Map doc ID to disabled boolean
   readonly selectedEquipment = signal<{ id: string; name: string; area: string }[]>([]);
   readonly groupedEquipment = computed(() => {
     const raw = this.selectedEquipment();
@@ -411,10 +414,14 @@ export class AppStateService {
     { id: 'reports', label: 'Report Controlli', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
     { id: 'general-checks', label: 'Controlli Generali', icon: 'fa-list-check', category: 'dashboard', adminOnly: true },
 
+    // --- ARCHIVIO DOCUMENTALE ---
+    { id: 'documentation', label: 'Archivio Documentale', icon: 'fa-folder-tree', category: 'documentation' },
+
     // --- REGISTRI E FASI OPERATIVE ---
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations' },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
+    { id: 'production-log', label: 'Rintracciabilità', icon: 'fa-barcode', category: 'operations' },
 
     { id: 'cleaning-maintenance', label: 'Manutenzione', icon: 'fa-screwdriver-wrench', category: 'operations' },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations' },
@@ -423,14 +430,10 @@ export class AppStateService {
     // --- STORICO ---
     { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
 
-    // --- Rintracciabilità ---
-    { id: 'production-log', label: 'Registri Produzione', icon: 'fa-barcode', category: 'production' },
-
     // --- CONSUMABILI E MESSAGGI ---
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
 
     // Config
-    { id: 'documentation', label: 'Documentazione', icon: 'fa-folder-tree', category: 'config' },
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config' },
     { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config' },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },

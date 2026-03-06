@@ -7,214 +7,180 @@ import { AppStateService } from '../services/app-state.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-6 animate-fade-in">
+    <div class="space-y-8 animate-fade-in p-2">
       
-      <!-- Enhanced Operator Header (Matching Admin Style) -->
-      <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-8 rounded-3xl shadow-xl border border-emerald-500/30 relative overflow-hidden mb-6">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-          <i class="fa-solid fa-user-check text-9xl text-white"></i>
-        </div>
-        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+      <!-- Premium Operator Hero -->
+      <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-emerald-600 to-teal-800 p-8 shadow-2xl border border-emerald-500/20">
+        <!-- Decor Elements -->
+        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 h-40 w-40 rounded-full bg-emerald-400/20 blur-2xl"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
           <div class="flex items-center gap-6">
-            <div class="relative group">
-              <div class="absolute -inset-1 bg-white/30 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity"></div>
-              <img [src]="state.currentUser()?.avatar" class="relative w-16 h-16 rounded-2xl border-2 border-white/30 shadow-2xl object-cover">
-              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
+            <div class="relative">
+              <div class="absolute -inset-2 rounded-[2rem] bg-white/20 blur-md animate-pulse"></div>
+              <img [src]="state.currentUser()?.avatar" class="relative h-20 w-20 rounded-[1.5rem] border-2 border-white/40 shadow-2xl object-cover">
+              <div class="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-teal-700 bg-emerald-400"></div>
             </div>
             
             <div>
-              <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">
-                Ciao, <span class="text-emerald-400">{{ state.currentUser()?.name?.split(' ')[0] }}</span>
+              <h2 class="text-4xl font-black tracking-tight text-white mb-1">
+                Ciao, <span class="text-emerald-200">{{ state.currentUser()?.name?.split(' ')[0] }}</span>
               </h2>
-              <div class="flex items-center gap-2 text-sm text-slate-400 font-medium">
-                <span class="bg-white/10 px-2 py-0.5 rounded text-xs text-slate-300 border border-white/10 flex items-center gap-1">
-                   <i class="fa-solid fa-user-tag text-xs"></i> {{ state.currentUser()?.department || 'Operativo' }}
+              <div class="flex items-center gap-3">
+                <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-emerald-50 border border-white/20 uppercase tracking-widest">
+                  <i class="fa-solid fa-user-tag text-xs mr-2"></i> {{ state.currentUser()?.department || 'Staff Operativo' }}
                 </span>
-                <span class="text-emerald-500 flex items-center gap-1">
-                   <i class="fa-solid fa-circle text-[8px]"></i> Online
+                <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
+                  <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Online
                 </span>
               </div>
             </div>
           </div>
           
-          <div class="flex gap-3">
-             <!-- Date Pill -->
-             <div class="px-5 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                   <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Oggi è</div>
-                   <div class="text-sm font-bold text-white capitalize">{{ getCurrentDay() }}</div>
+          <div class="flex flex-wrap gap-4">
+             <!-- Time/Date Pill -->
+             <div class="flex items-center gap-4 rounded-3xl bg-black/20 p-4 border border-white/10 backdrop-blur-md">
+                <div class="text-right">
+                   <p class="text-[10px] font-black uppercase tracking-widest text-emerald-200/60 text-left">Turno Odierno</p>
+                   <p class="text-lg font-bold text-white leading-none whitespace-nowrap">{{ getCurrentDay() }}, {{ getCurrentDayNumber() }} {{ getCurrentMonth() }}</p>
                 </div>
-                <div class="h-8 w-px bg-white/10 mx-1"></div>
-                <div class="text-right hidden sm:block">
-                   <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ getCurrentMonth() }}</div>
-                   <div class="text-sm font-bold text-white">{{ getCurrentDayNumber() }}</div>
+                <div class="h-10 w-10 flex items-center justify-center bg-white/10 rounded-2xl text-emerald-300">
+                   <i class="fa-solid fa-clock text-xl"></i>
                 </div>
-                <i class="fa-solid fa-calendar-day text-blue-400 text-xl ml-2"></i>
              </div>
           </div>
         </div>
       </div>
 
-      <!-- Quick Actions Grid (Compact Buttons) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Main Operational Phases -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         
-        <!-- Pre-Op -->
-        <button (click)="state.setModule('pre-op-checklist')" 
-             class="group relative bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden">
-           <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <i class="fa-solid fa-sun text-6xl text-blue-600"></i>
-           </div>
-           <div class="relative z-10">
-              <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-3 group-hover:bg-blue-500 transition-colors">
-                <i class="fa-solid fa-sun text-blue-600 group-hover:text-white transition-colors"></i>
-              </div>
-              <h3 class="font-bold text-slate-800 leading-tight mb-1">Fase<br>Pre-Operativa</h3>
-              <div class="flex items-center gap-2 mt-2">
-                 <div class="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-500 transition-all" [style.width.%]="isPhaseComplete('pre-op-checklist') ? 100 : 0"></div>
-                 </div>
-                 <span class="text-[10px] font-bold" [class.text-blue-600]="isPhaseComplete('pre-op-checklist')" [class.text-slate-400]="!isPhaseComplete('pre-op-checklist')">
-                    {{ isPhaseComplete('pre-op-checklist') ? '100%' : '0%' }}
-                 </span>
-              </div>
-           </div>
-        </button>
-
-        <!-- Operative -->
-        <button (click)="state.setModule('operative-checklist')" 
-             class="group relative bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden">
-           <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <i class="fa-solid fa-briefcase text-6xl text-indigo-600"></i>
-           </div>
-           <div class="relative z-10">
-              <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mb-3 group-hover:bg-indigo-500 transition-colors">
-                <i class="fa-solid fa-briefcase text-indigo-600 group-hover:text-white transition-colors"></i>
-              </div>
-              <h3 class="font-bold text-slate-800 leading-tight mb-1">Fase<br>Operativa</h3>
-              <div class="flex items-center gap-2 mt-2">
-                 <div class="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-500 transition-all" [style.width.%]="isPhaseComplete('operative-checklist') ? 100 : 0"></div>
-                 </div>
-                 <span class="text-[10px] font-bold" [class.text-indigo-600]="isPhaseComplete('operative-checklist')" [class.text-slate-400]="!isPhaseComplete('operative-checklist')">
-                    {{ isPhaseComplete('operative-checklist') ? '100%' : '0%' }}
-                 </span>
-              </div>
-           </div>
-        </button>
-
-        <!-- Post-Op -->
-        <button (click)="state.setModule('post-op-checklist')" 
-             class="group relative bg-white p-6 rounded-2xl shadow-lg border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden">
-           <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <i class="fa-solid fa-hourglass-end text-6xl text-purple-600"></i>
-           </div>
-           <div class="relative z-10">
-              <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-3 group-hover:bg-purple-500 transition-colors">
-                <i class="fa-solid fa-hourglass-end text-purple-600 group-hover:text-white transition-colors"></i>
-              </div>
-              <h3 class="font-bold text-slate-800 leading-tight mb-1">Fase<br>Post-Operativa</h3>
-              <div class="flex items-center gap-2 mt-2">
-                 <div class="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-purple-500 transition-all" [style.width.%]="isPhaseComplete('post-op-checklist') ? 100 : 0"></div>
-                 </div>
-                 <span class="text-[10px] font-bold" [class.text-purple-600]="isPhaseComplete('post-op-checklist')" [class.text-slate-400]="!isPhaseComplete('post-op-checklist')">
-                    {{ isPhaseComplete('post-op-checklist') ? '100%' : '0%' }}
-                 </span>
-              </div>
-           </div>
-        </button>
-
-        <!-- Report Anomaly -->
-        <button (click)="state.setModule('non-compliance')" 
-             class="group relative bg-red-50 p-6 rounded-2xl shadow-lg border-2 border-red-100 hover:border-red-300 hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden">
-           <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-200/20 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors"></div>
-           <div class="relative z-10 w-full h-full flex flex-col justify-between">
-              <div>
-                <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center mb-3 group-hover:bg-red-500 transition-colors shadow-sm">
-                    <i class="fa-solid fa-triangle-exclamation text-red-600 group-hover:text-white transition-colors"></i>
+        @for (phase of [
+          {id: 'pre-op-checklist', label: 'Start Check', sub: 'Pre-Operativa', icon: 'fa-sun', color: 'blue', desc: 'Controlli apertura'},
+          {id: 'operative-checklist', label: 'Monitor Check', sub: 'Operativa', icon: 'fa-briefcase', color: 'indigo', desc: 'Gestione flussi'},
+          {id: 'post-op-checklist', label: 'End Check', sub: 'Post-Operativa', icon: 'fa-hourglass-end', color: 'purple', desc: 'Chiusura e pulizia'}
+        ]; track phase.id) {
+          <button (click)="state.setModule(phase.id)" 
+               class="group relative overflow-hidden rounded-[2.5rem] bg-white p-6 shadow-sm border border-slate-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left">
+             
+             <div class="mb-6 flex items-center justify-between">
+                <div [class]="'h-14 w-14 rounded-2xl flex items-center justify-center transition-all bg-' + phase.color + '-50 text-' + phase.color + '-600 group-hover:bg-' + phase.color + '-600 group-hover:text-white group-hover:rotate-6 shadow-sm'">
+                  <i class="fa-solid {{ phase.icon }} text-2xl transition-transform"></i>
                 </div>
-                <h3 class="font-black text-red-900 leading-tight mb-1">Segnala<br>Anomalia</h3>
+                <div class="text-right">
+                   <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{{ phase.sub }}</span>
+                   <span class="text-xs font-black" [class]="'text-' + phase.color + '-600'">{{ isPhaseComplete(phase.id) ? 'COMPLETATO' : 'DA COMPILARE' }}</span>
+                </div>
+             </div>
+
+             <h3 class="text-xl font-black text-slate-900 leading-tight mb-2">{{ phase.label }}</h3>
+             <p class="text-xs font-medium text-slate-500 mb-6">{{ phase.desc }}</p>
+
+             <div class="relative h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full transition-all duration-1000 shadow-sm" 
+                     [class]="'bg-' + phase.color + '-600'"
+                     [style.width.%]="isPhaseComplete(phase.id) ? 100 : 0"></div>
+             </div>
+          </button>
+        }
+
+        <!-- Critical Action: Anomaly -->
+        <button (click)="state.setModule('non-compliance')" 
+             class="group relative overflow-hidden rounded-[2.5rem] bg-red-600 p-6 shadow-2xl hover:shadow-red-500/30 hover:-translate-y-2 transition-all duration-300 text-left">
+           <div class="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-colors"></div>
+           
+           <div class="relative z-10 flex flex-col h-full justify-between">
+              <div class="mb-6">
+                <div class="h-14 w-14 rounded-2xl bg-white/20 flex items-center justify-center text-white mb-4 border border-white/20 shadow-lg">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl animate-pulse"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white leading-tight mb-1 uppercase tracking-tighter">Segnala<br>Anomalia</h3>
               </div>
-              <div class="mt-2 flex items-center text-xs font-bold text-red-600 group-hover:underline">
-                 Apri Modulo <i class="fa-solid fa-arrow-right ml-2 opacity-50 group-hover:translate-x-1 transition-transform"></i>
+              
+              <div class="flex items-center gap-2 text-xs font-black text-red-100 uppercase tracking-widest group-hover:translate-x-2 transition-transform">
+                 Apri Modulo Rapido <i class="fa-solid fa-arrow-right text-[10px]"></i>
               </div>
            </div>
         </button>
       </div>
 
-      <!-- Secondary Section: Messages & Metrics -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Secondary Data Hub -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Recent Messages Container -->
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="fa-solid fa-inbox text-blue-600 text-sm"></i>
-                    </div>
-                    <h3 class="font-bold text-slate-800">Messaggi Ricevuti</h3>
-                </div>
-                <button (click)="state.setModule('messages')" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                    Vedi Tutti
+        <!-- Messaging Center -->
+        <div class="lg:col-span-2 rounded-[2.5rem] bg-white shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <div class="border-b border-slate-100 bg-slate-50/50 p-6 flex items-center justify-between">
+                <h3 class="text-lg font-black text-slate-900 flex items-center gap-3">
+                    <span class="h-6 w-1.5 bg-blue-600 rounded-full"></span>
+                    Comunicazioni Interne
+                </h3>
+                <button (click)="state.setModule('messages')" class="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700 hover:bg-blue-600 hover:text-white transition-all">
+                    ARCHIVIO
                 </button>
             </div>
             
-            <div class="p-0 flex-1">
+            <div class="p-4 flex-1">
                 @if (state.getMessagesForCurrentUser().length === 0) {
                     <div class="flex flex-col items-center justify-center h-48 text-slate-400">
-                        <i class="fa-regular fa-envelope-open text-4xl mb-3 opacity-50"></i>
-                        <p class="text-sm font-medium">Nessun messaggio recente</p>
+                        <i class="fa-regular fa-envelope-open text-4xl mb-4 opacity-10"></i>
+                        <p class="text-sm font-bold uppercase tracking-widest text-slate-300">Nessuna notifica</p>
                     </div>
                 } @else {
-                    <div class="divide-y divide-slate-100">
+                    <div class="space-y-3">
                         @for (msg of state.getMessagesForCurrentUser().slice(0, 3); track msg.id) {
                             <div (click)="state.setModule('messages')" 
-                                 class="p-4 hover:bg-slate-50 transition-colors cursor-pointer group flex gap-4 items-start">
-                                <div class="w-2 h-2 mt-2 rounded-full flex-shrink-0" [class.bg-blue-500]="!msg.read" [class.bg-slate-200]="msg.read"></div>
+                                 class="p-5 rounded-[1.5rem] bg-slate-50 hover:bg-white border-2 border-transparent hover:border-blue-100 hover:shadow-xl transition-all cursor-pointer group flex gap-5 items-start">
+                                <div class="h-3 w-3 mt-1.5 rounded-full flex-shrink-0" [class.bg-blue-600]="!msg.read" [class.bg-slate-300]="msg.read"></div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <h4 class="text-sm font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors">{{ msg.subject }}</h4>
-                                        <span class="text-[10px] text-slate-400 font-mono">{{ msg.timestamp | date:'dd/MM HH:mm' }}</span>
+                                    <div class="flex justify-between items-baseline mb-2">
+                                        <h4 class="text-base font-black text-slate-800 truncate group-hover:text-blue-600 transition-colors">{{ msg.subject }}</h4>
+                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ msg.timestamp | date:'HH:mm' }}</span>
                                     </div>
-                                    <p class="text-xs text-slate-500 line-clamp-2">{{ msg.content }}</p>
+                                    <p class="text-sm text-slate-500 line-clamp-2 leading-relaxed">{{ msg.content }}</p>
                                 </div>
-                                <i class="fa-solid fa-chevron-right text-slate-300 text-xs mt-2 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </div>
                         }
                     </div>
                 }
             </div>
             @if (state.unreadMessagesCount() > 0) {
-               <div class="bg-blue-50 p-3 text-center text-xs font-bold text-blue-700 border-t border-blue-100">
-                  Hai {{ state.unreadMessagesCount() }} messaggi non letti
+               <div class="bg-blue-600 p-4 text-center text-xs font-black text-white uppercase tracking-widest animate-pulse-subtle">
+                  Hai {{ state.unreadMessagesCount() }} nuovi messaggi da leggere
                </div>
             }
         </div>
 
-        <!-- Metric Card -->
-        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden flex flex-col justify-between">
-             <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <!-- Personal Insights -->
+        <div class="rounded-[2.5rem] bg-slate-900 p-8 shadow-2xl relative overflow-hidden flex flex-col">
+             <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
              
-             <div>
-                <h3 class="text-lg font-black mb-6 border-b border-white/10 pb-4 flex items-center justify-between">
+             <div class="mb-auto">
+                <h3 class="text-xl font-black text-white mb-8 border-b border-white/5 pb-4 flex items-center justify-between">
                     <span>Performance</span>
-                    <i class="fa-solid fa-chart-pie text-indigo-400"></i>
+                    <i class="fa-solid fa-bolt text-indigo-400"></i>
                 </h3>
                 
-                <div class="grid grid-cols-2 gap-4">
-                   <div class="bg-white/5 rounded-xl p-4 border border-white/10 text-center">
-                       <div class="text-3xl font-black text-emerald-400 mb-1">{{ completedPhasesCount() }}/3</div>
-                       <div class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Fasi Oggi</div>
+                <div class="grid grid-cols-1 gap-4">
+                   <div class="rounded-3xl bg-white/5 p-6 border border-white/10 group hover:bg-white/10 transition-colors">
+                       <div class="flex items-center justify-between mb-2">
+                           <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">Completamento</span>
+                           <span class="text-2xl font-black text-emerald-400">{{ completedPhasesCount() }} <span class="text-sm text-slate-500">/ 3</span></span>
+                       </div>
+                       <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                           <div class="h-full bg-emerald-500 transition-all duration-1000" [style.width.%]="(completedPhasesCount() / 3) * 100"></div>
+                       </div>
                    </div>
-                   <div class="bg-white/5 rounded-xl p-4 border border-white/10 text-center">
-                       <div class="text-xl font-black text-blue-400 mb-2 truncate">{{ lastRecordTime() }}</div>
-                       <div class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Ultimo Check</div>
+
+                   <div class="rounded-3xl bg-white/5 p-6 border border-white/10 group hover:bg-white/10 transition-colors">
+                       <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 text-left">Ultimo Accesso Registro</p>
+                       <p class="text-2xl font-black text-blue-400">{{ lastRecordTime() }}</p>
                    </div>
                 </div>
              </div>
 
-             <button (click)="state.setModule('history')" class="group w-full mt-6 py-4 bg-white hover:bg-indigo-50 text-indigo-950 rounded-xl font-black text-xs tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95">
-                <span>VAI ALLO STORICO</span>
+             <button (click)="state.setModule('history')" class="group w-full mt-10 py-5 bg-white hover:bg-indigo-50 text-indigo-950 rounded-[1.5rem] font-black text-xs tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95">
+                VEDI STORICO PERSONALE
                 <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
              </button>
         </div>

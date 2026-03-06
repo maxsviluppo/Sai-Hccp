@@ -64,11 +64,9 @@ export class AppComponent {
 
   hasAccessToCategory(category: string): boolean {
     if (this.state.isAdmin()) {
-      // Admin sees management, monitoring and communication, not operational checklists
-      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication'].includes(category);
+      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication', 'documentation'].includes(category);
     }
-    // Collaborator sees operational stuff, history, and config/comm
-    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication'].includes(category);
+    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication', 'documentation'].includes(category);
   }
   loginMode = signal<'SELECT' | 'ADMIN' | 'OPERATOR'>('SELECT');
   loginUsername = signal('');
@@ -146,6 +144,7 @@ export class AppComponent {
       'production': 'Rintracciabilità',
       'config': 'Configurazione',
       'communication': 'Comunicazioni',
+      'documentation': 'Archivio Documentale',
       'dashboard': 'Panoramica'
     };
     return labels[category] || category;

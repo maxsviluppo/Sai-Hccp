@@ -19,456 +19,362 @@ interface ChecklistItem {
    standalone: true,
    imports: [CommonModule, FormsModule],
    template: `
-    <div class="pb-20 animate-fade-in relative max-w-2xl mx-auto">
-
-       <!-- PRINT ONLY HEADER (HACCP Requirement) -->
-       <div class="hidden print:block font-sans text-black p-4">
-          <div class="border-b-2 border-slate-800 pb-4 mb-6 text-center">
-             <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
-             <h2 class="text-xl font-light text-slate-600">Registro Fase Operativa</h2>
-             <div class="flex justify-between mt-4 text-sm text-slate-500">
-                <span>Data: {{ getFormattedDate() }}</span>
-                <span>Operatore: {{ state.currentUser()?.name }}</span>
-             </div>
-          </div>
-
-          <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-             <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-slate-800">Informativa Libro Ingredienti</h3>
-              <div class="space-y-1 text-[9px] font-bold text-slate-700">
-                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> LIBRO INGREDIENTI: Denominazione alimento/preparazione</div>
-                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> ELENCO INGREDIENTI CON il numero di lotto</div>
-                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Data di preparazione E Scadenza</div>
-                <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Modalità di conservazione</div>
-              </div>
-          </div>
-
-          <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-             <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-rose-800">Informativa Sostanze Allergeniche (Reg. UE 1169/2011)</h3>
-             <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[9px]">
-                <div>1. Cereali contenenti glutine</div>
-                <div>2. Crostacei e derivati</div>
-                <div>3. Uova e derivati</div>
-                <div>4. Pesce e derivati</div>
-                <div>5. Arachidi e derivati</div>
-                <div>6. Soia e derivati</div>
-                <div>7. Latte e derivati</div>
-                <div>8. Frutta a guscio</div>
-                <div>9. Sedano e derivati</div>
-                <div>10. Senape e derivati</div>
-                <div>11. Semi di sesamo e derivati</div>
-                <div>12. Anidride solforosa e solfiti</div>
-                <div>13. Lupini e derivati</div>
-                <div>14. Molluschi e derivati</div>
-             </div>
-          </div>
-
-
-
-          <table class="w-full text-left text-sm border-collapse">
-             <thead>
-                <tr class="border-b border-slate-400 bg-slate-50">
-                   <th class="py-2 px-3 font-bold">Controllo</th>
-                   <th class="py-2 px-3 font-bold">Esito</th>
-                   <th class="py-2 px-3 font-bold">Note</th>
-                </tr>
-             </thead>
-             <tbody>
-                @for (item of items(); track item.id) {
-                    <tr class="border-b border-slate-100">
-                       <td class="py-3 px-3">
-                          <div class="font-medium">{{ item.label }}</div>
-                          @if (item.temperature) {
-                             <div class="text-[10px] text-slate-500 font-bold mt-0.5">Temperatura: {{ item.temperature }}°C</div>
-                          }
-                       </td>
-                       <td class="py-3 px-3 font-bold uppercase">
-                          {{ item.status === 'ok' ? 'Conforme' : (item.status === 'issue' ? 'Non Conforme' : 'N.E.') }}
-                       </td>
-                       <td class="py-3 px-3 italic">{{ item.note || '-' }}</td>
-                    </tr>
-                }
-             </tbody>
-          </table>
-       </div>
-      
-       <!-- Enhanced UI Header (Hidden on print) -->
-       <div class="print:hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 p-8 rounded-3xl shadow-xl border border-indigo-500/30 relative overflow-hidden mb-8 mt-4">
-         <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-           <i class="fa-solid fa-briefcase text-9xl text-white"></i>
-         </div>
-         <div class="relative z-10">
-           <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-             <div class="flex items-center gap-4">
-               <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30">
-                 <i class="fa-solid fa-briefcase text-white text-2xl"></i>
-               </div>
-                <div>
-                  <h2 class="text-3xl font-black text-white">Fase Operativa</h2>
-                  <div class="flex items-center gap-3 mt-1">
-                    <p class="text-indigo-100 text-sm font-medium">Gestione Ricezione e Stoccaggio</p>
-                    <button (click)="state.setModule('production-log')" 
-                            class="px-3 py-1 bg-white/20 hover:bg-white/40 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-white/30 ml-2">
-                        <i class="fa-solid fa-boxes-packing"></i> Rintracciabilità
-                    </button>
-                  </div>
-                </div>
-             </div>
-
-             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-               <!-- Progress Indicator -->
-               <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex-1 sm:flex-initial">
-                 <div class="flex justify-between items-end mb-1.5">
-                   <span class="text-[10px] text-indigo-100 uppercase font-bold tracking-wider">Avanzamento</span>
-                   <span class="text-sm font-black text-white">{{ completedCount() }}/{{ items().length }}</span>
-                 </div>
-                 <div class="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
-                   <div class="h-full bg-white rounded-full transition-all duration-700"
-                        [style.width.%]="progressPercentage()"></div>
-                 </div>
-               </div>
-
-               <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
-                 <div class="text-left">
-                   <div class="text-[10px] text-indigo-100 uppercase font-bold tracking-wider">Stato</div>
-                   <div class="text-sm font-bold text-white flex items-center">
-                     <i class="fa-solid fa-circle-check mr-2"></i> In Compilazione
-                   </div>
-                 </div>
-               </div>
-             </div>
-           </div>
-         </div>
-        </div>
-
-
-
-        <!-- Allergens Informative Banner -->
-        <div class="print:hidden bg-rose-50 border-2 border-rose-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-rose-900/5 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                <i class="fa-solid fa-triangle-exclamation text-7xl text-rose-900"></i>
-            </div>
-            <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-inner border border-rose-200/50">
-                <i class="fa-solid fa-circle-info text-2xl"></i>
-            </div>
-            <div class="space-y-3 relative z-10 w-full">
-                <div class="flex items-center gap-3">
-                   <h3 class="text-sm font-black text-rose-900 uppercase tracking-widest">Elenco delle Sostanze Allergeniche</h3>
-                   <span class="bg-rose-200/50 text-rose-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Informativa Reg. UE 1169/2011</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">1</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Cereali contenenti glutine (grano, segale, orzo, avena, farro, kamut)</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">2</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Crostacei e prodotti a base di crostacei</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">3</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Uova e prodotti a base di uova</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">4</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Pesce e prodotti a base di pesce</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">5</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Arachidi e prodotti a base di arachidi</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">6</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Soia e prodotti a base di soia</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">7</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Latte e prodotti a base di latte</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">8</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Frutta a guscio (mandorle, nocciole, noci, acagiù, pecan, Brasile, pistacchi)</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">9</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Sedano e prodotti a base di sedano</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">10</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Senape e prodotti a base di senape</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">11</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Semi di sesamo e prodotti a base di sesamo</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">12</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Anidride solforosa e solfiti (> 10 mg/kg)</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">13</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Lupini e prodotti a base di lupini</span>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="text-[10px] font-black w-4 h-4 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">14</span>
-                        <span class="text-[11px] font-bold text-rose-800 leading-tight tracking-tight italic">Molluschi e prodotti a base di molluschi</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Libro Ingredienti Informative Banner -->
-        <div class="print:hidden bg-blue-50 border-2 border-blue-200 rounded-3xl p-6 mb-8 flex gap-5 items-start shadow-xl shadow-blue-900/5 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                <i class="fa-solid fa-book-open text-7xl text-blue-900"></i>
-            </div>
-            <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-inner border border-blue-200/50">
-                <i class="fa-solid fa-circle-info text-2xl"></i>
-            </div>
-            <div class="space-y-3 relative z-10 w-full">
-                <div class="flex items-center gap-3">
-                   <h3 class="text-sm font-black text-blue-900 uppercase tracking-widest">Informativa Libro Ingredienti</h3>
-                   <span class="bg-blue-200/50 text-blue-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Requisiti Obbligatori</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
-                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">LIBRO INGREDIENTI: Denominazione alimento/preparazione</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
-                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">ELENCO INGREDIENTI CON il numero di lotto</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
-                        <span class="text-xs font-bold text-blue-800 uppercase leading-tight tracking-tight">Data di preparazione E Scadenza</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-check text-[10px] text-blue-500"></i>
-                        <span class="text-xs font-bold text-blue-800 leading-tight tracking-tight italic">Modalità di conservazione</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="print:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between mx-auto max-w-2xl relative z-20 -mt-4">
-           <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                 <i class="fa-solid fa-calendar-day"></i>
-              </div>
-              <div class="flex-1">
-                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data di Registrazione</label>
-                 <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
-                        class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-base">
+    <!-- PRINT ONLY HEADER (HACCP Requirement) -->
+        <div class="hidden print:block font-sans text-black p-4">
+           <div class="border-b-2 border-slate-800 pb-4 mb-6 text-center">
+              <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
+              <h2 class="text-xl font-light text-slate-600">Registro Fase Operativa</h2>
+              <div class="flex justify-between mt-4 text-sm text-slate-500">
+                 <span>Data: {{ getFormattedDate() }}</span>
+                 <span>Operatore: {{ state.currentUser()?.name }}</span>
               </div>
            </div>
 
-           <!-- Quick Set All Ok -->
-           <button (click)="setAllOk()" 
-                   class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors shadow-sm border border-emerald-100"
-                   title="Imposta tutto come Conforme">
-              <i class="fa-solid fa-check-double"></i>
-           </button>
+           <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-slate-800">Informativa Libro Ingredienti</h3>
+               <div class="space-y-1 text-[9px] font-bold text-slate-700">
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> LIBRO INGREDIENTI: Denominazione alimento/preparazione</div>
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> ELENCO INGREDIENTI CON il numero di lotto</div>
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Data di preparazione E Scadenza</div>
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Modalità di conservazione</div>
+               </div>
+           </div>
+
+           <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-rose-800">Informativa Sostanze Allergeniche (Reg. UE 1169/2011)</h3>
+              <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[9px]">
+                 <div>1. Cereali contenenti glutine</div>
+                 <div>2. Crostacei e derivati</div>
+                 <div>3. Uova e derivati</div>
+                 <div>4. Pesce e derivati</div>
+                 <div>5. Arachidi e derivati</div>
+                 <div>6. Soia e derivati</div>
+                 <div>7. Latte e derivati</div>
+                 <div>8. Frutta a guscio</div>
+                 <div>9. Sedano e derivati</div>
+                 <div>10. Senape e derivati</div>
+                 <div>11. Semi di sesamo e derivati</div>
+                 <div>12. Anidride solforosa e solfiti</div>
+                 <div>13. Lupini e derivati</div>
+                 <div>14. Molluschi e derivati</div>
+              </div>
+           </div>
+
+           <table class="w-full text-left text-sm border-collapse">
+              <thead>
+                 <tr class="border-b border-slate-400 bg-slate-50">
+                    <th class="py-2 px-3 font-bold">Controllo</th>
+                    <th class="py-2 px-3 font-bold">Esito</th>
+                    <th class="py-2 px-3 font-bold">Note</th>
+                 </tr>
+              </thead>
+              <tbody>
+                 @for (item of items(); track item.id) {
+                     <tr class="border-b border-slate-100">
+                        <td class="py-3 px-3">
+                           <div class="font-medium">{{ item.label }}</div>
+                           @if (item.temperature) {
+                              <div class="text-[10px] text-slate-500 font-bold mt-0.5">Temperatura: {{ item.temperature }}°C</div>
+                           }
+                        </td>
+                        <td class="py-3 px-3 font-bold uppercase">
+                           {{ item.status === 'ok' ? 'Conforme' : (item.status === 'issue' ? 'Non Conforme' : 'N.E.') }}
+                        </td>
+                        <td class="py-3 px-3 italic">{{ item.note || '-' }}</td>
+                     </tr>
+                 }
+              </tbody>
+           </table>
         </div>
 
-        <!-- GROUP 1: Ricezione Merci -->
-        <div class="print:hidden mb-12">
-            <div class="flex items-center gap-4 mb-6">
-                <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Ricezione merci</h3>
-                <div class="h-0.5 flex-1 bg-slate-200"></div>
-            </div>
-
-            <div class="space-y-4">
-                @for (item of group1Items(); track item.id) {
-                    <ng-container *ngTemplateOutlet="checklistCard; context: { $implicit: item }"></ng-container>
-                }
-            </div>
-        </div>
-
-        <!-- GROUP 2: Verifica temperature e contenuto... -->
-        <div class="print:hidden mb-8">
-            <div class="flex items-center gap-4 mb-2">
-                <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider text-center flex-1">Verifica temperature e contenuto frigoriferi e congelatori</h3>
-            </div>
-            <div class="h-0.5 w-full bg-slate-200 mb-6"></div>
-
-            <!-- Dynamic & Final List -->
-            <div class="space-y-4">
-                @for (item of group2Items(); track item.id) {
-                    <ng-container *ngTemplateOutlet="checklistCard; context: { $implicit: item }"></ng-container>
-                }
-            </div>
-
-        </div>
-
-        <!-- REUSABLE CARD TEMPLATE -->
-        <ng-template #checklistCard let-item>
-            <div class="bg-white rounded-[28px] border-2 transition-all duration-300 relative overflow-hidden group/card shadow-sm"
-                 [class.border-slate-100]="item.status === 'pending'"
-                 [class.border-emerald-500]="item.status === 'ok'"
-                 [class.border-red-500]="item.status === 'issue'"
-                 [class.bg-emerald-50/10]="item.status === 'ok'"
-                 [class.bg-red-50/10]="item.status === 'issue'">
+        <!-- UI CONTENT (Hidden on print) -->
+        <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+            <!-- Premium Hero Header -->
+            <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
+                <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-purple-600/15 blur-3xl"></div>
+                <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-indigo-600/10 blur-3xl"></div>
                 
-                <div class="p-5 flex items-center gap-5">
-                    <!-- Dynamic Icon Wrapper -->
-                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner transition-all shrink-0"
-                         [class.bg-slate-50]="item.status === 'pending'"
-                         [class.text-slate-400]="item.status === 'pending'"
-                         [class.bg-emerald-100]="item.status === 'ok'"
-                         [class.text-emerald-600]="item.status === 'ok'"
-                         [class.bg-red-100]="item.status === 'issue'"
-                         [class.text-red-600]="item.status === 'issue'">
-                        <i [class]="'fa-solid ' + item.icon"></i>
+                <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-center gap-5">
+                        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+                            <i class="fa-solid fa-briefcase text-3xl text-white"></i>
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-3 mb-1">
+                                <h2 class="text-4xl font-black tracking-tight text-white font-outfit">Fase <span class="text-indigo-400">Operativa</span></h2>
+                                <button (click)="state.setModule('production-log')" 
+                                        class="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-white/10">
+                                    <i class="fa-solid fa-barcode text-indigo-400"></i> Rintracciabilità
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
+                                    <i class="fa-solid fa-circle text-[9px] animate-pulse text-amber-400"></i>
+                                    Monitoraggio Attivo
+                                </span>
+                                <span class="flex items-center gap-2 rounded-full bg-indigo-500/10 px-4 py-1.5 text-sm font-black text-indigo-400 border border-indigo-500/20">
+                                    <i class="fa-solid fa-user-check text-xs"></i> {{ state.currentUser()?.name }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight">
-                            {{ item.label }}
-                        </h4>
-                        @if (item.hasTemperature && !isSubmitted()) {
-                           <div class="mt-2 flex items-center gap-2">
-                             <div class="relative flex-1 max-w-[120px]">
+                    <div class="flex flex-wrap gap-3">
+                        <div class="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-md">
+                            <div class="text-left">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Completamento</p>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                                        <div class="h-full bg-indigo-500 rounded-full transition-all duration-1000" [style.width.%]="progressPercentage()"></div>
+                                    </div>
+                                    <span class="text-xl font-black text-white whitespace-nowrap">{{ completedCount() }} / {{ items().length }}</span>
+                                </div>
+                            </div>
+                            <div class="h-10 w-10 flex items-center justify-center bg-indigo-500/20 rounded-xl text-indigo-400">
+                                <i class="fa-solid fa-chart-pie text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                <!-- Left Column: Informative Sidebar -->
+                <div class="xl:col-span-1 space-y-8">
+                    <div class="bg-white rounded-2xl p-5 relative overflow-hidden group border border-slate-100 shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner">
+                                <i class="fa-solid fa-calendar-day"></i>
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Data Competenza</label>
+                                <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
+                                       class="w-full font-black text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-lg leading-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 border border-rose-100 bg-rose-50/10 shadow-sm">
+                        <h3 class="text-base font-black text-rose-800 uppercase tracking-widest mb-6 flex items-center justify-between">
+                            <span>Allergeni (UE 1169)</span>
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        </h3>
+                        <div class="grid grid-cols-1 gap-y-3">
+                            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]; track i) {
+                                <div class="flex items-start gap-2.5 opacity-80 group hover:opacity-100 transition-opacity">
+                                    <span class="text-xs font-black w-5 h-5 rounded-md bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                                        {{ i }}
+                                    </span>
+                                    <span class="text-sm font-bold text-slate-600 leading-tight italic">
+                                        {{ i === 1 ? 'Cereali con glutine' : 
+                                           i === 2 ? 'Crostacei' : 
+                                           i === 3 ? 'Uova' : 
+                                           i === 4 ? 'Pesce' : 
+                                           i === 5 ? 'Arachidi' :
+                                           i === 6 ? 'Soia' : 
+                                           i === 7 ? 'Latte' : 
+                                           i === 8 ? 'Frutta a guscio' : 
+                                           i === 9 ? 'Sedano' : 
+                                           i === 10 ? 'Senape' : 
+                                           i === 11 ? 'Sesamo' : 
+                                           i === 12 ? 'Anidride solforosa' : 
+                                           i === 13 ? 'Lupini' : 'Molluschi' }}
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 bg-blue-50/10 border border-blue-100 shadow-sm">
+                        <h3 class="text-base font-black text-blue-800 uppercase tracking-widest mb-6 flex items-center justify-between">
+                            <span>Libro Ingredienti</span>
+                            <i class="fa-solid fa-book-open"></i>
+                        </h3>
+                        <div class="space-y-5">
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-check text-blue-500 text-sm mt-1"></i>
+                                <p class="text-sm font-bold text-slate-600 uppercase tracking-[0.05em]">Lotto e Denominazione</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fa-solid fa-check text-blue-500 text-sm mt-1"></i>
+                                <p class="text-sm font-bold text-slate-600 uppercase tracking-[0.05em]">Preparazione e Scadenza</p>
+                            </div>
+                            <div class="flex items-start gap-3 border-t border-blue-50 pt-4">
+                                <p class="text-xs font-medium text-blue-600 italic leading-relaxed">Assicurarsi che ogni preparato sia etichettato correttamente.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content: Checklists -->
+                <div class="xl:col-span-3 space-y-12">
+                    <div class="space-y-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4 px-4">
+                            <div class="flex items-center gap-4">
+                                <div class="h-8 w-1.5 bg-indigo-600 rounded-full"></div>
+                                <h3 class="text-xl font-black text-slate-800 uppercase tracking-widest">Ricezione Merci</h3>
+                            </div>
+                            <button (click)="setAllOk()" class="shrink-0 px-5 py-2.5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-xs uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100">
+                                IMPOSTA TUTTI OK
+                            </button>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="divide-y divide-slate-100">
+                                @for (item of group1Items(); track item.id; let i = $index) {
+                                    <ng-container *ngTemplateOutlet="checklistItemList; context: { $implicit: { ...item, index: i } }"></ng-container>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-4 px-4">
+                            <div class="h-8 w-1.5 bg-purple-600 rounded-full"></div>
+                            <h3 class="text-xl font-black text-slate-800 uppercase tracking-widest">Verifica Temperature e Conservazione</h3>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="divide-y divide-slate-100">
+                                @for (item of group2Items(); track item.id; let i = $index) {
+                                    <ng-container *ngTemplateOutlet="checklistItemList; context: { $implicit: { ...item, index: i + group1Items().length } }"></ng-container>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REUSABLE LIST TEMPLATE -->
+            <ng-template #checklistItemList let-item>
+                <div class="px-5 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:bg-slate-50 relative group/row animate-fade-in"
+                     [class.bg-emerald-50/40]="item.status === 'ok'"
+                     [class.bg-red-50/40]="item.status === 'issue'">
+                    
+                    <div class="flex items-center gap-4 flex-[2] min-w-0">
+                        <span class="text-[9px] font-black w-5 h-5 rounded bg-white flex items-center justify-center border border-slate-200 shadow-sm shrink-0 leading-none text-slate-400">
+                            {{ $any(item).index + 1 }}
+                        </span>
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all shadow-inner shrink-0"
+                             [class.bg-slate-100]="item.status === 'pending'" [class.text-slate-400]="item.status === 'pending'"
+                             [class.bg-emerald-100]="item.status === 'ok'" [class.text-emerald-600]="item.status === 'ok'"
+                             [class.bg-red-100]="item.status === 'issue'" [class.text-red-600]="item.status === 'issue'">
+                            <i [class]="'fa-solid ' + item.icon"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-slate-800 text-sm leading-tight group-hover/row:text-indigo-600 transition-colors truncate">{{ item.label }}</h4>
+                            @if (item.status !== 'pending') {
+                                <span class="text-[9px] font-black uppercase tracking-widest mt-0.5 block"
+                                      [class.text-emerald-600]="item.status === 'ok'"
+                                      [class.text-red-600]="item.status === 'issue'">
+                                    {{ item.status === 'ok' ? 'CONFORME' : 'NON CONFORME' }}
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 flex-1 justify-end">
+                        @if (item.hasTemperature) {
+                            <div class="w-24 bg-slate-50 rounded-lg border border-slate-200 px-2 py-1 flex items-center gap-1.5 focus-within:ring-2 focus-within:ring-indigo-500/20">
+                                <i class="fa-solid fa-temperature-half text-[10px] text-indigo-400"></i>
                                 <input type="number" 
                                        [ngModel]="statusMap()[item.id]?.temperature"
                                        (ngModelChange)="updateTemperature(item.id, $event)"
-                                       placeholder="Temp."
-                                       class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
-                                <span class="absolute right-2 top-1.5 text-[10px] font-bold text-slate-400">°C</span>
-                             </div>
-                           </div>
-                        } @else if (item.hasTemperature && isSubmitted() && statusMap()[item.id]?.temperature) {
-                           <p class="text-[11px] font-bold text-indigo-600 mt-1 flex items-center gap-1">
-                              <i class="fa-solid fa-temperature-half"></i> Temp: {{ statusMap()[item.id]?.temperature }}°C
-                           </p>
+                                       placeholder="°C"
+                                       [disabled]="isSubmitted()"
+                                       class="w-full font-black text-slate-800 bg-transparent h-5 focus:outline-none text-xs disabled:opacity-50">
+                            </div>
                         }
-                        @if (item.status === 'issue' && item.note) {
-                          <p class="text-[11px] text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded mt-1.5 inline-block">Nota: {{ item.note }}</p>
-                        } @else {
-                          <p class="text-[10px] uppercase tracking-[0.1em] font-black mt-1.5"
-                             [class.text-slate-400]="item.status === 'pending'"
-                             [class.text-emerald-500]="item.status === 'ok'"
-                             [class.text-red-500]="item.status === 'issue'">
-                               {{ item.status === 'pending' ? 'Da Registrare' : (item.status === 'ok' ? 'CONFORME' : 'NON CONFORME') }}
-                          </p>
-                        }
+
+                        <div class="flex items-center gap-1.5">
+                            @if (item.status === 'pending') {
+                                <button (click)="setStatus(item.id, 'ok')" 
+                                        class="w-9 h-9 rounded-full bg-white border border-emerald-200 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center">
+                                    <i class="fa-solid fa-check text-xs"></i>
+                                </button>
+                                <button (click)="openIssueModal(item)" 
+                                        class="w-9 h-9 rounded-full bg-white border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center">
+                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                                </button>
+                            } @else {
+                                <button (click)="setStatus(item.id, 'pending')" 
+                                        class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 hover:text-white transition-all border border-slate-200">
+                                    RESET
+                                </button>
+                            }
+                        </div>
                     </div>
 
-                    <!-- Action Buttons as Tondini -->
-                    <div class="flex gap-2">
-                      @if (item.status === 'pending') {
-                        <!-- OK Button: Verde con cerchio check -->
-                        <button (click)="setStatus(item.id, 'ok')" 
-                                class="w-10 h-10 rounded-full bg-slate-100 hover:bg-emerald-100 text-slate-300 hover:text-emerald-600 flex items-center justify-center transition-all border border-slate-200">
-                          <i class="fa-solid fa-circle-check text-lg"></i>
-                        </button>
-                        <!-- ISSUE Button: Rosso con triangolo -->
-                        <button (click)="openIssueModal(item)"
-                                class="w-10 h-10 rounded-full bg-slate-100 hover:bg-red-100 text-slate-300 hover:text-red-500 flex items-center justify-center transition-all border border-slate-200">
-                          <i class="fa-solid fa-triangle-exclamation text-sm"></i>
-                        </button>
-                      } @else {
-                        <!-- Reset Button -->
-                        <button (click)="setStatus(item.id, 'pending')" 
-                                class="w-8 h-8 rounded-full bg-white/50 hover:bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all border border-black/5 shadow-sm">
-                          <i class="fa-solid fa-rotate-left text-xs"></i>
-                        </button>
-                      }
+                    @if (item.status === 'issue' && item.note) {
+                        <div class="w-full mt-2 text-[10px] text-red-600 font-bold italic bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
+                             Nota: {{ item.note }}
+                        </div>
+                    }
+                </div>
+            </ng-template>
+
+            <!-- Fixed Footer Actions -->
+            <div class="fixed bottom-6 right-6 z-50">
+                @if (!isSubmitted()) {
+                    <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
+                            class="h-16 px-10 bg-slate-900 border-b-4 border-slate-950 text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-2xl flex items-center gap-4 disabled:opacity-40 disabled:grayscale group hover:bg-emerald-600 hover:border-emerald-700">
+                        <div class="flex flex-col items-end">
+                            <span class="text-[8px] opacity-60 font-bold tracking-widest group-hover:opacity-100 transition-opacity uppercase">Fase Operativa</span>
+                            <span class="text-xs">REGISTRA OPERAZIONI</span>
+                        </div>
+                        <div class="w-px h-6 bg-white/20"></div>
+                        <i class="fa-solid fa-cloud-arrow-up text-xl group-hover:scale-110 transition-transform"></i>
+                    </button>
+                } @else {
+                    <div class="bg-white/80 backdrop-blur-xl p-3 rounded-[3.5rem] shadow-2xl flex items-center gap-3 border border-white animate-slide-up">
+                        <div class="px-8 py-5 bg-emerald-500 text-white rounded-[2.5rem] flex items-center gap-4">
+                            <i class="fa-solid text-xl" [class.fa-check]="!hasIssues()" [class.fa-triangle-exclamation]="hasIssues()"></i>
+                            <span class="font-black text-sm uppercase text-white">{{ hasIssues() ? 'NON CONFORME' : 'CONFORME' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 px-3">
+                            <button (click)="printReport()" class="h-14 w-14 rounded-full bg-slate-50 hover:bg-slate-900 hover:text-white flex items-center justify-center transition-all shadow-sm" title="Stampa"><i class="fa-solid fa-print text-lg"></i></button>
+                            <button (click)="sendEmail()" class="h-14 w-14 rounded-full bg-slate-50 hover:bg-slate-900 hover:text-white flex items-center justify-center transition-all shadow-sm" title="Email"><i class="fa-solid fa-envelope text-lg"></i></button>
+                        </div>
+                        <div class="w-px h-12 bg-slate-100 mx-2"></div>
+                        <button (click)="startNewChecklist()" class="h-16 px-10 rounded-[2.5rem] bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-4 font-black text-sm uppercase tracking-[0.15em] transition-all"><i class="fa-solid fa-rotate-right text-lg"></i> NUOVA</button>
                     </div>
-                 </div>
+                }
             </div>
-        </ng-template>
 
-        <!-- Footer Actions -->
-        <div class="print:hidden fixed bottom-6 right-6 z-30 md:absolute md:bottom-0 md:right-0 md:relative md:mt-8 w-full md:w-auto">
-          
-          @if (!isSubmitted()) {
-              @if (isAllCompleted()) {
-                 <button (click)="submitChecklist()" 
-                         class="ml-auto bg-emerald-600 text-white rounded-2xl px-6 py-4 shadow-2xl shadow-emerald-500/40 font-bold text-lg flex items-center gap-3 hover:bg-emerald-700 hover:scale-105 transition-all">
-                    <div>
-                       <div class="leading-none text-[10px] uppercase opacity-80 text-left">Checklist Completa</div>
-                       <div class="flex items-center">REGISTRA ORA <i class="fa-solid fa-check-double ml-2"></i></div>
-                    </div>
-                 </button>
-              } @else {
-                 <div class="bg-slate-800 text-white rounded-full px-5 py-3 shadow-lg text-xs font-bold opacity-80 backdrop-blur-md float-right">
-                    {{ items().length - completedCount() }} Rimanenti
-                 </div>
-              }
-          } @else {
-              <div class="mb-4 flex justify-center animate-slide-up">
-                   <div class="bg-white/90 backdrop-blur rounded-full px-6 py-2 shadow-lg border border-slate-200 flex items-center gap-3 select-none"
-                        [class.border-emerald-500]="!hasIssues()"
-                        [class.border-red-500]="hasIssues()">
-                       <div class="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-colors duration-300"
-                            [class.bg-emerald-500]="!hasIssues()"
-                            [class.bg-red-500]="hasIssues()">
-                           @if(!hasIssues()) { <i class="fa-solid fa-check text-sm"></i> }
-                           @else { <i class="fa-solid fa-triangle-exclamation text-sm"></i> }
-                       </div>
-                       <div class="font-bold uppercase text-sm"
-                            [class.text-emerald-600]="!hasIssues()"
-                            [class.text-red-600]="hasIssues()">
-                            {{ hasIssues() ? 'Non Conforme' : 'Conforme' }}
-                       </div>
-                   </div>
-              </div>
-
-              <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 rounded-2xl shadow-2xl animate-slide-up mx-4 md:mx-0">
-                  <div class="flex flex-wrap items-center justify-center gap-2">
-                      <button (click)="submitChecklist()" class="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-2 border border-emerald-400/50 ring-2 ring-emerald-500/20">
-                          <i class="fa-solid fa-floppy-disk"></i> Salva
-                      </button>
-                      <div class="w-px h-8 bg-white/20 mx-1 hidden sm:block"></div>
-                      <button (click)="printReport()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10">
-                          <i class="fa-solid fa-print"></i> <span class="hidden sm:inline">Stampa</span>
-                      </button>
-                      <button (click)="sendEmail()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10">
-                          <i class="fa-solid fa-envelope"></i> <span class="hidden sm:inline">Email</span>
-                      </button>
-                      <button (click)="sendInternalMessage()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10">
-                          <i class="fa-solid fa-comments"></i> <span class="hidden sm:inline">Chat</span>
-                      </button>
-                      <div class="w-px h-8 bg-white/20 mx-1 hidden sm:block"></div>
-                      <button (click)="startNewChecklist()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-blue-100 hover:text-white flex items-center justify-center gap-2 backdrop-blur-sm whitespace-nowrap">
-                          <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Nuova</span>
-                      </button>
+            <!-- Issue Modal -->
+            @if (isModalOpen()) {
+               <div class="print:hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+                  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" (click)="closeModal()"></div>
+                  <div class="relative w-full max-w-sm bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-slide-up border border-slate-100">
+                     <div class="p-10 text-center bg-red-50/50">
+                        <div class="w-24 h-24 rounded-[2.5rem] bg-white text-red-500 flex items-center justify-center mx-auto mb-8 shadow-xl shadow-red-100"><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
+                        <h3 class="text-3xl font-black text-slate-900 uppercase tracking-tight mb-3">Anomalia</h3>
+                        <p class="text-base text-red-600 font-black leading-tight italic px-4">{{ currentItem()?.label }}</p>
+                     </div>
+                     <div class="p-10 space-y-5">
+                        <textarea #issueInput class="w-full bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] p-8 text-slate-800 placeholder:text-slate-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-400 focus:outline-none h-48 transition-all font-bold text-lg" placeholder="Descrivi l'anomalia..."></textarea>
+                        <div class="flex gap-4">
+                           <button class="flex-1 py-5 bg-slate-100 text-slate-400 font-black rounded-3xl text-sm" (click)="closeModal()">Annulla</button>
+                           <button class="flex-1 py-5 bg-red-600 text-white font-black rounded-3xl shadow-xl shadow-red-200 text-sm" (click)="confirmIssue(issueInput.value)">Salva</button>
+                        </div>
+                     </div>
                   </div>
-              </div>
-          }
+               </div>
+            }
         </div>
-
-        <!-- Non-Conformity Modal -->
-        @if (isModalOpen()) {
-           <div class="print:hidden fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
-              <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md" (click)="closeModal()"></div>
-              <div class="relative w-full max-w-sm bg-white rounded-[48px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100">
-                 <div class="px-8 py-10 bg-red-50/50 text-center">
-                    <div class="w-20 h-20 rounded-[32px] bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-red-200">
-                       <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-red-950 uppercase tracking-tight">Non Conformità</h3>
-                    <p class="text-sm text-red-800 font-bold mt-2 leading-tight px-4">{{ currentItem()?.label }}</p>
-                 </div>
-                 <div class="p-8 space-y-4">
-                    <textarea #issueInput class="w-full bg-slate-50 border-2 border-slate-100 rounded-[32px] p-6 text-slate-800 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 focus:outline-none h-40 transition-all font-medium text-sm" placeholder="Specifica il motivo della non conformità..."></textarea>
-                    <div class="flex gap-4">
-                       <button class="flex-1 py-5 bg-slate-50 text-slate-400 font-black rounded-[24px] hover:bg-slate-100 transition-colors uppercase tracking-widest text-[10px]" (click)="closeModal()">Annulla</button>
-                       <button class="flex-1 py-5 bg-red-600 text-white font-black rounded-[24px] shadow-xl shadow-red-300 hover:bg-red-700 transition-all active:scale-95 uppercase tracking-widest text-[10px]" (click)="confirmIssue(issueInput.value)">Salva</button>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        }
-
-    </div>
   `,
    styles: [`
     .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-fade-in { animation: fadeIn 0.6s ease-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .glass-card { 
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
   `]
 })
 export class OperativeChecklistComponent {

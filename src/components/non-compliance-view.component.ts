@@ -13,22 +13,49 @@ interface CheckItem {
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div class="space-y-8 pb-10">
-        <div class="bg-indigo-50 border-2 border-indigo-200 rounded-[40px] p-8 mb-8 relative overflow-hidden group shadow-xl shadow-indigo-900/5">
-            <div class="absolute top-0 right-0 p-8 opacity-5 pointer-events-none -rotate-12 translate-x-4">
-                <i class="fa-solid fa-file-signature text-9xl text-indigo-900"></i>
-            </div>
+    <!-- UI CONTENT (Hidden on print) -->
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+        
+        <!-- Premium Hero Header -->
+        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
+            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-indigo-600/15 blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-blue-600/10 blur-3xl"></div>
             
-            <div class="relative z-10">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-inner border border-indigo-200/50">
-                        <i class="fa-solid fa-clipboard-check text-2xl"></i>
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+                        <i class="fa-solid fa-file-circle-exclamation text-3xl text-white"></i>
                     </div>
                     <div>
-                        <h3 class="text-lg font-black text-indigo-900 uppercase tracking-widest leading-none">Gestione Modelli</h3>
-                        <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-tighter mt-1 italic">Compilazione e archiviazione anomalie</p>
+                        <h2 class="text-4xl font-black tracking-tight text-white mb-1"><span class="text-indigo-400">Non</span> Conformità</h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
+                                <i class="fa-solid fa-circle text-[9px] animate-pulse text-indigo-400"></i>
+                                Gestione Anomalie
+                            </span>
+                            <button (click)="showStandardInfo.set(true)" 
+                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 transition-all text-xs font-black border border-indigo-500/20">
+                                <i class="fa-solid fa-circle-info"></i>
+                                INFO PROTOCOLLO
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                <div class="flex flex-col items-end gap-2">
+                    <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
+                         <div class="flex flex-col items-end">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Registrazioni</span>
+                            <span class="text-xl font-black text-white leading-none tabular-nums">{{ checkedCount() }} / {{ checks().length }}</span>
+                         </div>
+                         <div class="w-px h-8 bg-white/10 mx-1"></div>
+                         <div class="h-10 w-10 rounded-full border-2 border-indigo-500/30 flex items-center justify-center">
+                            <i class="fa-solid fa-clipboard-check text-indigo-400"></i>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
                 <div class="space-y-4">
                     @for (check of checks(); track check.id) {
@@ -61,9 +88,7 @@ interface CheckItem {
                         </div>
                     }
                 </div>
-            </div>
-        </div>
-
+        
         @if (!canEdit()) {
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
                 <i class="fa-solid fa-lock text-yellow-600 mt-0.5"></i>

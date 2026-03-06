@@ -13,36 +13,46 @@ interface CheckItem {
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div class="space-y-8 pb-10">
-        <!-- Premium Header Banner -->
-        <div class="bg-gradient-to-r from-pink-600 via-rose-600 to-red-600 p-8 rounded-3xl shadow-xl border border-pink-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <i class="fa-solid fa-vial text-9xl text-white"></i>
-            </div>
-            <div class="relative z-10">
-                <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-                    <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/30">
-                        <i class="fa-solid fa-vial"></i>
-                    </span>
-                    Monitoraggio Microbiologico
-                </h2>
-                <div class="flex items-center gap-4 mt-2">
-                    <p class="text-pink-100 text-sm font-medium ml-1">Analisi e test periodici di igiene</p>
-                    <button (click)="showStandardInfo.set(true)" 
-                            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white text-white hover:text-rose-700 transition-all text-[10px] font-black border border-white/30 shadow-md group">
-                        <i class="fa-solid fa-circle-info text-sm group-hover:scale-110 transition-transform"></i>
-                        <span>INFO PROTOCOLLO</span>
-                    </button>
+    <!-- UI CONTENT (Hidden on print) -->
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+        
+        <!-- Premium Hero Header -->
+        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
+            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-rose-600/15 blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-red-600/10 blur-3xl"></div>
+            
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-red-700 shadow-lg shadow-rose-500/20 ring-1 ring-white/20">
+                        <i class="fa-solid fa-vial text-3xl text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-4xl font-black tracking-tight text-white mb-1"><span class="text-rose-400">Monitoraggio</span> Microbiologico</h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
+                                <i class="fa-solid fa-circle text-[9px] animate-pulse text-rose-400"></i>
+                                Analisi & Test
+                            </span>
+                            <button (click)="showStandardInfo.set(true)" 
+                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-all text-xs font-black border border-rose-500/20">
+                                <i class="fa-solid fa-circle-info"></i>
+                                INFO PROTOCOLLO
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="relative z-10 flex flex-col gap-2">
-                <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-                    <i class="fa-solid fa-microscope text-white text-lg"></i>
-                    <span class="text-white font-bold">{{ checkedCount() }} / {{ checks().length }}</span>
-                </div>
-                <div class="text-xs text-pink-100 font-medium flex items-center gap-2">
-                    <i class="fa-regular fa-calendar"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}
-                    @if (getDisplayName()) { <span class="mx-1">•</span> <i class="fa-regular fa-user"></i> {{ getDisplayName() }} }
+
+                <div class="flex flex-col items-end gap-2">
+                    <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
+                         <div class="flex flex-col items-end">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Completamento</span>
+                            <span class="text-xl font-black text-white leading-none tabular-nums">{{ checkedCount() }} / {{ checks().length }}</span>
+                         </div>
+                         <div class="w-px h-8 bg-white/10 mx-1"></div>
+                         <div class="h-10 w-10 rounded-full border-2 border-rose-500/30 flex items-center justify-center">
+                            <i class="fa-solid fa-microscope text-rose-400"></i>
+                         </div>
+                    </div>
                 </div>
             </div>
         </div>

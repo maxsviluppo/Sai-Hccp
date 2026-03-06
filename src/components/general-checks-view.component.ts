@@ -26,33 +26,33 @@ interface CheckCategory {
     <div class="space-y-6 pb-10">
       
       <!-- Premium Header Banner -->
-      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden">
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-10 rounded-[3rem] shadow-2xl border border-slate-700 relative overflow-hidden">
         <div class="absolute inset-0 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
         <div class="relative z-10">
-          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div class="flex items-center gap-4">
-              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg border border-white/10">
-                <i class="fa-solid fa-list-check text-white text-2xl"></i>
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10">
+            <div class="flex items-center gap-6">
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg border border-white/10">
+                <i class="fa-solid fa-list-check text-white text-3xl"></i>
               </div>
               <div>
-                <h2 class="text-3xl font-black text-white">Controlli Generali</h2>
-                <div class="flex items-center gap-4 mt-2">
-                    <p class="text-slate-400 text-sm font-medium">Panoramica completa stato HACCP</p>
+                <h2 class="text-4xl font-black text-white">Controlli Generali</h2>
+                <div class="flex items-center gap-5 mt-3">
+                    <p class="text-slate-400 text-lg font-medium">Panoramica completa stato HACCP</p>
                     <button (click)="showStandardInfo.set(true)" 
-                            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all text-[10px] font-black border border-white/10 shadow-md group">
-                        <i class="fa-solid fa-circle-info text-sm group-hover:scale-110 transition-transform"></i>
-                        <span>INFO PROTOCOLLO</span>
+                            class="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all text-sm font-black border border-white/10 shadow-md group">
+                        <i class="fa-solid fa-circle-info text-base group-hover:scale-110 transition-transform"></i>
+                        <span class="tracking-widest">INFO PROTOCOLLO</span>
                     </button>
                 </div>
               </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
               <!-- Company Selector -->
-              <div class="bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex-1 sm:flex-initial">
-                <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Azienda Selezionata</label>
+              <div class="bg-white/5 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10 flex-1 sm:flex-initial">
+                <label class="text-xs text-slate-400 font-black uppercase tracking-[0.2em] block mb-1.5">Azienda Selezionata</label>
                 <select [ngModel]="selectedCompanyId()" (ngModelChange)="selectedCompanyId.set($event)"
-                        class="bg-transparent text-white font-bold focus:outline-none cursor-pointer border-none p-0 text-sm min-w-[200px]">
+                        class="bg-transparent text-white font-black focus:outline-none cursor-pointer border-none p-0 text-base min-w-[200px]">
                   <option value="" class="bg-slate-800">Tutte le Aziende</option>
                   @for (client of state.clients(); track client.id) {
                     <option [value]="client.id" class="bg-slate-800">{{ client.name }}</option>
@@ -63,8 +63,8 @@ interface CheckCategory {
               <!-- Print Action -->
               <button (click)="printCompleteList()" 
                       [disabled]="!selectedCompanyId()"
-                      class="px-5 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-30 disabled:grayscale shadow-lg backdrop-blur-sm">
-                <i class="fa-solid fa-print"></i>
+                      class="px-8 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-2xl font-black text-base transition-all flex items-center gap-3 disabled:opacity-30 disabled:grayscale shadow-lg backdrop-blur-sm active:scale-95">
+                <i class="fa-solid fa-print text-lg"></i>
                 <span class="hidden sm:inline">Stampa Report</span>
               </button>
             </div>
@@ -87,35 +87,35 @@ interface CheckCategory {
                         </div>
                     </div>
                     
-                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-shield-check text-xs"></i> 01. Obiettivo
+                    <div class="p-10 pt-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3">
+                                <i class="fa-solid fa-shield-check text-sm"></i> 01. Obiettivo
                             </h4>
-                            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
-                                <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                            <div class="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
+                                <p class="text-sm text-slate-700 leading-relaxed font-bold">
                                     Monitorare costantemente l'attuazione delle procedure di autocontrollo previste dal piano HACCP aziendale.
                                 </p>
                             </div>
                         </div>
 
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-flask-vial text-xs"></i> 02. Protocollo Sanificazione
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3">
+                                <i class="fa-solid fa-flask-vial text-sm"></i> 02. Protocollo Sanificazione
                             </h4>
-                            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
-                                <p class="text-[10px] text-slate-500 font-bold leading-relaxed italic">
+                            <div class="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
+                                <p class="text-xs text-slate-500 font-black leading-relaxed italic">
                                     "La sanificazione comprende pulizia meccanica/chimica e successiva disinfezione." 
                                     Utilizzare prodotti anionici per il lavaggio e cationici per la disinfezione.
                                 </p>
                             </div>
                         </div>
 
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-triangle-exclamation text-xs"></i> 03. Segnalazione
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-black text-emerald-600 uppercase tracking-widest flex items-center gap-3">
+                                <i class="fa-solid fa-triangle-exclamation text-sm"></i> 03. Segnalazione
                             </h4>
-                            <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 text-[10px] font-bold text-slate-500 italic">
+                            <div class="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 text-xs font-black text-slate-500 italic">
                                 Le non conformità rilevate devono essere registrate tempestivamente con le relative azioni correttive intraprese nel registro specifico.
                             </div>
                         </div>
@@ -132,51 +132,51 @@ interface CheckCategory {
         }
 
       <!-- Summary Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm transition-transform hover:scale-[1.02]">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-slate-500 font-bold uppercase">Totale Controlli</p>
-              <p class="text-3xl font-black text-slate-800 mt-1">{{ totalChecks() }}</p>
+              <p class="text-sm text-slate-500 font-black uppercase tracking-widest">Totale Controlli</p>
+              <p class="text-4xl font-black text-slate-800 mt-2">{{ totalChecks() }}</p>
             </div>
-            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-              <i class="fa-solid fa-clipboard-list text-slate-600 text-xl"></i>
+            <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 shadow-inner">
+              <i class="fa-solid fa-clipboard-list text-3xl"></i>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl p-5 border border-emerald-200 shadow-sm">
+        <div class="bg-white rounded-2xl p-6 border border-emerald-200 shadow-sm transition-transform hover:scale-[1.02]">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-emerald-600 font-bold uppercase">Completati</p>
-              <p class="text-3xl font-black text-emerald-600 mt-1">{{ completedChecks() }}</p>
+              <p class="text-sm text-emerald-600 font-black uppercase tracking-widest">Completati</p>
+              <p class="text-4xl font-black text-emerald-600 mt-2">{{ completedChecks() }}</p>
             </div>
-            <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-              <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i>
+            <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-inner">
+              <i class="fa-solid fa-circle-check text-3xl"></i>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl p-5 border border-orange-200 shadow-sm">
+        <div class="bg-white rounded-2xl p-6 border border-orange-200 shadow-sm transition-transform hover:scale-[1.02]">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-orange-600 font-bold uppercase">Da Completare</p>
-              <p class="text-3xl font-black text-orange-600 mt-1">{{ pendingChecks() }}</p>
+              <p class="text-sm text-orange-600 font-black uppercase tracking-widest">Da Completare</p>
+              <p class="text-4xl font-black text-orange-600 mt-2">{{ pendingChecks() }}</p>
             </div>
-            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-              <i class="fa-solid fa-clock text-orange-600 text-xl"></i>
+            <div class="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600 shadow-inner">
+              <i class="fa-solid fa-clock text-3xl"></i>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl p-5 border border-blue-200 shadow-sm">
+        <div class="bg-white rounded-2xl p-6 border border-blue-200 shadow-sm transition-transform hover:scale-[1.02]">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-blue-600 font-bold uppercase">Completamento</p>
-              <p class="text-3xl font-black text-blue-600 mt-1">{{ completionRate() }}%</p>
+              <p class="text-sm text-blue-600 font-black uppercase tracking-widest">Completamento</p>
+              <p class="text-4xl font-black text-blue-600 mt-2">{{ completionRate() }}%</p>
             </div>
-            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <i class="fa-solid fa-chart-pie text-blue-600 text-xl"></i>
+            <div class="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-inner">
+              <i class="fa-solid fa-chart-pie text-3xl"></i>
             </div>
           </div>
         </div>
@@ -195,95 +195,95 @@ interface CheckCategory {
                [style.--category-color]="category.color">
             
             <!-- Category Header -->
-            <div class="relative px-6 py-5 cursor-pointer select-none transition-colors hover:bg-slate-50 border-l-4"
+            <div class="relative px-8 py-6 cursor-pointer select-none transition-colors hover:bg-slate-50 border-l-[6px]"
                  [style.border-left-color]="category.color"
                  (click)="toggleCategory(category.id)">
                
-               <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                   <div class="flex items-center gap-4 flex-1">
+               <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                   <div class="flex items-center gap-6 flex-1">
                        <!-- Icon -->
-                       <div class="w-14 h-14 rounded-xl flex items-center justify-center shadow-sm text-white text-2xl"
+                       <div class="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg text-white text-4xl shadow-inner-white"
                             [style.background]="category.color">
                           <i [class]="'fa-solid ' + category.icon"></i>
                        </div>
                        
                        <div class="flex-1">
-                          <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3">
+                          <h3 class="font-black text-3xl text-slate-800 flex items-center gap-4 mb-2">
                               {{ category.name }}
-                              <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-mono">
-                                  {{ categoryTotal }} controlli
+                              <span class="text-xs bg-slate-900 text-white px-3 py-1 rounded-lg font-black tracking-widest uppercase">
+                                  {{ categoryTotal }} CONTROLLI
                               </span>
                           </h3>
                           
                           <!-- Progress Bar -->
-                          <div class="flex items-center gap-4 mt-2">
-                              <div class="flex-1 max-w-md">
-                                  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                      <div class="h-full transition-all duration-500 rounded-full"
+                          <div class="flex items-center gap-6">
+                              <div class="flex-1 max-w-xl">
+                                  <div class="h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                      <div class="h-full transition-all duration-700 rounded-full shadow-sm"
                                            [style.background]="category.color"
                                            [style.width.%]="categoryRate"></div>
                                   </div>
                               </div>
-                              <span class="text-sm font-bold" [style.color]="category.color">
-                                  {{ categoryCompleted }}/{{ categoryTotal }}
+                              <span class="text-lg font-black" [style.color]="category.color">
+                                  {{ (categoryRate | number:'1.0-0') }}%
                               </span>
                           </div>
                        </div>
 
                        <!-- Expand Arrow -->
-                       <div class="w-8 h-8 flex items-center justify-center text-slate-400 transition-transform duration-300"
+                       <div class="w-12 h-12 flex items-center justify-center text-slate-300 transition-transform duration-300 transform"
                             [class.rotate-180]="isOpen">
-                           <i class="fa-solid fa-chevron-down"></i>
+                           <i class="fa-solid fa-chevron-down text-xl"></i>
                        </div>
                    </div>
                </div>
             </div>
-
-            <!-- Category Items (Accordion Body) -->
+            <!-- Category Items (Accordion Body) -->
             @if (isOpen) {
-                <div class="border-t border-slate-100 bg-slate-50/50 p-6 animate-slide-down">
-                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div class="border-t border-slate-100 bg-slate-50/50 p-8 animate-slide-down">
+                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       @for (item of category.items; track item.id) {
-                          <div class="bg-white rounded-lg p-4 border transition-all"
+                          <div class="bg-white rounded-2xl p-6 border-2 transition-all flex items-center gap-5"
                                [class.border-emerald-200]="item.completed"
                                [class.bg-emerald-50/30]="item.completed"
-                               [class.border-slate-200]="!item.completed"
-                               [class.hover:border-slate-300]="!item.completed">
+                               [class.border-slate-100]="!item.completed"
+                               [class.hover:border-slate-300]="!item.completed"
+                               [class.shadow-sm]="item.completed">
                               
-                              <div class="flex items-start gap-3">
+                              <div class="flex items-start gap-5 flex-1">
                                   <!-- Status Icon -->
-                                  <div class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 transition-all"
+                                  <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 transition-all shadow-sm"
                                        [class.bg-emerald-500]="item.completed"
                                        [class.text-white]="item.completed"
                                        [class.bg-slate-200]="!item.completed"
                                        [class.text-slate-400]="!item.completed">
                                       @if (item.completed) {
-                                          <i class="fa-solid fa-check text-xs"></i>
+                                          <i class="fa-solid fa-check text-sm font-black"></i>
                                       } @else {
-                                          <i class="fa-solid fa-minus text-xs"></i>
+                                          <i class="fa-solid fa-minus text-sm font-black"></i>
                                       }
                                   </div>
 
                                   <!-- Label -->
                                   <div class="flex-1 min-w-0">
-                                      <p class="text-sm font-medium leading-snug"
+                                      <p class="text-base md:text-lg font-bold leading-tight"
                                          [class.text-slate-800]="!item.completed"
-                                         [class.text-emerald-700]="item.completed">
+                                         [class.text-emerald-800]="item.completed">
                                           {{ item.label }}
                                       </p>
-                                      <p class="text-xs text-slate-400 mt-1">
+                                      <p class="text-xs text-slate-400 mt-1 uppercase font-black tracking-widest">
                                           Modulo: {{ getModuleName(item.moduleId) }}
                                       </p>
                                   </div>
 
                                   <!-- Status Badge -->
                                   @if (item.completed) {
-                                      <span class="flex-shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">
-                                          Fatto
+                                      <span class="flex-shrink-0 text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                                          CONFERMATO
                                       </span>
                                   } @else {
-                                      <span class="flex-shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded bg-orange-100 text-orange-700 border border-orange-200">
-                                          Da Fare
+                                      <span class="flex-shrink-0 text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-orange-100 text-orange-700 border border-orange-200 shadow-sm">
+                                          PENDENTE
                                       </span>
                                   }
                               </div>
@@ -292,6 +292,7 @@ interface CheckCategory {
                    </div>
                 </div>
             }
+
           </div>
         }
       </div>
