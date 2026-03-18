@@ -20,180 +20,199 @@ interface Supplier {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="space-y-8 pb-10">
-        <!-- Premium Header Banner -->
-        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 p-8 rounded-3xl shadow-xl border border-blue-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <i class="fa-solid fa-truck-field text-9xl text-white"></i>
-            </div>
-            <div class="relative z-10">
-                <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-                    <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/30">
-                        <i class="fa-solid fa-truck-field"></i>
-                    </span>
-                    Anagrafica Fornitori
-                </h2>
-                <p class="text-blue-100 text-sm mt-2 font-medium ml-1">Gestione qualificata e monitoraggio fornitori</p>
-            </div>
-            <div class="relative z-10 flex flex-col gap-2">
-                <button (click)="isAddModalOpen.set(true)" 
-                        class="px-6 py-3 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2">
-                    <i class="fa-solid fa-plus-circle"></i>
-                    Nuovo Fornitore
-                </button>
-            </div>
+    <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
+      
+      <!-- App-style Header -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="h-12 w-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shadow-sm border border-indigo-100/50">
+            <i class="fa-solid fa-truck-field"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-slate-800 tracking-tight">Anagrafica Fornitori</h2>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Gestione & Qualifica Aziendale</p>
+          </div>
         </div>
-
-        <!-- Suppliers Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            @for (s of suppliers(); track s.id) {
-                <div class="bg-white rounded-[32px] p-6 shadow-sm border-2 transition-all duration-300 relative overflow-hidden group"
-                     [class.border-slate-100]="s.status === 'pending'"
-                     [class.border-emerald-500/30]="s.status === 'ok'"
-                     [class.border-rose-500/30]="s.status === 'issue'"
-                     [class.bg-emerald-50/30]="s.status === 'ok'"
-                     [class.bg-rose-50/30]="s.status === 'issue'">
-                    
-                    <div class="flex flex-col gap-6">
-                        <!-- Card Header -->
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-start gap-4">
-                                <div class="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg border shrink-0"
-                                     [class.bg-emerald-500]="s.status === 'ok'"
-                                     [class.text-white]="s.status === 'ok'"
-                                     [class.bg-rose-500]="s.status === 'issue'"
-                                     [class.text-white]="s.status === 'issue'"
-                                     [class.bg-slate-50]="s.status === 'pending'"
-                                     [class.text-slate-400]="s.status === 'pending'">
-                                    <i class="fa-solid fa-building text-2xl"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <h3 class="font-black text-slate-800 text-lg uppercase tracking-tight truncate">{{ s.ragioneSociale }}</h3>
-                                    <div class="flex flex-col gap-1 mt-1">
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                            <i class="fa-solid fa-user-tie text-[8px]"></i> Resp: {{ s.responsabile }}
-                                        </span>
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                            <i class="fa-solid fa-id-card text-[8px]"></i> P.IVA: {{ s.piva }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="flex items-center gap-2">
-                                <button (click)="setStatus(s.id, 'ok')" 
-                                        class="w-10 h-10 rounded-xl flex items-center justify-center transition-all border-2"
-                                        [class]="s.status === 'ok' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-300 hover:border-emerald-500 hover:text-emerald-500'">
-                                    <i class="fa-solid fa-check"></i>
-                                </button>
-                                <button (click)="setStatus(s.id, 'issue')" 
-                                        class="w-10 h-10 rounded-xl flex items-center justify-center transition-all border-2"
-                                        [class]="s.status === 'issue' ? 'bg-rose-500 border-rose-500 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-300 hover:border-rose-500 hover:text-rose-500'">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                                <button (click)="removeSupplier(s.id)" 
-                                        class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50 border-2 border-slate-100 text-slate-300 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all ml-2">
-                                    <i class="fa-solid fa-trash-can text-sm"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Contact Grid -->
-                        <div class="grid grid-cols-2 gap-3 p-4 bg-white/50 rounded-2xl border border-slate-100 shadow-inner">
-                            <div class="flex flex-col">
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Contatto Email</span>
-                                <span class="text-xs font-bold text-slate-700 truncate">{{ s.email }}</span>
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Telefono</span>
-                                <span class="text-xs font-bold text-slate-700">{{ s.telefono }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Non-conformity Note -->
-                        @if (s.status === 'issue') {
-                            <div class="animate-slide-down">
-                                <label class="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2 block">Motivazione Non Conformità</label>
-                                <textarea [(ngModel)]="s.note" 
-                                          (ngModelChange)="onNoteUpdate()"
-                                          placeholder="Specifica i motivi della non conformità (es. certificazione scaduta, merce non idonea)..."
-                                          class="w-full bg-white border-2 border-rose-100 rounded-2xl p-4 text-sm text-slate-700 focus:outline-none focus:border-rose-500 transition-all min-h-[100px] shadow-inner"></textarea>
-                            </div>
-                        }
-                    </div>
-                </div>
-            } @empty {
-                <div class="lg:col-span-2 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[40px] p-20 text-center">
-                    <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <i class="fa-solid fa-truck-ramp-box text-4xl text-slate-300"></i>
-                    </div>
-                    <h3 class="text-xl font-black text-slate-400 uppercase tracking-tight">Nessun fornitore censito</h3>
-                    <p class="text-slate-400 text-sm mt-2">Inizia aggiungendo il primo fornitore all'anagrafica.</p>
-                </div>
-            }
+        
+        <div class="flex items-center gap-4 w-full sm:w-auto">
+          <div class="bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 flex items-center gap-3 shrink-0">
+             <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+                <i class="fa-solid fa-users"></i> {{ suppliers().length }} Aziende
+             </span>
+          </div>
+          <button (click)="isAddModalOpen.set(true)" 
+                  class="flex-1 sm:flex-none h-10 px-6 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95">
+            <i class="fa-solid fa-plus"></i> NUOVO
+          </button>
         </div>
+      </div>
 
-        <!-- Add Supplier Modal -->
-        @if (isAddModalOpen()) {
-            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="isAddModalOpen.set(false)"></div>
-                <div class="relative bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
-                    <div class="p-8 bg-gradient-to-br from-blue-700 to-indigo-900 text-white flex justify-between items-center">
-                        <div>
-                            <h3 class="text-2xl font-black mb-1">Nuovo Fornitore</h3>
-                            <p class="text-blue-200 text-[10px] font-bold uppercase tracking-widest opacity-80">Caricamento anagrafica di base</p>
-                        </div>
-                        <button (click)="isAddModalOpen.set(false)" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="md:col-span-2">
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Ragione Sociale</label>
-                                <input [(ngModel)]="newSupplier.ragioneSociale" type="text" placeholder="Nome Azienda Srl..." class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm focus:border-blue-500 focus:outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Partita IVA</label>
-                                <input [(ngModel)]="newSupplier.piva" type="text" placeholder="IT00000000000" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm focus:border-blue-500 focus:outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Responsabile</label>
-                                <input [(ngModel)]="newSupplier.responsabile" type="text" placeholder="Nome e Cognome..." class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm focus:border-blue-500 focus:outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Email di contatto</label>
-                                <input [(ngModel)]="newSupplier.email" type="email" placeholder="email@fornitore.it" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm focus:border-blue-500 focus:outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Telefono</label>
-                                <input [(ngModel)]="newSupplier.telefono" type="text" placeholder="+39 000 0000000" class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm focus:border-blue-500 focus:outline-none transition-all">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Indirizzo Sede</label>
-                                <input [(ngModel)]="newSupplier.indirizzo" type="text" placeholder="Via, Città, CAP..." class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm focus:border-blue-500 focus:outline-none transition-all">
-                            </div>
-                        </div>
-                    </div>
+      <!-- Compact App-style Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @for (s of suppliers(); track s.id) {
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-all group flex flex-col relative overflow-hidden">
+             <!-- Status Accent Bar -->
+             <div class="absolute left-0 top-0 bottom-0 w-1"
+                  [class.bg-emerald-500]="s.status === 'ok'"
+                  [class.bg-rose-500]="s.status === 'issue'"
+                  [class.bg-slate-300]="s.status === 'pending'"></div>
 
-                    <div class="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
-                        <button (click)="isAddModalOpen.set(false)" class="flex-1 py-4 bg-white text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest border border-slate-200 hover:bg-slate-100 transition-all">Annulla</button>
-                        <button (click)="addSupplier()" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">Salva Fornitore</button>
-                    </div>
+             <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                   <div class="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-colors">
+                      <i class="fa-solid fa-building text-lg"></i>
+                   </div>
+                   <div class="min-w-0">
+                      <h3 class="text-sm font-bold text-slate-800 truncate leading-tight">{{ s.ragioneSociale }}</h3>
+                      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">P.IVA: {{ s.piva }}</p>
+                   </div>
                 </div>
+                
+                <div class="flex gap-1">
+                   <button (click)="removeSupplier(s.id)" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100">
+                      <i class="fa-solid fa-trash-can text-[10px]"></i>
+                   </button>
+                </div>
+             </div>
+
+             <div class="bg-slate-50/50 rounded-xl p-3 space-y-2.5 mb-5 border border-slate-100/50">
+                <div class="flex items-center justify-between gap-4">
+                   <div class="flex items-center gap-2 min-w-0">
+                      <i class="fa-solid fa-user-tie text-[10px] text-slate-300"></i>
+                      <span class="text-[11px] font-medium text-slate-600 truncate">{{ s.responsabile }}</span>
+                   </div>
+                   <div class="flex items-center gap-2 shrink-0">
+                      <i class="fa-solid fa-phone text-[10px] text-slate-300"></i>
+                      <span class="text-[11px] font-medium text-slate-600">{{ s.telefono }}</span>
+                   </div>
+                </div>
+                <div class="flex items-center gap-2">
+                   <i class="fa-solid fa-envelope text-[10px] text-slate-300"></i>
+                   <span class="text-[11px] font-medium text-slate-600 truncate">{{ s.email }}</span>
+                </div>
+             </div>
+
+             <div class="mt-auto flex items-center justify-between gap-3 pt-3 border-t border-slate-50">
+                <div class="flex gap-1.5">
+                   <button (click)="setStatus(s.id, 'ok')" 
+                           class="h-8 px-3 rounded-lg flex items-center justify-center gap-2 transition-all border text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                           [class.bg-emerald-600]="s.status === 'ok'" [class.text-white]="s.status === 'ok'" [class.border-emerald-600]="s.status === 'ok'"
+                           [class.bg-white]="s.status !== 'ok'" [class.text-slate-400]="s.status !== 'ok'" [class.border-slate-200]="s.status !== 'ok'" [class.hover:border-emerald-500]="s.status !== 'ok'" [class.hover:text-emerald-500]="s.status !== 'ok'">
+                      <i class="fa-solid fa-check"></i> OK
+                   </button>
+                   <button (click)="setStatus(s.id, 'issue')" 
+                           class="h-8 px-3 rounded-lg flex items-center justify-center gap-2 transition-all border text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                           [class.bg-rose-600]="s.status === 'issue'" [class.text-white]="s.status === 'issue'" [class.border-rose-600]="s.status === 'issue'"
+                           [class.bg-white]="s.status !== 'issue'" [class.text-slate-400]="s.status !== 'issue'" [class.border-slate-200]="s.status !== 'issue'" [class.hover:border-rose-500]="s.status !== 'issue'" [class.hover:text-rose-500]="s.status !== 'issue'">
+                      <i class="fa-solid fa-triangle-exclamation"></i> KO
+                   </button>
+                </div>
+                
+                <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
+                      [class.bg-slate-100]="s.status === 'pending'" [class.text-slate-500]="s.status === 'pending'"
+                      [class.bg-emerald-100]="s.status === 'ok'" [class.text-emerald-600]="s.status === 'ok'"
+                      [class.bg-rose-100]="s.status === 'issue'" [class.text-rose-600]="s.status === 'issue'">
+                   {{ s.status === 'ok' ? 'Approvato' : (s.status === 'issue' ? 'Segnalato' : 'In Attesa') }}
+                </span>
+             </div>
+          </div>
+        } @empty {
+          <div class="col-span-full bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-12 text-center group cursor-pointer hover:bg-slate-100/50 transition-colors" (click)="isAddModalOpen.set(true)">
+            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-100 text-slate-300 group-hover:text-indigo-500 transition-colors">
+               <i class="fa-solid fa-truck-ramp-box text-xl"></i>
             </div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Nessun fornitore in archivio</p>
+            <p class="text-[10px] text-slate-400 mt-1">Clicca per aggiungere la prima azienda</p>
+          </div>
         }
+      </div>
+
+      <!-- Add Supplier Modal (Modern App Style) -->
+      @if (isAddModalOpen()) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isAddModalOpen.set(false)"></div>
+          <div class="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div class="flex items-center gap-3">
+                 <div class="h-8 w-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md shadow-indigo-100">
+                    <i class="fa-solid fa-plus"></i>
+                 </div>
+                 <h3 class="font-bold text-slate-800 tracking-tight">Nuovo Fornitore</h3>
+              </div>
+              <button (click)="isAddModalOpen.set(false)" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors border border-slate-100 bg-white">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ragione Sociale</label>
+                <div class="relative">
+                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
+                      <i class="fa-solid fa-building text-xs"></i>
+                   </div>
+                   <input [(ngModel)]="newSupplier.ragioneSociale" type="text" placeholder="Nome Azienda Srl..." 
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Partita IVA</label>
+                  <input [(ngModel)]="newSupplier.piva" type="text" placeholder="IT..." 
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Responsabile</label>
+                  <input [(ngModel)]="newSupplier.responsabile" type="text" placeholder="Nome Cognome" 
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                  <input [(ngModel)]="newSupplier.email" type="email" placeholder="azienda@info.it" 
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Telefono</label>
+                  <input [(ngModel)]="newSupplier.telefono" type="text" placeholder="+39..." 
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Indirizzo Sede Legale</label>
+                <div class="relative">
+                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
+                      <i class="fa-solid fa-location-dot text-xs"></i>
+                   </div>
+                   <input [(ngModel)]="newSupplier.indirizzo" type="text" placeholder="Via/Piazza, CAP Città" 
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 bg-slate-50 border-t border-slate-100 flex gap-3 shrink-0">
+              <button (click)="isAddModalOpen.set(false)" class="flex-1 py-3 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">Annulla</button>
+              <button (click)="addSupplier()" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">SALVA ANAGRAFICA</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
-    `,
+  `,
   styles: [`
-    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-slide-down { animation: slideDown 0.3s ease-out; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; }
     `]
 })
 export class SuppliersViewComponent {

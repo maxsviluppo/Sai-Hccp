@@ -13,153 +13,137 @@ interface CheckItem {
     standalone: true,
     imports: [CommonModule],
     template: `
-    <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+    <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
         
-        <!-- Minimal Hero Header -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 lg:p-8 flex flex-col md:flex-row justify-between md:items-center gap-6 relative overflow-hidden">
-            <!-- Subtle accent -->
-            <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-
-            <div class="relative z-10 flex items-center gap-3 md:gap-4">
-                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-sm shrink-0">
-                    <i class="fa-solid fa-triangle-exclamation text-lg md:text-xl"></i>
+        <!-- App-style Header -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="h-12 w-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shadow-sm border border-amber-100/50">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Non Conformità</h2>
-                    <div class="flex flex-wrap items-center gap-2 mt-1">
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-circle text-[8px] animate-pulse text-amber-500"></i>
-                            Gestione Anomalie
-                        </span>
-                        <button (click)="showStandardInfo.set(true)" 
-                                class="flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded border border-amber-100 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none transition-colors">
-                            <i class="fa-solid fa-circle-info"></i> Info Protocollo
-                        </button>
-                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 tracking-tight">Non Conformità</h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Gestione Anomalie & Richiami</p>
                 </div>
             </div>
 
-            <!-- Stats -->
-            <div class="w-full md:w-auto relative z-10 flex gap-4 pr-1">
-                <div class="flex items-center gap-4 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 w-full justify-between">
-                    <div class="min-w-[120px]">
-                        <p class="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Registrazioni</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex-1">
-                                <div class="h-full bg-amber-500 rounded-full transition-all duration-1000" [style.width.%]="(checkedCount() / checks().length) * 100"></div>
-                            </div>
-                            <span class="text-sm md:text-base font-bold text-slate-700 leading-none whitespace-nowrap">{{ checkedCount() }}/{{ (checks().length || 1) }}</span>
-                        </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <a href="/mod_RICHIAMO.pdf" 
+                   download="mod_RICHIAMO.pdf"
+                   class="w-full sm:w-auto h-10 px-4 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap group">
+                    <i class="fa-solid fa-file-pdf text-rose-500 group-hover:scale-110 transition-transform"></i> 
+                    Modello PDF
+                </a>
+                
+                <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 shrink-0 shadow-inner">
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Archiviate</p>
+                        <p class="text-xs font-bold text-slate-700 leading-none">{{ checkedCount() }} / {{ checks().length }}</p>
                     </div>
-                    <i class="fa-solid fa-clipboard-check text-slate-300 text-lg md:text-xl ml-2"></i>
+                    <div class="h-8 w-8 flex items-center justify-center bg-white rounded-lg border border-slate-200 text-amber-500 shadow-sm">
+                        <i class="fa-solid fa-folder-tree text-sm"></i>
+                    </div>
                 </div>
             </div>
         </div>
 
-                <div class="space-y-4">
-                    @for (check of checks(); track check.id) {
-                        <div class="bg-white p-4 md:p-6 rounded-2xl border shadow-sm transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden group"
-                             [class.border-slate-200]="!check.checked" [class.border-amber-200]="check.checked"
-                             [class.bg-slate-50/50]="!check.checked" [class.bg-amber-50/40]="check.checked">
-                             
-                            <!-- Status side border indicator -->
-                            <div class="absolute left-0 top-0 bottom-0 w-1 transition-colors"
-                                 [class.bg-transparent]="!check.checked" [class.bg-amber-400]="check.checked"></div>
-                                 
-                            <div class="flex items-center gap-3 md:gap-4 pl-2">
-                                <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
-                                        class="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all shadow-sm border focus:outline-none"
-                                        [class.bg-amber-100]="check.checked" [class.border-amber-200]="check.checked" [class.text-amber-600]="check.checked"
-                                        [class.bg-white]="!check.checked" [class.border-slate-200]="!check.checked" [class.text-slate-300]="!check.checked"
-                                        [class.hover:bg-amber-200]="check.checked && canEdit()" [class.hover:bg-slate-50]="!check.checked && canEdit()"
-                                        [class.cursor-not-allowed]="!canEdit()" [class.opacity-50]="!canEdit()">
-                                    <i class="fa-solid" [class.fa-check]="check.checked" [class.fa-circle]="!check.checked"></i>
-                                </button>
-                                <div class="cursor-pointer" (click)="toggleCheck(check.id)">
-                                    <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight tracking-tight">{{ check.label }}</h4>
-                                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5 md:mt-1 group-hover:text-amber-600 transition-colors">Procedura di registrazione ufficiale</p>
+        <!-- Modern App List -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Protocolli Disponibili</h3>
+                <button (click)="showStandardInfo.set(true)" class="text-[10px] font-bold text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1.5">
+                   <i class="fa-solid fa-circle-info"></i> INFO PROTOCOLLO
+                </button>
+            </div>
+            
+            <div class="divide-y divide-slate-100">
+                @for (check of checks(); track check.id) {
+                    <div class="p-6 flex flex-col sm:flex-row items-center justify-between gap-6 hover:bg-slate-50 transition-colors group relative overflow-hidden">
+                        <!-- Left side -->
+                        <div class="flex items-center gap-5 w-full sm:w-auto">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all border shadow-sm group-hover:scale-105"
+                                    [class.bg-amber-50]="check.checked" [class.border-amber-100]="check.checked" [class.text-amber-600]="check.checked"
+                                    [class.bg-slate-50]="!check.checked" [class.border-slate-100]="!check.checked" [class.text-slate-300]="!check.checked">
+                                <i class="fa-solid" [class.fa-file-circle-check]="check.checked" [class.fa-file-circle-plus]="!check.checked"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight uppercase tracking-tight">{{ check.label }}</h4>
+                                <div class="flex items-center gap-2 mt-1">
+                                   <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">HACCP Standard 2024</span>
+                                   @if (check.checked) {
+                                      <span class="h-1 w-1 rounded-full bg-slate-300"></span>
+                                      <span class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">ARCHIVIATO</span>
+                                   }
                                 </div>
                             </div>
-                            
-                            <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                <button (click)="printModel(check.label)" 
-                                        class="flex-1 sm:flex-none px-4 md:px-5 py-2.5 md:py-3 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-50 hover:text-amber-600 transition-all flex items-center justify-center gap-2 shadow-sm focus:outline-none">
-                                    <i class="fa-solid fa-print"></i> Stampa
-                                </button>
-                                <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
-                                        class="flex-[2] sm:flex-none px-4 md:px-5 py-2.5 md:py-3 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm border focus:outline-none"
-                                        [class.bg-slate-100]="check.checked" [class.text-slate-500]="check.checked" [class.border-slate-200]="check.checked" [class.hover:bg-slate-200]="check.checked && canEdit()"
-                                        [class.bg-emerald-600]="!check.checked" [class.text-white]="!check.checked" [class.border-emerald-500]="!check.checked" [class.hover:bg-emerald-700]="!check.checked && canEdit()"
-                                        [class.opacity-60]="!canEdit()" [class.cursor-not-allowed]="!canEdit()">
-                                    <i class="fa-solid fa-floppy-disk"></i> {{ check.checked ? 'Registrato' : 'Registra' }}
-                                </button>
-                            </div>
                         </div>
-                    }
-                </div>
-        
+                        
+                        <!-- Right side (Actions) -->
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <button (click)="printModel(check.label)" 
+                                    class="flex-1 sm:flex-none h-10 px-6 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-print"></i> Stampa
+                            </button>
+                            
+                            <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
+                                    class="flex-[2] sm:flex-none h-10 px-8 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md group relative overflow-hidden flex items-center justify-center gap-2"
+                                    [class.bg-slate-100]="check.checked" [class.text-slate-400]="check.checked" [class.border-slate-200]="check.checked"
+                                    [class.bg-amber-600]="!check.checked" [class.text-white]="!check.checked" [class.border-amber-500]="!check.checked" [class.hover:bg-amber-700]="!check.checked" [class.shadow-amber-100]="!check.checked"
+                                    [class.opacity-50]="!canEdit()" [class.cursor-not-allowed]="!canEdit()">
+                                <i class="fa-solid" [class.fa-check-double]="check.checked" [class.fa-floppy-disk]="!check.checked"></i>
+                                {{ check.checked ? 'Reg. Salvata' : 'Salva Reg.' }}
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
         @if (!canEdit()) {
-            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
-                <i class="fa-solid fa-lock text-yellow-600 mt-0.5"></i>
-                <p class="text-sm text-yellow-800 font-medium">Modalità di sola lettura. Seleziona un'unità operativa per modificare i dati.</p>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-lock text-slate-400 text-xs"></i>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Modalità sola lettura attiva</p>
             </div>
         }
 
-        <!-- Informational Modal -->
+        <!-- Informational Modal (Dashboard Style) -->
         @if (showStandardInfo()) {
-            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="showStandardInfo.set(false)"></div>
-                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-2xl shadow-xl overflow-hidden flex flex-col animate-slide-up border border-slate-200">
-                    <div class="bg-amber-600 px-6 py-5 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
-                        <div class="absolute inset-0 bg-gradient-to-r from-amber-700/50 to-transparent pointer-events-none"></div>
-                        <div class="flex items-center gap-4 relative z-10">
-                            <div class="w-10 h-10 rounded-lg bg-amber-500/30 flex items-center justify-center border border-amber-400/30">
-                                <i class="fa-solid fa-triangle-exclamation text-lg text-amber-100"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-bold">Non Conformità</h3>
-                                <p class="text-[10px] md:text-xs text-amber-200 uppercase tracking-widest">Protocollo HACCP</p>
-                            </div>
-                        </div>
-                        <button (click)="showStandardInfo.set(false)" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors relative z-10 text-white">
-                            <i class="fa-solid fa-xmark text-sm"></i>
+            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="showStandardInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-slate-200">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 tracking-tight">Protocollo Non Conformità</h3>
+                        <button (click)="showStandardInfo.set(false)" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
                     
-                    <div class="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
-                        <div class="space-y-2">
-                            <h4 class="text-[10px] md:text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-file-circle-exclamation text-[10px]"></i> 01. Identificazione
-                            </h4>
-                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                                <p class="text-[11px] md:text-sm text-slate-600 leading-relaxed font-medium">
-                                    Qualsiasi deviazione dai parametri critici o anomalia riscontrata deve essere formalizzata mediante l'apposito modello di Non Conformità.
-                                </p>
+                    <div class="p-6 space-y-6">
+                        <div class="flex gap-4">
+                            <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold border border-amber-100">1</div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Identificazione</h4>
+                                <p class="text-sm text-slate-600 leading-relaxed">Qualsiasi deviazione dai parametri critici deve essere formalizzata mediante l'apposito modello.</p>
                             </div>
                         </div>
+                        <div class="flex gap-4">
+                            <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold border border-amber-100">2</div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Azione Correttiva</h4>
+                                <p class="text-sm text-slate-600 leading-relaxed italic">Definire la causa, isolare i prodotti e implementare soluzioni immediate.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold border border-amber-100">3</div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Registrazione</h4>
+                                <p class="text-sm text-slate-600 leading-relaxed">Il modello deve essere stampato e conservato nell'archivio cartaceo aziendale.</p>
+                            </div>
+                        </div>
+                    </div>
 
-                        <div class="space-y-2">
-                            <h4 class="text-[10px] md:text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-bolt text-[10px]"></i> 02. Azione Correttiva
-                            </h4>
-                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-amber-400">
-                                <p class="text-[11px] md:text-sm text-slate-700 leading-relaxed italic">
-                                    Definire la causa, isolare i prodotti o le aree coinvolte e implementare soluzioni immediate per il ripristino della conformità.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <h4 class="text-[10px] md:text-xs font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-print text-[10px]"></i> 03. Registrazione
-                            </h4>
-                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                                <p class="text-[11px] md:text-sm font-medium text-slate-600">
-                                    Il modello compilato deve essere <strong class="text-slate-800">stampato e conservato</strong> nell'archivio cartaceo, oltre alla registrazione digitale nel sistema.
-                                </p>
-                            </div>
-                        </div>
+                    <div class="p-6 bg-slate-50 border-t border-slate-100">
+                        <button (click)="showStandardInfo.set(false)" class="w-full py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-100 transition-all">HO COMPRESO</button>
                     </div>
                 </div>
             </div>
@@ -274,4 +258,3 @@ export class NonComplianceViewComponent {
         }
     }
 }
-

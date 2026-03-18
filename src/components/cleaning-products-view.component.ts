@@ -222,4 +222,3 @@ export class CleaningProductsViewComponent {
         this.state.saveRecord(this.moduleId, this.checks());
     }
 }
-
