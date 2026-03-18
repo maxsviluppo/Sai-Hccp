@@ -317,7 +317,7 @@ import { FormsModule } from '@angular/forms';
             </div>
         }
     </div>
-  `,,
+    `,
     styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
