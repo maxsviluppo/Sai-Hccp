@@ -32,7 +32,7 @@ import { ToastService } from '../services/toast.service';
                             </span>
                             <span class="hidden md:flex items-center gap-2 rounded-full bg-indigo-500/20 px-4 py-1.5 text-xs font-black text-indigo-300 border border-indigo-500/30 uppercase tracking-widest">
                                 <i class="fa-solid fa-id-card"></i>
-                                Azienda: {{ state.adminCompany().name }}
+                                Azienda: {{ getCompanyName() }}
                             </span>
                         </div>
                     </div>
@@ -199,16 +199,18 @@ export class DocsRegularityViewComponent {
 
     constructor() {
         effect(() => {
-            const docs = this.state.documents();
-            const clientId = this.state.currentUser()?.clientId || 'demo';
-            const uploadedTypes = new Set(docs.filter(d => d.clientId === clientId && d.category === 'regolarita-documentazione').map(d => d.type));
-            this.uploadedCount.set(this.docDefinitions.filter(def => uploadedTypes.has(def.id) || this.state.disabledDocs()[def.id]).length);
+            const docs = this.state.filteredDocuments();
+            this.uploadedCount.set(this.docDefinitions.filter(def => 
+                docs.some(d => d.type === def.id && d.category === 'regolarita-documentazione') || 
+                this.state.disabledDocs()[def.id]
+            ).length);
         }, { allowSignalWrites: true });
     }
 
     getDocsByType(type: string) {
-        const clientId = this.state.currentUser()?.clientId || 'demo';
-        return this.state.documents().filter(d => d.clientId === clientId && d.type === type);
+        return this.state.filteredDocuments().filter(d => 
+            d.category === 'regolarita-documentazione' && d.type === type
+        );
     }
 
     isDocUploaded(type: string) {
@@ -219,10 +221,9 @@ export class DocsRegularityViewComponent {
         const files: FileList = event.target.files;
         if (!files || files.length === 0) return;
 
-        const clientId = this.state.currentUser()?.clientId || 'demo';
         Array.from(files).forEach(file => {
             this.state.saveDocument({
-                clientId,
+                clientId: '', // Handled by context
                 category: 'regolarita-documentazione',
                 type,
                 fileName: file.name,
@@ -230,7 +231,7 @@ export class DocsRegularityViewComponent {
                 fileData: 'BASE64_PLACE_HOLDER'
             });
         });
-        this.toast.success('Documento caricato', `Il file è stato aggiunto con successo.`);
+        this.toast.success('Documento caricato', `Il file è stato aggiunto con successo all'archivio dell'unità.`);
     }
 
     getExpiryDate(type: string) {
@@ -240,16 +241,17 @@ export class DocsRegularityViewComponent {
 
     updateExpiryDate(type: string, event: any) {
         const expiryDate = event.target.value;
-        const docs = this.getDocsByType(type);
-        if (docs.length > 0) {
-            this.state.documents.update(allDocs => allDocs.map(d => {
-                if (d.id === docs[0].id) return { ...d, expiryDate };
-                return d;
-            }));
-            this.toast.success('Scadenza salvata', 'Data aggiornata.');
-        } else {
-            this.toast.info('Attenzione', 'Carica prima il documento.');
-        }
+        const targetClientId = this.state.activeTargetClientId();
+        
+        if (!targetClientId) return;
+
+        this.state.documents.update(allDocs => allDocs.map(d => {
+            if (d.type === type && d.clientId === targetClientId) {
+                return { ...d, expiryDate };
+            }
+            return d;
+        }));
+        this.toast.success('Sincronizzato', 'Data di scadenza aggiornata.');
     }
 
     downloadDoc(doc: any) {
@@ -281,12 +283,10 @@ export class DocsRegularityViewComponent {
             isExcluding ? 'L\'elemento non sarà conteggiato nella verifica.' : 'L\'elemento è ora obbligatorio per la conformità.');
     }
 
-    confirmDelete() {
-        const doc = this.docToDelete();
-        if (doc) {
-            this.state.deleteDocument(doc.id);
-            this.isDeleteModalOpen.set(false);
-            this.docToDelete.set(null);
-        }
+    getCompanyName(): string {
+        const targetClientId = this.state.activeTargetClientId();
+        if (!targetClientId) return 'HACCP Pro';
+        const client = this.state.clients().find(c => c.id === targetClientId);
+        return client ? client.name : (this.state.isAdmin() ? 'Amministrazione' : 'Mia Unità');
     }
 }

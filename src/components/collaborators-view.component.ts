@@ -10,195 +10,175 @@ import { ToastService } from '../services/toast.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="space-y-8 pb-10">
+    <div class="space-y-6 max-w-7xl mx-auto p-4 pb-12">
       
-      <!-- Premium Header -->
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-xl border border-slate-700/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
-        <!-- Background Decoration -->
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <i class="fa-solid fa-network-wired text-9xl text-white"></i>
-        </div>
-
-        <div class="relative z-10">
-          <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-            <span class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center mr-4 shadow-lg border border-white/20">
-                <i class="fa-solid fa-sitemap"></i>
-            </span>
-            Struttura Organizzativa
-          </h2>
-          <p class="text-indigo-200 text-sm mt-2 font-medium ml-1">
-            Gestione centralizzata di Aziende, Sedi e Personale Operativo
-          </p>
+      <!-- Sleek Professional Header -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden mb-6">
+        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+        
+        <div class="relative z-10 flex items-center gap-5">
+           <div class="h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-indigo-600 shrink-0 relative">
+              <i class="fa-solid fa-sitemap text-2xl"></i>
+           </div>
+           <div>
+              <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Struttura Organizzativa</h2>
+              <p class="text-xs font-semibold text-slate-500 mt-1">Gestione Aziende e Personale Operativo</p>
+           </div>
         </div>
         
-        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto relative z-10">
-            <button (click)="openClientModal()" class="px-5 py-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-xl hover:bg-white hover:text-indigo-900 transition-all font-bold flex items-center justify-center shadow-lg group">
-                <i class="fa-solid fa-building mr-2 text-indigo-300 group-hover:text-indigo-600 transition-colors"></i> 
-                Nuova Azienda
+        <div class="flex gap-3 w-full md:w-auto relative z-10 justify-between md:justify-end">
+            <button (click)="openClientModal()" class="px-4 py-2 bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all font-bold rounded-lg text-sm flex items-center shadow-sm">
+                <i class="fa-solid fa-building mr-2 text-indigo-400"></i> Nuova Azienda
             </button>
-            <button (click)="openUserModal()" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl transition-all shadow-lg shadow-indigo-500/30 font-bold flex items-center justify-center group active:scale-95">
-                <i class="fa-solid fa-user-plus mr-2 group-hover:animate-pulse"></i> 
-                Aggiungi Personale
+            <button (click)="openUserModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-all shadow-sm flex items-center text-sm">
+                <i class="fa-solid fa-user-plus mr-2 text-indigo-200"></i> Nuova Unità
             </button>
         </div>
       </div>
 
       <!-- Accordion List - Companies -->
-      <div class="space-y-4 animate-fade-in">
+      <div class="space-y-3">
         @for (client of state.clients(); track client.id) {
           @let isOpen = isClientExpanded(client.id);
           @let users = getUsersByClient(client.id);
 
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-md"
-               [class.ring-2]="isOpen" [class.ring-indigo-100]="isOpen">
+          <div class="bg-white rounded-xl shadow-sm border transition-all duration-300"
+               [class.border-indigo-300]="isOpen && !client.suspended" [class.border-slate-200]="!isOpen && !client.suspended"
+               [class.border-red-300]="client.suspended" [class.bg-red-50/20]="client.suspended">
             
             <!-- Company Header (Clickable for Accordion) -->
-            <div class="relative bg-white px-6 py-5 cursor-pointer select-none transition-colors hover:bg-slate-50 border-l-4"
-                 [class.border-l-indigo-500]="isOpen && !client.suspended" 
-                 [class.border-l-transparent]="!isOpen && !client.suspended"
-                 [class.border-l-red-500]="client.suspended"
-                 [class.bg-red-50]="client.suspended"
+            <div class="p-4 md:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors"
                  (click)="toggleClient(client.id)">
                
-               <!-- Suspension Warning Banner -->
-               @if (client.suspended) {
-                   <div class="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-1 text-xs font-bold flex items-center justify-center gap-2 shadow-md">
-                       <i class="fa-solid fa-ban animate-pulse"></i>
-                       SERVIZIO SOSPESO - MANCATO PAGAMENTO
-                       <i class="fa-solid fa-ban animate-pulse"></i>
+               <div class="flex items-center gap-4 w-full md:w-auto flex-1">
+                   <!-- Icon Box -->
+                   <div class="w-10 h-10 rounded border flex items-center justify-center text-slate-500 shrink-0 transition-colors"
+                        [class.bg-red-50]="client.suspended" [class.border-red-200]="client.suspended" [class.text-red-600]="client.suspended"
+                        [class.bg-white]="!client.suspended" [class.border-slate-200]="!client.suspended">
+                      <i class="fa-regular fa-building text-sm" [class.fa-solid]="client.suspended" [class.fa-ban]="client.suspended"></i>
                    </div>
-               }
-
-               <div class="flex flex-col md:flex-row justify-between items-center gap-4" [class.mt-6]="client.suspended">
-                   <!-- Info Azienda -->
-                   <div class="flex items-center gap-4 w-full">
-                       <!-- Icon Box -->
-                       <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 shadow-sm flex-shrink-0 group-hover:scale-110 transition-transform"
-                            [class.bg-red-100]="client.suspended" [class.border-red-200]="client.suspended" [class.text-red-600]="client.suspended">
-                          <i class="fa-regular fa-building text-2xl" [class.fa-solid]="client.suspended" [class.fa-ban]="client.suspended"></i>
-                       </div>
-                       
-                       <div class="flex-1 min-w-0">
-                          <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3" [class.text-red-700]="client.suspended">
+                   
+                   <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                          <h3 class="text-base font-bold text-slate-800 truncate" [class.text-red-700]="client.suspended">
                               {{ client.name }}
-                              <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-mono border border-slate-200"
-                                    [class.bg-red-100]="client.suspended" [class.text-red-600]="client.suspended" [class.border-red-200]="client.suspended">
-                                  {{ users.length }} Risorse
-                              </span>
-                              @if (client.suspended) {
-                                  <span class="text-xs bg-red-500 text-white px-2 py-1 rounded-md font-bold uppercase animate-pulse shadow-lg">
-                                      🚫 BLOCCATO
-                                  </span>
-                              }
                           </h3>
-                          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-medium mt-1">
-                             <span class="flex items-center"><i class="fa-solid fa-location-dot mr-1.5 text-indigo-400"></i> {{ client.address }}</span>
-                             <span class="hidden sm:inline text-slate-300">|</span>
-                             <span class="flex items-center"><i class="fa-solid fa-file-invoice mr-1.5 text-indigo-400"></i> P.IVA: {{ client.piva }}</span>
-                          </div>
+                          @if (client.suspended) {
+                              <span class="px-1.5 py-0.5 bg-red-100 text-red-700 border border-red-200 text-[9px] font-black uppercase tracking-widest rounded whitespace-nowrap">
+                                  Sospeso
+                              </span>
+                          }
+                          <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold rounded whitespace-nowrap">
+                              {{ users.length }} Op.
+                          </span>
                       </div>
+                      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-500 tracking-wide">
+                         <span class="flex items-center"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i> {{ client.address }}</span>
+                         <span class="hidden sm:inline text-slate-300">•</span>
+                         <span class="flex items-center"><i class="fa-solid fa-file-invoice mr-1.5 text-slate-400"></i> P.IVA: {{ client.piva }}</span>
+                      </div>
+                  </div>
+               </div>
 
-                      <!-- Arrow Icon -->
-                      <div class="w-8 h-8 flex items-center justify-center text-slate-400 transition-transform duration-300"
-                           [class.rotate-180]="isOpen">
-                          <i class="fa-solid fa-chevron-down"></i>
-                      </div>
+               <!-- Quick Actions -->
+               <div class="flex items-center gap-3 w-full md:w-auto justify-end pt-3 md:pt-0 border-t md:border-t-0 border-slate-100" (click)="$event.stopPropagation()">
+                   
+                   <div class="flex items-center gap-2 px-2.5 py-1.5 rounded bg-white border border-slate-100 shadow-sm transition-all"
+                        [class.bg-red-50]="client.suspended" [class.border-red-200]="client.suspended">
+                       <span class="text-[9px] font-black uppercase tracking-widest" 
+                             [class.text-red-600]="client.suspended" [class.text-emerald-600]="!client.suspended">
+                           {{ client.suspended ? 'Sospeso' : 'Attivo' }}
+                       </span>
+                       <button (click)="toggleSuspension(client)" 
+                           class="w-8 h-4 rounded-full relative transition-colors duration-200 shadow-inner"
+                           [class.bg-red-400]="client.suspended"
+                           [class.bg-emerald-400]="!client.suspended"
+                           title="{{ client.suspended ? 'Riattiva Servizio' : 'Sospendi per Mancato Pagamento' }}">
+                           <div class="w-3 h-3 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+                                [class.left-4.5]="client.suspended"
+                                [class.left-0.5]="!client.suspended"></div>
+                       </button>
                    </div>
 
-                   <!-- Quick Actions (Stop Propagation to prevent toggle) -->
-                   <div class="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-100 pt-3 md:pt-0 mt-3 md:mt-0 pl-18 md:pl-0" (click)="$event.stopPropagation()">
-                       
-                       <!-- Suspension Toggle -->
-                       <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all"
-                            [class.border-red-300]="client.suspended" [class.bg-red-50]="client.suspended"
-                            [class.border-emerald-200]="!client.suspended" [class.bg-emerald-50]="!client.suspended">
-                           <span class="text-[10px] font-bold uppercase tracking-wider" 
-                                 [class.text-red-600]="client.suspended" [class.text-emerald-600]="!client.suspended">
-                               {{ client.suspended ? 'Sospeso' : 'Attivo' }}
-                           </span>
-                           <button (click)="toggleSuspension(client)" 
-                               class="w-11 h-6 rounded-full relative transition-colors duration-200 ease-in-out focus:outline-none shadow-inner"
-                               [class.bg-red-500]="client.suspended"
-                               [class.bg-emerald-500]="!client.suspended"
-                               title="{{ client.suspended ? 'Riattiva Servizio' : 'Sospendi per Mancato Pagamento' }}">
-                               <div class="w-4 h-4 bg-white rounded-full absolute top-1 transition-all duration-200 shadow-md"
-                                    [class.left-6]="client.suspended"
-                                    [class.left-1]="!client.suspended"></div>
-                           </button>
-                       </div>
-
-                       <button (click)="openClientModal(client)" class="w-9 h-9 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 flex items-center justify-center transition-all bg-white" title="Modifica Dati Azienda">
-                          <i class="fa-solid fa-pen-to-square"></i>
-                       </button>
-                       <button (click)="openUserModal(undefined, client.id)" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-all flex items-center whitespace-nowrap"
-                               [disabled]="client.suspended" [class.opacity-50]="client.suspended" [class.cursor-not-allowed]="client.suspended">
-                          <i class="fa-solid fa-plus mr-1.5"></i> Add User
-                       </button>
+                   <button (click)="openClientModal(client)" class="w-8 h-8 rounded border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 flex items-center justify-center transition-all bg-white shadow-sm" title="Modifica Azienda">
+                      <i class="fa-solid fa-pen text-xs"></i>
+                   </button>
+                   <button (click)="openUserModal(undefined, client.id)" class="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 rounded text-[11px] font-bold transition-all flex items-center whitespace-nowrap shadow-sm"
+                           [disabled]="client.suspended" [class.opacity-50]="client.suspended" [class.cursor-not-allowed]="client.suspended">
+                      <i class="fa-solid fa-plus mr-1"></i> Add Utente
+                   </button>
+                   
+                   <div class="w-6 h-6 flex items-center justify-center text-slate-400 transition-transform duration-300 ml-1" [class.rotate-180]="isOpen">
+                       <i class="fa-solid fa-chevron-down text-sm"></i>
                    </div>
                </div>
             </div>
 
             <!-- Users List (Accordion Body) -->
             @if (isOpen) {
-                <div class="border-t border-slate-100 bg-slate-50/50 p-4 animate-slide-down">
+                <div class="border-t border-slate-100 bg-white p-4 md:p-5 rounded-b-xl border-t-dashed">
                    
                    @if (users.length === 0) {
-                     <div class="bg-white border-2 border-dashed border-slate-200 rounded-xl p-8 text-center">
-                        <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
-                            <i class="fa-solid fa-users-slash text-xl"></i>
-                        </div>
-                        <p class="text-slate-500 min-w-0 font-medium">Nessuna unità operativa configurata per questa sede.</p>
-                        <button (click)="openUserModal(undefined, client.id)" class="mt-3 text-indigo-600 text-sm font-bold hover:underline">
-                            + Aggiungi il primo collaboratore
-                        </button>
+                     <div class="bg-slate-50 border border-dashed border-slate-200 rounded-lg p-6 text-center">
+                        <i class="fa-solid fa-users-slash text-2xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-500 font-bold">Nessuna unità operativa configurata per questa sede.</p>
                      </div>
                    } @else {
-                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         @for (user of users; track user.id) {
-                            <div class="group bg-white rounded-xl p-4 border border-slate-200 hover:border-indigo-200 hover:shadow-md transition-all flex items-center gap-4">
+                            <div class="group bg-slate-50 rounded-lg p-3.5 border border-slate-100 hover:bg-white hover:border-indigo-200 hover:shadow-sm transition-all flex items-center gap-3.5">
                                 <!-- Avatar -->
-                                <div class="relative flex-shrink-0">
-                                    <img [src]="user.avatar" class="w-14 h-14 rounded-xl object-cover border border-slate-100 shadow-sm" [class.grayscale]="!user.active">
-                                    <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center"
+                                <div class="relative shrink-0">
+                                    <img [src]="user.avatar" class="w-10 h-10 rounded border border-slate-200 shadow-sm" [class.grayscale]="!user.active">
+                                    <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white flex items-center justify-center"
                                          [class.bg-emerald-500]="user.active" [class.bg-slate-300]="!user.active">
                                     </div>
                                 </div>
 
                                 <!-- User Details -->
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-start">
+                                    <div class="flex justify-between items-start mb-1">
                                         <div>
-                                            <h4 class="font-bold text-slate-800 text-base leading-tight">{{ user.name }}</h4>
-                                            <p class="text-xs text-slate-500 font-medium truncate">{{ user.email }}</p>
+                                            <h4 class="font-bold text-slate-800 text-sm leading-tight truncate">{{ user.name }}</h4>
+                                            <p class="text-[10px] text-slate-500 font-bold truncate">{{ user.email }}</p>
                                         </div>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">
+                                        <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-white text-slate-500 border border-slate-200 group-hover:border-indigo-200 transition-colors">
                                             {{ user.department || 'Generale' }}
                                         </span>
                                     </div>
                                     
                                     <!-- Actions Row -->
-                                    <div class="mt-3 flex items-center justify-between pt-3 border-t border-slate-50 group-hover:border-slate-100 transition-colors">
+                                    <div class="flex items-center justify-between mt-2">
                                         <!-- Active Toggle -->
-                                        <button (click)="toggleUserActive(user)" [disabled]="user.role === 'ADMIN'"
-                                            class="flex items-center gap-2 text-xs font-bold focus:outline-none transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed">
-                                            <div class="w-8 h-4 rounded-full relative transition-colors duration-200"
-                                                [class.bg-emerald-500]="user.active" [class.bg-slate-300]="!user.active">
-                                                <div class="w-2.5 h-2.5 bg-white rounded-full absolute top-[3px] transition-all duration-200 shadow-sm"
-                                                     [class.left-[18px]]="user.active" [class.left-[3px]]="!user.active"></div>
+                                        <div class="flex items-center gap-3">
+                                            <button (click)="toggleUserActive(user)" [disabled]="user.role === 'ADMIN'"
+                                                class="flex items-center gap-1.5 focus:outline-none transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <div class="w-6 h-3 rounded-full relative transition-colors duration-200"
+                                                    [class.bg-emerald-400]="user.active" [class.bg-slate-300]="!user.active">
+                                                    <div class="w-2 h-2 bg-white rounded-full absolute top-[2px] transition-all duration-200 shadow-sm"
+                                                        [class.left-[14px]]="user.active" [class.left-[2px]]="!user.active"></div>
+                                                </div>
+                                                <span class="text-[9px] font-black uppercase tracking-widest" [class.text-emerald-600]="user.active" [class.text-slate-400]="!user.active">
+                                                    {{ user.active ? 'On' : 'Off' }}
+                                                </span>
+                                            </button>
+                                            <div class="flex items-center gap-1 px-1.5 py-0.5 bg-white rounded border border-slate-200">
+                                                <i class="fa-solid fa-file-shield text-[10px] text-indigo-400"></i>
+                                                <span class="text-[9px] font-black text-slate-500">{{ getDocCount(user.clientId) }}</span>
                                             </div>
-                                            <span [class.text-emerald-600]="user.active" [class.text-slate-400]="!user.active">
-                                                {{ user.active ? 'ATTIVO' : 'DISABILITATO' }}
-                                            </span>
-                                        </button>
+                                        </div>
 
                                         <!-- Edit/Delete -->
-                                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button (click)="openUserModal(user)" class="text-slate-400 hover:text-indigo-600 p-1 transition-colors" title="Modifica">
-                                                <i class="fa-solid fa-pen-to-square"></i>
+                                        <div class="flex gap-1.5 opacity-0 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button (click)="viewUnitDocs(user)" class="text-indigo-600 bg-white hover:bg-indigo-50 px-2.5 py-1 rounded border border-slate-200 hover:border-indigo-200 transition-colors text-[9px] font-black uppercase flex items-center gap-1.5" title="Vedi Archivio">
+                                                <i class="fa-solid fa-folder-open"></i> Docs
+                                            </button>
+                                            <button (click)="openUserModal(user)" class="w-6 h-6 flex items-center justify-center rounded bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 transition-colors" title="Modifica">
+                                                <i class="fa-solid fa-pen text-[10px]"></i>
                                             </button>
                                             @if (user.role !== 'ADMIN') {
-                                                <button (click)="deleteUser(user.id)" class="text-slate-400 hover:text-red-600 p-1 transition-colors" title="Elimina">
-                                                    <i class="fa-solid fa-trash-can"></i>
+                                                <button (click)="deleteUser(user.id)" class="w-6 h-6 flex items-center justify-center rounded bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Elimina">
+                                                    <i class="fa-solid fa-trash-can text-[10px]"></i>
                                                 </button>
                                             }
                                         </div>
@@ -214,26 +194,28 @@ import { ToastService } from '../services/toast.service';
         }
       </div>
 
-      <!-- User Modal -->
+      <!-- Unit Modal -->
       @if (activeModal() === 'user') {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
+          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
           
-          <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 class="text-lg font-bold text-slate-800">
+          <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+            <div class="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-indigo-500"></i>
                 {{ isEditing() ? 'Modifica Unità Operativa' : 'Nuova Unità Operativa' }}
               </h3>
-              <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <i class="fa-solid fa-xmark text-xl"></i>
+              <button (click)="closeModal()" class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                <i class="fa-solid fa-xmark text-sm"></i>
               </button>
             </div>
             
-            <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="p-6 space-y-5">
+            <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="p-6 space-y-4 bg-slate-50/50">
               
-              <div class="space-y-1">
-                <label class="text-xs font-bold text-slate-500 uppercase">Sede di Appartenenza</label>
-                <select formControlName="clientId" class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 font-bold text-slate-700">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sede di Appartenenza</label>
+                <select formControlName="clientId" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm font-bold text-slate-700 hover:border-indigo-200 transition-all shadow-sm">
                   <option value="">-- Seleziona Sede --</option>
                   @for (client of state.clients(); track client.id) {
                     <option [value]="client.id">{{ client.name }}</option>
@@ -242,45 +224,45 @@ import { ToastService } from '../services/toast.service';
               </div>
 
               <div class="grid grid-cols-2 gap-4">
-                 <div class="space-y-1">
-                   <label class="text-xs font-bold text-slate-500 uppercase">Nome / Reparto</label>
+                 <div>
+                   <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nome / Reparto</label>
                    <input type="text" formControlName="department" placeholder="Es. Cucina, Bar..." 
-                          class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm bg-white transition-all placeholder:font-normal font-bold text-slate-700 hover:border-indigo-200 shadow-sm">
                  </div>
-                 <div class="space-y-1">
-                   <label class="text-xs font-bold text-slate-500 uppercase">Ruolo Accesso</label>
-                   <select formControlName="role" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                 <div>
+                   <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Ruolo Accesso</label>
+                   <select formControlName="role" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-sm font-bold text-slate-700 transition-all hover:border-indigo-200 shadow-sm">
                      <option value="COLLABORATOR">Operatore</option>
                      <option value="ADMIN">Amministratore</option>
                    </select>
                  </div>
               </div>
 
-              <div class="space-y-1">
-                 <label class="text-xs font-bold text-slate-500 uppercase">Responsabile (Nome Cognome)</label>
+              <div>
+                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Responsabile (Nome e Cognome)</label>
                  <div class="relative">
-                    <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400"></i>
+                    <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                     <input type="text" formControlName="name" placeholder="Es. Mario Rossi"
-                           class="w-full pl-10 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-800">
+                           class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
 
-              <div class="space-y-1">
-                 <label class="text-xs font-bold text-slate-500 uppercase">Email (Login)</label>
+              <div>
+                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email (Login)</label>
                  <div class="relative">
-                    <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-400"></i>
-                    <input type="email" formControlName="email" placeholder="email@esempio.it"
-                           class="w-full pl-10 px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-800">
+                    <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="email" formControlName="email" placeholder="operatore@esempio.it"
+                           class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
 
-              <div class="pt-2 flex justify-end gap-3">
-                 <button type="button" (click)="closeModal()" class="px-5 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 transition-colors">Annulla</button>
-                 <button type="submit" [disabled]="userForm.invalid" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:scale-100">
+              <div class="pt-4 flex justify-end gap-2 border-t border-slate-100 mt-6">
+                 <button type="button" (click)="closeModal()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Annulla</button>
+                 <button type="submit" [disabled]="userForm.invalid" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <i class="fa-solid fa-check text-xs"></i>
                     {{ isEditing() ? 'Salva Modifiche' : 'Crea Unità' }}
                  </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -289,54 +271,57 @@ import { ToastService } from '../services/toast.service';
       <!-- Client Company Modal -->
       @if (activeModal() === 'client') {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
+          <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
           
-          <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 class="text-lg font-bold text-slate-800">
+          <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+            <div class="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-building text-indigo-500"></i>
                 {{ isEditing() ? 'Modifica Azienda' : 'Nuova Azienda' }}
               </h3>
-              <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <i class="fa-solid fa-xmark text-xl"></i>
+              <button (click)="closeModal()" class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                <i class="fa-solid fa-xmark text-sm"></i>
               </button>
             </div>
             
-            <form [formGroup]="clientForm" (ngSubmit)="saveClient()" class="p-6 space-y-5">
+            <form [formGroup]="clientForm" (ngSubmit)="saveClient()" class="p-6 space-y-4 bg-slate-50/50">
               
-              <div class="space-y-1">
-                 <label class="text-xs font-bold text-slate-500 uppercase">Ragione Sociale / Nome</label>
+              <div>
+                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Ragione Sociale / Nome</label>
                  <input type="text" formControlName="name" placeholder="Es. Ristorante Da Mario S.r.l."
-                        class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800">
+                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
               </div>
 
-              <div class="space-y-1">
-                 <label class="text-xs font-bold text-slate-500 uppercase">Partita IVA</label>
+              <div>
+                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Partita IVA</label>
                  <input type="text" formControlName="piva" placeholder="12345678901"
-                        class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-mono font-medium">
+                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-mono font-bold text-slate-700 transition-all placeholder:font-sans placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
               </div>
 
-              <div class="space-y-1">
-                 <label class="text-xs font-bold text-slate-500 uppercase">Indirizzo Sede Operativa</label>
+              <div>
+                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Indirizzo Sede Operativa</label>
                  <input type="text" formControlName="address" placeholder="Via Roma 1, Milano"
-                        class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
               </div>
 
                <div class="grid grid-cols-2 gap-4">
-                 <div class="space-y-1">
-                   <label class="text-xs font-bold text-slate-500 uppercase">Telefono</label>
+                 <div>
+                   <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Telefono</label>
                    <input type="text" formControlName="phone" placeholder="02 1234567" 
-                          class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
-                 <div class="space-y-1">
-                   <label class="text-xs font-bold text-slate-500 uppercase">Email Aziendale</label>
+                 <div>
+                   <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email Aziendale</label>
                    <input type="email" formControlName="email" placeholder="info@azienda.it" 
-                          class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-medium">
+                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
 
-              <div class="pt-2 flex justify-end gap-3">
-                 <button type="button" (click)="closeModal()" class="px-5 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 transition-colors">Annulla</button>
-                 <button type="submit" [disabled]="clientForm.invalid" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all transform active:scale-95 disabled:opacity-50 disabled:scale-100">
+              <div class="pt-4 flex justify-end gap-2 border-t border-slate-100 mt-6">
+                 <button type="button" (click)="closeModal()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Annulla</button>
+                 <button type="submit" [disabled]="clientForm.invalid" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <i class="fa-solid fa-check text-xs"></i>
                     {{ isEditing() ? 'Aggiorna Azienda' : 'Crea Azienda' }}
                  </button>
               </div>
@@ -466,6 +451,17 @@ export class CollaboratorsViewComponent {
       this.closeModal();
     }
   }
+
+    getDocCount(clientId?: string): number {
+        if (!clientId) return 0;
+        return this.state.documents().filter(d => d.clientId === clientId).length;
+    }
+
+    viewUnitDocs(user: SystemUser) {
+        this.state.setCollaboratorFilter(user.id);
+        this.state.setModule('documentation');
+        this.toastService.info('Accesso Archivio', `Consultazione documenti per l'unità ${user.name}`);
+    }
 
   deleteUser(id: string) {
     if (confirm('Sei sicuro di voler rimuovere questa unità operativa e tutti i suoi dati?')) {

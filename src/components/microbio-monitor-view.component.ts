@@ -16,72 +16,79 @@ interface CheckItem {
     <!-- UI CONTENT (Hidden on print) -->
     <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
         
-        <!-- Premium Hero Header -->
-        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
-            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-rose-600/15 blur-3xl"></div>
-            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-red-600/10 blur-3xl"></div>
-            
-            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div class="flex items-center gap-5">
-                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-red-700 shadow-lg shadow-rose-500/20 ring-1 ring-white/20">
-                        <i class="fa-solid fa-vial text-3xl text-white"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-4xl font-black tracking-tight text-white mb-1"><span class="text-rose-400">Monitoraggio</span> Microbiologico</h2>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
-                                <i class="fa-solid fa-circle text-[9px] animate-pulse text-rose-400"></i>
-                                Analisi & Test
-                            </span>
-                            <button (click)="showStandardInfo.set(true)" 
-                                    class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-all text-xs font-black border border-rose-500/20">
-                                <i class="fa-solid fa-circle-info"></i>
-                                INFO PROTOCOLLO
-                            </button>
-                        </div>
+        <!-- Minimal Hero Header -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 lg:p-8 flex flex-col md:flex-row justify-between md:items-center gap-6 relative overflow-hidden">
+            <!-- Subtle accent -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+
+            <div class="relative z-10 flex items-center gap-3 md:gap-4">
+                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-sm shrink-0">
+                    <i class="fa-solid fa-vial text-lg md:text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Monitoraggio Microbiologico</h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-circle text-[8px] animate-pulse text-rose-500"></i>
+                            Analisi & Test
+                        </span>
+                        <button (click)="showStandardInfo.set(true)" 
+                                class="flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded border border-rose-100 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none transition-colors">
+                            <i class="fa-solid fa-circle-info"></i> Info Protocollo
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex flex-col items-end gap-2">
-                    <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
-                         <div class="flex flex-col items-end">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Completamento</span>
-                            <span class="text-xl font-black text-white leading-none tabular-nums">{{ checkedCount() }} / {{ checks().length }}</span>
-                         </div>
-                         <div class="w-px h-8 bg-white/10 mx-1"></div>
-                         <div class="h-10 w-10 rounded-full border-2 border-rose-500/30 flex items-center justify-center">
-                            <i class="fa-solid fa-microscope text-rose-400"></i>
-                         </div>
+            <!-- Stats -->
+            <div class="w-full md:w-auto relative z-10 flex gap-4 pr-1">
+                <div class="flex items-center gap-4 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 w-full justify-between">
+                    <div class="min-w-[120px]">
+                        <p class="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Completamento</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex-1">
+                                <div class="h-full bg-rose-500 rounded-full transition-all duration-1000" [style.width.%]="(checkedCount() / checks().length) * 100"></div>
+                            </div>
+                            <span class="text-sm md:text-base font-bold text-slate-700 leading-none whitespace-nowrap">{{ checkedCount() }}/{{ (checks().length || 1) }}</span>
+                        </div>
                     </div>
+                    <i class="fa-solid fa-microscope text-slate-300 text-lg md:text-xl ml-2"></i>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @for (check of checks(); track check.id) {
-                <div class="bg-white p-6 rounded-2xl shadow-sm border-2 transition-all duration-300 group"
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border transition-all duration-300 group relative overflow-hidden flex flex-col h-full"
                      [class.cursor-pointer]="canEdit()" [class.cursor-not-allowed]="!canEdit()" [class.opacity-60]="!canEdit()"
-                     [class.border-pink-100]="!check.checked" [class.border-pink-500]="check.checked"
-                     [class.bg-pink-50]="check.checked" [class.shadow-lg]="check.checked" [class.shadow-pink-200/50]="check.checked"
+                     [class.border-slate-200]="!check.checked" [class.border-rose-200]="check.checked"
+                     [class.bg-slate-50/50]="!check.checked" [class.bg-rose-50/40]="check.checked"
                      (click)="toggleCheck(check.id)">
-                    <div class="flex items-start gap-4">
-                        <div class="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300"
-                             [class.bg-pink-500]="check.checked" [class.text-white]="check.checked" [class.shadow-lg]="check.checked"
-                             [class.shadow-pink-200]="check.checked" [class.bg-slate-100]="!check.checked" [class.text-slate-400]="!check.checked">
-                            <i class="fa-solid text-2xl" [class.fa-check-circle]="check.checked" [class.fa-flask-vial]="!check.checked"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-slate-800 text-base leading-tight mb-2">{{ check.label }}</h3>
-                            <div class="flex items-center gap-2">
-                                @if (check.checked) {
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-500 text-white text-xs font-bold rounded-full">
-                                        <i class="fa-solid fa-circle-check"></i> VERIFICATO
-                                    </span>
-                                } @else {
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 text-slate-600 text-xs font-bold rounded-full">
-                                        <i class="fa-regular fa-circle"></i> DA VERIFICARE
-                                    </span>
-                                }
+
+                    <!-- Status side border indicator -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 transition-colors"
+                         [class.bg-transparent]="!check.checked" [class.bg-rose-400]="check.checked"></div>
+                         
+                    <div class="flex items-start gap-4 pl-2 h-full flex-col sm:flex-row">
+                        <div class="flex-[1] flex items-start gap-3 md:gap-4 w-full">
+                            <div class="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex flex-col items-center justify-center transition-all duration-300 border shadow-sm group-hover:scale-[1.03]"
+                                 [class.bg-rose-50]="check.checked" [class.border-rose-200]="check.checked" [class.text-rose-500]="check.checked"
+                                 [class.bg-white]="!check.checked" [class.border-slate-200]="!check.checked" [class.text-slate-300]="!check.checked">
+                                <i class="fa-solid text-xl md:text-2xl" [class.fa-check-circle]="check.checked" [class.fa-flask-vial]="!check.checked"></i>
+                            </div>
+                            <div class="flex-1 min-w-0 flex flex-col justify-center mt-1 sm:mt-0">
+                                <h3 class="font-bold text-slate-800 text-sm md:text-base leading-tight mb-2 md:mb-3">{{ check.label }}</h3>
+                                <div class="flex items-center gap-2 mt-auto">
+                                    @if (check.checked) {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-md border border-rose-200">
+                                            <i class="fa-solid fa-circle-check"></i> Verificato
+                                        </span>
+                                    } @else {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-500 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-md border border-slate-200">
+                                            <i class="fa-regular fa-circle"></i> Da Verificare
+                                        </span>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -99,52 +106,57 @@ interface CheckItem {
         <!-- Informational Modal -->
         @if (showStandardInfo()) {
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showStandardInfo.set(false)"></div>
-                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
-                    <div class="p-8 bg-gradient-to-br from-pink-700 to-rose-900 text-white relative flex-shrink-0">
-                        <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
-                            <i class="fa-solid fa-microscope text-8xl"></i>
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="showStandardInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-2xl shadow-xl overflow-hidden flex flex-col animate-slide-up border border-slate-200">
+                    <div class="bg-rose-600 px-6 py-5 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
+                        <div class="absolute inset-0 bg-gradient-to-r from-rose-700/50 to-transparent pointer-events-none"></div>
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="w-10 h-10 rounded-lg bg-rose-500/30 flex items-center justify-center border border-rose-400/30">
+                                <i class="fa-solid fa-microscope text-lg text-rose-100"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold">Micro Monitoring</h3>
+                                <p class="text-[10px] md:text-xs text-rose-200 uppercase tracking-widest">Protocollo HACCP</p>
+                            </div>
                         </div>
-                        <div class="relative z-10">
-                            <h3 class="text-2xl font-black mb-1">Micro Monitoring</h3>
-                            <p class="text-pink-200 text-[10px] font-black uppercase tracking-[0.2em]">Standard HACCP Pro</p>
-                        </div>
+                        <button (click)="showStandardInfo.set(false)" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors relative z-10 text-white">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
                     </div>
                     
-                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-vial-circle-check text-xs"></i> 01. Analisi Superfici
+                    <div class="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
+                        <div class="space-y-2">
+                            <h4 class="text-[10px] md:text-xs font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-vial-circle-check text-[10px]"></i> 01. Analisi Superfici
                             </h4>
-                            <div class="bg-rose-50/50 p-5 rounded-2xl border border-rose-100 text-xs text-slate-700 font-medium leading-relaxed">
-                                Tamponi periodici su piani di lavoro, attrezzature e mani degli operatori per verificare l'efficacia della sanificazione.
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-rose-400">
+                                <p class="text-[11px] md:text-sm text-slate-600 font-medium leading-relaxed">
+                                    Tamponi periodici su piani di lavoro, attrezzature e mani degli operatori per verificare l'efficacia della sanificazione.
+                                </p>
                             </div>
                         </div>
 
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-droplet text-xs"></i> 02. Analisi Acqua
+                        <div class="space-y-2">
+                            <h4 class="text-[10px] md:text-xs font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-droplet text-[10px]"></i> 02. Analisi Acqua
                             </h4>
-                            <div class="bg-rose-50/50 p-5 rounded-2xl border border-rose-100 text-xs text-slate-700 font-medium leading-relaxed">
-                                Controllo della potabilità e assenza di cariche batteriche (Legionella, Pseudomonas) nelle reti idriche.
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                <p class="text-[11px] md:text-sm text-slate-600 font-medium leading-relaxed">
+                                    Controllo della potabilità e assenza di cariche batteriche (Legionella, Pseudomonas) nelle reti idriche.
+                                </p>
                             </div>
                         </div>
 
-                        <div class="space-y-3">
-                            <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-clipboard-check text-xs"></i> 03. Validazione
+                        <div class="space-y-2">
+                            <h4 class="text-[10px] md:text-xs font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-clipboard-check text-[10px]"></i> 03. Validazione
                             </h4>
-                            <div class="bg-rose-50/50 p-5 rounded-2xl border border-rose-100 text-[10px] font-bold text-slate-500 italic">
-                                Tutti i risultati devono essere archiviati e confrontati con i limiti di legge previsti dal piano di autocontrollo.
+                            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                <p class="text-[11px] md:text-sm text-slate-600 font-medium leading-relaxed">
+                                    Tutti i risultati devono essere archiviati e confrontati con i <strong class="text-slate-800">limiti di legge</strong> previsti dal piano di autocontrollo.
+                                </p>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="p-6 bg-slate-50 border-t border-slate-100">
-                        <button (click)="showStandardInfo.set(false)"
-                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95">
-                            HO PRESO VISIONE
-                        </button>
                     </div>
                 </div>
             </div>

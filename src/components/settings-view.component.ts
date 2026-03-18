@@ -14,182 +14,176 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
       <!-- Admin View: System & Master Company Settings -->
       @if (state.isAdmin()) {
         <!-- Enhanced Settings Header (Admin) -->
-        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-700 relative overflow-hidden mb-6">
-            <div class="absolute inset-0 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
-            <div class="relative z-10 font-sans">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                    <div class="flex items-center gap-6">
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg border border-white/10">
-                            <i class="fa-solid fa-gears text-white text-3xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-3xl font-black text-white tracking-tight leading-none mb-1">Configurazione Sistema</h2>
-                            <p class="text-cyan-200 text-sm font-medium">Gestione parametri globali e reportistica.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-8 bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-2">
-                                <i class="fa-solid fa-envelope-circle-check text-cyan-400 text-xl"></i>
-                                <h3 class="text-lg font-bold text-white">Email Reportistica</h3>
-                            </div>
-                            <p class="text-slate-400 text-sm">Indirizzo di ricezione per i report giornalieri inviati dagli operatori.</p>
-                        </div>
-                        
-                        <div class="flex gap-2 w-full md:w-auto">
-                            <input type="email" #newEmail [value]="state.reportRecipientEmail()"
-                                    class="bg-slate-900/50 text-white border border-slate-600 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500 w-full md:min-w-[300px] placeholder-slate-500"
-                                    placeholder="email@esempio.it">
-                            <button (click)="state.setReportRecipientEmail(newEmail.value)"
-                                    class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-cyan-500/20 active:scale-95 whitespace-nowrap">
-                                <i class="fa-solid fa-save mr-2"></i> Salva
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden mb-6">
+          <div class="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-cyan-50 to-transparent pointer-events-none"></div>
+          
+          <div class="relative z-10 flex items-center gap-5">
+             <div class="h-14 w-14 rounded-xl bg-white border border-cyan-100 flex items-center justify-center shadow-sm text-cyan-600 shrink-0">
+                <i class="fa-solid fa-gears text-2xl"></i>
+             </div>
+             <div>
+                <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Configurazione Sistema</h2>
+                <p class="text-xs font-semibold text-slate-500 mt-1">Gestione parametri globali e reportistica</p>
+             </div>
+          </div>
+  
+          <div class="w-full md:w-auto mt-4 md:mt-0 relative z-10 flex flex-col sm:flex-row gap-4 items-center bg-slate-50 rounded-xl p-4 md:p-2 border border-slate-200">
+             <div class="flex items-center gap-3 w-full justify-between sm:justify-start px-2">
+                 <div>
+                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest block mb-0.5">Email Reportistica</span>
+                    <span class="text-xs font-bold text-slate-700">{{ state.reportRecipientEmail() || 'Non configurata' }}</span>
+                 </div>
+                 <i class="fa-solid fa-envelope-circle-check text-cyan-400 text-lg mr-2"></i>
+             </div>
+             
+             <div class="flex gap-2 w-full sm:w-auto relative">
+                 <input type="email" #newEmail [value]="state.reportRecipientEmail()"
+                         class="bg-white text-slate-800 border border-slate-200 rounded text-xs px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 w-full sm:min-w-[200px]"
+                         placeholder="email@esempio.it">
+                 <button (click)="state.setReportRecipientEmail(newEmail.value)"
+                         class="px-4 py-2 bg-white border border-slate-200 hover:bg-cyan-50 text-cyan-600 rounded text-[11px] font-bold transition-colors shadow-sm whitespace-nowrap">
+                     Salva
+                 </button>
+             </div>
+          </div>
         </div>
 
-        <!-- 2. Master Company Anagraphic (Replacing the dynamic client list) -->
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-          <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <!-- Master Company Anagraphic -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
             <div class="flex items-center gap-4">
               <!-- Admin Logo Preview/Upload -->
-              <div class="relative group">
-                <div class="w-16 h-16 rounded-2xl bg-slate-100 border-2 border-slate-200 flex items-center justify-center overflow-hidden shadow-inner">
+              <div class="relative group shrink-0">
+                <div class="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
                   @if (state.adminCompany().logo) {
-                    <img [src]="state.adminCompany().logo" class="w-full h-full object-contain p-2">
+                    <img [src]="state.adminCompany().logo" class="w-full h-full object-contain p-1.5">
                   } @else {
-                    <i class="fa-solid fa-image text-slate-300 text-2xl"></i>
+                    <i class="fa-solid fa-building-user text-slate-300 text-xl"></i>
                   }
                 </div>
                 @if (isEditingAdmin()) {
-                  <label class="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-indigo-700 transition-colors border-2 border-white">
-                    <i class="fa-solid fa-camera text-xs"></i>
+                  <label class="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-indigo-600 text-white rounded flex items-center justify-center cursor-pointer shadow-sm hover:bg-indigo-700 transition-colors border border-white">
+                    <i class="fa-solid fa-camera text-[10px]"></i>
                     <input type="file" (change)="onLogoChange($event, 'ADMIN')" class="hidden" accept="image/*">
                   </label>
                 }
               </div>
               <div>
-                <h2 class="text-2xl font-black text-slate-800 flex items-center">
-                  <i class="fa-solid fa-building-shield mr-3 text-indigo-600"></i>
-                  Anagrafica Azienda Amministratore
+                <h2 class="text-base font-black text-slate-800 flex items-center">
+                   Azienda Amministratore (Master)
                 </h2>
-                <p class="text-slate-500 text-sm mt-1">Gestisci i dati della sede centrale e il logo globale del sistema.</p>
+                <p class="text-slate-500 text-[11px] font-bold mt-0.5">Gestisci i dati della sede centrale e il logo globale</p>
               </div>
             </div>
-            @if (!isEditingAdmin()) {
-              <button (click)="startEditingAdmin()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 font-bold flex items-center gap-2">
-                <i class="fa-solid fa-pen-to-square"></i> Modifica Dati
-              </button>
-            } @else {
-              <div class="flex gap-3">
-                <button (click)="cancelEditingAdmin()" class="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-all font-bold">
-                  Annulla
-                </button>
-                <button (click)="saveAdminData()" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 font-bold flex items-center gap-2">
-                  <i class="fa-solid fa-check"></i> Salva Modifiche
-                </button>
-              </div>
-            }
+            
+            <div class="shrink-0 flex gap-2">
+                @if (!isEditingAdmin()) {
+                  <button (click)="startEditingAdmin()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square"></i> Modifica
+                  </button>
+                } @else {
+                  <button (click)="cancelEditingAdmin()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded text-xs font-bold transition-colors shadow-sm">
+                    Annulla
+                  </button>
+                  <button (click)="saveAdminData()" class="px-3 py-1.5 bg-indigo-600 border border-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-save"></i> Salva
+                  </button>
+                }
+            </div>
           </div>
 
-          <div class="p-8">
-            <form [formGroup]="adminForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <!-- Grid items remain same as before, but with logo management handled separately slightly -->
-              <div class="space-y-2 lg:col-span-1">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Ragione Sociale</label>
+          <div class="p-6">
+            <form [formGroup]="adminForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              
+              <div class="space-y-1.5 lg:col-span-1">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Ragione Sociale</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="name" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800">{{ state.adminCompany().name }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().name || '-' }}</p>
                 }
               </div>
               
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Partita IVA</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Partita IVA</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="piva" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="piva" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors font-mono uppercase">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800 font-mono">{{ state.adminCompany().piva }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded font-mono">{{ state.adminCompany().piva || '-' }}</p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Indirizzo Sede Centrale</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Indirizzo Sede Centrale</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="address" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="address" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800">{{ state.adminCompany().address }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().address || '-' }}</p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Email Amministrativa</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Email Amministrativa</label>
                 @if (isEditingAdmin()) {
-                  <input type="email" formControlName="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800">{{ state.adminCompany().email }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().email || '-' }}</p>
                 }
               </div>
               
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Posta Elettronica Certificata (PEC)</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">PEC</label>
                 @if (isEditingAdmin()) {
-                  <input type="email" formControlName="pec" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="email" formControlName="pec" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase">
                 } @else {
-                  <p class="text-lg font-bold text-indigo-600">{{ state.adminCompany().pec }}</p>
+                  <p class="text-sm font-bold text-indigo-600 bg-indigo-50/50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().pec || '-' }}</p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Codice Univoco (SDI)</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Codice Univoco (SDI)</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="sdi" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800 uppercase">
+                  <input type="text" formControlName="sdi" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800 font-mono tracking-widest">{{ state.adminCompany().sdi }}</p>
+                  <p class="text-sm font-bold text-slate-800 font-mono tracking-widest bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().sdi || '-' }}</p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Telefono Fisso</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Telefono Fisso</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="phone" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800">{{ state.adminCompany().phone || '-' }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().phone || '-' }}</p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Cellulare</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Cellulare</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="cellphone" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="cellphone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800">{{ state.adminCompany().cellphone || '-' }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().cellphone || '-' }}</p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">WhatsApp</label>
+              <div class="space-y-1.5">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">WhatsApp</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="whatsapp" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="whatsapp" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
-                  <p class="text-lg font-bold text-emerald-600 flex items-center gap-2">
-                    <i class="fa-brands fa-whatsapp"></i>
-                    {{ state.adminCompany().whatsapp || '-' }}
+                  <p class="text-sm font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 border border-transparent px-3 py-2 rounded">
+                    <i class="fa-brands fa-whatsapp"></i> {{ state.adminCompany().whatsapp || '-' }}
                   </p>
                 }
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Nr. Licenza Master</label>
+              <div class="space-y-1.5 lg:col-span-1">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Nr. Licenza Master</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="licenseNumber" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
+                  <input type="text" formControlName="licenseNumber" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
                 } @else {
-                  <p class="text-lg font-bold text-slate-800">{{ state.adminCompany().licenseNumber }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded font-mono">{{ state.adminCompany().licenseNumber || '-' }}</p>
                 }
               </div>
             </form>
@@ -199,112 +193,112 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
       
       <!-- Collaborator View: Remains Read-Only Summary of THEIR company, with EDIT possibility -->
       @else {
-        <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-          <div class="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-4">
               <!-- Operator Logo Preview/Upload -->
-              <div class="relative group">
-                <div class="w-20 h-20 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center overflow-hidden shadow-lg">
+              <div class="relative group shrink-0">
+                <div class="w-14 h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
                   @if (state.companyConfig().logo) {
-                    <img [src]="state.companyConfig().logo" class="w-full h-full object-contain p-2">
+                    <img [src]="state.companyConfig().logo" class="w-full h-full object-contain p-1.5">
                   } @else {
-                    <div class="w-full h-full bg-slate-900 text-white flex items-center justify-center text-3xl font-bold">
+                    <div class="w-full h-full bg-slate-50 text-slate-400 flex items-center justify-center text-xl font-bold">
                        {{ state.companyConfig().name.substring(0,1) }}
                     </div>
                   }
                 </div>
                 @if (isEditingOperator()) {
-                  <label class="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-xl hover:bg-blue-700 transition-colors border-4 border-white">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <label class="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-indigo-600 text-white rounded flex items-center justify-center cursor-pointer shadow-sm hover:bg-indigo-700 transition-colors border border-white">
+                    <i class="fa-solid fa-camera text-[10px]"></i>
                     <input type="file" (change)="onLogoChange($event, 'OPERATOR')" class="hidden" accept="image/*">
                   </label>
                 }
               </div>
               <div>
-                <h2 class="text-2xl font-black text-slate-800"><i class="fa-solid fa-building-circle-check mr-3 text-slate-500"></i>Profilo Aziendale Operativo</h2>
-                <p class="text-sm text-slate-500 mt-1">Gestisci i recapiti e l'immagine della tua unità operativa.</p>
+                <h2 class="text-base font-black text-slate-800">Profilo Aziendale Operativo</h2>
+                <p class="text-[11px] font-bold text-slate-500 mt-0.5">Gestisci recapiti e immagine della tua unità</p>
               </div>
             </div>
-            @if (!isEditingOperator()) {
-              <button (click)="startEditingOperator()" class="px-5 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg font-bold flex items-center gap-2">
-                <i class="fa-solid fa-pen-to-square"></i> Completa / Modifica
-              </button>
-            } @else {
-              <div class="flex gap-3">
-                <button (click)="cancelEditingOperator()" class="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-all font-bold">
+            
+            <div class="flex gap-2">
+              @if (!isEditingOperator()) {
+                <button (click)="startEditingOperator()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                  <i class="fa-solid fa-pen-to-square"></i> Modifica
+                </button>
+              } @else {
+                <button (click)="cancelEditingOperator()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded text-xs font-bold transition-colors shadow-sm">
                   Annulla
                 </button>
-                <button (click)="saveOperatorData()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg font-bold flex items-center gap-2">
-                  <i class="fa-solid fa-check"></i> Salva Tutto
+                <button (click)="saveOperatorData()" class="px-3 py-1.5 bg-indigo-600 border border-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                  <i class="fa-solid fa-save"></i> Salva
                 </button>
-              </div>
-            }
+              }
+            </div>
           </div>
 
-          <div class="p-8">
-             <div class="mb-10">
-                <h1 class="text-3xl font-black text-slate-900 leading-tight">{{ state.companyConfig().name }}</h1>
-                <div class="flex items-center gap-3 mt-1">
-                  <span class="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200 uppercase tracking-tighter">P.IVA: {{ state.companyConfig().piva }}</span>
-                  <span class="text-xs font-bold px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-100 uppercase tracking-tighter">Licenza: {{ state.companyConfig().licenseNumber }}</span>
+          <div class="p-6">
+             <div class="mb-8">
+                <h1 class="text-xl font-black text-slate-800 leading-tight mb-2">{{ state.companyConfig().name }}</h1>
+                <div class="flex items-center gap-2">
+                  <span class="text-[9px] font-black uppercase text-slate-500 px-2.5 py-1 bg-slate-50 rounded border border-slate-200 tracking-widest"><span class="text-slate-400 mr-1">P.IVA</span>{{ state.companyConfig().piva }}</span>
+                  <span class="text-[9px] font-black uppercase text-indigo-600 px-2.5 py-1 bg-indigo-50/50 rounded border border-indigo-100 tracking-widest"><span class="text-indigo-400 mr-1">LIC.</span>{{ state.companyConfig().licenseNumber }}</span>
                 </div>
              </div>
              
-             <form [formGroup]="operatorForm" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div class="space-y-2">
-                 <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Sede Operativa (Indirizzo)</label>
+             <form [formGroup]="operatorForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div class="space-y-1.5">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Sede Operativa (Indirizzo)</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="address" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800" placeholder="Indirizzo completo">
+                   <input type="text" formControlName="address" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Indirizzo">
                  } @else {
-                   <p class="text-lg font-bold text-slate-800 leading-snug">{{ state.companyConfig().address || 'Non specificato' }}</p>
+                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded truncate">{{ state.companyConfig().address || 'Non specificato' }}</p>
                  }
                </div>
 
-               <div class="space-y-2">
-                 <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Email di Contatto</label>
+               <div class="space-y-1.5">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Email di Contatto</label>
                  @if (isEditingOperator()) {
-                   <input type="email" formControlName="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800" placeholder="Email aziendale">
+                   <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase" placeholder="Email">
                  } @else {
-                   <p class="text-lg font-bold text-slate-800">{{ state.companyConfig().email || 'Non specificato' }}</p>
+                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded truncate">{{ state.companyConfig().email || 'Non specificato' }}</p>
                  }
                </div>
 
-               <div class="space-y-2">
-                 <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Telefono Fisso</label>
+               <div class="space-y-1.5">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Telefono Fisso</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="phone" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800" placeholder="Prefisso e Numero">
+                   <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Prefisso e numero">
                  } @else {
-                   <p class="text-lg font-bold text-slate-800">{{ state.companyConfig().phone || 'Non specificato' }}</p>
+                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.companyConfig().phone || 'Non specificato' }}</p>
                  }
                </div>
 
-               <div class="space-y-2">
-                 <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Cellulare / Mobile</label>
+               <div class="space-y-1.5">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Cellulare / Mobile</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="cellphone" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800" placeholder="Numero mobile">
+                   <input type="text" formControlName="cellphone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Cellulare">
                  } @else {
-                   <p class="text-lg font-bold text-slate-800">{{ state.companyConfig().cellphone || '-' }}</p>
+                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.companyConfig().cellphone || '-' }}</p>
                  }
                </div>
 
-               <div class="space-y-2">
-                 <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">WhatsApp Business</label>
+               <div class="space-y-1.5">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">WhatsApp Business</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="whatsapp" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800" placeholder="Numero WhatsApp">
+                   <input type="text" formControlName="whatsapp" class="w-full px-3 py-2 bg-emerald-50/50 border border-emerald-200 rounded text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="WhatsApp">
                  } @else {
-                   <p class="text-lg font-bold text-emerald-600 flex items-center gap-2">
-                     <i class="fa-brands fa-whatsapp text-xl"></i>
-                     {{ state.companyConfig().whatsapp || '-' }}
+                   <p class="text-sm font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 border border-transparent px-3 py-2 rounded">
+                     <i class="fa-brands fa-whatsapp text-lg"></i> {{ state.companyConfig().whatsapp || '-' }}
                    </p>
                  }
                </div>
              </form>
              
-             <div class="mt-10 p-5 bg-blue-50 rounded-2xl border border-blue-100 text-xs text-blue-700 flex items-start gap-3 shadow-inner">
-               <i class="fa-solid fa-circle-info mt-0.5 text-lg"></i>
-               <div class="space-y-1">
-                 <p class="font-bold uppercase tracking-tighter">Nota Informativa per l'Operatore</p>
-                 <p class="leading-relaxed opacity-80">Inserisci anche il logo aziendale se desiderato tramite l'icona di caricamento sull'immagine di sinistra.</p>
+             <div class="mt-8 p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-start gap-3">
+               <i class="fa-solid fa-circle-info mt-0.5 text-indigo-400"></i>
+               <div>
+                 <p class="text-[10px] font-black uppercase text-indigo-800 tracking-widest mb-0.5">Nota Informativa</p>
+                 <p class="text-xs text-indigo-600 font-medium">Inserisci anche il logo aziendale se desiderato tramite l'icona di caricamento sull'immagine di sinistra.</p>
                </div>
              </div>
           </div>

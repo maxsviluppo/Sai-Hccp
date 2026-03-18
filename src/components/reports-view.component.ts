@@ -21,28 +21,27 @@ interface CompanyReport {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-6 pb-10">
+    <div class="space-y-6 pb-12 max-w-7xl mx-auto p-4">
       
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 rounded-3xl shadow-xl border border-slate-700/50 relative overflow-hidden">
-        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <i class="fa-solid fa-file-contract text-9xl text-white"></i>
-        </div>
-
-        <div class="relative z-10">
-          <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
-            <span class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mr-4 shadow-lg border border-white/20">
-                <i class="fa-solid fa-clipboard-list"></i>
-            </span>
-            Report Controlli Giornalieri
-          </h2>
-          <p class="text-indigo-200 text-sm mt-2 font-medium ml-1">
-            @if (selectedClient()) {
-              Report per: {{ selectedClient()?.name }} - Data: {{ state.filterDate() | date:'dd/MM/yyyy' }}
-            } @else {
-              Panoramica Generale - Tutte le Aziende - Data: {{ state.filterDate() | date:'dd/MM/yyyy' }}
-            }
-          </p>
+      <!-- Sleek Professional Header -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+        
+        <div class="relative z-10 flex items-center gap-5">
+           <div class="h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0">
+             <i class="fa-solid fa-clipboard-list text-2xl"></i>
+           </div>
+           <div>
+             <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Report Controlli Giornalieri</h2>
+             <div class="flex items-center gap-3 mt-1 text-xs font-semibold text-slate-500">
+                @if (selectedClient()) {
+                  <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-widest font-bold text-[9px]">Azienda: {{ selectedClient()?.name }}</span>
+                } @else {
+                  <span>Aziende multiple</span>
+                }
+                <span class="flex items-center gap-1.5"><i class="fa-regular fa-calendar text-slate-400"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}</span>
+             </div>
+           </div>
         </div>
       </div>
 
@@ -52,67 +51,61 @@ interface CompanyReport {
           @let isOpen = isCompanyExpanded(report.client.id);
           @let completionRate = (report.completedChecks / report.totalChecks * 100) || 0;
 
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all hover:shadow-md"
-               [class.ring-2]="isOpen" [class.ring-blue-100]="isOpen">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all hover:border-slate-300">
             
             <!-- Company Header -->
-            <div class="relative bg-white px-6 py-5 cursor-pointer select-none transition-colors hover:bg-slate-50 border-l-4"
+            <div class="relative bg-white px-5 py-4 cursor-pointer select-none transition-colors hover:bg-slate-50 border-l-[3px]"
                  [class.border-l-blue-500]="isOpen" [class.border-l-transparent]="!isOpen"
                  [class.bg-red-50]="report.client.suspended"
                  (click)="toggleCompany(report.client.id)">
                
                @if (report.client.suspended) {
-                   <div class="absolute top-0 left-0 right-0 bg-red-500 text-white px-4 py-1 text-xs font-bold text-center">
-                       SERVIZIO SOSPESO
+                   <div class="absolute top-0 right-0 bg-red-500 text-white px-3 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-bl-lg">
+                       SOSPESO
                    </div>
                }
 
-               <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4" [class.mt-6]="report.client.suspended">
-                   <div class="flex items-center gap-4 flex-1">
-                       <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 shadow-sm">
-                          <i class="fa-solid fa-building text-2xl"></i>
+               <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                   <div class="flex items-center gap-4 flex-1 w-full relative">
+                       <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
+                          <i class="fa-solid fa-building text-base"></i>
                        </div>
                        
-                       <div class="flex-1 min-w-0">
-                          <h3 class="font-bold text-xl text-slate-800 flex items-center gap-3">
-                              {{ report.client.name }}
-                              <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-mono">
-                                  {{ report.users.length }} Operatori
+                       <div class="flex-1 min-w-0 pr-12 md:pr-0">
+                          <div class="flex items-center gap-3 mb-1">
+                              <h3 class="font-bold text-base text-slate-800 truncate">{{ report.client.name }}</h3>
+                              <span class="text-[9px] bg-slate-50 text-slate-500 border border-slate-200 px-2 py-0.5 rounded font-bold uppercase tracking-widest shrink-0">
+                                  {{ report.users.length }} OPE.
                               </span>
-                          </h3>
-                          <div class="flex items-center gap-4 mt-2">
-                              <!-- Progress Bar -->
-                              <div class="flex-1 max-w-xs">
-                                  <div class="flex justify-between text-xs mb-1">
-                                      <span class="text-slate-500 font-medium">Completamento</span>
-                                      <span class="font-bold" [class.text-emerald-600]="completionRate === 100" [class.text-orange-500]="completionRate < 100">
-                                          {{ completionRate | number:'1.0-0' }}%
-                                      </span>
-                                  </div>
-                                  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                      <div class="h-full transition-all duration-500 rounded-full"
+                          </div>
+                          
+                          <div class="flex items-center gap-3 mt-1.5">
+                              <div class="flex-1 max-w-[200px]">
+                                  <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                      <div class="h-full transition-all duration-500"
                                            [class.bg-emerald-500]="completionRate === 100"
                                            [class.bg-orange-500]="completionRate < 100"
                                            [style.width.%]="completionRate"></div>
                                   </div>
                               </div>
-                              <span class="text-sm text-slate-600">
-                                  <span class="font-bold text-emerald-600">{{ report.completedChecks }}</span> / {{ report.totalChecks }}
+                              <span class="text-[10px] font-bold" [class.text-emerald-600]="completionRate === 100" [class.text-slate-500]="completionRate < 100">
+                                  {{ completionRate | number:'1.0-0' }}% 
+                                  <span class="text-slate-400">({{ report.completedChecks }}/{{ report.totalChecks }})</span>
                               </span>
                           </div>
                        </div>
 
-                       <div class="w-8 h-8 flex items-center justify-center text-slate-400 transition-transform duration-300"
+                       <div class="absolute right-0 top-1/2 -translate-y-1/2 md:relative md:top-auto md:translate-y-0 w-8 h-8 flex items-center justify-center text-slate-400 transition-transform duration-300"
                             [class.rotate-180]="isOpen">
-                           <i class="fa-solid fa-chevron-down"></i>
+                           <i class="fa-solid fa-chevron-down text-sm"></i>
                        </div>
                    </div>
 
                    <!-- Print Button -->
-                   <div (click)="$event.stopPropagation()">
+                   <div (click)="$event.stopPropagation()" class="w-full md:w-auto mt-2 md:mt-0">
                        <button (click)="printReport(report)" 
-                               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-200">
-                          <i class="fa-solid fa-print"></i> Stampa Report
+                               class="w-full md:w-auto px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
+                          <i class="fa-solid fa-print"></i> PDF/Stampa
                        </button>
                    </div>
                </div>
@@ -120,41 +113,41 @@ interface CompanyReport {
 
             <!-- Users Detail (Accordion Body) -->
             @if (isOpen) {
-                <div class="border-t border-slate-100 bg-slate-50/50 p-6 animate-slide-down">
+                <div class="border-t border-slate-100 bg-slate-50/50 p-4 md:p-6 animate-slide-down">
                    @if (report.users.length === 0) {
-                     <div class="text-center py-8 text-slate-400">
-                        <i class="fa-solid fa-users-slash text-4xl mb-2"></i>
-                        <p class="font-medium">Nessun operatore configurato</p>
+                     <div class="text-center py-6 text-slate-400 bg-white border border-slate-100 rounded-lg">
+                        <i class="fa-solid fa-users-slash text-2xl mb-2 text-slate-300"></i>
+                        <p class="text-xs font-bold uppercase tracking-widest">Nessun operatore configurato</p>
                      </div>
                    } @else {
-                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         @for (user of report.users; track user.id) {
-                            <div class="bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-200 hover:shadow-md transition-all">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div>
-                                        <h4 class="font-bold text-slate-800">{{ user.name }}</h4>
-                                        <p class="text-xs text-slate-500">{{ user.department }}</p>
+                            <div class="bg-white rounded-lg p-4 border border-slate-200 hover:border-slate-300 transition-all">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="min-w-0 pr-2">
+                                        <h4 class="font-bold text-sm text-slate-800 truncate">{{ user.name }}</h4>
+                                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{{ user.department }}</p>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-2xl font-black" 
+                                    <div class="text-right shrink-0">
+                                        <div class="text-lg font-black leading-none" 
                                              [class.text-emerald-600]="user.checksCompleted === user.checksTotal"
                                              [class.text-orange-500]="user.checksCompleted < user.checksTotal">
                                             {{ user.checksCompleted }}/{{ user.checksTotal }}
                                         </div>
-                                        <div class="text-[10px] text-slate-400 font-bold uppercase">Controlli</div>
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase mt-1">Check</div>
                                     </div>
                                 </div>
                                 
-                                <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-1 bg-slate-100 rounded-full overflow-hidden mb-3">
                                     <div class="h-full transition-all"
                                          [class.bg-emerald-500]="user.checksCompleted === user.checksTotal"
                                          [class.bg-orange-500]="user.checksCompleted < user.checksTotal"
                                          [style.width.%]="(user.checksCompleted / user.checksTotal * 100)"></div>
                                 </div>
 
-                                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                                    <span class="text-slate-400">Ultimo accesso</span>
-                                    <span class="font-medium text-slate-600">{{ user.lastActivity }}</span>
+                                <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[10px]">
+                                    <span class="text-slate-400 font-bold uppercase">Ultima att.</span>
+                                    <span class="font-bold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{{ user.lastActivity }}</span>
                                 </div>
                             </div>
                         }
@@ -166,9 +159,11 @@ interface CompanyReport {
         }
 
         @if (companyReports().length === 0) {
-            <div class="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-slate-200">
-                <i class="fa-solid fa-folder-open text-6xl text-slate-200 mb-4"></i>
-                <p class="text-slate-400 font-medium">Nessuna azienda configurata nel sistema</p>
+            <div class="bg-white rounded-2xl p-10 text-center border border-slate-200 shadow-sm">
+                <div class="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                   <i class="fa-solid fa-folder-open text-2xl text-slate-300"></i>
+                </div>
+                <p class="text-sm font-bold text-slate-600 uppercase tracking-widest">Nessuna azienda nel sistema</p>
             </div>
         }
       </div>
@@ -177,7 +172,6 @@ interface CompanyReport {
       <div id="print-template" class="hidden">
         <!-- Will be populated dynamically -->
       </div>
-
     </div>
   `,
   styles: [`

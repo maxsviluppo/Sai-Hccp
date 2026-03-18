@@ -7,184 +7,155 @@ import { AppStateService } from '../services/app-state.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-8 animate-fade-in p-2">
+    <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
       
-      <!-- Premium Operator Hero -->
-      <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-emerald-600 to-teal-800 p-8 shadow-2xl border border-emerald-500/20">
-        <!-- Decor Elements -->
-        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-        <div class="absolute -left-20 -bottom-20 h-40 w-40 rounded-full bg-emerald-400/20 blur-2xl"></div>
-        
-        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div class="flex items-center gap-6">
-            <div class="relative">
-              <div class="absolute -inset-2 rounded-[2rem] bg-white/20 blur-md animate-pulse"></div>
-              <img [src]="state.currentUser()?.avatar" class="relative h-20 w-20 rounded-[1.5rem] border-2 border-white/40 shadow-2xl object-cover">
-              <div class="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-teal-700 bg-emerald-400"></div>
-            </div>
-            
-            <div>
-              <h2 class="text-4xl font-black tracking-tight text-white mb-1">
-                Ciao, <span class="text-emerald-200">{{ state.currentUser()?.name?.split(' ')[0] }}</span>
-              </h2>
-              <div class="flex items-center gap-3">
-                <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-emerald-50 border border-white/20 uppercase tracking-widest">
-                  <i class="fa-solid fa-user-tag text-xs mr-2"></i> {{ state.currentUser()?.department || 'Staff Operativo' }}
-                </span>
-                <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
-                  <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Online
-                </span>
-              </div>
+      <!-- Sleek Professional Header for Operator -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+        <div class="flex items-center gap-5 relative z-10">
+          <div class="relative flex-shrink-0">
+             <img [src]="state.currentUser()?.avatar" class="h-14 w-14 rounded-xl shadow-md object-cover ring-1 ring-slate-200">
+             <div class="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500"></div>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Ciao, {{ state.currentUser()?.name?.split(' ')[0] }}</h2>
+            <div class="flex items-center gap-2 mt-1">
+               <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">{{ state.currentUser()?.department || 'Staff Operativo' }}</span>
+               <span class="text-xs font-semibold text-emerald-600 flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Online</span>
             </div>
           </div>
-          
-          <div class="flex flex-wrap gap-4">
-             <!-- Time/Date Pill -->
-             <div class="flex items-center gap-4 rounded-3xl bg-black/20 p-4 border border-white/10 backdrop-blur-md">
-                <div class="text-right">
-                   <p class="text-[10px] font-black uppercase tracking-widest text-emerald-200/60 text-left">Turno Odierno</p>
-                   <p class="text-lg font-bold text-white leading-none whitespace-nowrap">{{ getCurrentDay() }}, {{ getCurrentDayNumber() }} {{ getCurrentMonth() }}</p>
-                </div>
-                <div class="h-10 w-10 flex items-center justify-center bg-white/10 rounded-2xl text-emerald-300">
-                   <i class="fa-solid fa-clock text-xl"></i>
-                </div>
-             </div>
-          </div>
+        </div>
+        <div class="flex items-center gap-4 relative z-10 bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 shrink-0">
+           <div class="text-right flex flex-col justify-center">
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Turno attuale</p>
+             <p class="text-sm font-bold text-slate-700 leading-none">{{ getCurrentDay() }}, {{ getCurrentDayNumber() }} {{ getCurrentMonth() }}</p>
+           </div>
+           <div class="h-10 w-10 flex items-center justify-center bg-white rounded-full border border-slate-200 text-slate-500 shadow-sm shrink-0">
+             <i class="fa-regular fa-calendar-check text-lg"></i>
+           </div>
         </div>
       </div>
 
       <!-- Main Operational Phases -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        
-        @for (phase of [
-          {id: 'pre-op-checklist', label: 'Start Check', sub: 'Pre-Operativa', icon: 'fa-sun', color: 'blue', desc: 'Controlli apertura'},
-          {id: 'operative-checklist', label: 'Monitor Check', sub: 'Operativa', icon: 'fa-briefcase', color: 'indigo', desc: 'Gestione flussi'},
-          {id: 'post-op-checklist', label: 'End Check', sub: 'Post-Operativa', icon: 'fa-hourglass-end', color: 'purple', desc: 'Chiusura e pulizia'}
-        ]; track phase.id) {
-          <button (click)="state.setModule(phase.id)" 
-               class="group relative overflow-hidden rounded-[2.5rem] bg-white p-6 shadow-sm border border-slate-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left">
-             
-             <div class="mb-6 flex items-center justify-between">
-                <div [class]="'h-14 w-14 rounded-2xl flex items-center justify-center transition-all bg-' + phase.color + '-50 text-' + phase.color + '-600 group-hover:bg-' + phase.color + '-600 group-hover:text-white group-hover:rotate-6 shadow-sm'">
-                  <i class="fa-solid {{ phase.icon }} text-2xl transition-transform"></i>
-                </div>
-                <div class="text-right">
-                   <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{{ phase.sub }}</span>
-                   <span class="text-xs font-black" [class]="'text-' + phase.color + '-600'">{{ isPhaseComplete(phase.id) ? 'COMPLETATO' : 'DA COMPILARE' }}</span>
-                </div>
-             </div>
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+         <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-6">Controlli Obbligatori Giornalieri</h3>
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            @for (phase of [
+              {id: 'pre-op-checklist', label: 'Apertura', sub: 'Pre-Operativa', icon: 'fa-sun', iconColor: 'text-sky-500', bg: 'bg-sky-50', bgFill: 'bg-sky-500'},
+              {id: 'operative-checklist', label: 'Monitoraggio', sub: 'Operativa', icon: 'fa-briefcase', iconColor: 'text-indigo-500', bg: 'bg-indigo-50', bgFill: 'bg-indigo-500'},
+              {id: 'post-op-checklist', label: 'Chiusura', sub: 'Post-Operativa', icon: 'fa-moon', iconColor: 'text-purple-500', bg: 'bg-purple-50', bgFill: 'bg-purple-500'}
+            ]; track phase.id) {
+              <button (click)="state.setModule(phase.id)" 
+                   class="group relative overflow-hidden rounded-xl p-5 border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-300 transition-all text-left flex flex-col h-full">
+                 
+                 <div class="mb-4 flex items-center justify-between">
+                    <div [class]="'h-10 w-10 rounded-full flex items-center justify-center transition-all bg-white shadow-sm border border-slate-100 group-hover:scale-110 shrink-0 ' + phase.iconColor">
+                      <i class="fa-solid {{ phase.icon }} text-lg"></i>
+                    </div>
+                    <div class="text-right">
+                       <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">{{ phase.sub }}</span>
+                       <span class="text-xs font-bold" [class]="isPhaseComplete(phase.id) ? 'text-emerald-600' : 'text-slate-500'">{{ isPhaseComplete(phase.id) ? 'Lavoro Concluso' : 'Da Rilasciare' }}</span>
+                    </div>
+                 </div>
 
-             <h3 class="text-xl font-black text-slate-900 leading-tight mb-2">{{ phase.label }}</h3>
-             <p class="text-xs font-medium text-slate-500 mb-6">{{ phase.desc }}</p>
+                 <h4 class="text-base font-bold text-slate-800 leading-tight mb-4 flex-1">{{ phase.label }}</h4>
 
-             <div class="relative h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div class="h-full transition-all duration-1000 shadow-sm" 
-                     [class]="'bg-' + phase.color + '-600'"
-                     [style.width.%]="isPhaseComplete(phase.id) ? 100 : 0"></div>
-             </div>
-          </button>
-        }
-
-        <!-- Critical Action: Anomaly -->
-        <button (click)="state.setModule('non-compliance')" 
-             class="group relative overflow-hidden rounded-[2.5rem] bg-red-600 p-6 shadow-2xl hover:shadow-red-500/30 hover:-translate-y-2 transition-all duration-300 text-left">
-           <div class="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-colors"></div>
-           
-           <div class="relative z-10 flex flex-col h-full justify-between">
-              <div class="mb-6">
-                <div class="h-14 w-14 rounded-2xl bg-white/20 flex items-center justify-center text-white mb-4 border border-white/20 shadow-lg">
-                    <i class="fa-solid fa-triangle-exclamation text-2xl animate-pulse"></i>
-                </div>
-                <h3 class="text-2xl font-black text-white leading-tight mb-1 uppercase tracking-tighter">Segnala<br>Anomalia</h3>
-              </div>
-              
-              <div class="flex items-center gap-2 text-xs font-black text-red-100 uppercase tracking-widest group-hover:translate-x-2 transition-transform">
-                 Apri Modulo Rapido <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </div>
-           </div>
-        </button>
+                 <div class="relative h-1.5 rounded-full bg-slate-200 overflow-hidden w-full">
+                    <div class="h-full transition-all duration-1000" 
+                         [class]="phase.bgFill"
+                         [style.width.%]="isPhaseComplete(phase.id) ? 100 : 0"></div>
+                 </div>
+              </button>
+            }
+         </div>
       </div>
 
-      <!-- Secondary Data Hub -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Lower Grid: Actions, Insights & Messages -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Messaging Center -->
-        <div class="lg:col-span-2 rounded-[2.5rem] bg-white shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-            <div class="border-b border-slate-100 bg-slate-50/50 p-6 flex items-center justify-between">
-                <h3 class="text-lg font-black text-slate-900 flex items-center gap-3">
-                    <span class="h-6 w-1.5 bg-blue-600 rounded-full"></span>
-                    Comunicazioni Interne
-                </h3>
-                <button (click)="state.setModule('messages')" class="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700 hover:bg-blue-600 hover:text-white transition-all">
-                    ARCHIVIO
-                </button>
-            </div>
-            
-            <div class="p-4 flex-1">
-                @if (state.getMessagesForCurrentUser().length === 0) {
-                    <div class="flex flex-col items-center justify-center h-48 text-slate-400">
-                        <i class="fa-regular fa-envelope-open text-4xl mb-4 opacity-10"></i>
-                        <p class="text-sm font-bold uppercase tracking-widest text-slate-300">Nessuna notifica</p>
-                    </div>
-                } @else {
-                    <div class="space-y-3">
-                        @for (msg of state.getMessagesForCurrentUser().slice(0, 3); track msg.id) {
-                            <div (click)="state.setModule('messages')" 
-                                 class="p-5 rounded-[1.5rem] bg-slate-50 hover:bg-white border-2 border-transparent hover:border-blue-100 hover:shadow-xl transition-all cursor-pointer group flex gap-5 items-start">
-                                <div class="h-3 w-3 mt-1.5 rounded-full flex-shrink-0" [class.bg-blue-600]="!msg.read" [class.bg-slate-300]="msg.read"></div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-baseline mb-2">
-                                        <h4 class="text-base font-black text-slate-800 truncate group-hover:text-blue-600 transition-colors">{{ msg.subject }}</h4>
-                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ msg.timestamp | date:'HH:mm' }}</span>
-                                    </div>
-                                    <p class="text-sm text-slate-500 line-clamp-2 leading-relaxed">{{ msg.content }}</p>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-            @if (state.unreadMessagesCount() > 0) {
-               <div class="bg-blue-600 p-4 text-center text-xs font-black text-white uppercase tracking-widest animate-pulse-subtle">
-                  Hai {{ state.unreadMessagesCount() }} nuovi messaggi da leggere
-               </div>
-            }
-        </div>
+        <!-- Action: Anomaly & History -->
+        <div class="space-y-6 flex flex-col">
+          <!-- Anomaly Button -->
+          <button (click)="state.setModule('non-compliance')" 
+               class="w-full bg-white rounded-2xl p-6 shadow-sm border border-red-100 hover:border-red-300 hover:shadow-md transition-all text-left flex items-center gap-5 group">
+             <div class="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center shrink-0 border border-red-100 group-hover:bg-red-500 group-hover:text-white text-red-500 transition-colors">
+                 <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+             </div>
+             <div>
+                <h3 class="text-base font-bold text-red-600 mb-0.5">Segnala Anomalia</h3>
+                <p class="text-xs text-slate-500">Apri un ticket di non conformità</p>
+             </div>
+          </button>
 
-        <!-- Personal Insights -->
-        <div class="rounded-[2.5rem] bg-slate-900 p-8 shadow-2xl relative overflow-hidden flex flex-col">
-             <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <!-- Personal Insights snippet -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex-1 flex flex-col">
+             <h3 class="text-sm font-bold text-slate-800 tracking-tight mb-4 border-b border-slate-100 pb-2">Riepilogo Turno</h3>
              
-             <div class="mb-auto">
-                <h3 class="text-xl font-black text-white mb-8 border-b border-white/5 pb-4 flex items-center justify-between">
-                    <span>Performance</span>
-                    <i class="fa-solid fa-bolt text-indigo-400"></i>
-                </h3>
-                
-                <div class="grid grid-cols-1 gap-4">
-                   <div class="rounded-3xl bg-white/5 p-6 border border-white/10 group hover:bg-white/10 transition-colors">
-                       <div class="flex items-center justify-between mb-2">
-                           <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">Completamento</span>
-                           <span class="text-2xl font-black text-emerald-400">{{ completedPhasesCount() }} <span class="text-sm text-slate-500">/ 3</span></span>
-                       </div>
-                       <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                           <div class="h-full bg-emerald-500 transition-all duration-1000" [style.width.%]="(completedPhasesCount() / 3) * 100"></div>
-                       </div>
-                   </div>
+             <div class="flex flex-col gap-4 mb-auto">
+                 <div>
+                     <div class="flex items-center justify-between mb-1.5">
+                         <span class="text-xs font-bold text-slate-500">Avanzamento Globale</span>
+                         <span class="text-sm font-bold text-slate-800 tabular-nums border border-slate-100 bg-slate-50 rounded-md px-1.5">{{ completedPhasesCount() }}/3</span>
+                     </div>
+                     <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                         <div class="h-full bg-emerald-500 transition-all duration-1000" [style.width.%]="(completedPhasesCount() / 3) * 100"></div>
+                     </div>
+                 </div>
 
-                   <div class="rounded-3xl bg-white/5 p-6 border border-white/10 group hover:bg-white/10 transition-colors">
-                       <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 text-left">Ultimo Accesso Registro</p>
-                       <p class="text-2xl font-black text-blue-400">{{ lastRecordTime() }}</p>
-                   </div>
-                </div>
+                 <div class="flex items-center justify-between mt-2">
+                     <span class="text-xs font-bold text-slate-500">Ultimo Accesso Registro</span>
+                     <span class="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">{{ lastRecordTime() }}</span>
+                 </div>
              </div>
 
-             <button (click)="state.setModule('history')" class="group w-full mt-10 py-5 bg-white hover:bg-indigo-50 text-indigo-950 rounded-[1.5rem] font-black text-xs tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95">
-                VEDI STORICO PERSONALE
-                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+             <button (click)="state.setModule('history')" class="group w-full mt-6 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2">
+                VEDI STORICO LISTE
              </button>
+          </div>
         </div>
 
+        <!-- Messaging Center -->
+        <div class="col-span-1 lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[350px]">
+             <div class="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                 <div class="flex items-center gap-3">
+                     <h3 class="text-base font-bold text-slate-800 tracking-tight">Messaggistica Aziendale</h3>
+                     @if (state.unreadMessagesCount() > 0) {
+                        <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">{{ state.unreadMessagesCount() }} nuovi</span>
+                     }
+                 </div>
+                 <button (click)="state.setModule('messages')" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline">Vedi Archivio</button>
+             </div>
+             
+             <div class="flex-1 p-4 overflow-y-auto custom-scrollbar">
+                 @if (state.getMessagesForCurrentUser().length === 0) {
+                     <div class="h-full flex flex-col items-center justify-center text-slate-400 p-8">
+                         <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa-regular fa-envelope-open text-2xl text-slate-300"></i>
+                         </div>
+                         <p class="text-sm font-bold text-slate-600">Nessun nuovo messaggio</p>
+                         <p class="text-xs">Le comunicazioni ricevute appariranno qui.</p>
+                     </div>
+                 } @else {
+                     <div class="space-y-3">
+                         @for (msg of state.getMessagesForCurrentUser().slice(0, 4); track msg.id) {
+                             <div (click)="state.setModule('messages')" 
+                                  class="p-4 rounded-xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer flex gap-4 items-start">
+                                 <div class="h-8 w-8 rounded-full flex items-center justify-center shrink-0 border mt-0.5" [class.bg-blue-50]="!msg.read" [class.border-blue-200]="!msg.read" [class.bg-slate-100]="msg.read" [class.border-slate-200]="msg.read">
+                                     <i class="fa-solid fa-envelope text-xs" [class.text-blue-500]="!msg.read" [class.text-slate-400]="msg.read"></i>
+                                 </div>
+                                 <div class="flex-1 min-w-0">
+                                     <div class="flex justify-between items-baseline mb-1">
+                                         <h4 class="text-sm font-bold text-slate-800 truncate" [class.text-blue-700]="!msg.read">{{ msg.subject }}</h4>
+                                     </div>
+                                     <p class="text-[11px] text-slate-600 line-clamp-2 leading-relaxed mb-1.5">{{ msg.content }}</p>
+                                     <p class="text-[9px] font-bold text-slate-400 uppercase">{{ msg.timestamp | date:'dd MMM HH:mm' }}</p>
+                                 </div>
+                             </div>
+                         }
+                     </div>
+                 }
+             </div>
+        </div>
       </div>
     </div>
   `,

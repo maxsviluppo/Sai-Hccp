@@ -24,25 +24,25 @@ interface ChecklistItem {
            <div class="border-b-2 border-slate-800 pb-4 mb-6 text-center">
               <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
               <h2 class="text-xl font-light text-slate-600">Registro Fase Operativa</h2>
-              <div class="flex justify-between mt-4 text-sm text-slate-500">
+              <div class="flex justify-between mt-4 text-lg text-slate-500">
                  <span>Data: {{ getFormattedDate() }}</span>
                  <span>Operatore: {{ state.currentUser()?.name }}</span>
               </div>
            </div>
 
            <div class="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-              <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-slate-800">Informativa Libro Ingredienti</h3>
-               <div class="space-y-1 text-[9px] font-bold text-slate-700">
-                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> LIBRO INGREDIENTI: Denominazione alimento/preparazione</div>
-                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> ELENCO INGREDIENTI CON il numero di lotto</div>
-                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Data di preparazione E Scadenza</div>
-                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[8px] text-slate-400"></i> Modalità di conservazione</div>
+              <h3 class="text-lg font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-slate-800">Informativa Libro Ingredienti</h3>
+               <div class="space-y-1 text-[11px] font-bold text-slate-700">
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[10px] text-slate-400"></i> LIBRO INGREDIENTI: Denominazione alimento/preparazione</div>
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[10px] text-slate-400"></i> ELENCO INGREDIENTI CON il numero di lotto</div>
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[10px] text-slate-400"></i> Data di preparazione E Scadenza</div>
+                 <div class="flex items-center gap-2"><i class="fa-solid fa-check text-[10px] text-slate-400"></i> Modalità di conservazione</div>
                </div>
            </div>
 
            <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-              <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-rose-800">Informativa Sostanze Allergeniche (Reg. UE 1169/2011)</h3>
-              <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[9px]">
+              <h3 class="text-lg font-bold uppercase mb-2 border-b border-slate-300 pb-1 text-rose-800">Informativa Sostanze Allergeniche (Reg. UE 1169/2011)</h3>
+              <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-[11px]">
                  <div>1. Cereali contenenti glutine</div>
                  <div>2. Crostacei e derivati</div>
                  <div>3. Uova e derivati</div>
@@ -60,7 +60,7 @@ interface ChecklistItem {
               </div>
            </div>
 
-           <table class="w-full text-left text-sm border-collapse">
+           <table class="w-full text-left text-lg border-collapse">
               <thead>
                  <tr class="border-b border-slate-400 bg-slate-50">
                     <th class="py-2 px-3 font-bold">Controllo</th>
@@ -74,7 +74,7 @@ interface ChecklistItem {
                         <td class="py-3 px-3">
                            <div class="font-medium">{{ item.label }}</div>
                            @if (item.temperature) {
-                              <div class="text-[10px] text-slate-500 font-bold mt-0.5">Temperatura: {{ item.temperature }}°C</div>
+                              <div class="text-xs text-slate-500 font-bold mt-0.5">Temperatura: {{ item.temperature }}°C</div>
                            }
                         </td>
                         <td class="py-3 px-3 font-bold uppercase">
@@ -89,49 +89,44 @@ interface ChecklistItem {
 
         <!-- UI CONTENT (Hidden on print) -->
         <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
-            <!-- Premium Hero Header -->
-            <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
-                <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-purple-600/15 blur-3xl"></div>
-                <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-indigo-600/10 blur-3xl"></div>
+            <!-- MINIMAL HERO HEADER -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-white/20 pointer-events-none"></div>
                 
-                <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    <div class="flex items-center gap-5">
-                        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
-                            <i class="fa-solid fa-briefcase text-3xl text-white"></i>
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 shadow-sm shrink-0">
+                            <i class="fa-solid fa-briefcase text-xl text-indigo-600"></i>
                         </div>
                         <div>
-                            <div class="flex flex-wrap items-center gap-3 mb-1">
-                                <h2 class="text-4xl font-black tracking-tight text-white font-outfit">Fase <span class="text-indigo-400">Operativa</span></h2>
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Fase <span class="text-indigo-600">Operativa</span></h2>
                                 <button (click)="state.setModule('production-log')" 
-                                        class="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-white/10">
-                                    <i class="fa-solid fa-barcode text-indigo-400"></i> Rintracciabilità
+                                        class="px-3 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded text-[11px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border border-slate-200">
+                                    <i class="fa-solid fa-barcode text-indigo-500"></i> Rintracciabilità
                                 </button>
                             </div>
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
-                                    <i class="fa-solid fa-circle text-[9px] animate-pulse text-amber-400"></i>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                    <i class="fa-solid fa-circle text-[10px] text-amber-500 animate-pulse"></i>
                                     Monitoraggio Attivo
                                 </span>
-                                <span class="flex items-center gap-2 rounded-full bg-indigo-500/10 px-4 py-1.5 text-sm font-black text-indigo-400 border border-indigo-500/20">
-                                    <i class="fa-solid fa-user-check text-xs"></i> {{ state.currentUser()?.name }}
+                                <span class="w-1 h-1 rounded-full bg-slate-200"></span>
+                                <span class="flex items-center gap-1.5 text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                                    <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name }}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <div class="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-md">
-                            <div class="text-left">
-                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Completamento</p>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
-                                        <div class="h-full bg-indigo-500 rounded-full transition-all duration-1000" [style.width.%]="progressPercentage()"></div>
-                                    </div>
-                                    <span class="text-xl font-black text-white whitespace-nowrap">{{ completedCount() }} / {{ items().length }}</span>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Completamento</p>
+                            <div class="flex items-center justify-end gap-3">
+                                <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" [style.width.%]="progressPercentage()"></div>
                                 </div>
-                            </div>
-                            <div class="h-10 w-10 flex items-center justify-center bg-indigo-500/20 rounded-xl text-indigo-400">
-                                <i class="fa-solid fa-chart-pie text-xl"></i>
+                                <span class="text-lg font-black text-slate-700 whitespace-nowrap">{{ completedCount() }}/{{ items().length }}</span>
                             </div>
                         </div>
                     </div>
@@ -140,32 +135,33 @@ interface ChecklistItem {
 
             <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 <!-- Left Column: Informative Sidebar -->
-                <div class="xl:col-span-1 space-y-8">
-                    <div class="bg-white rounded-2xl p-5 relative overflow-hidden group border border-slate-100 shadow-sm">
-                        <div class="flex items-center gap-4">
-                            <div class="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner">
-                                <i class="fa-solid fa-calendar-day"></i>
+                <div class="xl:col-span-1 space-y-4">
+                    <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="h-8 w-8 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shrink-0">
+                                <i class="fa-solid fa-calendar-day text-lg"></i>
                             </div>
                             <div class="flex-1">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Data Competenza</label>
+                                <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Data Competenza</label>
                                 <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
-                                       class="w-full font-black text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-lg leading-none">
+                                       class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-lg leading-none">
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 border border-rose-100 bg-rose-50/10 shadow-sm">
-                        <h3 class="text-base font-black text-rose-800 uppercase tracking-widest mb-6 flex items-center justify-between">
+                    <div class="bg-white rounded-xl p-5 border border-rose-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-400 to-rose-200"></div>
+                        <h3 class="text-xs font-black text-rose-600 uppercase tracking-widest mb-3 flex items-center justify-between">
                             <span>Allergeni (UE 1169)</span>
-                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <i class="fa-solid fa-circle-exclamation opacity-70"></i>
                         </h3>
-                        <div class="grid grid-cols-1 gap-y-3">
+                        <div class="grid grid-cols-1 gap-y-1.5">
                             @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]; track i) {
-                                <div class="flex items-start gap-2.5 opacity-80 group hover:opacity-100 transition-opacity">
-                                    <span class="text-xs font-black w-5 h-5 rounded-md bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                                <div class="flex items-start gap-2 group hover:opacity-100 transition-opacity">
+                                    <span class="text-[11px] font-bold w-4 h-4 rounded bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
                                         {{ i }}
                                     </span>
-                                    <span class="text-sm font-bold text-slate-600 leading-tight italic">
+                                    <span class="text-sm font-medium text-slate-600 leading-tight">
                                         {{ i === 1 ? 'Cereali con glutine' : 
                                            i === 2 ? 'Crostacei' : 
                                            i === 3 ? 'Uova' : 
@@ -185,41 +181,42 @@ interface ChecklistItem {
                         </div>
                     </div>
 
-                    <div class="bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-8 bg-blue-50/10 border border-blue-100 shadow-sm">
-                        <h3 class="text-base font-black text-blue-800 uppercase tracking-widest mb-6 flex items-center justify-between">
+                    <div class="bg-white rounded-xl p-5 border border-blue-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-200"></div>
+                        <h3 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center justify-between">
                             <span>Libro Ingredienti</span>
-                            <i class="fa-solid fa-book-open"></i>
+                            <i class="fa-solid fa-book-open opacity-70"></i>
                         </h3>
-                        <div class="space-y-5">
-                            <div class="flex items-start gap-3">
-                                <i class="fa-solid fa-check text-blue-500 text-sm mt-1"></i>
-                                <p class="text-sm font-bold text-slate-600 uppercase tracking-[0.05em]">Lotto e Denominazione</p>
+                        <div class="space-y-3">
+                            <div class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-blue-400 text-xs mt-0.5"></i>
+                                <p class="text-sm font-bold text-slate-600 uppercase tracking-widest">Lotto e Denominazione</p>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <i class="fa-solid fa-check text-blue-500 text-sm mt-1"></i>
-                                <p class="text-sm font-bold text-slate-600 uppercase tracking-[0.05em]">Preparazione e Scadenza</p>
+                            <div class="flex items-start gap-2">
+                                <i class="fa-solid fa-check text-blue-400 text-xs mt-0.5"></i>
+                                <p class="text-sm font-bold text-slate-600 uppercase tracking-widest">Preparazione e Scadenza</p>
                             </div>
-                            <div class="flex items-start gap-3 border-t border-blue-50 pt-4">
-                                <p class="text-xs font-medium text-blue-600 italic leading-relaxed">Assicurarsi che ogni preparato sia etichettato correttamente.</p>
+                            <div class="flex items-start gap-2 border-t border-blue-50 pt-2 mt-1">
+                                <p class="text-xs font-medium text-slate-500 italic leading-relaxed">Assicurarsi che ogni preparato sia etichettato correttamente.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Main Content: Checklists -->
-                <div class="xl:col-span-3 space-y-12">
-                    <div class="space-y-6">
-                        <div class="flex flex-wrap items-center justify-between gap-4 px-4">
-                            <div class="flex items-center gap-4">
-                                <div class="h-8 w-1.5 bg-indigo-600 rounded-full"></div>
-                                <h3 class="text-xl font-black text-slate-800 uppercase tracking-widest">Ricezione Merci</h3>
-                            </div>
-                            <button (click)="setAllOk()" class="shrink-0 px-5 py-2.5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-xs uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100">
-                                IMPOSTA TUTTI OK
+                <div class="xl:col-span-3 space-y-8">
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-4 px-2">
+                            <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-boxes-packing text-indigo-500"></i>
+                                Ricezione Merci
+                            </h3>
+                            <button (click)="setAllOk()" class="shrink-0 px-4 py-2 rounded-lg bg-white border border-emerald-200 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-50 transition-colors shadow-sm">
+                                <i class="fa-solid fa-check-double mr-1.5"></i> IMPOSTA TUTTI OK
                             </button>
                         </div>
 
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div class="divide-y divide-slate-100">
                                 @for (item of group1Items(); track item.id; let i = $index) {
                                     <ng-container *ngTemplateOutlet="checklistItemList; context: { $implicit: { ...item, index: i } }"></ng-container>
@@ -228,13 +225,15 @@ interface ChecklistItem {
                         </div>
                     </div>
 
-                    <div class="space-y-6">
-                        <div class="flex items-center gap-4 px-4">
-                            <div class="h-8 w-1.5 bg-purple-600 rounded-full"></div>
-                            <h3 class="text-xl font-black text-slate-800 uppercase tracking-widest">Verifica Temperature e Conservazione</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 px-2">
+                            <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-temperature-arrow-up text-indigo-500"></i>
+                                Verifica Temperature e Conservazione
+                            </h3>
                         </div>
 
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div class="divide-y divide-slate-100">
                                 @for (item of group2Items(); track item.id; let i = $index) {
                                     <ng-container *ngTemplateOutlet="checklistItemList; context: { $implicit: { ...item, index: i + group1Items().length } }"></ng-container>
@@ -247,66 +246,68 @@ interface ChecklistItem {
 
             <!-- REUSABLE LIST TEMPLATE -->
             <ng-template #checklistItemList let-item>
-                <div class="px-5 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:bg-slate-50 relative group/row animate-fade-in"
+                <div class="px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors hover:bg-slate-50 relative group/row animate-fade-in"
                      [class.bg-emerald-50/40]="item.status === 'ok'"
                      [class.bg-red-50/40]="item.status === 'issue'">
                     
-                    <div class="flex items-center gap-4 flex-[2] min-w-0">
-                        <span class="text-[9px] font-black w-5 h-5 rounded bg-white flex items-center justify-center border border-slate-200 shadow-sm shrink-0 leading-none text-slate-400">
+                    <div class="flex items-center gap-3 flex-[2] min-w-0">
+                        <span class="text-[11px] font-black w-5 h-5 rounded bg-slate-50 flex items-center justify-center border border-slate-200 shrink-0 text-slate-400">
                             {{ $any(item).index + 1 }}
                         </span>
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all shadow-inner shrink-0"
-                             [class.bg-slate-100]="item.status === 'pending'" [class.text-slate-400]="item.status === 'pending'"
-                             [class.bg-emerald-100]="item.status === 'ok'" [class.text-emerald-600]="item.status === 'ok'"
-                             [class.bg-red-100]="item.status === 'issue'" [class.text-red-600]="item.status === 'issue'">
-                            <i [class]="'fa-solid ' + item.icon"></i>
+                        
+                        <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center transition-colors border"
+                             [class.bg-slate-50]="item.status === 'pending'" [class.border-slate-200]="item.status === 'pending'" [class.text-slate-400]="item.status === 'pending'"
+                             [class.bg-emerald-50]="item.status === 'ok'" [class.border-emerald-200]="item.status === 'ok'" [class.text-emerald-500]="item.status === 'ok'"
+                             [class.bg-red-50]="item.status === 'issue'" [class.border-red-200]="item.status === 'issue'" [class.text-red-500]="item.status === 'issue'">
+                            <i [class]="'fa-solid text-base ' + item.icon"></i>
                         </div>
+
                         <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-slate-800 text-sm leading-tight group-hover/row:text-indigo-600 transition-colors truncate">{{ item.label }}</h4>
+                            <h4 class="font-bold text-slate-700 text-sm leading-tight group-hover/row:text-indigo-600 transition-colors">{{ item.label }}</h4>
                             @if (item.status !== 'pending') {
-                                <span class="text-[9px] font-black uppercase tracking-widest mt-0.5 block"
-                                      [class.text-emerald-600]="item.status === 'ok'"
-                                      [class.text-red-600]="item.status === 'issue'">
+                                <span class="text-[10px] font-black uppercase tracking-widest mt-0.5 block"
+                                      [class.text-emerald-500]="item.status === 'ok'"
+                                      [class.text-red-500]="item.status === 'issue'">
                                     {{ item.status === 'ok' ? 'CONFORME' : 'NON CONFORME' }}
                                 </span>
                             }
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4 flex-1 justify-end">
+                    <div class="flex items-center gap-3 flex-1 justify-end shrink-0">
                         @if (item.hasTemperature) {
-                            <div class="w-24 bg-slate-50 rounded-lg border border-slate-200 px-2 py-1 flex items-center gap-1.5 focus-within:ring-2 focus-within:ring-indigo-500/20">
-                                <i class="fa-solid fa-temperature-half text-[10px] text-indigo-400"></i>
+                            <div class="w-20 bg-white rounded border border-slate-200 px-2 flex items-center gap-1.5 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-shadow h-7 shadow-sm">
+                                <i class="fa-solid fa-temperature-half text-[11px] text-slate-400"></i>
                                 <input type="number" 
                                        [ngModel]="statusMap()[item.id]?.temperature"
                                        (ngModelChange)="updateTemperature(item.id, $event)"
                                        placeholder="°C"
                                        [disabled]="isSubmitted()"
-                                       class="w-full font-black text-slate-800 bg-transparent h-5 focus:outline-none text-xs disabled:opacity-50">
+                                       class="w-full font-bold text-slate-700 bg-transparent h-full focus:outline-none text-sm disabled:opacity-50">
                             </div>
                         }
 
                         <div class="flex items-center gap-1.5">
                             @if (item.status === 'pending') {
                                 <button (click)="setStatus(item.id, 'ok')" 
-                                        class="w-9 h-9 rounded-full bg-white border border-emerald-200 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center">
+                                        class="h-7 px-2.5 rounded bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-400 hover:text-emerald-500 transition-colors shadow-sm flex items-center justify-center">
                                     <i class="fa-solid fa-check text-xs"></i>
                                 </button>
                                 <button (click)="openIssueModal(item)" 
-                                        class="w-9 h-9 rounded-full bg-white border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center">
+                                        class="h-7 px-2.5 rounded bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-400 hover:text-red-500 transition-colors shadow-sm flex items-center justify-center">
                                     <i class="fa-solid fa-triangle-exclamation text-xs"></i>
                                 </button>
                             } @else {
                                 <button (click)="setStatus(item.id, 'pending')" 
-                                        class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 hover:text-white transition-all border border-slate-200">
-                                    RESET
+                                        class="h-7 px-2.5 rounded bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-[11px] uppercase tracking-widest transition-colors border border-slate-200">
+                                    <i class="fa-solid fa-rotate-left"></i>
                                 </button>
                             }
                         </div>
                     </div>
 
                     @if (item.status === 'issue' && item.note) {
-                        <div class="w-full mt-2 text-[10px] text-red-600 font-bold italic bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
+                        <div class="w-full md:w-auto mt-2 md:mt-0 text-xs text-red-600 font-medium italic bg-red-50 px-3 py-1.5 rounded border border-red-100 md:col-span-2">
                              Nota: {{ item.note }}
                         </div>
                     }
@@ -317,26 +318,24 @@ interface ChecklistItem {
             <div class="fixed bottom-6 right-6 z-50">
                 @if (!isSubmitted()) {
                     <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
-                            class="h-16 px-10 bg-slate-900 border-b-4 border-slate-950 text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-2xl flex items-center gap-4 disabled:opacity-40 disabled:grayscale group hover:bg-emerald-600 hover:border-emerald-700">
-                        <div class="flex flex-col items-end">
-                            <span class="text-[8px] opacity-60 font-bold tracking-widest group-hover:opacity-100 transition-opacity uppercase">Fase Operativa</span>
-                            <span class="text-xs">REGISTRA OPERAZIONI</span>
-                        </div>
-                        <div class="w-px h-6 bg-white/20"></div>
-                        <i class="fa-solid fa-cloud-arrow-up text-xl group-hover:scale-110 transition-transform"></i>
+                            class="h-12 px-6 bg-slate-900 border border-slate-800 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 hover:bg-slate-800 hover:shadow-xl group">
+                        <span>REGISTRA OPERAZIONI</span>
+                        <div class="w-px h-4 bg-white/20"></div>
+                        <i class="fa-solid fa-cloud-arrow-up group-hover:-translate-y-0.5 transition-transform"></i>
                     </button>
                 } @else {
-                    <div class="bg-white/80 backdrop-blur-xl p-3 rounded-[3.5rem] shadow-2xl flex items-center gap-3 border border-white animate-slide-up">
-                        <div class="px-8 py-5 bg-emerald-500 text-white rounded-[2.5rem] flex items-center gap-4">
-                            <i class="fa-solid text-xl" [class.fa-check]="!hasIssues()" [class.fa-triangle-exclamation]="hasIssues()"></i>
-                            <span class="font-black text-sm uppercase text-white">{{ hasIssues() ? 'NON CONFORME' : 'CONFORME' }}</span>
+                    <div class="bg-white p-2 rounded-xl shadow-xl flex items-center gap-2 border border-slate-200 animate-slide-up">
+                        <div class="px-4 py-2 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg flex items-center gap-2">
+                            <i class="fa-solid" [class.fa-check]="!hasIssues()" [class.fa-triangle-exclamation]="hasIssues()"></i>
+                            <span class="font-bold text-xs uppercase tracking-widest">{{ hasIssues() ? 'NON CONFORME' : 'REGISTRATO' }}</span>
                         </div>
-                        <div class="flex items-center gap-2 px-3">
-                            <button (click)="printReport()" class="h-14 w-14 rounded-full bg-slate-50 hover:bg-slate-900 hover:text-white flex items-center justify-center transition-all shadow-sm" title="Stampa"><i class="fa-solid fa-print text-lg"></i></button>
-                            <button (click)="sendEmail()" class="h-14 w-14 rounded-full bg-slate-50 hover:bg-slate-900 hover:text-white flex items-center justify-center transition-all shadow-sm" title="Email"><i class="fa-solid fa-envelope text-lg"></i></button>
+                        <div class="flex items-center gap-1.5 px-2">
+                            <button (click)="printReport()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-indigo-600 flex items-center justify-center transition-colors" title="Stampa"><i class="fa-solid fa-print text-base"></i></button>
                         </div>
-                        <div class="w-px h-12 bg-slate-100 mx-2"></div>
-                        <button (click)="startNewChecklist()" class="h-16 px-10 rounded-[2.5rem] bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-4 font-black text-sm uppercase tracking-[0.15em] transition-all"><i class="fa-solid fa-rotate-right text-lg"></i> NUOVA</button>
+                        <div class="w-px h-6 bg-slate-200"></div>
+                        <button (click)="startNewChecklist()" class="h-8 px-4 rounded bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors">
+                            <i class="fa-solid fa-plus text-base"></i> NUOVA
+                        </button>
                     </div>
                 }
             </div>
@@ -344,18 +343,23 @@ interface ChecklistItem {
             <!-- Issue Modal -->
             @if (isModalOpen()) {
                <div class="print:hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-                  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" (click)="closeModal()"></div>
-                  <div class="relative w-full max-w-sm bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-slide-up border border-slate-100">
-                     <div class="p-10 text-center bg-red-50/50">
-                        <div class="w-24 h-24 rounded-[2.5rem] bg-white text-red-500 flex items-center justify-center mx-auto mb-8 shadow-xl shadow-red-100"><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
-                        <h3 class="text-3xl font-black text-slate-900 uppercase tracking-tight mb-3">Anomalia</h3>
-                        <p class="text-base text-red-600 font-black leading-tight italic px-4">{{ currentItem()?.label }}</p>
+                  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="closeModal()"></div>
+                  <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
+                     <!-- Header -->
+                     <div class="p-6 bg-red-50 border-b border-red-100 text-center">
+                        <div class="w-12 h-12 rounded border border-red-200 bg-white text-red-500 flex items-center justify-center mx-auto mb-3 shadow-sm">
+                           <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-1">Anomalia Riscontrata</h3>
+                        <p class="text-base text-red-600 font-medium italic leading-snug">{{ currentItem()?.label }}</p>
                      </div>
-                     <div class="p-10 space-y-5">
-                        <textarea #issueInput class="w-full bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] p-8 text-slate-800 placeholder:text-slate-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-400 focus:outline-none h-48 transition-all font-bold text-lg" placeholder="Descrivi l'anomalia..."></textarea>
-                        <div class="flex gap-4">
-                           <button class="flex-1 py-5 bg-slate-100 text-slate-400 font-black rounded-3xl text-sm" (click)="closeModal()">Annulla</button>
-                           <button class="flex-1 py-5 bg-red-600 text-white font-black rounded-3xl shadow-xl shadow-red-200 text-sm" (click)="confirmIssue(issueInput.value)">Salva</button>
+                     <!-- Body -->
+                     <div class="p-6 space-y-4">
+                        <textarea #issueInput class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-red-400 focus:border-red-400 focus:outline-none h-32 transition-colors text-lg resize-none custom-scrollbar" placeholder="Descrivi brevemente l'anomalia..."></textarea>
+                        
+                        <div class="flex gap-3">
+                           <button class="flex-1 py-2 bg-slate-50 border border-slate-200 text-slate-600 font-bold uppercase tracking-widest rounded-lg text-xs hover:bg-slate-100 transition-colors" (click)="closeModal()">Annulla</button>
+                           <button class="flex-1 py-2 bg-red-600 border border-red-700 text-white font-bold uppercase tracking-widest rounded-lg text-xs shadow-sm hover:bg-red-700 transition-colors" (click)="confirmIssue(issueInput.value)">Salva Anomalia</button>
                         </div>
                      </div>
                   </div>

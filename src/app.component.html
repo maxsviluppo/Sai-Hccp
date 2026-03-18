@@ -138,62 +138,69 @@
 
   <!-- Sidebar -->
   <aside
-    [class]="'print:hidden w-72 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col border-r border-slate-800 fixed md:relative h-full z-50 transition-transform duration-300 md:translate-x-0 ' + (isMobileMenuOpen() ? 'translate-x-0' : '-translate-x-full')">
-    <!-- Logo Area -->
-    <div class="p-6 flex items-center gap-4 border-b border-slate-700/50">
-      <div
-        class="relative w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-lg overflow-hidden shrink-0">
-        <img [src]="state.currentLogo()" class="w-full h-full object-contain p-1.5">
+    [class]="'print:hidden w-80 bg-slate-950 text-slate-300 flex-shrink-0 flex flex-col border-r border-white/5 fixed md:relative h-full z-50 transition-transform duration-500 ease-in-out md:translate-x-0 ' + (isMobileMenuOpen() ? 'translate-x-0' : '-translate-x-full')">
+    
+    <!-- Premium Logo Area -->
+    <div class="p-8 flex items-center gap-5 border-b border-white/5 bg-slate-950 relative overflow-hidden">
+      <!-- Glow effect -->
+      <div class="absolute -top-10 -left-10 w-24 h-24 bg-blue-500/10 blur-3xl rounded-full"></div>
+      
+      <div class="relative w-14 h-14 flex items-center justify-center bg-white rounded-2xl shadow-2xl overflow-hidden shrink-0 ring-1 ring-white/20">
+        <img [src]="state.currentLogo()" class="w-full h-full object-contain p-2">
       </div>
-      <div class="overflow-hidden">
-        <h1 class="text-white font-bold tracking-tight text-lg leading-tight truncate">HACCP Pro</h1>
-        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest mt-0.5 truncate">Enterprise Solution
-        </p>
+      <div class="overflow-hidden relative z-10">
+        <h1 class="text-white font-black tracking-tighter text-2xl leading-none">HACCP <span class="text-blue-500">Pro</span></h1>
+        <p class="text-slate-500 text-[9px] uppercase font-black tracking-[0.2em] mt-1.5 opacity-80">Enterprise Logic</p>
       </div>
     </div>
 
     <!-- Navigation Menu -->
-    <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
+    <nav class="flex-1 overflow-y-auto py-8 px-5 space-y-2 custom-scrollbar bg-slate-950">
       @for (item of visibleMenuItems(); track item.id; let idx = $index) {
 
       <!-- Category Header -->
       @if (idx === 0 || item.category !== visibleMenuItems()[idx-1].category) {
-      <div class="mt-8 mb-3 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">
+      <div class="mt-10 mb-4 px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-3">
         {{ getCategoryLabel(item.category) }}
+        <div class="flex-1 h-px bg-white/5"></div>
       </div>
       }
 
-      <button (click)="state.setModule(item.id); isMobileMenuOpen.set(false)" [class]="'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden justify-start text-left ' + 
+      <button (click)="state.setModule(item.id); isMobileMenuOpen.set(false)" [class]="'w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden justify-start text-left ' + 
         (state.currentModuleId() === item.id 
-          ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30' 
-          : 'text-slate-400 hover:bg-slate-800 hover:text-white')">
+          ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl shadow-blue-500/20 ring-1 ring-white/10' 
+          : 'text-slate-500 hover:bg-white/5 hover:text-white')">
 
-        <i
-          [class]="'fa-solid text-lg w-6 text-left ' + item.icon + ' ' + (state.currentModuleId() === item.id ? 'text-white' : 'text-slate-500 group-hover:text-white')"></i>
-        <span class="font-medium text-sm tracking-wide flex-1">{{ item.label }}</span>
+        <div [class]="'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ' + (state.currentModuleId() === item.id ? 'bg-white/20 shadow-inner' : 'bg-white/5 group-hover:bg-white/10')">
+            <i [class]="'fa-solid text-base ' + item.icon + ' ' + (state.currentModuleId() === item.id ? 'text-white' : 'text-slate-500 group-hover:text-blue-400')"></i>
+        </div>
+        <span class="font-bold text-sm tracking-tight flex-1">{{ item.label }}</span>
 
         @if (state.currentModuleId() === item.id) {
-        <i class="fa-solid fa-chevron-right text-[10px] opacity-70"></i>
+            <div class="absolute right-0 top-0 bottom-0 w-1 bg-white rounded-l-full shadow-[0_0_15px_rgba(255,255,255,0.5)]"></div>
         }
       </button>
       }
     </nav>
 
     <!-- User Profile Summary (Sidebar Footer) -->
-    <div class="p-4 border-t border-slate-700/50 bg-slate-900/50">
-      <button (click)="state.logout()"
-        class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-500/10 hover:text-red-400 text-slate-400 transition-colors group">
-        <div class="relative">
-          <img [src]="state.currentUser()?.avatar"
-            class="w-9 h-9 rounded-full border-2 border-slate-700 group-hover:border-red-400/50 transition-colors">
-          <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
-        </div>
-        <div class="text-left flex-1 min-w-0">
-          <div class="font-bold text-xs truncate text-white">{{ state.currentUser()?.name }}</div>
-          <div class="text-[10px] truncate opacity-60">Disconnetti</div>
-        </div>
-        <i class="fa-solid fa-power-off text-xs opacity-40 group-hover:opacity-100 transition-opacity"></i>
-      </button>
+    <div class="p-6 border-t border-white/5 bg-slate-950/80 backdrop-blur-md">
+      <div class="bg-white/5 p-4 rounded-3xl border border-white/10 group hover:border-red-500/30 transition-all">
+          <button (click)="state.logout()" class="w-full flex items-center gap-4 text-left group">
+            <div class="relative flex-shrink-0">
+              <img [src]="state.currentUser()?.avatar"
+                class="w-11 h-11 rounded-2xl object-cover ring-2 ring-white/10 group-hover:ring-red-500/30 transition-all shadow-lg">
+              <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-950 rounded-full shadow-lg"></div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-black text-[13px] truncate text-white tracking-tight">{{ state.currentUser()?.name }}</div>
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1 opacity-70 group-hover:text-red-400 transition-colors">Disconnetti</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 group-hover:bg-red-500/10 group-hover:text-red-500 transition-all border border-white/5">
+                <i class="fa-solid fa-power-off text-sm"></i>
+            </div>
+          </button>
+      </div>
     </div>
   </aside>
 

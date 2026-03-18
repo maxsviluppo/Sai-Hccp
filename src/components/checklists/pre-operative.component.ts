@@ -21,15 +21,15 @@ interface AreaChecklist {
         <div class="border-b-2 border-slate-800 pb-4 mb-6">
             <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
             <h2 class="text-xl font-light text-slate-600">Fase Pre-operativa (Ispezione e Avvio)</h2>
-            <div class="flex justify-between mt-4 text-sm text-slate-500">
+            <div class="flex justify-between mt-4 text-lg text-slate-500">
                 <span><span class="font-bold">Data:</span> {{ getFormattedDate() }}</span>
                 <span><span class="font-bold">Operatore:</span> {{ state.currentUser()?.name || 'Operatore' }}</span>
             </div>
         </div>
 
         <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-            <h3 class="text-sm font-bold uppercase mb-2 border-b border-slate-300 pb-1">Igiene del personale (Promemoria)</h3>
-            <ul class="text-[10px] grid grid-cols-2 gap-x-8 gap-y-1 list-none">
+            <h3 class="text-lg font-bold uppercase mb-2 border-b border-slate-300 pb-1">Igiene del personale (Promemoria)</h3>
+            <ul class="text-xs grid grid-cols-2 gap-x-8 gap-y-1 list-none">
                 <li>• Abbigliamento sempre perfettamente pulito</li>
                 <li>• Scarpe diverse da quelle che si usano all'esterno</li>
                 <li>• Lavare frequentemente le mani con sapone germicida</li>
@@ -39,7 +39,7 @@ interface AreaChecklist {
             </ul>
         </div>
 
-        <table class="w-full text-left text-sm border-collapse">
+        <table class="w-full text-left text-lg border-collapse">
             <thead>
                 <tr class="border-b border-slate-400">
                     <th class="py-2 font-bold w-1/2">Area / Operazione</th>
@@ -59,7 +59,7 @@ interface AreaChecklist {
 
                 @for (area of areas(); track area.id) {
                     <tr class="border-b border-slate-100 bg-slate-50/50">
-                        <td class="py-2 pr-2 font-bold uppercase text-[11px]">{{ area.label }}</td>
+                        <td class="py-2 pr-2 font-bold uppercase text-sm">{{ area.label }}</td>
                         <td class="py-2">
                              @if(getAreaStatusLabel(area.id) === 'Conforme') { 
                                  <span class="font-bold text-emerald-800">CONFORME</span> 
@@ -69,14 +69,14 @@ interface AreaChecklist {
                                  <span class="text-slate-400">NON ESEGUITO</span> 
                              }
                         </td>
-                        <td class="py-2 italic text-slate-400 text-[10px]">Verifica Area completata</td>
+                        <td class="py-2 italic text-slate-400 text-xs">Verifica Area completata</td>
                     </tr>
                     @for (step of area.steps; track step.id) {
                         @if(step.status === 'issue') {
                             <tr class="border-b border-slate-100 bg-red-50/30">
-                                <td class="py-1 pl-6 pr-2 text-red-800 font-medium text-[10px]">Anomalia: {{ step.label }}</td>
-                                <td class="py-1 text-[10px] font-bold text-red-700">NON CONFORME</td>
-                                <td class="py-1 italic text-red-600 text-[9px]">Azione correttiva richiesta</td>
+                                <td class="py-1 pl-6 pr-2 text-red-800 font-medium text-xs">Anomalia: {{ step.label }}</td>
+                                <td class="py-1 text-xs font-bold text-red-700">NON CONFORME</td>
+                                <td class="py-1 italic text-red-600 text-[11px]">Azione correttiva richiesta</td>
                             </tr>
                         }
                     }
@@ -86,108 +86,101 @@ interface AreaChecklist {
     </div>
 
     <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
         
         <!-- Premium Hero Header -->
-        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
-            <!-- Decor Elements -->
-            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-blue-600/15 blur-3xl"></div>
-            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-emerald-600/10 blur-3xl"></div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-blue-50 to-transparent pointer-events-none"></div>
             
-            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div class="flex items-center gap-5">
-                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg shadow-blue-500/20 ring-1 ring-white/20">
-                        <i class="fa-solid fa-eye text-3xl text-white"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-4xl font-black tracking-tight text-white mb-1">Fase <span class="text-blue-400">Pre-Operativa</span></h2>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
-                                <i class="fa-solid fa-circle text-[9px] animate-pulse" [class.text-emerald-400]="isSubmitted()" [class.text-amber-400]="!isSubmitted()"></i>
-                                {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
-                            </span>
-                            <span class="flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-1.5 text-sm font-black text-blue-400 border border-blue-500/20">
-                                <i class="fa-solid fa-user-check text-xs"></i> {{ state.currentUser()?.name }}
-                            </span>
-                        </div>
+            <div class="relative z-10 flex items-center gap-5">
+                <div class="h-14 w-14 rounded-xl bg-white border border-blue-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0">
+                    <i class="fa-solid fa-eye text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Fase Pre-Operativa</h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-xs font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-circle text-[10px] animate-pulse" [class.text-emerald-500]="isSubmitted()" [class.text-amber-500]="!isSubmitted()"></i>
+                            {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
+                        </span>
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100 text-xs font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name || 'Operatore' }}
+                        </span>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex flex-wrap gap-3">
-                    <!-- Progress Card -->
-                    <div class="flex items-center gap-4 rounded-2xl bg-white/5 p-4 border border-white/10 backdrop-blur-md">
-                        <div class="text-left">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Avanzamento</p>
-                            <div class="flex items-center gap-3">
-                                <div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
-                                    <div class="h-full bg-blue-500 rounded-full transition-all duration-1000" [style.width.%]="progressPercentage()"></div>
-                                </div>
-                                <span class="text-xl font-black text-white whitespace-nowrap">{{ completedStepsCount() }} / {{ totalStepsCount() }}</span>
+            <div class="w-full md:w-auto relative z-10 flex gap-4 pr-1">
+                <div class="flex items-center gap-4 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 w-full justify-between">
+                    <div class="min-w-[120px]">
+                        <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Avanzamento Ispezione</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 rounded-full transition-all duration-1000" [style.width.%]="progressPercentage()"></div>
                             </div>
-                        </div>
-                        <div class="h-10 w-10 flex items-center justify-center bg-blue-500/20 rounded-xl text-blue-400">
-                            <i class="fa-solid fa-chart-pie text-xl"></i>
+                            <span class="text-lg font-bold text-slate-700 leading-none whitespace-nowrap">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
                         </div>
                     </div>
+                    <i class="fa-solid fa-chart-pie text-slate-300 text-xl ml-2"></i>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <!-- Left Col: Protocol & Global Items -->
-            <div class="xl:col-span-1 space-y-8">
+            <div class="xl:col-span-1 space-y-6">
                 <!-- Protocol Box - Refined -->
-                <div class="glass-card rounded-[2.5rem] p-8 relative overflow-hidden group border border-slate-100 shadow-sm">
-                    <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-500/5 blur-2xl group-hover:bg-indigo-500/10 transition-colors"></div>
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-500/5 blur-2xl transition-colors group-hover:bg-blue-500/10"></div>
                     
-                    <h3 class="text-2xl font-black text-slate-900 border-b border-slate-100 pb-4 mb-6 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center justify-between uppercase tracking-tight">
                         <span>Protocollo HACCP</span>
-                        <i class="fa-solid fa-shield-halved text-indigo-500"></i>
+                        <i class="fa-solid fa-shield-halved text-blue-500"></i>
                     </h3>
 
-                    <div class="space-y-6">
-                        <div class="flex gap-4 p-5 rounded-2xl bg-indigo-50/50 border border-indigo-100/50">
-                            <div class="h-12 w-12 shrink-0 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600">
-                                <i class="fa-solid fa-broom text-xl"></i>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 p-4 rounded-lg bg-slate-50 border border-slate-100 transition-colors hover:border-blue-200">
+                            <div class="h-10 w-10 shrink-0 bg-white border border-slate-200 rounded-md shadow-sm flex items-center justify-center text-blue-600">
+                                <i class="fa-solid fa-broom text-lg"></i>
                             </div>
                             <div>
-                                <h4 class="text-sm font-black text-indigo-700 uppercase tracking-widest mb-1">Sanificazione</h4>
-                                <p class="text-base text-slate-600 leading-relaxed italic">Pulizia meccanica/chimica e disinfezione profonda delle aree.</p>
+                                <h4 class="text-xs font-black text-blue-700 uppercase tracking-widest mb-0.5">Sanificazione</h4>
+                                <p class="text-base text-slate-500 leading-relaxed">Pulizia meccanica/chimica e disinfezione profonda delle aree.</p>
                             </div>
                         </div>
-                        <div class="flex gap-4 p-5 rounded-2xl bg-blue-50/50 border border-blue-100/50">
-                            <div class="h-12 w-12 shrink-0 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
-                                <i class="fa-solid fa-soap text-xl"></i>
+                        <div class="flex gap-4 p-4 rounded-lg bg-slate-50 border border-slate-100 transition-colors hover:border-indigo-200">
+                            <div class="h-10 w-10 shrink-0 bg-white border border-slate-200 rounded-md shadow-sm flex items-center justify-center text-indigo-600">
+                                <i class="fa-solid fa-soap text-lg"></i>
                             </div>
                             <div>
-                                <h4 class="text-sm font-black text-blue-700 uppercase tracking-widest mb-1">Detergenza</h4>
-                                <p class="text-base text-slate-600 leading-relaxed italic">Uso coordinato di tensioattivi anionici e cationici.</p>
+                                <h4 class="text-xs font-black text-indigo-700 uppercase tracking-widest mb-0.5">Detergenza</h4>
+                                <p class="text-base text-slate-500 leading-relaxed">Uso coordinato di tensioattivi anionici e cationici.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                     <!-- Global Checks List Style -->
-                    <div class="space-y-3">
-                        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest px-4">Controlli Generali Avvio</h3>
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="space-y-2">
+                        <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Controlli Generali Avvio</h3>
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <div class="divide-y divide-slate-100">
                                 @for (item of globalItems(); track item.id) {
-                                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:bg-slate-50"
-                                         [class.bg-emerald-50/40]="item.status === 'ok'"
-                                         [class.bg-red-50/40]="item.status === 'issue'">
+                                    <div class="p-3 flex items-center justify-between gap-3 transition-colors hover:bg-slate-50 group"
+                                         [class.bg-emerald-50/30]="item.status === 'ok'"
+                                         [class.bg-red-50/30]="item.status === 'issue'">
                                         
-                                        <div class="flex items-center gap-4 flex-1">
-                                            <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-inner"
-                                                 [class.bg-slate-100]="item.status === 'pending'" [class.text-slate-500]="item.status === 'pending'"
-                                                 [class.bg-emerald-100]="item.status === 'ok'" [class.text-emerald-600]="item.status === 'ok'"
-                                                 [class.bg-red-100]="item.status === 'issue'" [class.text-red-600]="item.status === 'issue'">
-                                                <i [class]="'fa-solid ' + item.icon"></i>
+                                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                                            <div class="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border"
+                                                 [class.bg-slate-50]="item.status === 'pending'" [class.border-slate-200]="item.status === 'pending'" [class.text-slate-400]="item.status === 'pending'"
+                                                 [class.bg-emerald-50]="item.status === 'ok'" [class.border-emerald-200]="item.status === 'ok'" [class.text-emerald-600]="item.status === 'ok'"
+                                                 [class.bg-red-50]="item.status === 'issue'" [class.border-red-200]="item.status === 'issue'" [class.text-red-600]="item.status === 'issue'">
+                                                <i [class]="'fa-solid ' + item.icon + ' text-xs'"></i>
                                             </div>
-                                            <div class="flex-1">
-                                                <h4 class="font-bold text-slate-800 text-sm leading-tight max-w-sm">{{ item.label }}</h4>
+                                            <div class="min-w-0">
+                                                <h4 class="font-bold text-slate-700 text-base truncate">{{ item.label }}</h4>
                                                 @if (item.status !== 'pending') {
-                                                    <span class="text-[9px] font-black uppercase tracking-widest mt-1 block"
+                                                    <span class="text-[10px] font-black uppercase tracking-widest mt-0.5 block"
                                                           [class.text-emerald-600]="item.status === 'ok'"
                                                           [class.text-red-600]="item.status === 'issue'">
                                                         {{ item.status === 'ok' ? 'CONFORME' : 'NON CONFORME' }}
@@ -196,28 +189,28 @@ interface AreaChecklist {
                                             </div>
                                         </div>
 
-                                        <div class="flex items-center gap-3 shrink-0">
+                                        <div class="flex items-center gap-2 shrink-0">
                                             <button (click)="item.id === 'g_cleaning_sanit' ? showCleaningInfo.set(true) : showPestInfo.set(true)" 
-                                                    class="px-3 py-2 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-100 text-[10px] font-black uppercase tracking-widest transition-all">
-                                                INFO
+                                                    class="w-7 h-7 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-blue-600 flex items-center justify-center transition-colors tooltip" title="Info Standard">
+                                                <i class="fa-solid fa-circle-info text-base"></i>
                                             </button>
 
-                                            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+                                            <div class="w-px h-5 bg-slate-200 mx-1"></div>
 
-                                            <div class="flex gap-2">
+                                            <div class="flex gap-1.5">
                                                 <button (click)="setGlobalStatus(item.id, 'ok')" 
-                                                        class="w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-sm shrink-0"
+                                                        class="w-7 h-7 rounded flex items-center justify-center transition-all border shrink-0"
                                                         [class.bg-emerald-500]="item.status === 'ok'" [class.text-white]="item.status === 'ok'" [class.border-emerald-600]="item.status === 'ok'"
-                                                        [class.bg-white]="item.status !== 'ok'" [class.text-emerald-500]="item.status !== 'ok'" [class.border-emerald-100]="item.status !== 'ok'"
+                                                        [class.bg-white]="item.status !== 'ok'" [class.text-emerald-500]="item.status !== 'ok'" [class.border-emerald-200]="item.status !== 'ok'"
                                                         [class.hover:bg-emerald-50]="item.status !== 'ok'">
-                                                    <i class="fa-solid fa-check text-sm"></i>
+                                                    <i class="fa-solid fa-check text-xs"></i>
                                                 </button>
                                                 <button (click)="setGlobalStatus(item.id, 'issue')" 
-                                                        class="w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-sm shrink-0"
+                                                        class="w-7 h-7 rounded flex items-center justify-center transition-all border shrink-0"
                                                         [class.bg-red-500]="item.status === 'issue'" [class.text-white]="item.status === 'issue'" [class.border-red-600]="item.status === 'issue'"
-                                                        [class.bg-white]="item.status !== 'issue'" [class.text-red-500]="item.status !== 'issue'" [class.border-red-100]="item.status !== 'issue'"
+                                                        [class.bg-white]="item.status !== 'issue'" [class.text-red-500]="item.status !== 'issue'" [class.border-red-200]="item.status !== 'issue'"
                                                         [class.hover:bg-red-50]="item.status !== 'issue'">
-                                                    <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -229,26 +222,27 @@ interface AreaChecklist {
             </div>
 
             <!-- Right Col: Checklists Grid -->
-            <div class="xl:col-span-2 space-y-4">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest px-4">Aree di Ispezione</h3>
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="xl:col-span-2 space-y-2">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Aree di Ispezione</h3>
+                <div class="grid grid-cols-1 gap-2">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="divide-y divide-slate-100">
                             @for (area of areas(); track area.id) {
                                 <div class="flex flex-col">
                                     <!-- Area Header -->
-                                    <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                                    <div class="p-3 flex items-center justify-between transition-colors cursor-pointer select-none border-b border-transparent"
+                                         [class.bg-slate-100]="area.expanded" [class.hover:bg-slate-50]="!area.expanded" [class.shadow-sm]="!area.expanded"
                                          (click)="toggleArea(area.id)">
-                                        <div class="flex items-center gap-4 flex-1">
-                                            <div class="h-10 w-10 rounded-xl flex items-center justify-center text-lg transition-all shadow-inner"
-                                                 [class.bg-blue-100]="isAreaComplete(area.id)" [class.text-blue-600]="isAreaComplete(area.id)"
-                                                 [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-500]="!isAreaComplete(area.id)">
+                                        <div class="flex items-center gap-3 flex-1">
+                                            <div class="h-8 w-8 rounded flex items-center justify-center text-lg transition-all border"
+                                                 [class.bg-blue-50]="isAreaComplete(area.id)" [class.text-blue-600]="isAreaComplete(area.id)" [class.border-blue-100]="isAreaComplete(area.id)"
+                                                 [class.bg-white]="!isAreaComplete(area.id)" [class.text-slate-400]="!isAreaComplete(area.id)" [class.border-slate-200]="!isAreaComplete(area.id)">
                                                 <i [class]="'fa-solid ' + area.icon"></i>
                                             </div>
                                             <div>
-                                                <h3 class="font-bold text-slate-800 text-base leading-tight">{{ area.label }}</h3>
+                                                <h3 class="font-bold text-slate-700 text-lg leading-tight">{{ area.label }}</h3>
                                                 <div class="flex items-center gap-2 mt-0.5">
-                                                    <span class="text-[9px] font-black uppercase tracking-widest"
+                                                    <span class="text-[10px] font-black uppercase tracking-widest"
                                                           [class.text-emerald-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" 
                                                           [class.text-red-600]="hasAreaIssues(area.id)"
                                                           [class.text-slate-400]="!isAreaComplete(area.id)">
@@ -258,42 +252,42 @@ interface AreaChecklist {
                                             </div>
                                         </div>
                                         
-                                        <div class="flex items-center gap-3 shrink-0">
+                                        <div class="flex items-center gap-2 shrink-0">
                                             <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
-                                                    class="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center border border-emerald-100" title="Imposta tutti conformi">
+                                                    class="h-7 w-7 rounded border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-600 transition-all flex items-center justify-center tooltip" title="Tutti Conformi">
                                                 <i class="fa-solid fa-check-double text-xs"></i>
                                             </button>
-                                            <i class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300 ml-2" [class.rotate-180]="area.expanded"></i>
+                                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-300 ml-1" [class.rotate-180]="area.expanded"></i>
                                         </div>
                                     </div>
 
                                     <!-- Area Steps (Expanded) -->
                                     @if (area.expanded) {
-                                        <div class="bg-slate-50/50 border-t border-slate-100 px-4 py-2 divide-y divide-slate-100/50 select-none shadow-inner">
+                                        <div class="bg-slate-50 border-t border-slate-200/60 px-3 py-1 divide-y divide-slate-200/50 shadow-inner">
                                             @for (step of area.steps; track step.id; let i = $index) {
-                                                <div class="py-3 flex items-center justify-between gap-4 group/step">
-                                                    <div class="flex items-center gap-3 flex-1">
-                                                        <span class="text-[9px] font-black text-slate-400 w-5 h-5 rounded hover:bg-white bg-white flex items-center justify-center border border-slate-200 shadow-sm shrink-0 leading-none">
+                                                <div class="py-2.5 flex items-center justify-between gap-4 group/step">
+                                                    <div class="flex items-center gap-2 flex-1">
+                                                        <span class="text-[10px] font-black text-slate-400 w-4 h-4 rounded bg-white flex items-center justify-center border border-slate-200 shrink-0 leading-none">
                                                             {{ i + 1 }}
                                                         </span>
-                                                        <span class="text-sm font-medium text-slate-700 leading-tight"
-                                                              [class.text-emerald-700]="step.status === 'ok'"
-                                                              [class.text-red-700]="step.status === 'issue'">
+                                                        <span class="text-base font-semibold text-slate-600 leading-tight"
+                                                              [class.text-emerald-600]="step.status === 'ok'"
+                                                              [class.text-red-600]="step.status === 'issue'">
                                                             {{ step.label }}
                                                         </span>
                                                     </div>
-                                                    <div class="flex gap-2 shrink-0">
+                                                    <div class="flex gap-1.5 shrink-0">
                                                         @if (step.status === 'pending') {
-                                                            <button (click)="setStepStatus(areaId(area), step.id, 'ok')" class="w-8 h-8 rounded-full border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-check text-xs"></i></button>
-                                                            <button (click)="setStepStatus(areaId(area), step.id, 'issue')" class="w-8 h-8 rounded-full border border-red-200 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
+                                                            <button (click)="setStepStatus(areaId(area), step.id, 'ok')" class="w-6 h-6 rounded border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-check text-[11px]"></i></button>
+                                                            <button (click)="setStepStatus(areaId(area), step.id, 'issue')" class="w-6 h-6 rounded border border-red-200 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-triangle-exclamation text-[11px]"></i></button>
                                                         } @else {
                                                             <div class="flex items-center gap-2">
-                                                                <span class="text-[9px] font-black uppercase tracking-widest px-2"
+                                                                <span class="text-[10px] font-black uppercase tracking-widest px-1.5"
                                                                       [class.text-emerald-600]="step.status === 'ok'"
                                                                       [class.text-red-600]="step.status === 'issue'">
                                                                     {{ step.status === 'ok' ? 'Conforme' : 'Anomalia' }}
                                                                 </span>
-                                                                <button (click)="setStepStatus(areaId(area), step.id, 'pending')" class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-500 hover:bg-slate-800 hover:border-slate-800 hover:text-white transition-all flex items-center justify-center shadow-sm"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>
+                                                                <button (click)="setStepStatus(areaId(area), step.id, 'pending')" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all flex items-center justify-center shadow-sm"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>
                                                             </div>
                                                         }
                                                     </div>
@@ -309,39 +303,40 @@ interface AreaChecklist {
             </div>
         </div>
         @if (isDocModalOpen()) {
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="closeDocModal()"></div>
-                <div class="relative bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="closeDocModal()"></div>
+                <div class="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up border border-slate-200">
                     <!-- Modal Header -->
-                    <div class="bg-indigo-600 p-8 text-white flex justify-between items-center">
-                        <div class="flex items-center gap-6">
-                            <div class="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shadow-inner">
-                                <i class="fa-solid fa-folder-tree text-3xl"></i>
+                    <div class="bg-indigo-600 px-6 py-5 text-white flex justify-between items-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-r from-indigo-700/50 to-transparent pointer-events-none"></div>
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-500/30 flex items-center justify-center border border-indigo-400/30">
+                                <i class="fa-solid fa-folder-tree text-lg text-indigo-100"></i>
                             </div>
                             <div>
-                                <h3 class="text-3xl font-black">{{ selectedDocCategory() === 'g_docs' ? 'Archivio Regolarità Documentale' : 'Censimento Attrezzature Cucina' }}</h3>
-                                <p class="text-base text-indigo-100 font-medium opacity-80 uppercase tracking-widest mt-1">{{ selectedDocCategory() === 'g_docs' ? 'Consultazione Documenti' : 'Selezione macchinari e area operativa' }}</p>
+                                <h3 class="text-lg font-bold">{{ selectedDocCategory() === 'g_docs' ? 'Archivio Regolarità Documentale' : 'Censimento Attrezzature Cucina' }}</h3>
+                                <p class="text-xs text-indigo-200 uppercase tracking-widest">{{ selectedDocCategory() === 'g_docs' ? 'Consultazione Documenti' : 'Selezione macchinari e area operativa' }}</p>
                             </div>
                         </div>
-                        <button (click)="closeDocModal()" class="w-12 h-12 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-colors">
-                            <i class="fa-solid fa-xmark text-xl"></i>
+                        <button (click)="closeDocModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors relative z-10 text-white">
+                            <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
 
                     <!-- Modal Body -->
-                    <div class="p-8 overflow-y-auto bg-slate-50 flex-1">
+                    <div class="p-6 overflow-y-auto bg-slate-50 flex-1">
                         @if (selectedDocCategory() === 'g_cleaning_sanit') {
                             <!-- EQUIPMENT SELECTION SYSTEM -->
-                            <div class="space-y-8">
-                                <div class="bg-indigo-50 border border-indigo-100 p-8 rounded-[32px]">
-                                    <h4 class="text-base font-black text-indigo-700 uppercase tracking-widest mb-6 flex items-center gap-3">
-                                        <i class="fa-solid fa-plus-circle text-xl"></i> Aggiungi Attrezzatura Area Cucina
+                            <div class="space-y-6">
+                                <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+                                    <h4 class="text-base font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <i class="fa-solid fa-plus text-indigo-500"></i> Aggiungi Attrezzatura Area Cucina
                                     </h4>
                                     
-                                    <div class="grid grid-cols-1 gap-4">
+                                    <div class="grid grid-cols-1 gap-3">
                                         <select #equipSelector 
                                                 (change)="addEquipment(equipSelector.value); equipSelector.value = ''"
-                                                class="w-full bg-white border-2 border-slate-100 rounded-2xl p-5 text-lg font-bold text-slate-700 focus:border-indigo-500 focus:outline-none shadow-sm transition-all appearance-none cursor-pointer">
+                                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-lg font-semibold text-slate-700 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer">
                                             <option value="" disabled selected>Fai una scelta dal selettore...</option>
                                             @for (group of masterEquipmentList; track group.area) {
                                                 <optgroup [label]="group.area">
@@ -351,35 +346,34 @@ interface AreaChecklist {
                                                 </optgroup>
                                             }
                                         </select>
-                                        <p class="text-xs text-indigo-400 font-bold px-2 uppercase tracking-tight mt-2">L'attrezzatura selezionata verrà aggiunta automaticamente alla lista sottostante.</p>
+                                        <p class="text-xs text-slate-400">L'attrezzatura selezionata verrà aggiunta automaticamente alla lista sottostante.</p>
                                     </div>
                                 </div>
 
-                                <div class="space-y-4">
-                                    <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Elenco Attrezzature Censite</h4>
+                                <div class="space-y-3">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Elenco Attrezzature Censite</h4>
                                     @for (eq of state.groupedEquipment(); track eq.id) {
-                                        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group animate-slide-up">
-                                            <div class="flex items-center gap-5">
-                                                <div class="w-12 h-12 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                                                    <i class="fa-solid fa-microchip text-xl"></i>
+                                        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between group animate-slide-up">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded border border-slate-100 bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                                    <i class="fa-solid fa-microchip text-base"></i>
                                                 </div>
                                                 <div>
-                                                    <span class="block font-black text-slate-800 text-lg leading-tight">{{ eq.name }}</span>
-                                                    <span class="text-sm font-bold text-indigo-500 uppercase tracking-tighter">{{ eq.area }}</span>
+                                                    <span class="block font-bold text-slate-700 text-lg leading-none mb-1">{{ eq.name }}</span>
+                                                    <span class="text-[11px] font-black text-indigo-500 uppercase tracking-widest">{{ eq.area }}</span>
                                                 </div>
                                             </div>
                                             <button (click)="state.removeEquipment(eq.id)"
-                                                    class="w-12 h-12 rounded-xl bg-red-50 text-red-400 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center shadow-sm">
-                                                <i class="fa-solid fa-trash-can text-lg"></i>
+                                                    class="w-8 h-8 rounded border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm">
+                                                <i class="fa-solid fa-trash-can text-xs"></i>
                                             </button>
                                         </div>
                                     } @empty {
-                                        <div class="flex flex-col items-center justify-center py-16 bg-slate-100/50 rounded-[40px] border-2 border-dashed border-slate-200">
-                                            <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
-                                                <i class="fa-solid fa-list-check text-4xl text-slate-200"></i>
+                                        <div class="flex flex-col items-center justify-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                            <div class="w-12 h-12 rounded bg-white border border-slate-200 flex items-center justify-center mb-3 shadow-sm text-slate-300">
+                                                <i class="fa-solid fa-list-check text-xl"></i>
                                             </div>
-                                            <p class="text-base font-bold text-slate-400 uppercase tracking-widest">Nessuna attrezzatura selezionata</p>
-                                            <p class="text-sm text-slate-400 mt-2 italic">Usa il selettore sopra per censire i macchinari</p>
+                                            <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Nessuna attrezzatura selezionata</p>
                                         </div>
                                     }
                                 </div>
@@ -388,9 +382,9 @@ interface AreaChecklist {
                     </div>
 
                     <!-- Modal Footer -->
-                    <div class="p-8 bg-white border-t border-slate-100 text-right">
-                        <button (click)="closeDocModal()" class="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all">
-                            CHIUDI ARCHIVIO
+                    <div class="px-6 py-4 bg-white border-t border-slate-200 flex justify-end">
+                        <button (click)="closeDocModal()" class="px-6 py-2 bg-slate-800 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-900 shadow-sm">
+                            <i class="fa-solid fa-check mr-2"></i> CHIUDI ARCHIVIO
                         </button>
                     </div>
                 </div>
@@ -399,80 +393,78 @@ interface AreaChecklist {
 
         @if (showCleaningInfo()) {
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showCleaningInfo.set(false)"></div>
-                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" (click)="showCleaningInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
                     <!-- Header -->
-                    <div class="p-10 bg-gradient-to-br from-indigo-700 to-indigo-900 text-white relative flex-shrink-0">
-                        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none -rotate-12 translate-x-2">
-                            <i class="fa-solid fa-flask-vial text-9xl"></i>
+                    <div class="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative flex-shrink-0 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded border border-white/20 bg-white/10 flex items-center justify-center">
+                                <i class="fa-solid fa-flask-vial text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold leading-none mb-1">Sanificazione</h3>
+                                <p class="text-blue-100 text-xs font-bold uppercase tracking-widest">Dettaglio Procedure</p>
+                            </div>
                         </div>
-                        <div class="relative z-10">
-                            <h3 class="text-3xl font-black mb-2">Sanificazione</h3>
-                            <p class="text-indigo-200 text-base font-bold leading-tight italic max-w-[320px]">"La sanificazione è un intervento globale che comprende sia la pulizia meccanica/chimica che la successiva disinfezione."</p>
-                        </div>
+                        <button (click)="showCleaningInfo.set(false)" class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                     
-                    <div class="p-10 pt-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+                    <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
+                        <p class="text-lg text-slate-600 font-medium italic border-l-2 border-blue-400 pl-3">"La sanificazione è un intervento globale che comprende sia la pulizia meccanica/chimica che la successiva disinfezione."</p>
+                        
                         <!-- Sezione Pulizia -->
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-broom text-base"></i> 01. Azione Scopatura
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-broom text-blue-500"></i> 01. Azione Scopatura
                             </h4>
-                            <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                                <p class="text-lg font-bold text-slate-700 leading-relaxed italic">
-                                    "Per una corretta scopatura utilizzare movimenti brevi, partendo dai bordi e angoli verso il centro, usare una scopa a setole morbide e un panno umido per evitare di sollevare il pulviscolo. Pulire periodicamente la scopa."
+                            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                                <p class="text-lg font-medium text-slate-600 leading-relaxed">
+                                    Movimenti brevi, partendo dai bordi verso il centro. Usare scopa a setole morbide e panno umido per non sollevare polvere.
                                 </p>
                             </div>
                         </div>
 
                         <!-- Sezione Detergenti -->
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-soap text-base"></i> 02. Azione Detergenti
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-soap text-indigo-500"></i> 02. Azione Detergenti
                             </h4>
-                            <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                                <p class="text-base text-slate-700 leading-relaxed font-medium">
-                                    Sostanze e miscele atte a rimuovere sporco e grasso da tutte le superfici, attrezzature e utensili.
+                            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-3">
+                                <p class="text-lg text-slate-600 font-medium leading-relaxed">
+                                    Sostanze per rimuovere sporco e grasso basati su tensioattivi.
                                 </p>
-                                <div class="mt-5 p-4 bg-white rounded-xl border border-indigo-100 flex gap-4 items-start shadow-sm">
-                                    <i class="fa-solid fa-vial text-indigo-500 text-lg mt-1"></i>
-                                    <p class="text-sm text-slate-500 font-bold leading-relaxed italic">
-                                        Basati su tensioattivi che emulsionano lo sporco facilitandone la rimozione mediante risciacquo. 
-                                        Per rimuovere lo sporco dalle superfici utilizzare prodotti anionici (leggere la composizione chimica) che hanno un elevato potere lavante e schiumogeno. 
-                                        Per ottenere un effetto disinfettante, utilizzare prodotti cationici. Per ottenere un effetto sgrassante utilizzare prodotti non ionici.
-                                    </p>
-                                </div>
+                                <ul class="text-sm text-slate-500 space-y-2 list-none">
+                                    <li class="flex items-start gap-2"><i class="fa-solid fa-circle-play text-[10px] mt-1 text-slate-400"></i> <b>Anionici:</b> elevato potere lavante, per rimuovere sporco.</li>
+                                    <li class="flex items-start gap-2"><i class="fa-solid fa-circle-play text-[10px] mt-1 text-slate-400"></i> <b>Cationici:</b> per ottenere effetto disinfettante.</li>
+                                    <li class="flex items-start gap-2"><i class="fa-solid fa-circle-play text-[10px] mt-1 text-slate-400"></i> <b>Non Ionici:</b> per sgrassare.</li>
+                                </ul>
                             </div>
                         </div>
 
-                        <!-- Sezione Disinfettante (NEW) -->
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-virus-slash text-base"></i> 03. Azione Disinfettante
+                        <!-- Sezione Disinfettante -->
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-virus-slash text-emerald-500"></i> 03. Azione Disinfettante
                             </h4>
-                            <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                                <p class="text-base text-slate-700 leading-relaxed font-medium mb-4">
-                                    I disinfettanti mirano alla eliminazione dei microorganismi patogeni ed alla riduzione della carica microbica totale (batteri, muffe, lieviti, virus).
+                            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-3">
+                                <p class="text-lg text-slate-600 font-medium leading-relaxed">
+                                    Riduzione della carica microbica totale (batteri, muffe, virus).
                                 </p>
-                                <div class="p-4 bg-white rounded-xl border border-indigo-100 space-y-3 shadow-sm">
-                                    <div class="flex gap-4 items-center">
-                                        <i class="fa-solid fa-shield-virus text-indigo-500 text-sm"></i>
-                                        <p class="text-xs text-slate-500 font-bold uppercase tracking-tight">Meccanismi d'azione:</p>
-                                    </div>
-                                    <ul class="text-sm text-slate-600 font-medium space-y-2 ml-8 list-disc">
-                                        <li>Denaturazione delle proteine (es. Alcool)</li>
-                                        <li>Azione ossidante (es. Cloro / Ipoclorito)</li>
-                                        <li>Disattivazione enzimatica e strutturale</li>
-                                    </ul>
-                                </div>
+                                <ul class="text-sm text-slate-500 space-y-1 list-disc ml-4">
+                                    <li>Denaturazione delle proteine (es. Alcool)</li>
+                                    <li>Azione ossidante (es. Cloro / Ipoclorito)</li>
+                                    <li>Disattivazione enzimatica</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-8 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+                    <div class="px-6 py-4 bg-white border-t border-slate-200 flex-shrink-0 flex justify-end">
                         <button (click)="showCleaningInfo.set(false)"
-                                class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
-                            HO PRESO VISIONE
+                                class="px-6 py-2 bg-slate-800 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all shadow-sm">
+                            <i class="fa-solid fa-check mr-2"></i> HO PRESO VISIONE
                         </button>
                     </div>
                 </div>
@@ -481,59 +473,68 @@ interface AreaChecklist {
 
         @if (showPestInfo()) {
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showPestInfo.set(false)"></div>
-                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" (click)="showPestInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
                     <!-- Header -->
-                    <div class="p-10 bg-gradient-to-br from-amber-600 to-amber-800 text-white relative flex-shrink-0">
-                        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none -rotate-12 translate-x-2">
-                            <i class="fa-solid fa-bug-slash text-9xl"></i>
+                    <div class="px-6 py-5 bg-gradient-to-r from-amber-500 to-orange-600 text-white relative flex-shrink-0 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded border border-white/20 bg-white/10 flex items-center justify-center">
+                                <i class="fa-solid fa-bug-slash text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold leading-none mb-1">Piano Infestanti</h3>
+                                <p class="text-amber-100 text-xs font-bold uppercase tracking-widest">Dettaglio Procedure</p>
+                            </div>
                         </div>
-                        <div class="relative z-10">
-                            <h3 class="text-3xl font-black mb-2">Piano Infestanti</h3>
-                            <p class="text-amber-100 text-base font-bold leading-tight italic max-w-[320px]">"Il controllo degli infestanti previene la contaminazione biologica degli alimenti mediante monitoraggio costante."</p>
-                        </div>
+                        <button (click)="showPestInfo.set(false)" class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                     
-                    <div class="p-10 pt-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+                    <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
+                        <p class="text-lg text-slate-600 font-medium italic border-l-2 border-amber-400 pl-3">"Il controllo degli infestanti previene la contaminazione biologica degli alimenti mediante monitoraggio costante."</p>
+                        
                         <!-- Sezione Monitoraggio -->
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-magnifying-glass text-base"></i> 01. Monitoraggio
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass text-amber-500"></i> 01. Monitoraggio
                             </h4>
-                            <div class="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
-                                <p class="text-lg font-bold text-slate-700 leading-relaxed italic">
-                                    "Ispezionare visivamente le trappole (collanti, esche) e le aree critiche. Verificare l'assenza di tracce (escrementi, rosicchiature)."
+                            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                                <p class="text-lg font-medium text-slate-600 leading-relaxed">
+                                    Ispezionare visivamente le trappole (collanti, esche). Verificare l'assenza di tracce (escrementi, rosicchiature).
                                 </p>
                             </div>
                         </div>
 
                         <!-- Sezione Prevenzione -->
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-shield-halved text-base"></i> 02. Prevenzione
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-amber-500"></i> 02. Prevenzione
                             </h4>
-                            <div class="bg-amber-50/50 p-6 rounded-2xl border border-amber-100">
-                                <p class="text-base text-slate-700 leading-relaxed font-medium">
-                                    Mantenere le soglie sigillate, le finestre dotate di zanzariere integre e i pozzetti di scarico protetti. Non lasciare residui di cibo.
+                            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                                <p class="text-lg text-slate-600 font-medium leading-relaxed">
+                                    Mantenere sigillate le soglie. Finestre con zanzariere. Pozzetti protetti. Non lasciare residui di cibo.
                                 </p>
                             </div>
                         </div>
 
                         <!-- Sezione Intervento -->
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                <i class="fa-solid fa-phone-flip text-base"></i> 03. Segnalazione
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-phone-flip text-red-500"></i> 03. Segnalazione
                             </h4>
-                            <div class="bg-amber-50/50 p-6 rounded-2xl border border-amber-100 text-sm font-bold text-slate-500 italic">
-                                In caso di avvistamento o infestazione sospetta, contattare immediatamente la ditta specializzata e annotare nel registro.
+                            <div class="bg-white p-4 rounded-lg border border-red-100 bg-red-50 shadow-sm">
+                                <p class="text-lg font-bold text-red-600">
+                                    In caso di infestazione sospetta, contattare subito la ditta specializzata e annotare nel registro.
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-8 bg-slate-50 border-t border-slate-100 flex-shrink-0">
+                    <div class="px-6 py-4 bg-white border-t border-slate-200 flex-shrink-0 flex justify-end">
                         <button (click)="showPestInfo.set(false)"
-                                class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95">
-                            HO PRESO VISIONE
+                                class="px-6 py-2 bg-slate-800 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all shadow-sm">
+                            <i class="fa-solid fa-check mr-2"></i> HO PRESO VISIONE
                         </button>
                     </div>
                 </div>
@@ -543,25 +544,25 @@ interface AreaChecklist {
         <!-- CUSTOM DELETE CONFIRMATION MODAL (APP STYLE) -->
         @if (isDeleteModalOpen()) {
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" (click)="isDeleteModalOpen.set(false)"></div>
-                <div class="relative bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden p-10 animate-slide-up text-center">
-                    <div class="w-24 h-24 rounded-3xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-8 shadow-xl shadow-red-100/50">
-                        <i class="fa-solid fa-trash-can-arrow-up text-4xl"></i>
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="isDeleteModalOpen.set(false)"></div>
+                <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 animate-slide-up text-center border border-slate-200">
+                    <div class="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-100">
+                        <i class="fa-solid fa-trash-can-arrow-up text-2xl"></i>
                     </div>
 
-                    <h3 class="text-3xl font-black text-slate-800 mb-3">Elimina Documento?</h3>
-                    <p class="text-lg text-slate-500 font-medium leading-relaxed mb-10">
-                        Sei sicuro di voler rimuovere <span class="text-slate-800 font-bold">"{{ docToDelete()?.fileName }}"</span>? <br>L'azione è definitiva e non può essere annullata.
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Elimina Documento?</h3>
+                    <p class="text-base text-slate-500 leading-relaxed mb-6">
+                        Rimuovere <span class="text-slate-700 font-bold">"{{ docToDelete()?.fileName }}"</span>?<br> L'azione è irreversibile.
                     </p>
 
-                    <div class="space-y-4">
-                        <button (click)="confirmDelete()"
-                                class="w-full py-5 bg-red-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200">
-                            SÌ, ELIMINA DEFINITIVAMENTE
-                        </button>
+                    <div class="flex gap-3">
                         <button (click)="isDeleteModalOpen.set(false)"
-                                class="w-full py-5 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">
-                            ANNULLA OPERAZIONE
+                                class="flex-1 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-colors">
+                            ANNULLA
+                        </button>
+                        <button (click)="confirmDelete()"
+                                class="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-red-700 transition-colors shadow-sm">
+                            ELIMINA
                         </button>
                     </div>
                 </div>
@@ -572,18 +573,17 @@ interface AreaChecklist {
         <div class="fixed bottom-6 right-6 z-30">
             @if (!isSubmitted()) {
                 <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
-                        class="bg-slate-900 text-white rounded-2xl px-10 py-5 shadow-2xl font-black text-sm uppercase tracking-[0.2em] flex items-center gap-5 disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 active:scale-95 group border-2 border-white/10">
-                    REGISTRA OPERAZIONI 
-                    <i class="fa-solid fa-check-double text-xl text-blue-400 group-hover:rotate-12 transition-transform"></i>
+                        class="bg-blue-600 text-white rounded-xl px-8 py-3.5 shadow-lg font-black text-xs uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:grayscale transition-all hover:bg-blue-700 active:scale-95 border border-blue-500 tooltip relative overflow-hidden group">
+                    <span class="relative z-10 w-full flex items-center gap-3 justify-center">Registra Operazioni <i class="fa-solid fa-check-double text-blue-300 group-hover:text-white transition-colors"></i></span>
                 </button>
             } @else {
-                <div class="bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-2xl flex items-center gap-2 border border-slate-100 animate-slide-up">
-                    <div class="bg-emerald-500 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-center shadow-lg shadow-emerald-200/50">REGISTRATO</div>
-                    <button (click)="printReport()" class="h-12 px-5 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white flex items-center gap-3 font-bold text-xs transition-all border border-slate-100">
-                        <i class="fa-solid fa-print text-sm"></i> STAMPA
+                <div class="bg-white/95 backdrop-blur-sm p-2 rounded-xl shadow-lg flex items-center gap-2 border border-slate-200 animate-slide-up">
+                    <div class="bg-emerald-50 border border-emerald-100 text-emerald-600 px-4 py-2 rounded-lg font-black text-[11px] uppercase tracking-widest text-center shadow-sm"><i class="fa-solid fa-check"></i> Registrato</div>
+                    <button (click)="printReport()" class="h-9 px-4 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors shadow-sm">
+                        <i class="fa-solid fa-print"></i> Stampa
                     </button>
-                    <button (click)="startNewChecklist()" class="h-12 px-5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-3 font-bold text-xs transition-all shadow-lg shadow-blue-200">
-                        <i class="fa-solid fa-rotate-right text-sm"></i> NUOVA
+                    <button (click)="startNewChecklist()" class="h-9 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors shadow-sm">
+                        <i class="fa-solid fa-rotate-right"></i> Nuova
                     </button>
                 </div>
             }

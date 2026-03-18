@@ -98,6 +98,7 @@ export interface AppDocument {
   fileData?: string; // base64
   uploadDate: Date;
   expiryDate?: string; // For PEE
+  userId?: string; // Specific unit/collaborator association
 }
 
 export interface ProductionIngredient {
@@ -145,6 +146,18 @@ export class AppStateService {
       return this.adminCompany().logo || '/logo.png';
     }
     return this.companyConfig().logo || '/logo.png';
+  });
+
+  readonly activeTargetClientId = computed(() => {
+    const user = this.currentUser();
+    if (!user) return null;
+    if (this.isAdmin()) {
+      const targetUserId = this.filterCollaboratorId();
+      if (!targetUserId) return null;
+      const targetUser = this.systemUsers().find(u => u.id === targetUserId);
+      return targetUser?.clientId || null;
+    }
+    return user.clientId;
   });
 
   // --- Admin Company / Master Data ---
@@ -233,9 +246,10 @@ export class AppStateService {
     id: string;
     moduleId: string;
     userId: string;
+    clientId: string;
     date: string;
     data: any;
-    timestamp: Date;
+    timestamp: any;
   }[]>([]);
 
   readonly documents = signal<AppDocument[]>([]);
@@ -254,6 +268,22 @@ export class AppStateService {
     return Array.from(uniqueMap.values());
   });
   readonly productionRecords = signal<ProductionRecord[]>([]);
+
+  // Global Filtered Documents for Admin View
+  readonly filteredDocuments = computed(() => {
+    const targetClientId = this.activeTargetClientId();
+    if (!targetClientId) return [];
+
+    return this.documents().filter(d => d.clientId === targetClientId);
+  });
+
+  // Global Filtered Checklists for Admin View
+  readonly filteredChecklistRecords = computed(() => {
+    const targetClientId = this.activeTargetClientId();
+    if (!targetClientId) return [];
+
+    return this.checklistRecords().filter(r => r.clientId === targetClientId);
+  });
 
   getEquipmentIcon(name: string): string {
     const nameLower = name.toLowerCase();
@@ -434,8 +464,8 @@ export class AppStateService {
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
 
     // Config
-    { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config' },
-    { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config' },
+    { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config', operatorOnly: true },
+    { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config', operatorOnly: true },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
     { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false },
@@ -562,47 +592,52 @@ export class AppStateService {
 
   // --- Data Access Methods ---
 
-  saveRecord(moduleId: string, data: any) {
+  saveChecklist(moduleIdOrObj: string | any, data?: any) {
     const user = this.currentUser();
     if (!user) return;
 
-    const date = this.filterDate();
-    const targetUserId = (this.isAdmin() && this.filterCollaboratorId())
-      ? this.filterCollaboratorId()
+    let moduleId: string;
+    let actualData: any;
+    let forcedId: string | undefined;
+    let forcedDate: string | undefined;
+
+    if (typeof moduleIdOrObj === 'object' && moduleIdOrObj !== null && !data) {
+      moduleId = moduleIdOrObj.moduleId;
+      actualData = moduleIdOrObj.data;
+      forcedId = moduleIdOrObj.id;
+      forcedDate = moduleIdOrObj.date;
+    } else {
+      moduleId = moduleIdOrObj;
+      actualData = data;
+    }
+
+    // Determine target company context
+    const targetClientId = this.activeTargetClientId();
+    
+    // Determine the specific user identity (if admin is recording on behalf of a collaborator)
+    const targetUserId = (this.isAdmin() && this.filterCollaboratorId()) 
+      ? this.filterCollaboratorId() 
       : user.id;
 
-    // Check if record exists for this day/user/module
-    const existingIndex = this.checklistRecords().findIndex(r =>
-      r.moduleId === moduleId &&
-      r.userId === targetUserId &&
-      r.date === date
-    );
-
-    const newRecord = {
-      id: existingIndex >= 0 ? this.checklistRecords()[existingIndex].id : Math.random().toString(36).substr(2, 9),
-      moduleId,
+    const record = {
+      id: forcedId || Math.random().toString(36).substring(2, 9),
       userId: targetUserId,
-      date,
-      data,
-      timestamp: new Date()
+      clientId: targetClientId || user.clientId || 'demo',
+      moduleId,
+      date: forcedDate || this.filterDate(),
+      timestamp: new Date().toISOString(),
+      data: actualData
     };
 
     this.checklistRecords.update(records => {
-      if (existingIndex >= 0) {
-        // Overwrite existing
-        const updated = [...records];
-        updated[existingIndex] = newRecord;
-        return updated;
-      } else {
-        // Add new
-        return [...records, newRecord];
-      }
+      // Logic to prevent duplicates for the same module/user/date if needed
+      const filtered = records.filter(r => 
+        !(r.moduleId === moduleId && r.userId === targetUserId && (r as any).date === record.date)
+      );
+      return [...filtered, record as any];
     });
 
-    // Notify user
-    if (existingIndex >= 0) {
-      this.toastService.info('Dati Aggiornati', 'La registrazione precedente per questa data è stata sovrascritta.');
-    }
+    this.toastService.success('Registrazione Salvata', 'I dati sono stati archiviati correttamente.');
 
     // Feed to Operator if Admin is editing
     if (this.isAdmin() && this.filterCollaboratorId()) {
@@ -623,7 +658,7 @@ export class AppStateService {
         recipientId: targetUser?.clientId,
         recipientUserId: targetUserId,
         subject: `Aggiornamento: ${menuItem?.label}`,
-        content: `L'amministratore ha revisionato e aggiornato i dati inseriti in data ${date} per il modulo ${menuItem?.label}.`,
+        content: `L'amministratore ha revisionato e aggiornato i dati inseriti in data ${record.date} per il modulo ${menuItem?.label}.`,
         timestamp: new Date(),
         read: false,
         replies: []
@@ -631,9 +666,13 @@ export class AppStateService {
     }
   }
 
+  saveRecord(moduleId: string, data: any) {
+    return this.saveChecklist(moduleId, data);
+  }
+
   // --- New Historical Methods ---
 
-  saveChecklist(record: { id?: string, moduleId: string, data: any, date?: string }) {
+  saveChecklistOld(record: { id?: string, moduleId: string, data: any, date?: string }) {
     const user = this.currentUser();
     if (!user) return;
 
@@ -644,6 +683,7 @@ export class AppStateService {
       id: recordId,
       moduleId: record.moduleId,
       userId: user.id,
+      clientId: user.clientId || 'demo',
       date: date,
       data: record.data,
       timestamp: new Date()
@@ -778,14 +818,25 @@ export class AppStateService {
     }
   }
 
-  saveDocument(doc: Omit<AppDocument, 'id' | 'uploadDate'>) {
+  saveDocument(doc: Partial<AppDocument>) {
+    const user = this.currentUser();
+    if (!user) return;
+
+    const targetClientId = this.activeTargetClientId();
+
     const newDoc: AppDocument = {
-      ...doc,
-      id: Math.random().toString(36).substring(2, 9),
-      uploadDate: new Date()
+      clientId: targetClientId || user.clientId || 'demo',
+      userId: user.id,
+      category: doc.category || 'general',
+      type: doc.type || 'unknown',
+      fileName: doc.fileName || 'documento.pdf',
+      fileType: doc.fileType || 'application/pdf',
+      fileData: doc.fileData || '',
+      id: doc.id || Math.random().toString(36).substring(2, 9),
+      uploadDate: doc.uploadDate || new Date(),
+      expiryDate: doc.expiryDate
     };
     this.documents.update(docs => [...docs, newDoc]);
-    this.toastService.success('Documento salvato', `${doc.fileName} è stato archiviato.`);
   }
 
   deleteDocument(id: string) {

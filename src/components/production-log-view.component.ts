@@ -10,29 +10,27 @@ import { FormsModule } from '@angular/forms';
     imports: [CommonModule, FormsModule],
     template: `
     <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
         
-        <!-- Premium Hero Header -->
-        <div class="relative overflow-hidden rounded-[2rem] bg-slate-900 p-6 shadow-xl border border-slate-800">
-            <div class="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-teal-600/15 blur-3xl"></div>
-            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-emerald-600/10 blur-3xl"></div>
+        <!-- Minimal Hero Header -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 flex flex-col md:flex-row justify-between md:items-center gap-6 relative overflow-hidden">
+            <!-- Subtle accent -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
             
-            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div class="flex items-center gap-5">
-                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
-                        <i class="fa-solid fa-barcode text-3xl text-white"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-4xl font-black tracking-tight text-white mb-1"><span class="text-teal-400">Rintracciabilità</span> Prodotti</h2>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-sm font-bold text-slate-300 border border-white/10">
-                                <i class="fa-solid fa-circle text-[9px] animate-pulse text-teal-400"></i>
-                                Registro Produzione
-                            </span>
-                            <span class="flex items-center gap-2 rounded-full bg-teal-500/10 px-4 py-1.5 text-sm font-black text-teal-400 border border-teal-500/20">
-                                <i class="fa-solid fa-user-check text-xs"></i> {{ state.currentUser()?.name }}
-                            </span>
-                        </div>
+            <div class="relative z-10 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100 shadow-sm shrink-0">
+                    <i class="fa-solid fa-barcode text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Rintracciabilità Prodotti</h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-xs font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-circle text-[10px] animate-pulse text-teal-500"></i>
+                            Registro Produzione
+                        </span>
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-teal-50 text-teal-600 rounded border border-teal-100 text-xs font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-user-check text-[10px]"></i> {{ state.currentUser()?.name }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -40,48 +38,51 @@ import { FormsModule } from '@angular/forms';
 
         @if (isEditing()) {
             <!-- EDITING / CREATION VIEW -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slide-up">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up">
                 <!-- Main Product Card -->
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white rounded-[40px] p-8 border border-slate-100 shadow-xl overflow-hidden sticky top-6">
-                        <div class="flex items-center justify-between mb-8">
-                            <h3 class="text-xl font-black text-slate-800">Scheda Prodotto</h3>
-                            <div class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">Master</div>
+                <div class="lg:col-span-1 space-y-4">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-6">
+                        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800">Scheda Prodotto</h3>
+                            <div class="px-2 py-0.5 bg-teal-50 border border-teal-100 text-teal-600 rounded text-[10px] font-black uppercase tracking-widest">Master</div>
                         </div>
 
-                        <div class="space-y-6">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nome Alimento Principale</label>
+                        <div class="space-y-5">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Nome Alimento Principale</label>
                                 <input type="text" [(ngModel)]="currentRecord.mainProductName" 
                                        placeholder="es. Sugo alla Genovese"
-                                       class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-800 focus:border-emerald-500 focus:bg-white transition-all outline-none">
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100">
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Confezionamento</label>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Confezionamento</label>
                                     <input type="date" [(ngModel)]="currentRecord.packagingDate"
-                                           class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs font-bold text-slate-800 outline-none">
+                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-xs md:text-sm font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none">
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Scadenza</label>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Scadenza</label>
                                     <input type="date" [(ngModel)]="currentRecord.expiryDate"
-                                           class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs font-bold text-slate-800 outline-none border-red-50">
+                                           class="w-full bg-slate-50 border border-rose-200 rounded-xl px-3 py-3 text-xs md:text-sm font-bold text-slate-800 focus:border-rose-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-rose-100">
                                 </div>
                             </div>
 
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Numero Lotto (L-XXXX)</label>
-                                <input type="text" [(ngModel)]="currentRecord.lotto"
-                                       class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-mono font-bold text-emerald-700 outline-none placeholder:font-sans"
-                                       placeholder="Genera o inserisci lotto">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Numero Lotto</label>
+                                <div class="relative">
+                                    <input type="text" [(ngModel)]="currentRecord.lotto"
+                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm md:text-base font-mono font-bold text-teal-700 outline-none placeholder:font-sans focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all focus:bg-white"
+                                           placeholder="Genera o inserisci lotto">
+                                    <i class="fa-solid fa-barcode absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                </div>
                             </div>
 
-                            <div class="pt-6 border-t border-slate-50 flex gap-3">
-                                <button (click)="cancelEdit()" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Annulla</button>
+                            <div class="pt-5 border-t border-slate-100 flex gap-3">
+                                <button (click)="cancelEdit()" class="flex-1 py-3 bg-slate-50 text-slate-500 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 hover:text-slate-600 transition-all">Annulla</button>
                                 <button (click)="saveRecord()" [disabled]="!currentRecord.mainProductName"
-                                        class="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50">
-                                    Salva Registro
+                                        class="flex-[2] py-3 bg-teal-600 text-white border border-teal-500 flex items-center justify-center gap-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-teal-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Salva Registro
                                 </button>
                             </div>
                         </div>
@@ -89,125 +90,133 @@ import { FormsModule } from '@angular/forms';
                 </div>
 
                 <!-- Ingredients Section -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- Ingrediente Form -->
-                    <div class="bg-indigo-950 rounded-[40px] p-8 text-white relative overflow-hidden shadow-2xl">
-                        <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
-                        
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Ingrediente Form Banner -->
+                    <div class="bg-slate-100 rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden">
                         <div class="relative z-10">
-                            <h4 class="text-sm font-black uppercase tracking-[0.2em] mb-8 text-indigo-300">Aggiungi Ingrediente / Materia Prima</h4>
+                            <h4 class="text-sm md:text-base font-black uppercase tracking-widest mb-5 text-slate-700 flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle text-teal-600"></i> Aggiungi Ingrediente / Materia Prima
+                            </h4>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-6">
                                 <!-- Photo Upload -->
-                                <div class="col-span-1">
-                                    <div class="aspect-square rounded-3xl bg-white/5 border-2 border-dashed border-indigo-400/30 overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all group relative"
+                                <div class="sm:col-span-1">
+                                    <div class="aspect-square rounded-xl bg-white border border-dashed border-slate-300 overflow-hidden flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors group relative shadow-sm"
                                          (click)="photoInput.click()">
                                         @if (tempPhoto) {
                                             <img [src]="tempPhoto" class="w-full h-full object-cover">
-                                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                <i class="fa-solid fa-camera-rotate text-2xl"></i>
+                                            <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <i class="fa-solid fa-camera-rotate text-white text-xl"></i>
                                             </div>
                                         } @else {
-                                            <i class="fa-solid fa-camera text-3xl text-indigo-400 mb-2 group-hover:scale-110 transition-transform"></i>
-                                            <span class="text-[9px] font-black uppercase tracking-widest text-indigo-300">Carica Foto JPG</span>
+                                            <i class="fa-solid fa-camera text-2xl text-slate-300 mb-2 group-hover:scale-110 transition-transform group-hover:text-teal-500"></i>
+                                            <span class="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 px-2 text-center">Carica Immagine</span>
                                         }
                                     </div>
                                     <input #photoInput type="file" accept="image/*" class="hidden" (change)="handleFile($event)">
                                 </div>
 
                                 <!-- Ingredient Details -->
-                                <div class="col-span-2 space-y-4">
-                                    <div class="space-y-1">
-                                        <label class="text-[9px] font-black text-indigo-300 uppercase tracking-widest px-1">Nome Prodotto</label>
-                                        <input type="text" [(ngModel)]="newIngredient.name"
-                                               class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-sm font-bold text-white outline-none focus:bg-white/20 transition-all">
-                                    </div>
-
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="space-y-1">
-                                            <label class="text-[9px] font-black text-indigo-300 uppercase tracking-widest px-1">Produzione/Arrivo</label>
-                                            <input type="date" [(ngModel)]="newIngredient.packingDate"
-                                                   class="w-full bg-white/10 border border-white/20 rounded-2xl p-3 text-xs font-bold text-white outline-none">
+                                <div class="sm:col-span-3 space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="space-y-1.5 md:col-span-2">
+                                            <label class="text-[11px] md:text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Nome Prodotto *</label>
+                                            <input type="text" [(ngModel)]="newIngredient.name"
+                                                   class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm">
                                         </div>
-                                        <div class="space-y-1">
-                                            <label class="text-[9px] font-black text-indigo-300 uppercase tracking-widest px-1">Scadenza</label>
-                                            <input type="date" [(ngModel)]="newIngredient.expiryDate"
-                                                   class="w-full bg-white/10 border border-white/20 rounded-2xl p-3 text-xs font-bold text-white outline-none">
+
+                                        <div class="space-y-1.5">
+                                            <label class="text-[11px] md:text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Produzione/Arrivo</label>
+                                            <div class="relative">
+                                                 <input type="date" [(ngModel)]="newIngredient.packingDate"
+                                                        class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pl-10 text-xs md:text-sm font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
+                                                 <i class="fa-solid fa-calendar-plus absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-1.5">
+                                            <label class="text-[11px] md:text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Scadenza</label>
+                                            <div class="relative">
+                                                 <input type="date" [(ngModel)]="newIngredient.expiryDate"
+                                                        class="w-full bg-white border border-rose-200 rounded-xl px-4 py-3 pl-10 text-xs md:text-sm font-bold text-slate-800 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all shadow-sm">
+                                                 <i class="fa-solid fa-calendar-xmark absolute left-3 top-1/2 -translate-y-1/2 text-rose-400"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-1.5 md:col-span-2">
+                                            <label class="text-[11px] md:text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Lotto o Rif. Fattura (Opzionale)</label>
+                                            <input type="text" [(ngModel)]="newIngredient.lotto"
+                                                   class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-medium font-mono text-slate-600 outline-none focus:border-teal-400 transition-all shadow-sm">
                                         </div>
                                     </div>
 
-                                    <div class="space-y-1">
-                                        <label class="text-[9px] font-black text-indigo-300 uppercase tracking-widest px-1">Lotto o Rif. Fattura (Opzionale)</label>
-                                        <input type="text" [(ngModel)]="newIngredient.lotto"
-                                               class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-sm font-bold text-white outline-none">
+                                    <div class="pt-2">
+                                        <button (click)="addIngredient()" [disabled]="!newIngredient.name"
+                                                class="w-full py-3 bg-slate-800 text-white flex items-center justify-center gap-2 rounded-xl font-bold text-xs md:text-sm uppercase tracking-widest hover:bg-slate-700 transition-all shadow-[0_4px_10px_rgba(0,0,0,0.1)] border border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fa-solid fa-plus text-teal-400"></i> Aggiungi Ingrediente
+                                        </button>
                                     </div>
-
-                                    <button (click)="addIngredient()" [disabled]="!newIngredient.name"
-                                            class="w-full py-4 bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-400 transition-all shadow-xl shadow-indigo-900/50 disabled:opacity-50">
-                                        Aggiungi alla Genovese
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Ingredients Table -->
-                    <div class="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-hidden">
-                        <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                            <h4 class="text-sm font-black text-slate-800 uppercase tracking-widest">Elenco Componenti Associati</h4>
-                            <span class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-lg">
-                                {{ ingredientsList().length }}
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[500px]">
+                        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                            <h4 class="text-xs md:text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-layer-group text-slate-400"></i> Elenco Componenti Associati
+                            </h4>
+                            <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-black shadow-sm">
+                                {{ ingredientsList().length }} INGR.
                             </span>
                         </div>
 
-                        <div class="overflow-x-auto overflow-y-auto max-h-[500px] custom-scrollbar">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                        <div class="overflow-y-auto custom-scrollbar flex-1 bg-white">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                                     <tr>
-                                        <th class="px-8 py-4">Foto</th>
-                                        <th class="px-8 py-4">Prodotto</th>
-                                        <th class="px-8 py-4">Lotto / Factory</th>
-                                        <th class="px-8 py-4">Scadenze</th>
-                                        <th class="px-8 py-4 text-right"></th>
+                                        <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest">Foto</th>
+                                        <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest">Prodotto</th>
+                                        <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest">Lotto / Rif.</th>
+                                        <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest">Scadenze</th>
+                                        <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Azioni</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-50">
+                                <tbody class="divide-y divide-slate-100">
                                     @for (ing of ingredientsList(); track ing.id) {
                                         <tr class="hover:bg-slate-50 transition-colors group">
-                                            <td class="px-8 py-4">
-                                                <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 shadow-inner group-hover:scale-105 transition-transform">
+                                            <td class="px-4 py-3">
+                                                <div class="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center text-slate-300">
                                                     @if (ing.photo) {
                                                         <img [src]="ing.photo" class="w-full h-full object-cover">
                                                     } @else {
-                                                        <div class="w-full h-full flex items-center justify-center text-slate-300">
-                                                            <i class="fa-solid fa-image text-lg"></i>
-                                                        </div>
+                                                        <i class="fa-solid fa-image text-lg"></i>
                                                     }
                                                 </div>
                                             </td>
-                                            <td class="px-8 py-4">
-                                                <span class="block font-black text-slate-800 text-sm leading-tight">{{ ing.name }}</span>
+                                            <td class="px-4 py-3">
+                                                <span class="block font-bold text-slate-800 text-sm md:text-base leading-tight">{{ ing.name }}</span>
                                             </td>
-                                            <td class="px-8 py-4">
-                                                <span class="text-[10px] font-mono font-bold bg-slate-100 px-2 py-1 rounded-lg text-slate-600 border border-slate-200">{{ ing.lotto || 'N/A' }}</span>
+                                            <td class="px-4 py-3">
+                                                <span class="text-xs font-mono font-bold bg-white px-2 py-1 rounded border border-slate-200 text-slate-600">{{ ing.lotto || 'N/A' }}</span>
                                             </td>
-                                            <td class="px-8 py-4">
-                                                <div class="flex flex-col gap-1">
-                                                    <span class="text-[9px] text-slate-400 font-black uppercase">Scad: {{ ing.expiryDate | date:'dd/MM/yy' }}</span>
-                                                    <span class="text-[9px] text-emerald-500 font-bold">Prod: {{ ing.packingDate | date:'dd/MM/yy' }}</span>
+                                            <td class="px-4 py-3">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <span class="text-xs text-slate-500 font-bold uppercase"><i class="fa-solid fa-circle-xmark text-rose-400 w-4"></i> {{ ing.expiryDate | date:'dd/MM/yy' }}</span>
+                                                    <span class="text-xs text-teal-600 font-bold uppercase"><i class="fa-solid fa-calendar-check w-4"></i> {{ ing.packingDate | date:'dd/MM/yy' }}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-8 py-4 text-right">
-                                                <button (click)="removeIngredient(ing.id)" class="w-10 h-10 rounded-xl bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center">
-                                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                            <td class="px-4 py-3 text-right">
+                                                <button (click)="removeIngredient(ing.id)" class="w-10 h-10 rounded-lg border border-rose-200 bg-rose-50 text-rose-500 opacity-0 group-hover:opacity-100 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center ml-auto">
+                                                    <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </td>
                                         </tr>
                                     } @empty {
                                         <tr>
-                                            <td colspan="5" class="px-8 py-16 text-center">
-                                                <i class="fa-solid fa-layer-group text-4xl text-slate-100 mb-4"></i>
-                                                <p class="text-xs font-bold text-slate-300 uppercase tracking-widest italic">Nessun ingrediente inserito</p>
+                                            <td colspan="5" class="px-4 py-12 text-center bg-slate-50/50">
+                                                <i class="fa-solid fa-layer-group text-4xl text-slate-200 mb-3"></i>
+                                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Nessun ingrediente inserito</p>
                                             </td>
                                         </tr>
                                     }
@@ -220,91 +229,95 @@ import { FormsModule } from '@angular/forms';
 
         } @else {
             <!-- HISTORY / LIST VIEW -->
-            <div class="space-y-8 animate-fade-in">
+            <div class="space-y-6 animate-fade-in">
                 <!-- Filter & Actions -->
-                <div class="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl">
-                    <div class="flex items-center gap-6">
-                        <div class="relative group">
-                             <div class="flex items-center gap-4 px-6 py-4 bg-slate-50 rounded-3xl border-2 border-slate-100 group-hover:border-emerald-500 transition-all cursor-pointer">
-                                <i class="fa-solid fa-calendar-alt text-emerald-600 text-xl"></i>
-                                <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Giorno Archivio</span>
-                                    <input type="date" [value]="state.filterDate()" (change)="state.filterDate.set($any($event.target).value)" 
-                                           class="bg-transparent border-none p-0 outline-none text-sm font-black text-slate-800">
-                                </div>
-                             </div>
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center gap-4 w-full md:w-auto">
+                        <div class="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200 hover:border-teal-400 transition-colors cursor-pointer w-full md:w-auto">
+                            <i class="fa-solid fa-calendar-alt text-teal-600"></i>
+                            <div class="flex flex-col">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Data Riferimento</span>
+                                <input type="date" [value]="state.filterDate()" (change)="state.filterDate.set($any($event.target).value)" 
+                                       class="bg-transparent border-none p-0 outline-none text-xs md:text-sm font-bold text-slate-800">
+                            </div>
                         </div>
                     </div>
 
                     <button (click)="startNew()" 
-                            class="px-8 py-5 bg-slate-900 border-b-4 border-slate-950 text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-600 hover:border-emerald-700 transition-all shadow-xl active:scale-95 flex items-center gap-3">
-                        <i class="fa-solid fa-plus-circle text-lg"></i> Inizia Registrazione Lotto
+                            class="w-full md:w-auto px-5 py-2.5 bg-teal-600 border border-teal-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-teal-700 hover:-translate-y-0.5 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95">
+                        <i class="fa-solid fa-folder-plus text-sm"></i> Nuovo Registro
                     </button>
                 </div>
 
                 <!-- Grid of Records -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                     @for (rec of filteredRecords(); track rec.id) {
-                        <div class="group bg-white rounded-[40px] p-8 border border-slate-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all relative overflow-hidden flex flex-col h-full">
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-emerald-50 transition-colors"></div>
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all relative overflow-hidden flex flex-col h-full group">
+                            <!-- Label at top -->
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="px-2 py-1 bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-bold font-mono rounded inline-flex items-center gap-1.5 shadow-sm">
+                                    <i class="fa-solid fa-barcode text-slate-400"></i> {{ rec.lotto }}
+                                </div>
+                                <span class="text-[11px] text-slate-400 font-bold uppercase tracking-tight flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> {{ rec.recordedDate | date:'HH:mm' }}</span>
+                            </div>
                             
-                            <div class="relative z-10 flex-1">
-                                <div class="flex items-center justify-between mb-6">
-                                    <span class="px-4 py-1.5 bg-slate-900 text-white text-[9px] font-black rounded-full uppercase tracking-widest shadow-lg">Lotto {{ rec.lotto }}</span>
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{{ rec.recordedDate | date:'HH:mm' }}</span>
-                                </div>
-                                
-                                <h3 class="text-2xl font-black text-slate-800 mb-2 leading-tight group-hover:text-emerald-600 transition-colors">{{ rec.mainProductName }}</h3>
-                                <div class="flex items-center gap-2 mb-6">
-                                    <i class="fa-solid fa-clock-rotate-left text-xs text-slate-300"></i>
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Confezionato: {{ rec.packagingDate | date:'dd MMMM yyyy' }}</span>
-                                </div>
+                            <h3 class="text-xl md:text-2xl font-bold text-slate-800 mb-2 leading-tight group-hover:text-teal-600 transition-colors line-clamp-2">{{ rec.mainProductName }}</h3>
+                            <div class="flex flex-col gap-1.5 mb-6 flex-1">
+                                <p class="text-[11px] md:text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                                    <i class="fa-solid fa-box-open w-4 text-center"></i> Conf: <span class="text-slate-700">{{ rec.packagingDate | date:'dd/MM/yy' }}</span>
+                                </p>
+                                <p class="text-[11px] md:text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                                    <i class="fa-solid fa-calendar-xmark w-4 text-center text-rose-400"></i> Scad: <span class="text-rose-600">{{ rec.expiryDate | date:'dd/MM/yy' }}</span>
+                                </p>
+                            </div>
 
-                                <div class="bg-slate-50 rounded-3xl p-5 mb-8 border border-slate-100 flex items-center justify-between">
-                                    <div class="flex -space-x-3">
-                                        @for (ing of rec.ingredients.slice(0, 4); track ing.id) {
-                                            <div class="w-10 h-10 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm">
-                                                @if (ing.photo) {
-                                                    <img [src]="ing.photo" class="w-full h-full object-cover">
-                                                } @else {
-                                                    <div class="w-full h-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-300 font-black">{{ ing.name[0] }}</div>
-                                                }
-                                            </div>
-                                        }
-                                        @if (rec.ingredients.length > 4) {
-                                            <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-lg">
-                                                +{{ rec.ingredients.length - 4 }}
-                                            </div>
-                                        }
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Componenti</span>
-                                        <span class="text-lg font-black text-slate-800">{{ rec.ingredients.length }}</span>
-                                    </div>
+                            <!-- Ingredients row summary -->
+                            <div class="bg-slate-50/80 rounded-xl p-3 mb-4 border border-slate-100 flex items-center justify-between shadow-inner">
+                                <div class="flex -space-x-2">
+                                    @for (ing of rec.ingredients.slice(0, 4); track ing.id) {
+                                        <div class="w-10 h-10 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm flex items-center justify-center text-xs text-slate-400 font-bold">
+                                            @if (ing.photo) {
+                                                <img [src]="ing.photo" class="w-full h-full object-cover">
+                                            } @else {
+                                                {{ ing.name[0] | uppercase }}
+                                            }
+                                        </div>
+                                    }
+                                    @if (rec.ingredients.length > 4) {
+                                        <div class="w-10 h-10 rounded-full border-2 border-white bg-slate-200 text-slate-600 flex items-center justify-center text-[11px] font-black shadow-sm z-10">
+                                            +{{ rec.ingredients.length - 4 }}
+                                        </div>
+                                    }
+                                </div>
+                                <div class="text-right flex flex-col items-end">
+                                    <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Voci Conf.</span>
+                                    <span class="text-base md:text-lg font-black text-slate-700">{{ rec.ingredients.length }}</span>
                                 </div>
                             </div>
 
-                            <div class="pt-6 border-t border-slate-50 flex gap-2">
-                                <button (click)="openDetail(rec)" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all">Dettagli</button>
-                                <button (click)="deleteRecord(rec.id)" class="w-14 py-4 bg-red-50 text-red-400 rounded-2xl hover:bg-red-600 hover:text-white transition-all flex items-center justify-center">
+                            <div class="flex gap-2 shrink-0">
+                                <button (click)="openDetail(rec)" class="flex-1 py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg font-bold text-xs uppercase hover:bg-slate-50 hover:text-teal-600 transition-all shadow-sm flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-eye"></i> Apri
+                                </button>
+                                <button (click)="deleteRecord(rec.id)" class="w-12 py-2.5 bg-white border border-rose-200 text-rose-500 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center shadow-sm tooltip" title="Elimina">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
                         </div>
                     } @empty {
-                        <div class="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-[60px] border-4 border-dashed border-slate-50 opacity-60">
-                            <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 text-slate-200 shadow-inner">
-                                <i class="fa-solid fa-clipboard-list text-4xl"></i>
+                        <div class="col-span-full py-20 flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 text-slate-300 shadow-sm border border-slate-100">
+                                <i class="fa-solid fa-clipboard-list text-2xl"></i>
                             </div>
-                            <h4 class="text-xl font-black text-slate-300 uppercase tracking-[0.2em]">Archivio Vuoto</h4>
-                            <p class="text-xs text-slate-400 mt-2 font-bold italic">Nessuna produzione registrata per la data selezionata.</p>
+                            <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Archivio Vuoto</h4>
+                            <p class="text-xs text-slate-500 font-medium">Nessuna produzione per la data selezionata.</p>
                         </div>
                     }
                 </div>
             </div>
         }
     </div>
-  `,
+  `,,
     styles: [`
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
