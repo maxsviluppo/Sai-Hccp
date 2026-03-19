@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;cbb89999f8ae536d7099c2a2e9bec747d5de80a1a3557bb390abda1002b53b76;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/production-log-view.component.ts"],
+  "sourcesContent": ["\n    .custom-scrollbar::-webkit-scrollbar { width: 6px; }\n    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }\n    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; }\n    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }\n  "],
+  "mappings": ";AACI,CAAC,gBAAgB;AAAsB,SAAO;AAAK;AACnD,CADC,gBACgB;AAA4B,cAAY;AAAa;AACtE,CAFC,gBAEgB;AAA4B,cAAY;AAAS,iBAAe;AAAM;AACvF,CAHC,gBAGgB,yBAAyB;AAAS,cAAY;AAAS;",
+  "names": []
+}

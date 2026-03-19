@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;dde4b2f92b83d0fc5bf72b642f5a216b6ab207953affd3f2f052bee3940d89e3;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/accounting-view.component.ts"],
+  "sourcesContent": ["\n    @keyframes slideDown {\n      from { opacity: 0; transform: translateY(-10px); }\n      to { opacity: 1; transform: translateY(0); }\n    }\n  "],
+  "mappings": ";AACI,WAAW;AACT;AAAO,aAAS;AAAG,eAAW,WAAW;AAAQ;AACjD;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAC7C;",
+  "names": []
+}

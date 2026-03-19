@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;07ec3b338db99a5ffe1a59d898dc5a4dc87aca445e3976d93cf6ee9b43c52aac;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/reports-view.component.ts"],
+  "sourcesContent": ["\n    @keyframes slideDown {\n      from { opacity: 0; transform: translateY(-10px); }\n      to { opacity: 1; transform: translateY(0); }\n    }\n    .animate-slide-down {\n      animation: slideDown 0.2s ease-out forwards;\n    }\n\n    @media print {\n      body * {\n        visibility: hidden;\n      }\n      #print-template, #print-template * {\n        visibility: visible;\n      }\n      #print-template {\n        position: absolute;\n        left: 0;\n        top: 0;\n        width: 100%;\n      }\n    }\n  "],
+  "mappings": ";AACI,WAAW;AACT;AAAO,aAAS;AAAG,eAAW,WAAW;AAAQ;AACjD;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAC7C;AACA,CAAC;AACC,aAAW,UAAU,KAAK,SAAS;AACrC;AAEA,OAAO;AACL,OAAK;AACH,gBAAY;AACd;AACA,GAAC;AAAA,EAAgB,CAAhB,eAAgC;AAC/B,gBAAY;AACd;AACA,GAHC;AAIC,cAAU;AACV,UAAM;AACN,SAAK;AACL,WAAO;AACT;AACF;",
+  "names": []
+}

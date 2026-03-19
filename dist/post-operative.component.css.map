@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;35162cfc678a640ca4b529eb6bbbdac6e066b04d103cb0b13fd3e2de63bb2071;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/checklists/post-operative.component.ts"],
+  "sourcesContent": ["\n        .animate-slide-down { animation: slideDown 0.3s ease-out; }\n        @keyframes slideDown { \n            from { transform: translateY(-10px); opacity: 0; max-height: 0; } \n            to { transform: translateY(0); opacity: 1; max-height: 1000px; } \n        }\n        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }\n        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }\n    "],
+  "mappings": ";AACQ,CAAC;AAAqB,aAAW,UAAU,KAAK;AAAU;AAC1D,WADiC;AAE7B;AAAO,eAAW,WAAW;AAAQ,aAAS;AAAG,gBAAY;AAAG;AAChE;AAAK,eAAW,WAAW;AAAI,aAAS;AAAG,gBAAY;AAAQ;AACnE;AACA,CAAC;AAAmB,aAAW,QAAQ,KAAK,aAAa,IAAI,EAAE,CAAC,EAAE,GAAG,EAAE;AAAI;AAC3E,WAD+B;AACV;AAAO,eAAW,WAAW;AAAO,aAAS;AAAG;AAAE;AAAK,eAAW,WAAW;AAAI,aAAS;AAAG;AAAE;",
+  "names": []
+}

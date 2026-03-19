@@ -103,6 +103,9 @@ import { ToastService } from '../services/toast.service';
                    <button (click)="openClientModal(client)" class="w-8 h-8 rounded border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 flex items-center justify-center transition-all bg-white shadow-sm" title="Modifica Azienda">
                       <i class="fa-solid fa-pen text-xs"></i>
                    </button>
+                   <button (click)="deleteClient(client.id)" class="w-8 h-8 rounded border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all bg-white shadow-sm" title="Elimina Azienda">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                   </button>
                    <button (click)="openUserModal(undefined, client.id)" class="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 rounded text-[11px] font-bold transition-all flex items-center whitespace-nowrap shadow-sm"
                            [disabled]="client.suspended" [class.opacity-50]="client.suspended" [class.cursor-not-allowed]="client.suspended">
                       <i class="fa-solid fa-plus mr-1"></i> Add Utente
@@ -140,7 +143,11 @@ import { ToastService } from '../services/toast.service';
                                     <div class="flex justify-between items-start mb-1">
                                         <div>
                                             <h4 class="font-bold text-slate-800 text-sm leading-tight truncate">{{ user.name }}</h4>
-                                            <p class="text-[10px] text-slate-500 font-bold truncate">{{ user.email }}</p>
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-[10px] text-slate-500 font-bold truncate">{{ user.email }}</p>
+                                                <span class="text-[10px] text-indigo-400 font-black">•</span>
+                                                <p class="text-[10px] text-indigo-600 font-black truncate">@{{ user.username }}</p>
+                                            </div>
                                         </div>
                                         <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-white text-slate-500 border border-slate-200 group-hover:border-indigo-200 transition-colors">
                                             {{ user.department || 'Generale' }}
@@ -169,7 +176,7 @@ import { ToastService } from '../services/toast.service';
                                         </div>
 
                                         <!-- Edit/Delete -->
-                                        <div class="flex gap-1.5 opacity-0 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div class="flex gap-1.5 opacity-100 transition-opacity">
                                             <button (click)="viewUnitDocs(user)" class="text-indigo-600 bg-white hover:bg-indigo-50 px-2.5 py-1 rounded border border-slate-200 hover:border-indigo-200 transition-colors text-[9px] font-black uppercase flex items-center gap-1.5" title="Vedi Archivio">
                                                 <i class="fa-solid fa-folder-open"></i> Docs
                                             </button>
@@ -248,12 +255,31 @@ import { ToastService } from '../services/toast.service';
               </div>
 
               <div>
-                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email (Login)</label>
+                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email (Anagrafica)</label>
                  <div class="relative">
                     <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                     <input type="email" formControlName="email" placeholder="operatore@esempio.it"
                            class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Username (Accesso)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-at absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" formControlName="username" placeholder="mario.cucina"
+                               class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" formControlName="password" placeholder="Pass123!"
+                               class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                    </div>
+                  </div>
               </div>
 
               <div class="pt-4 flex justify-end gap-2 border-t border-slate-100 mt-6">
@@ -364,6 +390,8 @@ export class CollaboratorsViewComponent {
       role: ['COLLABORATOR', Validators.required],
       department: ['', Validators.required],
       clientId: ['', Validators.required],
+      username: ['', Validators.required],
+      password: ['', Validators.required],
       active: [true]
     });
 
@@ -422,6 +450,8 @@ export class CollaboratorsViewComponent {
         role: user.role,
         department: user.department || '',
         clientId: user.clientId || '',
+        username: user.username || '',
+        password: user.password || '',
         active: user.active
       });
     } else {
@@ -464,9 +494,11 @@ export class CollaboratorsViewComponent {
     }
 
   deleteUser(id: string) {
-    if (confirm('Sei sicuro di voler rimuovere questa unità operativa e tutti i suoi dati?')) {
-      this.state.deleteSystemUser(id);
-    }
+    this.state.deleteSystemUser(id);
+  }
+
+  deleteClient(id: string) {
+    this.state.deleteClient(id);
   }
 
   // --- Client/Company Logic ---

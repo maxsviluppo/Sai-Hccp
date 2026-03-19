@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;1e8bd539ea7752296b0b46c397ac71346008585879e21d9b70bb71f38719948f;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/toast-container.component.ts"],
+  "sourcesContent": ["\n    @keyframes slideInRight {\n      from { transform: translateX(400px); opacity: 0; }\n      to { transform: translateX(0); opacity: 1; }\n    }\n    @keyframes shrink {\n      from { width: 100%; }\n      to { width: 0%; }\n    }\n    .animate-slide-in-right {\n      animation: slideInRight 0.3s ease-out;\n    }\n    .animate-shrink {\n      animation: shrink linear;\n    }\n  "],
+  "mappings": ";AACI,WAAW;AACT;AAAO,eAAW,WAAW;AAAQ,aAAS;AAAG;AACjD;AAAK,eAAW,WAAW;AAAI,aAAS;AAAG;AAC7C;AACA,WAAW;AACT;AAAO,WAAO;AAAM;AACpB;AAAK,WAAO;AAAI;AAClB;AACA,CAAC;AACC,aAAW,aAAa,KAAK;AAC/B;AACA,CAAC;AACC,aAAW,OAAO;AACpB;",
+  "names": []
+}

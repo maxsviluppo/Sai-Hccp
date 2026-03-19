@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;2c8ba38dc1734659aa3701cdda4ec03ea5e4c659c3737318d51a5214c2d5e404;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/staff-training-checklist.component.ts"],
+  "sourcesContent": ["\n    .animate-fade-in { animation: fadeIn 0.4s ease-out; }\n    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }\n  "],
+  "mappings": ";AACI,CAAC;AAAkB,aAAW,OAAO,KAAK;AAAU;AACpD,WAD8B;AACV;AAAO,aAAS;AAAG,eAAW,WAAW;AAAO;AAAE;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAAE;",
+  "names": []
+}

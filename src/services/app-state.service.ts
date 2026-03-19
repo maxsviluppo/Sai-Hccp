@@ -1,5 +1,6 @@
-import { Injectable, signal, computed, inject, effect } from '@angular/core';
-import { ToastService } from './toast.service';
+ import { Injectable, signal, computed, inject, effect } from '@angular/core';
+ import { ToastService } from './toast.service';
+ import { supabase } from '../supabase';
 
 export type UserRole = 'ADMIN' | 'COLLABORATOR' | null;
 
@@ -199,6 +200,7 @@ export class AppStateService {
 
   constructor() {
     this.loadState();
+    this.initSupabase();
 
     // Auto-save State when critical data changes
     effect(() => {
@@ -215,6 +217,81 @@ export class AppStateService {
       productionRecords: this.productionRecords()
     };
     localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
+  }
+
+  async initSupabase() {
+    await this.refreshAllData();
+  }
+
+  async refreshAllData() {
+    console.log('Refreshing HACCP PRO Data from Supabase...');
+    try {
+      // Synchronize Clients
+    const { data: dbClients } = await supabase.from('clients').select('*');
+    if (dbClients) {
+      this.clients.set(dbClients.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        piva: c.piva,
+        address: c.address,
+        phone: c.phone,
+        email: c.email,
+        licenseNumber: c.license_number,
+        suspended: c.suspended,
+        logo: c.logo
+      })));
+    }
+
+    // Synchronize Users
+    const { data: dbUsers } = await supabase.from('system_users').select('*');
+    if (dbUsers) {
+      this.systemUsers.set(dbUsers.map((u: any) => ({
+        id: u.id,
+        clientId: u.client_id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        department: u.department,
+        active: u.active,
+        avatar: u.avatar,
+        username: u.username,
+        password: u.password
+      })));
+    }
+
+    // Synchronize Records
+    const { data: dbRecords } = await supabase.from('checklist_records').select('*');
+    if (dbRecords) {
+      this.checklistRecords.set(dbRecords.map((r: any) => ({
+        id: r.id,
+        moduleId: r.module_id,
+        userId: r.user_id,
+        clientId: r.client_id,
+        date: r.date,
+        data: r.data,
+        timestamp: r.timestamp
+      })));
+    }
+
+      // 4. Documents
+      const { data: docs } = await supabase.from('documents').select('*');
+      if (docs) this.documents.set(docs as any);
+
+      // 5. Equipment
+      const { data: equip } = await supabase.from('equipment').select('*');
+      if (equip) this.selectedEquipment.set(equip as any);
+
+      // 6. Messages
+      const { data: msgs } = await supabase.from('messages').select('*').order('timestamp', { ascending: false });
+      if (msgs) this.messages.set(msgs as any);
+
+      // 7. Production Records
+      const { data: prod } = await supabase.from('production_records').select('*');
+      if (prod) this.productionRecords.set(prod as any);
+
+    } catch (e) {
+      console.error('Error refreshing data from Supabase:', e);
+    }
   }
 
   private loadState() {
@@ -300,81 +377,10 @@ export class AppStateService {
   }
 
   // --- Clients / Companies Database (New) ---
-  readonly clients = signal<ClientEntity[]>([
-    {
-      id: 'c1',
-      name: 'Ristorante Da Mario S.r.l.',
-      piva: '12345678901',
-      address: 'Via Roma 1, Milano',
-      phone: '02 1234567',
-      email: 'info@damario.it',
-      licenseNumber: 'HACCP-MI-001',
-      suspended: false
-    },
-    {
-      id: 'c2',
-      name: 'Pizzeria Bella Napoli',
-      piva: '98765432109',
-      address: 'Corso Italia 50, Napoli',
-      phone: '081 5556667',
-      email: 'admin@bellanapoli.it',
-      licenseNumber: 'HACCP-NA-999',
-      suspended: false
-    }
-  ]);
+  readonly clients = signal<ClientEntity[]>([]);
 
   // --- System Users State ---
-  readonly systemUsers = signal<SystemUser[]>([
-    // Admin Removed as per request
-    // {
-    //   id: '1',
-    //   name: 'Amministratore Sede',
-    //   email: 'admin@gestionale.it',
-    //   role: 'ADMIN',
-    //   department: 'Direzione',
-    //   active: true,
-    //   avatar: 'https://ui-avatars.com/api/?name=Admin+Sede&background=0f172a&color=fff',
-    //   clientId: undefined,
-    //   username: 'admin',
-    //   password: 'password'
-    // },
-    {
-      id: '2',
-      name: 'Mario Rossi (Capo Sala)',
-      email: 'mario@damario.it',
-      role: 'COLLABORATOR',
-      department: 'Sala',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=Mario+Rossi&background=3b82f6&color=fff',
-      clientId: 'c1',
-      username: 'mario',
-      password: 'password'
-    },
-    {
-      id: '3',
-      name: 'Luigi Verdi (Chef)',
-      email: 'chef@bellanapoli.it',
-      role: 'COLLABORATOR',
-      department: 'Cucina',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=Luigi+Verdi&background=10b981&color=fff',
-      clientId: 'c2',
-      username: 'luigi',
-      password: 'password'
-    },
-    {
-      id: '4',
-      name: 'Giulia Bianchi (Bar)',
-      email: 'giulia@damario.it',
-      role: 'COLLABORATOR',
-      department: 'Bar',
-      active: false,
-      avatar: 'https://ui-avatars.com/api/?name=Giulia+Bianchi&background=d97706&color=fff',
-      clientId: 'c1',
-      username: 'giulia',
-      password: 'password'
-    }
-  ]);
+  readonly systemUsers = signal<SystemUser[]>([]);
 
   // --- Current Active Company Config ---
   // If Admin, this might be the first client or a specific selected one.
@@ -394,31 +400,7 @@ export class AppStateService {
   readonly recordToEdit = signal<any>(null);
 
   // --- Messages Database ---
-  readonly messages = signal<Message[]>([
-    {
-      id: 'm1',
-      senderId: '1',
-      senderName: 'Amministrazione',
-      subject: 'Benvenuti nel nuovo sistema HACCP Pro',
-      content: 'Siamo lieti di annunciare il lancio della nuova piattaforma. Per qualsiasi assistenza, utilizzate questo modulo di messaggistica.',
-      recipientType: 'ALL',
-      timestamp: new Date(Date.now() - 86400000 * 2), // 2 days ago
-      read: true,
-      replies: []
-    },
-    {
-      id: 'm2',
-      senderId: '1',
-      senderName: 'Amministrazione',
-      subject: 'Aggiornamento Documentazione',
-      content: 'Abbiamo caricato i nuovi moduli per il controllo temperature. Si prega di prenderne visione.',
-      recipientType: 'SINGLE',
-      recipientId: 'c1',
-      timestamp: new Date(Date.now() - 3600000 * 5), // 5 hours ago
-      read: false,
-      replies: []
-    }
-  ]);
+  readonly messages = signal<Message[]>([]);
 
   readonly unreadMessagesCount = computed(() => {
     const user = this.currentUser();
@@ -637,6 +619,9 @@ export class AppStateService {
       return [...filtered, record as any];
     });
 
+    // Supabase Sync
+    supabase.from('checklist_records').upsert(record).then();
+
     this.toastService.success('Registrazione Salvata', 'I dati sono stati archiviati correttamente.');
 
     // Feed to Operator if Admin is editing
@@ -742,9 +727,48 @@ export class AppStateService {
 
   // --- Client/Company Management Methods ---
 
-  addClient(client: Omit<ClientEntity, 'id'>) {
+  async addClient(client: Omit<ClientEntity, 'id'>) {
     const newClient = { ...client, id: Math.random().toString(36).substr(2, 9) };
     this.clients.update(c => [...c, newClient]);
+    
+    const { error } = await supabase.from('clients').insert({
+      id: newClient.id,
+      name: newClient.name,
+      piva: newClient.piva,
+      address: newClient.address,
+      phone: newClient.phone,
+      email: newClient.email,
+      license_number: newClient.licenseNumber,
+      suspended: newClient.suspended,
+      logo: newClient.logo
+    });
+
+    if (!error) {
+      this.toastService.success('Azienda Registrata', `${newClient.name} è stata aggiunta correttamente.`);
+    } else {
+      console.error('Error adding client:', error);
+      this.toastService.error('Errore', 'Impossibile salvare l\'azienda sul database.');
+    }
+  }
+
+  async deleteClient(id: string) {
+    const client = this.clients().find(c => c.id === id);
+    if (!client) return;
+
+    if (confirm(`⚠️ ATTENZIONE: Sei sicuro di voler eliminare DEFINITIVAMENTE l'azienda "${client.name}"?\n\nQuesta azione eliminerà anche TUTTI i suoi utenti e documenti collegati.`)) {
+      this.clients.update(clients => clients.filter(c => c.id !== id));
+      
+      // Cascade-like manual cleanup (Supabase should ideally have fk constraints but let's be safe)
+      this.systemUsers.update(users => users.filter(u => u.clientId !== id));
+      
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      
+      if (!error) {
+          this.toastService.success('Azienda Rimossa', 'L\'anagrafica e i relativi dati sono stati cancellati.');
+      } else {
+          this.toastService.error('Errore', 'Impossibile rimuovere l\'azienda dal database.');
+      }
+    }
   }
 
   updateClient(id: string, updates: Partial<ClientEntity>) {
@@ -783,19 +807,42 @@ export class AppStateService {
 
   // --- User Management Methods ---
 
-  addSystemUser(user: Omit<SystemUser, 'id' | 'avatar'>) {
+  async addSystemUser(user: Omit<SystemUser, 'id' | 'avatar'>) {
     const newUser: SystemUser = {
       ...user,
       id: Math.random().toString(36).substr(2, 9),
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`
     };
+    
     this.systemUsers.update(users => [...users, newUser]);
+    
+    const { error } = await supabase.from('system_users').insert({
+      id: newUser.id,
+      client_id: newUser.clientId,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      department: newUser.department,
+      active: newUser.active,
+      avatar: newUser.avatar,
+      username: newUser.username,
+      password: newUser.password
+    });
+    
+    if (!error) {
+      this.toastService.success('Unità Creata', `L'unità operativa ${newUser.name} è stata registrata.`);
+    } else {
+      console.error('Error adding user:', error);
+      this.toastService.error('Errore', 'Impossibile salvare il collaboratore sul database.');
+    }
   }
 
-  updateSystemUser(id: string, updates: Partial<SystemUser>) {
+  async updateSystemUser(id: string, updates: Partial<SystemUser>) {
     this.systemUsers.update(users =>
       users.map(u => u.id === id ? { ...u, ...updates } : u)
     );
+
+    const { error } = await supabase.from('system_users').update(updates).eq('id', id);
 
     // Auto-suspend company if all users are now disabled
     if (updates.active === false) {
@@ -804,10 +851,27 @@ export class AppStateService {
         this.checkAutoSuspendClient(user.clientId);
       }
     }
+
+    if (!error) {
+      this.toastService.success('Aggiornato', 'I dati del collaboratore sono stati salvati.');
+    }
   }
 
-  deleteSystemUser(id: string) {
-    this.systemUsers.update(users => users.filter(u => u.id !== id));
+  async deleteSystemUser(id: string) {
+    const user = this.systemUsers().find(u => u.id === id);
+    if (!user) return;
+
+    if (confirm(`Sei sicuro di voler eliminare definitivamente ${user.name}? Questa operazione non può essere annullata.`)) {
+      this.systemUsers.update(users => users.filter(u => u.id !== id));
+      const { error } = await supabase.from('system_users').delete().eq('id', id);
+      
+      if (!error) {
+        this.toastService.success('Eliminato', 'Il collaboratore è stato rimosso correttamente.');
+      } else {
+        this.toastService.error('Errore', 'Impossibile eliminare dal database.');
+        // Rollback state if error? For now simple.
+      }
+    }
   }
 
   updateCurrentCompany(updates: Partial<ClientEntity>) {
@@ -968,4 +1032,3 @@ export class AppStateService {
     this.messages.update(msgs => [msg, ...msgs]);
   }
 }
-

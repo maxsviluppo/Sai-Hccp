@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;2c1c6285adec1051bdaf81e3f711599f1c0bd4914a43991a8a137d85b5e0f249;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/collaborators-view.component.ts"],
+  "sourcesContent": ["\n    @keyframes slideDown {\n      from { opacity: 0; transform: translateY(-10px); }\n      to { opacity: 1; transform: translateY(0); }\n    }\n    .animate-slide-down {\n      animation: slideDown 0.2s ease-out forwards;\n    }\n  "],
+  "mappings": ";AACI,WAAW;AACT;AAAO,aAAS;AAAG,eAAW,WAAW;AAAQ;AACjD;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAC7C;AACA,CAAC;AACC,aAAW,UAAU,KAAK,SAAS;AACrC;",
+  "names": []
+}

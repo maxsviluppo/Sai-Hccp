@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;6ad156622844516dfb2e35d4fe90507c2875c89c2fe7bd0ef1ee821988c217b3;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/microbio-monitor-view.component.ts"],
+  "sourcesContent": ["\n    .animate-fade-in { animation: fadeIn 0.3s ease-out; }\n    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }\n    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }\n    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }\n    .custom-scrollbar::-webkit-scrollbar { width: 4px; }\n    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }\n    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }\n  "],
+  "mappings": ";AACI,CAAC;AAAkB,aAAW,OAAO,KAAK;AAAU;AACpD,WAD8B;AACV;AAAO,aAAS;AAAG,eAAW,WAAW;AAAO;AAAE;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAAE;AACnH,CAAC;AAAmB,aAAW,QAAQ,KAAK,aAAa,IAAI,EAAE,CAAC,EAAE,GAAG,EAAE;AAAI;AAC3E,WAD+B;AACV;AAAO,eAAW,WAAW;AAAO,aAAS;AAAG;AAAE;AAAK,eAAW,WAAW;AAAI,aAAS;AAAG;AAAE;AACpH,CAAC,gBAAgB;AAAsB,SAAO;AAAK;AACnD,CADC,gBACgB;AAA4B,cAAY;AAAa;AACtE,CAFC,gBAEgB;AAA4B,cAAY;AAAS,iBAAe;AAAM;",
+  "names": []
+}

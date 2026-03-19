@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;6621c86509d12d6510e2c4674682dea021cd8d5cc452bd9eb2bd55490c9307aa;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/dashboard-view.component.ts"],
+  "sourcesContent": ["\n    .custom-scrollbar::-webkit-scrollbar { width: 5px; }\n    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }\n    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; }\n    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }\n    .shadow-3xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }\n    .shadow-glow-blue { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }\n    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }\n    .animate-fade-in { animation: fadeIn 0.4s ease-out; }\n  "],
+  "mappings": ";AACI,CAAC,gBAAgB;AAAsB,SAAO;AAAK;AACnD,CADC,gBACgB;AAA4B,cAAY;AAAa;AACtE,CAFC,gBAEgB;AAA4B,cAAY;AAAS,iBAAe;AAAM;AACvF,CAHC,gBAGgB,yBAAyB;AAAS,cAAY;AAAS;AACxE,CAAC;AAAa,cAAY,EAAE,KAAK,KAAK,MAAM,KAAK,CAAC,EAAE,CAAC,EAAE,CAAC,EAAE;AAAM;AAChE,CAAC;AAAmB,cAAY,EAAE,EAAE,KAAK,KAAK,EAAE,EAAE,GAAG,EAAE,GAAG,EAAE;AAAM;AAClE,WAAW;AAAS;AAAO,aAAS;AAAG,eAAW,WAAW;AAAO;AAAE;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAAE;AACnH,CAAC;AAAkB,aAAW,OAAO,KAAK;AAAU;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;3495a7bfc5dead51dbd1c25e12908c30314b9a8624f878aaaa81732ea5837046;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/settings-view.component.ts"],
+  "sourcesContent": ["\n    .animate-fade-in { animation: fadeIn 0.4s ease-out; }\n    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }\n  "],
+  "mappings": ";AACI,CAAC;AAAkB,aAAW,OAAO,KAAK;AAAU;AACpD,WAD8B;AACV;AAAO,aAAS;AAAG,eAAW,WAAW;AAAM;AAAE;AAAK,aAAS;AAAG,eAAW,WAAW;AAAI;AAAE;",
+  "names": []
+}

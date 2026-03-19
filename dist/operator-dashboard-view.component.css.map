@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;9c21c7239f812c66683d026bc35986cab9b6efdced2c8868a356a020da2c40ab;C:/Users/Max/Downloads/A Codici Main/haccp pro main/src/components/operator-dashboard-view.component.ts"],
+  "sourcesContent": ["\n    .line-clamp-2 {\n      display: -webkit-box;\n      -webkit-line-clamp: 2;\n      -webkit-box-orient: vertical;\n      overflow: hidden;\n    }\n  "],
+  "mappings": ";AACI,CAAC;AACC,WAAS;AACT,sBAAoB;AACpB,sBAAoB;AACpB,YAAU;AACZ;",
+  "names": []
+}
