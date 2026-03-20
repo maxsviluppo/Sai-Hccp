@@ -26,19 +26,16 @@ import { ToastService } from '../services/toast.service';
            </div>
         </div>
         
-        <div class="flex gap-3 w-full md:w-auto relative z-10 justify-between md:justify-end">
-            <button (click)="openClientModal()" class="px-4 py-2 bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all font-bold rounded-lg text-sm flex items-center shadow-sm">
-                <i class="fa-solid fa-building mr-2 text-indigo-400"></i> Nuova Azienda
-            </button>
-            <button (click)="openUserModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-all shadow-sm flex items-center text-sm">
-                <i class="fa-solid fa-user-plus mr-2 text-indigo-200"></i> Nuova Unità
+        <div class="flex gap-3 w-full md:w-auto relative z-10 justify-end">
+            <button (click)="openClientModal()" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center text-sm group">
+                <i class="fa-solid fa-plus mr-3 text-indigo-200 group-hover:rotate-90 transition-transform"></i> Nuova Azienda
             </button>
         </div>
       </div>
 
       <!-- Accordion List - Companies -->
       <div class="space-y-3">
-        @for (client of state.clients(); track client.id) {
+        @for (client of state.filteredClients(); track client.id) {
           @let isOpen = isClientExpanded(client.id);
           @let users = getUsersByClient(client.id);
 
@@ -106,10 +103,10 @@ import { ToastService } from '../services/toast.service';
                    <button (click)="deleteClient(client.id)" class="w-8 h-8 rounded border border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all bg-white shadow-sm" title="Elimina Azienda">
                       <i class="fa-solid fa-trash-can text-xs"></i>
                    </button>
-                   <button (click)="openUserModal(undefined, client.id)" class="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 rounded text-[11px] font-bold transition-all flex items-center whitespace-nowrap shadow-sm"
-                           [disabled]="client.suspended" [class.opacity-50]="client.suspended" [class.cursor-not-allowed]="client.suspended">
-                      <i class="fa-solid fa-plus mr-1"></i> Add Utente
-                   </button>
+                    <button (click)="openUserModal(undefined, client.id)" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold transition-all flex items-center whitespace-nowrap shadow-md"
+                            [disabled]="client.suspended" [class.opacity-50]="client.suspended" [class.cursor-not-allowed]="client.suspended">
+                       <i class="fa-solid fa-plus-circle mr-2"></i> Nuova Unità
+                    </button>
                    
                    <div class="w-6 h-6 flex items-center justify-center text-slate-400 transition-transform duration-300 ml-1" [class.rotate-180]="isOpen">
                        <i class="fa-solid fa-chevron-down text-sm"></i>
@@ -343,6 +340,20 @@ import { ToastService } from '../services/toast.service';
                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
+                            <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200">
+                  <div class="flex-1">
+                    <label class="block text-xs font-bold text-slate-700">Pagamento Saldo</label>
+                    <p class="text-[10px] text-slate-500">Mostra il banner di avviso pagamento saldo a tutti i dipendenti.</p>
+                  </div>
+                  <button type="button" (click)="clientForm.patchValue({paymentBalanceDue: !clientForm.get('paymentBalanceDue')?.value})" 
+                      class="w-10 h-5 rounded-full relative transition-colors duration-200"
+                      [class.bg-amber-400]="clientForm.get('paymentBalanceDue')?.value"
+                      [class.bg-slate-300]="!clientForm.get('paymentBalanceDue')?.value">
+                      <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
+                           [class.left-5.5]="clientForm.get('paymentBalanceDue')?.value"
+                           [class.left-0.5]="!clientForm.get('paymentBalanceDue')?.value"></div>
+                  </button>
+               </div>
 
               <div class="pt-4 flex justify-end gap-2 border-t border-slate-100 mt-6">
                  <button type="button" (click)="closeModal()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Annulla</button>
@@ -401,7 +412,8 @@ export class CollaboratorsViewComponent {
       address: ['', Validators.required],
       phone: [''],
       email: [''],
-      licenseNumber: ['']
+      licenseNumber: [''],
+      paymentBalanceDue: [false]
     });
 
     // All closed by default as requested
@@ -513,7 +525,8 @@ export class CollaboratorsViewComponent {
         address: client.address,
         phone: client.phone,
         email: client.email,
-        licenseNumber: client.licenseNumber
+        licenseNumber: client.licenseNumber,
+        paymentBalanceDue: client.paymentBalanceDue || false
       });
     } else {
       this.isEditing.set(false);

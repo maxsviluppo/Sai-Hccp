@@ -206,10 +206,9 @@ export class ReportsViewComponent {
 
   // Filter by global company selection
   selectedClient = computed(() => {
-    const filterId = this.state.filterCollaboratorId();
+    const filterId = this.state.filterClientId();
     if (!filterId) return null;
-    const user = this.state.systemUsers().find(u => u.id === filterId);
-    return user ? this.state.clients().find(c => c.id === user.clientId) : null;
+    return this.state.clients().find(c => c.id === filterId) || null;
   });
 
   companyReports = computed((): CompanyReport[] => {

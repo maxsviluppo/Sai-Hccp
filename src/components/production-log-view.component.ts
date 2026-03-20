@@ -350,23 +350,28 @@ export class ProductionLogViewComponent {
 
     filteredRecords = computed(() => {
         const selDate = this.state.filterDate(); // Format: YYYY-MM-DD
-        const client = this.state.currentUser()?.clientId || 'demo';
+        const targetClientId = this.state.activeTargetClientId();
         return this.state.productionRecords().filter(r =>
-            r.clientId === client && r.recordedDate.startsWith(selDate)
+            (targetClientId ? r.clientId === targetClientId : true) && 
+            r.recordedDate.startsWith(selDate)
         ).sort((a, b) => b.recordedDate.localeCompare(a.recordedDate));
     });
 
     startNew() {
+        const targetClientId = this.state.activeTargetClientId() || 'demo';
+        const selDate = this.state.filterDate(); // Use the global filter date
+        const currentTime = new Date().toISOString().split('T')[1];
+        
         this.currentRecord = {
             id: Math.random().toString(36).substring(2, 9),
             mainProductName: '',
-            packagingDate: new Date().toISOString().split('T')[0],
+            packagingDate: selDate,
             expiryDate: '',
             lotto: 'L-' + (Date.now() % 100000).toString().padStart(5, '0'),
-            recordedDate: new Date().toISOString(),
+            recordedDate: selDate + 'T' + currentTime,
             ingredients: [],
             userId: this.state.currentUser()?.id || 'demo',
-            clientId: this.state.currentUser()?.clientId || 'demo'
+            clientId: targetClientId
         };
         this.ingredientsList.set([]);
         this.isEditing.set(true);
@@ -387,7 +392,7 @@ export class ProductionLogViewComponent {
         this.tempPhoto = null;
         this.newIngredient = {
             name: '',
-            packingDate: new Date().toISOString().split('T')[0],
+            packingDate: this.state.filterDate(),
             expiryDate: '',
             lotto: ''
         };
@@ -427,10 +432,13 @@ export class ProductionLogViewComponent {
     saveRecord() {
         if (!this.currentRecord.mainProductName) return;
 
+        const selDate = this.state.filterDate();
+        const currentTime = new Date().toISOString().split('T')[1];
+
         const finalRecord: ProductionRecord = {
             ...(this.currentRecord as ProductionRecord),
             ingredients: this.ingredientsList(),
-            recordedDate: new Date().toISOString() // Update to current time saved
+            recordedDate: selDate + 'T' + currentTime // Archive on the filtered date
         };
 
         this.state.productionRecords.update(list => {

@@ -13,85 +13,77 @@ interface CheckItem {
     standalone: true,
     imports: [CommonModule],
     template: `
-    <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
-        
-        <!-- App-style Header -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-4">
-                <div class="h-12 w-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shadow-sm border border-amber-100/50">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800 tracking-tight">Non Conformità</h2>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Gestione Anomalie & Richiami</p>
+    <div class="space-y-8 pb-10">
+        <!-- Premium Header Banner -->
+        <div class="bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 p-8 rounded-3xl shadow-xl border border-rose-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <i class="fa-solid fa-triangle-exclamation text-9xl text-white"></i>
+            </div>
+            
+            <div class="relative z-10">
+                <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
+                    <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/30">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </span>
+                    Non Conformità
+                </h2>
+                <div class="flex items-center gap-4 mt-2">
+                    <p class="text-rose-100 text-sm font-medium ml-1">Gestione anomalie, richiami e azioni correttoive</p>
+                    <button (click)="showStandardInfo.set(true)" 
+                            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white text-white hover:text-rose-700 transition-all text-[10px] font-black border border-white/30 shadow-md group">
+                        <i class="fa-solid fa-circle-info text-sm group-hover:scale-110 transition-transform"></i>
+                        <span>INFO PROTOCOLLO</span>
+                    </button>
                 </div>
             </div>
-
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                <a href="/mod_RICHIAMO.pdf" 
-                   download="mod_RICHIAMO.pdf"
-                   class="w-full sm:w-auto h-10 px-4 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap group">
-                    <i class="fa-solid fa-file-pdf text-rose-500 group-hover:scale-110 transition-transform"></i> 
-                    Modello PDF
-                </a>
-                
-                <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 shrink-0 shadow-inner">
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Archiviate</p>
-                        <p class="text-xs font-bold text-slate-700 leading-none">{{ checkedCount() }} / {{ checks().length }}</p>
-                    </div>
-                    <div class="h-8 w-8 flex items-center justify-center bg-white rounded-lg border border-slate-200 text-amber-500 shadow-sm">
-                        <i class="fa-solid fa-folder-tree text-sm"></i>
-                    </div>
+            
+            <div class="relative z-10 flex flex-col gap-2">
+                <div class="text-xs text-rose-100 font-medium flex items-center justify-end gap-2">
+                    <i class="fa-regular fa-calendar"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}
+                    @if (getDisplayName()) {
+                        <span class="mx-1">•</span>
+                        <i class="fa-regular fa-user"></i>
+                        {{ getDisplayName() }}
+                    }
                 </div>
             </div>
         </div>
 
-        <!-- Modern App List -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
-                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Protocolli Disponibili</h3>
-                <button (click)="showStandardInfo.set(true)" class="text-[10px] font-bold text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1.5">
-                   <i class="fa-solid fa-circle-info"></i> INFO PROTOCOLLO
-                </button>
-            </div>
-            
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="divide-y divide-slate-100">
                 @for (check of checks(); track check.id) {
-                    <div class="p-6 flex flex-col sm:flex-row items-center justify-between gap-6 hover:bg-slate-50 transition-colors group relative overflow-hidden">
-                        <!-- Left side -->
-                        <div class="flex items-center gap-5 w-full sm:w-auto">
-                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all border shadow-sm group-hover:scale-105"
-                                    [class.bg-amber-50]="check.checked" [class.border-amber-100]="check.checked" [class.text-amber-600]="check.checked"
-                                    [class.bg-slate-50]="!check.checked" [class.border-slate-100]="!check.checked" [class.text-slate-300]="!check.checked">
-                                <i class="fa-solid" [class.fa-file-circle-check]="check.checked" [class.fa-file-circle-plus]="!check.checked"></i>
+                    <div class="p-8 flex flex-col lg:flex-row items-center justify-between gap-6 hover:bg-slate-50 transition-colors group relative overflow-hidden">
+                        <div class="flex items-center gap-6 w-full lg:w-auto">
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all border shadow-sm group-hover:scale-105"
+                                 [class.bg-rose-500]="check.checked" [class.border-rose-400]="check.checked" [class.text-white]="check.checked"
+                                 [class.bg-slate-50]="!check.checked" [class.border-slate-100]="!check.checked" [class.text-slate-300]="!check.checked">
+                                <i class="fa-solid text-2xl" [class.fa-file-circle-check]="check.checked" [class.fa-file-circle-plus]="!check.checked"></i>
                             </div>
                             <div class="min-w-0">
-                                <h4 class="font-bold text-slate-800 text-sm md:text-base leading-tight uppercase tracking-tight">{{ check.label }}</h4>
+                                <h4 class="font-black text-slate-800 text-lg leading-tight uppercase tracking-tight">{{ check.label }}</h4>
                                 <div class="flex items-center gap-2 mt-1">
-                                   <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">HACCP Standard 2024</span>
+                                   <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Procedura Operativa Standard</span>
                                    @if (check.checked) {
-                                      <span class="h-1 w-1 rounded-full bg-slate-300"></span>
-                                      <span class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">ARCHIVIATO</span>
+                                      <span class="h-1.5 w-1.5 rounded-full bg-rose-300"></span>
+                                      <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">ARCHIVIATO</span>
                                    }
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Right side (Actions) -->
-                        <div class="flex items-center gap-3 w-full sm:w-auto">
-                            <button (click)="printModel(check.label)" 
-                                    class="flex-1 sm:flex-none h-10 px-6 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-                                <i class="fa-solid fa-print"></i> Stampa
+                        <div class="flex items-center gap-3 w-full lg:w-auto">
+                            <button (click)="downloadModule()" 
+                                    class="flex-1 lg:flex-none py-4 px-6 bg-white text-slate-600 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm group">
+                                <i class="fa-solid fa-download text-sm group-hover:-translate-y-0.5 transition-transform"></i> SCARICA MODULO
                             </button>
                             
                             <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
-                                    class="flex-[2] sm:flex-none h-10 px-8 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md group relative overflow-hidden flex items-center justify-center gap-2"
-                                    [class.bg-slate-100]="check.checked" [class.text-slate-400]="check.checked" [class.border-slate-200]="check.checked"
-                                    [class.bg-amber-600]="!check.checked" [class.text-white]="!check.checked" [class.border-amber-500]="!check.checked" [class.hover:bg-amber-700]="!check.checked" [class.shadow-amber-100]="!check.checked"
+                                    class="flex-[2] lg:flex-none py-4 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-rose-200/50 group relative overflow-hidden flex items-center justify-center gap-2"
+                                    [class.bg-slate-100]="check.checked" [class.text-slate-400]="check.checked" [class.border-slate-200]="check.checked" [class.shadow-none]="check.checked"
+                                    [class.bg-rose-600]="!check.checked" [class.text-white]="!check.checked" [class.border-rose-500]="!check.checked" [class.hover:bg-rose-700]="!check.checked"
                                     [class.opacity-50]="!canEdit()" [class.cursor-not-allowed]="!canEdit()">
-                                <i class="fa-solid" [class.fa-check-double]="check.checked" [class.fa-floppy-disk]="!check.checked"></i>
-                                {{ check.checked ? 'Reg. Salvata' : 'Salva Reg.' }}
+                                <i class="fa-solid text-sm" [class.fa-check-double]="check.checked" [class.fa-floppy-disk]="!check.checked"></i>
+                                {{ check.checked ? 'Archiviato' : 'Salva Registro' }}
                             </button>
                         </div>
                     </div>
@@ -100,50 +92,60 @@ interface CheckItem {
         </div>
 
         @if (!canEdit()) {
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-center gap-3">
-                <i class="fa-solid fa-lock text-slate-400 text-xs"></i>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Modalità sola lettura attiva</p>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
+                <i class="fa-solid fa-lock text-yellow-600 mt-0.5"></i>
+                <p class="text-sm text-yellow-800 font-medium">Modalità di sola lettura. Seleziona un'unità operativa per modificare i dati.</p>
             </div>
         }
 
-        <!-- Informational Modal (Dashboard Style) -->
+        <!-- Informational Modal -->
         @if (showStandardInfo()) {
-            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="showStandardInfo.set(false)"></div>
-                <div class="relative bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-slate-200">
-                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                        <h3 class="font-bold text-slate-800 tracking-tight">Protocollo Non Conformità</h3>
-                        <button (click)="showStandardInfo.set(false)" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
+            <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="showStandardInfo.set(false)"></div>
+                <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                    <div class="p-8 bg-gradient-to-br from-rose-700 to-pink-900 text-white relative flex-shrink-0">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none -rotate-12 translate-x-2">
+                            <i class="fa-solid fa-triangle-exclamation text-8xl"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <h3 class="text-2xl font-black mb-1">Non Conformità</h3>
+                            <p class="text-rose-200 text-[10px] font-black uppercase tracking-[0.2em]">Protocollo Sicurezza</p>
+                        </div>
                     </div>
                     
-                    <div class="p-6 space-y-6">
-                        <div class="flex gap-4">
-                            <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold border border-amber-100">1</div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Identificazione</h4>
-                                <p class="text-sm text-slate-600 leading-relaxed">Qualsiasi deviazione dai parametri critici deve essere formalizzata mediante l'apposito modello.</p>
+                    <div class="p-8 pt-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-search text-xs"></i> 01. Identificazione
+                            </h4>
+                            <div class="bg-rose-50/50 p-5 rounded-2xl border border-rose-100 text-xs text-slate-700 font-medium leading-relaxed">
+                                Qualsiasi deviazione dai parametri critici o dai limiti di legge deve essere formalizzata.
                             </div>
                         </div>
-                        <div class="flex gap-4">
-                            <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold border border-amber-100">2</div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Azione Correttiva</h4>
-                                <p class="text-sm text-slate-600 leading-relaxed italic">Definire la causa, isolare i prodotti e implementare soluzioni immediate.</p>
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-bolt text-xs"></i> 02. Azione Immediata
+                            </h4>
+                            <div class="bg-rose-50/50 p-5 rounded-2xl border border-rose-100 text-xs text-slate-700 font-medium leading-relaxed">
+                                In caso di pericolo imminente, isolare il lotto interessato e bloccare la vendita/produzione.
                             </div>
                         </div>
-                        <div class="flex gap-4">
-                            <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold border border-amber-100">3</div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Registrazione</h4>
-                                <p class="text-sm text-slate-600 leading-relaxed">Il modello deve essere stampato e conservato nell'archivio cartaceo aziendale.</p>
+
+                        <div class="space-y-3">
+                            <h4 class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-pen-nib text-xs"></i> 03. Tracciabilità
+                            </h4>
+                            <div class="bg-rose-50/50 p-5 rounded-2xl border border-rose-100 text-[10px] font-bold text-slate-500 italic">
+                                La registrazione cartacea (Stampa Modulo) deve essere sempre firmata e conservata nell'archivio fisico.
                             </div>
                         </div>
                     </div>
 
                     <div class="p-6 bg-slate-50 border-t border-slate-100">
-                        <button (click)="showStandardInfo.set(false)" class="w-full py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-100 transition-all">HO COMPRESO</button>
+                        <button (click)="showStandardInfo.set(false)"
+                                class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95">
+                            HO PRESO VISIONE
+                        </button>
                     </div>
                 </div>
             </div>
@@ -211,6 +213,10 @@ export class NonComplianceViewComponent {
         if (!this.canEdit()) return;
         this.checks.update(items => items.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
         this.state.saveRecord(this.moduleId, this.checks());
+    }
+
+    downloadModule() {
+        window.open('/mod_RICHIAMO.pdf', '_blank');
     }
 
     printModel(label: string) {

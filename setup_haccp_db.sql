@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS clients (
   email TEXT,
   license_number TEXT,
   suspended BOOLEAN DEFAULT false,
+  payment_balance_due BOOLEAN DEFAULT false,
+  license_expiry_date TEXT,
   logo TEXT
 );
 
@@ -90,6 +92,38 @@ CREATE TABLE IF NOT EXISTS production_records (
   client_id TEXT
 );
 
+-- Accounting Tables
+CREATE TABLE IF NOT EXISTS accounting_payments (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id),
+  amount NUMERIC,
+  frequency TEXT,
+  due_date TEXT,
+  status TEXT,
+  paid_date TEXT,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS journal_entries (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id),
+  date TEXT,
+  description TEXT,
+  debit NUMERIC,
+  credit NUMERIC,
+  category TEXT
+);
+
+CREATE TABLE IF NOT EXISTS accounting_reminders (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id),
+  type TEXT,
+  message TEXT,
+  due_date TEXT,
+  priority TEXT,
+  dismissed BOOLEAN DEFAULT false
+);
+
 -- Disable RLS for development
 ALTER TABLE clients DISABLE ROW LEVEL SECURITY;
 ALTER TABLE system_users DISABLE ROW LEVEL SECURITY;
@@ -98,18 +132,22 @@ ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
 ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
 ALTER TABLE production_records DISABLE ROW LEVEL SECURITY;
+ALTER TABLE accounting_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE journal_entries DISABLE ROW LEVEL SECURITY;
+ALTER TABLE accounting_reminders DISABLE ROW LEVEL SECURITY;
 
 -- TRUNCATE TABLES (Clear all test data)
-TRUNCATE TABLE clients CASCADE;
-TRUNCATE TABLE system_users CASCADE;
-TRUNCATE TABLE checklist_records CASCADE;
-TRUNCATE TABLE documents CASCADE;
-TRUNCATE TABLE messages CASCADE;
-TRUNCATE TABLE equipment CASCADE;
-TRUNCATE TABLE production_records CASCADE;
+-- TRUNCATE TABLE clients CASCADE;
+-- TRUNCATE TABLE system_users CASCADE;
+-- TRUNCATE TABLE checklist_records CASCADE;
+-- TRUNCATE TABLE documents CASCADE;
+-- TRUNCATE TABLE messages CASCADE;
+-- TRUNCATE TABLE equipment CASCADE;
+-- TRUNCATE TABLE production_records CASCADE;
+-- TRUNCATE TABLE accounting_payments CASCADE;
+-- TRUNCATE TABLE journal_entries CASCADE;
+-- TRUNCATE TABLE accounting_reminders CASCADE;
 
 -- Insert ONLY the essential developer admin
-INSERT INTO system_users (id, name, role, active, avatar, username, password)
-VALUES ('dev-admin', 'Sviluppatore (Admin)', 'ADMIN', true, 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff', 'dev', 'dev');
-
--- No demo companies or operators. Pure zero state.
+-- INSERT INTO system_users (id, name, role, active, avatar, username, password)
+-- VALUES ('dev-admin', 'Sviluppatore (Admin)', 'ADMIN', true, 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff', 'dev', 'dev');

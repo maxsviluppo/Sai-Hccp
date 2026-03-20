@@ -29,6 +29,8 @@ export interface ClientEntity {
   email: string;
   licenseNumber: string;
   suspended: boolean; // Service suspension for non-payment
+  paymentBalanceDue?: boolean; // New: Banner info for balance payment due
+  licenseExpiryDate?: string; // New: Expiration date for the subscription
   logo?: string;
 }
 
@@ -40,6 +42,7 @@ export interface SystemUser {
   department?: string;
   active: boolean;
   avatar: string;
+  initials?: string;
   clientId?: string; // Link to the specific Company/Client
   username?: string;
   password?: string;
@@ -50,6 +53,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatar: string;
+  initials?: string;
   department?: string;
   clientId?: string;
 }
@@ -123,6 +127,36 @@ export interface ProductionRecord {
   clientId: string;
 }
 
+export interface Payment {
+  id: string;
+  clientId: string;
+  amount: number;
+  frequency: string;
+  dueDate: string;
+  status: 'paid' | 'pending' | 'overdue';
+  paidDate?: string;
+  notes?: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  clientId: string;
+  date: string;
+  description: string;
+  debit: number;
+  credit: number;
+  category: string;
+}
+
+export interface Reminder {
+  id: string;
+  clientId: string;
+  type: string;
+  message: string;
+  dueDate: string;
+  priority: 'low' | 'medium' | 'high';
+  dismissed: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -137,28 +171,91 @@ export class AppStateService {
   // --- Navigation State ---
   readonly currentModuleId = signal<string>('dashboard');
 
+  // --- Accounting / Payments State ---
+  readonly payments = signal<Payment[]>([]);
+  readonly journalEntries = signal<JournalEntry[]>([]);
+  readonly reminders = signal<Reminder[]>([]);
+
   // --- Global Filter State ---
   readonly filterCollaboratorId = signal<string>(''); // '' means All
   readonly filterDate = signal<string>(new Date().toISOString().split('T')[0]); // Default Today
   readonly reportRecipientEmail = signal<string>('amministrazione@haccppro.it');
+
+  // Filter state for firms/companies
+  readonly filterClientId = signal<string | null>(null);
+
+  // Automatically switches between logged operator or filter for administrator.
+  readonly activeTargetClientId = computed(() => {
+    const user = this.currentUser();
+    const filterId = this.filterClientId();
+
+    if (user?.role === 'ADMIN') {
+      return filterId || user.clientId || 'demo';
+    }
+
+    // Role == COLLABORATOR
+    return user?.clientId || 'demo';
+  });
+
+  // Returns list of unique brands for initial filtering
+  readonly groupedViewClients = computed(() => {
+    const all = this.clients();
+    const seen = new Set<string>();
+    const brands: ClientEntity[] = [];
+
+    all.forEach(c => {
+      // Identify brand by PIVA or base name before space
+      const brandKey = c.piva || c.name.split(' ')[0].toLowerCase();
+      if (!seen.has(brandKey)) {
+        seen.add(brandKey);
+        brands.push(c);
+      }
+    });
+    return brands;
+  });
+
+  // Returns list of units belonging to the same brand as the selected filterClientId
+  readonly activeBrandUnits = computed(() => {
+    const all = this.clients();
+    const filterId = this.filterClientId();
+    if (!filterId) return [];
+
+    const selected = all.find(c => c.id === filterId);
+    if (!selected) return [];
+
+    const brandKey = selected.piva || selected.name.split(' ')[0].toLowerCase();
+    
+    return all.filter(c => {
+      const cKey = c.piva || c.name.split(' ')[0].toLowerCase();
+      return cKey === brandKey;
+    });
+  });
+
+  // Returns list of companies filtered if administrator has selection.
+  readonly filteredClients = computed(() => {
+    const clients = this.clients();
+    const filterId = this.filterClientId();
+    if (this.currentUser()?.role === 'ADMIN' && filterId) {
+      return clients.filter(c => c.id === filterId);
+    }
+    return clients;
+  });
+
+  // Returns list of users filtered by the active company selection.
+  readonly filteredSystemUsers = computed(() => {
+    const users = this.systemUsers();
+    const activeClientId = this.activeTargetClientId();
+    if (this.isAdmin() && activeClientId) {
+      return users.filter(u => u.clientId === activeClientId);
+    }
+    return users;
+  });
 
   readonly currentLogo = computed(() => {
     if (this.isAdmin()) {
       return this.adminCompany().logo || '/logo.png';
     }
     return this.companyConfig().logo || '/logo.png';
-  });
-
-  readonly activeTargetClientId = computed(() => {
-    const user = this.currentUser();
-    if (!user) return null;
-    if (this.isAdmin()) {
-      const targetUserId = this.filterCollaboratorId();
-      if (!targetUserId) return null;
-      const targetUser = this.systemUsers().find(u => u.id === targetUserId);
-      return targetUser?.clientId || null;
-    }
-    return user.clientId;
   });
 
   // --- Admin Company / Master Data ---
@@ -214,7 +311,8 @@ export class AppStateService {
       selectedEquipment: this.selectedEquipment(),
       disabledDocs: this.disabledDocs(),
       checklistRecords: this.checklistRecords(),
-      productionRecords: this.productionRecords()
+      productionRecords: this.productionRecords(),
+      messages: this.messages()
     };
     localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
   }
@@ -229,48 +327,66 @@ export class AppStateService {
       // Synchronize Clients
     const { data: dbClients } = await supabase.from('clients').select('*');
     if (dbClients) {
-      this.clients.set(dbClients.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        piva: c.piva,
-        address: c.address,
-        phone: c.phone,
-        email: c.email,
-        licenseNumber: c.license_number,
-        suspended: c.suspended,
-        logo: c.logo
-      })));
+      const validClients = dbClients.filter((c: any) => 
+        !c.name.toLowerCase().includes('demo') && 
+        !c.name.toLowerCase().includes('sviluppatore')
+      );
+      this.clients.set(validClients.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          piva: c.piva,
+          address: c.address,
+          phone: c.phone,
+          email: c.email,
+          licenseNumber: c.license_number,
+          suspended: c.suspended,
+          paymentBalanceDue: !!c.payment_balance_due,
+          licenseExpiryDate: c.license_expiry_date,
+          logo: c.logo
+        })));
     }
+
+    const validClientIds = this.clients().map(c => c.id);
 
     // Synchronize Users
     const { data: dbUsers } = await supabase.from('system_users').select('*');
     if (dbUsers) {
-      this.systemUsers.set(dbUsers.map((u: any) => ({
-        id: u.id,
-        clientId: u.client_id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        department: u.department,
-        active: u.active,
-        avatar: u.avatar,
-        username: u.username,
-        password: u.password
-      })));
+      this.systemUsers.set(dbUsers
+        .filter((u: any) => {
+          const isDemo = u.name.toLowerCase().includes('demo') || u.name.toLowerCase().includes('sviluppatore');
+          const isOrphaned = u.role !== 'ADMIN' && !validClientIds.includes(u.client_id);
+          
+          return !isDemo && !isOrphaned;
+        })
+        .map((u: any) => ({
+          id: u.id,
+          clientId: u.client_id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          department: u.department,
+          active: u.active,
+          avatar: u.avatar,
+          initials: this.generateInitials(u.name),
+          username: u.username,
+          password: u.password
+        })));
     }
 
     // Synchronize Records
     const { data: dbRecords } = await supabase.from('checklist_records').select('*');
     if (dbRecords) {
-      this.checklistRecords.set(dbRecords.map((r: any) => ({
-        id: r.id,
-        moduleId: r.module_id,
-        userId: r.user_id,
-        clientId: r.client_id,
-        date: r.date,
-        data: r.data,
-        timestamp: r.timestamp
-      })));
+      this.checklistRecords.set(dbRecords
+        .filter((r: any) => r.client_id === 'demo' || validClientIds.includes(r.client_id))
+        .map((r: any) => ({
+          id: r.id,
+          moduleId: r.module_id,
+          userId: r.user_id,
+          clientId: r.client_id,
+          date: r.date,
+          data: r.data,
+          timestamp: r.timestamp
+        })));
     }
 
       // 4. Documents
@@ -282,12 +398,77 @@ export class AppStateService {
       if (equip) this.selectedEquipment.set(equip as any);
 
       // 6. Messages
-      const { data: msgs } = await supabase.from('messages').select('*').order('timestamp', { ascending: false });
-      if (msgs) this.messages.set(msgs as any);
+      const { data: dbMsgs } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
+      if (dbMsgs) {
+        this.messages.set(dbMsgs.map((m: any) => ({
+          id: m.id,
+          senderId: m.sender_id,
+          senderName: m.sender_name,
+          recipientType: m.recipient_type,
+          recipientId: m.recipient_id,
+          recipientUserId: m.recipient_user_id,
+          subject: m.subject,
+          content: m.content,
+          attachmentUrl: m.attachment_url,
+          attachmentName: m.attachment_name,
+          timestamp: new Date(m.timestamp || m.created_at),
+          read: m.read,
+          replies: (m.replies || []).map((r: any) => ({
+            id: r.id,
+            senderId: r.sender_id || r.senderId,
+            senderName: r.sender_name || r.senderName,
+            content: r.content,
+            timestamp: new Date(r.timestamp)
+          }))
+        })));
+      }
 
       // 7. Production Records
       const { data: prod } = await supabase.from('production_records').select('*');
       if (prod) this.productionRecords.set(prod as any);
+
+      // 8. Accounting Payments
+      const { data: payData } = await supabase.from('accounting_payments').select('*');
+      if (payData) {
+        this.payments.set(payData.map((p: any) => ({
+          id: p.id,
+          clientId: p.client_id,
+          amount: parseFloat(p.amount) || 0,
+          frequency: p.frequency,
+          dueDate: p.due_date,
+          status: p.status,
+          paidDate: p.paid_date,
+          notes: p.notes
+        })));
+      }
+
+      // 9. Journal Entries
+      const { data: journalData } = await supabase.from('journal_entries').select('*');
+      if (journalData) {
+        this.journalEntries.set(journalData.map((j: any) => ({
+          id: j.id,
+          clientId: j.client_id,
+          date: j.date,
+          description: j.description,
+          debit: parseFloat(j.debit) || 0,
+          credit: parseFloat(j.credit) || 0,
+          category: j.category
+        })));
+      }
+
+      // 10. Accounting Reminders
+      const { data: reminderData } = await supabase.from('accounting_reminders').select('*');
+      if (reminderData) {
+        this.reminders.set(reminderData.map((r: any) => ({
+          id: r.id,
+          clientId: r.client_id,
+          type: r.type,
+          message: r.message,
+          dueDate: r.due_date,
+          priority: r.priority,
+          dismissed: !!r.dismissed
+        })));
+      }
 
     } catch (e) {
       console.error('Error refreshing data from Supabase:', e);
@@ -311,6 +492,12 @@ export class AppStateService {
           this.checklistRecords.set(restoredRecords);
         }
         if (data.productionRecords) this.productionRecords.set(data.productionRecords);
+        if (data.messages) {
+          this.messages.set(data.messages.map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp)
+          })));
+        }
       } catch (e) {
         console.error('Failed to load local state', e);
       }
@@ -383,17 +570,25 @@ export class AppStateService {
   readonly systemUsers = signal<SystemUser[]>([]);
 
   // --- Current Active Company Config ---
-  // If Admin, this might be the first client or a specific selected one.
-  // If Collaborator, this is THEIR client.
-  readonly companyConfig = signal<ClientEntity>({
-    id: 'demo',
-    name: 'Demo Company S.r.l.',
-    piva: '00000000000',
-    address: 'Via Demo 1',
-    phone: '',
-    email: '',
-    licenseNumber: '',
-    suspended: false
+  // Automatically follows the activeTargetClientId (global Firm filter for Admin)
+  readonly companyConfig = computed<ClientEntity>(() => {
+    const targetId = this.activeTargetClientId();
+    const allClients = this.clients();
+    
+    const found = allClients.find(c => c.id === targetId);
+    if (found) return found;
+
+    // Fallback/Default
+    return allClients[0] || {
+      id: 'demo',
+      name: 'Demo Company S.r.l.',
+      piva: '00000000000',
+      address: 'Via Demo 1',
+      phone: '',
+      email: '',
+      licenseNumber: '',
+      suspended: false
+    };
   });
 
   // --- Current Active Editing Session ---
@@ -458,13 +653,13 @@ export class AppStateService {
     if (username === 'dev' && pass === 'dev') {
       this.currentUser.set({
         id: 'dev-admin',
-        name: 'Sviluppatore (Admin)',
+        name: this.adminCompany().name,
         role: 'ADMIN',
-        avatar: 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff',
+        avatar: this.adminCompany().logo || '',
+        initials: 'Adm',
         clientId: 'demo' // Default to demo context
       });
-      // Default config
-      if (this.clients().length > 0) this.companyConfig.set(this.clients()[0]);
+      // companyConfig is now computed
 
       this.currentModuleId.set('dashboard');
       return true;
@@ -501,12 +696,9 @@ export class AppStateService {
       });
 
       // Determine company config (Admin -> First or demo, Collab -> Their Client)
-      if (user.role === 'ADMIN') {
-        this.companyConfig.set(this.clients()[0]); // Default to first client for admin view
-      } else {
-        const clientConfig = this.clients().find(c => c.id === user.clientId);
-        if (clientConfig) this.companyConfig.set(clientConfig);
-      }
+      // companyConfig is now computed and will follow automatically
+      // The computed signal `companyConfig` will automatically react to changes in `activeTargetClientId` and `clients`.
+      // No manual setting needed here.
 
       this.currentModuleId.set(user.role === 'ADMIN' ? 'dashboard' : 'operator-dashboard');
     }
@@ -517,8 +709,7 @@ export class AppStateService {
       const adminUser = this.systemUsers().find(u => u.role === 'ADMIN');
       if (adminUser) {
         this.currentUser.set({ id: adminUser.id, name: adminUser.name, role: 'ADMIN', avatar: adminUser.avatar, clientId: adminUser.clientId });
-        // Admin defaults to the first client in list for view purposes, or a generic dash
-        this.companyConfig.set(this.clients()[0]);
+        // companyConfig is now computed
       }
     } else {
       // Login as the first active collaborator found for demo
@@ -532,12 +723,7 @@ export class AppStateService {
           clientId: collabUser.clientId,
           department: collabUser.department
         });
-
-        // LOAD THE SPECIFIC CLIENT CONFIG FOR THIS USER
-        const clientConfig = this.clients().find(c => c.id === collabUser.clientId);
-        if (clientConfig) {
-          this.companyConfig.set(clientConfig);
-        }
+        // companyConfig is now computed
       }
     }
     this.currentModuleId.set(role === 'ADMIN' ? 'dashboard' : 'operator-dashboard');
@@ -556,6 +742,12 @@ export class AppStateService {
 
   setCollaboratorFilter(id: string) {
     this.filterCollaboratorId.set(id);
+  }
+
+  setClientIdFilter(id: string | null) {
+    this.filterClientId.set(id);
+    // When changing company, reset the collaborator/unit filter
+    this.filterCollaboratorId.set('');
   }
 
   setDateFilter(date: string) {
@@ -686,19 +878,11 @@ export class AppStateService {
   }
 
   getChecklistHistory(moduleId: string) {
-    // Return all records for this module, filtered by current user (or admin view logic)
-    const user = this.currentUser();
-    if (!user) return [];
-
-    // Admins might want to see ALL records for this module? Or filtered by user?
-    // user request: "troviamo la lista"
-    // Let's return all records matching the module for now.
-    // In a real app we would filter by Company.
-    // Here we filter by clientId via user check? 
-    // Let's verify clientId matches current user's clientId if not admin.
+    const targetClientId = this.activeTargetClientId();
+    if (!targetClientId) return [];
 
     return this.checklistRecords()
-      .filter(r => r.moduleId === moduleId)
+      .filter(r => r.moduleId === moduleId && r.clientId === targetClientId)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
@@ -740,6 +924,8 @@ export class AppStateService {
       email: newClient.email,
       license_number: newClient.licenseNumber,
       suspended: newClient.suspended,
+      payment_balance_due: newClient.paymentBalanceDue,
+      license_expiry_date: newClient.licenseExpiryDate,
       logo: newClient.logo
     });
 
@@ -771,13 +957,27 @@ export class AppStateService {
     }
   }
 
-  updateClient(id: string, updates: Partial<ClientEntity>) {
+  async updateClient(id: string, updates: Partial<ClientEntity>) {
     this.clients.update(clients =>
       clients.map(c => c.id === id ? { ...c, ...updates } : c)
     );
-    // If currently viewing this company, update the view immediately
-    if (this.companyConfig().id === id) {
-      this.companyConfig.update(c => ({ ...c, ...updates }));
+    // Sync with Supabase
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.piva !== undefined) dbUpdates.piva = updates.piva;
+    if (updates.address !== undefined) dbUpdates.address = updates.address;
+    if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.licenseNumber !== undefined) dbUpdates.license_number = updates.licenseNumber;
+    if (updates.suspended !== undefined) dbUpdates.suspended = updates.suspended;
+    if (updates.paymentBalanceDue !== undefined) dbUpdates.payment_balance_due = updates.paymentBalanceDue;
+    if (updates.licenseExpiryDate !== undefined) dbUpdates.license_expiry_date = updates.licenseExpiryDate;
+    if (updates.logo !== undefined) dbUpdates.logo = updates.logo;
+
+    const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
+    if (error) {
+      console.error('Error updating client:', error);
+      this.toastService.error('Errore Sync', 'Impossibile aggiornare i dati nel database.');
     }
   }
 
@@ -960,7 +1160,26 @@ export class AppStateService {
       replies: []
     };
 
-    this.messages.update(msgs => [...msgs, newMessage]);
+    this.messages.update(msgs => [newMessage, ...msgs]);
+
+    // DB Sync
+    supabase.from('messages').insert({
+      id: newMessage.id,
+      sender_id: newMessage.senderId,
+      sender_name: newMessage.senderName,
+      recipient_type: newMessage.recipientType,
+      recipient_id: newMessage.recipientId,
+      recipient_user_id: newMessage.recipientUserId,
+      subject: newMessage.subject,
+      content: newMessage.content,
+      attachment_url: newMessage.attachmentUrl,
+      attachment_name: newMessage.attachmentName,
+      timestamp: newMessage.timestamp.toISOString(),
+      read: newMessage.read,
+      replies: newMessage.replies
+    }).then(({ error }) => {
+      if (error) console.error('Error saving message:', error);
+    });
 
     // Show toast notification to recipients
     if (recipientType === 'ALL') {
@@ -989,13 +1208,35 @@ export class AppStateService {
       timestamp: new Date()
     };
 
+    let updatedMessage: Message | undefined;
+
     this.messages.update(msgs =>
-      msgs.map(msg =>
-        msg.id === messageId
-          ? { ...msg, replies: [...msg.replies, reply] }
-          : msg
-      )
+      msgs.map(msg => {
+        if (msg.id === messageId) {
+          updatedMessage = { ...msg, replies: [...msg.replies, reply] };
+          return updatedMessage;
+        }
+        return msg;
+      })
     );
+
+    if (updatedMessage) {
+      // DB Sync - map replies back to snake_case if needed, but usually we store as JSON
+      // Let's ensure the format for storage is consistent
+      const dbReplies = updatedMessage.replies.map(r => ({
+        id: r.id,
+        sender_id: r.senderId,
+        sender_name: r.senderName,
+        content: r.content,
+        timestamp: r.timestamp.toISOString()
+      }));
+
+      supabase.from('messages').update({ 
+        replies: dbReplies,
+        read: false // Mark as unread for the original sender if we want? 
+                    // Actually, usually messages are unread for recipients.
+      }).eq('id', messageId).then();
+    }
 
     this.toastService.success('Risposta inviata', 'La tua risposta è stata inviata');
   }
@@ -1006,6 +1247,15 @@ export class AppStateService {
         msg.id === messageId ? { ...msg, read: true } : msg
       )
     );
+
+    supabase.from('messages').update({ read: true }).eq('id', messageId).then();
+  }
+
+
+  deleteMessage(id: string) {
+    this.messages.update(msgs => msgs.filter(m => m.id !== id));
+    supabase.from('messages').delete().eq('id', id).then();
+    this.toastService.success('Messaggio Eliminato', 'Il messaggio è stato rimosso correttamente.');
   }
 
   getMessagesForCurrentUser() {
@@ -1030,5 +1280,94 @@ export class AppStateService {
 
   addMessage(msg: any) {
     this.messages.update(msgs => [msg, ...msgs]);
+  }
+  private generateInitials(name: string): string {
+    if (!name) return '??';
+    return name
+      .split(' ')
+      .filter(part => part.length > 0)
+      .map(part => part[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  }
+
+  // --- Accounting Persistence Methods ---
+  async syncPayment(payment: Payment) {
+    try {
+      const { error } = await supabase.from('accounting_payments').upsert({
+        id: payment.id,
+        client_id: payment.clientId,
+        amount: payment.amount,
+        frequency: payment.frequency,
+        due_date: payment.dueDate,
+        status: payment.status,
+        paid_date: payment.paidDate,
+        notes: payment.notes
+      });
+      if (error) throw error;
+      this.refreshAllData();
+    } catch (e) {
+      console.error('Error syncing payment:', e);
+      this.toastService.error('Errore Database', 'Impossibile salvare il pagamento.');
+    }
+  }
+
+  async syncJournalEntry(entry: JournalEntry) {
+    try {
+      const { error } = await supabase.from('journal_entries').upsert({
+        id: entry.id,
+        client_id: entry.clientId,
+        date: entry.date,
+        description: entry.description,
+        debit: entry.debit,
+        credit: entry.credit,
+        category: entry.category
+      });
+      if (error) throw error;
+      this.refreshAllData();
+    } catch (e) {
+      console.error('Error syncing journal entry:', e);
+      this.toastService.error('Errore Database', 'Impossibile salvare la voce in prima nota.');
+    }
+  }
+
+  async syncReminder(reminder: Reminder) {
+    try {
+      const { error } = await supabase.from('accounting_reminders').upsert({
+        id: reminder.id,
+        client_id: reminder.clientId,
+        type: reminder.type,
+        message: reminder.message,
+        due_date: reminder.dueDate,
+        priority: reminder.priority,
+        dismissed: reminder.dismissed
+      });
+      if (error) throw error;
+      this.refreshAllData();
+    } catch (e) {
+      console.error('Error syncing reminder:', e);
+      this.toastService.error('Errore Database', 'Impossibile salvare il promemoria.');
+    }
+  }
+
+  // Helper for dashboard display
+  readonly latestActivePayment = computed(() => {
+    const user = this.currentUser();
+    if (!user || !user.clientId) return null;
+
+    return this.payments()
+      .filter(p => p.clientId === user.clientId && p.status !== 'paid')
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0] || null;
+  });
+
+  getDaysRemaining(dateStr: string): number {
+    if (!dateStr) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = target.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 }

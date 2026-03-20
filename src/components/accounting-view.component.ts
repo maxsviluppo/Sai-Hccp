@@ -1,48 +1,10 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { AppStateService, ClientEntity } from '../services/app-state.service';
+import { AppStateService, ClientEntity, Payment, JournalEntry, Reminder } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
 
-interface Payment {
-  id: string;
-  clientId: string;
-  amount: number;
-  frequency: 'monthly' | 'quarterly' | 'yearly' | 'one-time';
-  dueDate: string;
-  paidDate?: string;
-  status: 'paid' | 'pending' | 'overdue';
-  notes?: string;
-}
 
-interface Installment {
-  id: string;
-  paymentId: string;
-  amount: number;
-  dueDate: string;
-  paidDate?: string;
-  status: 'paid' | 'pending' | 'overdue';
-}
-
-interface JournalEntry {
-  id: string;
-  clientId: string;
-  date: string;
-  description: string;
-  debit: number;
-  credit: number;
-  category: 'payment' | 'expense' | 'refund' | 'other';
-}
-
-interface Reminder {
-  id: string;
-  clientId: string;
-  type: 'payment' | 'deadline' | 'memo';
-  message: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
-  dismissed: boolean;
-}
 
 @Component({
   selector: 'app-accounting-view',
@@ -72,12 +34,6 @@ interface Reminder {
         </div>
 
         <div class="flex items-center gap-3 relative z-10">
-           <div class="bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 flex flex-col shadow-sm">
-              <span class="text-[9px] text-slate-400 uppercase font-bold tracking-widest leading-tight">Stato Sistema</span>
-              <span class="text-xs font-black text-emerald-500 flex items-center gap-1.5 mt-0.5">
-                 <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div> Operativo
-              </span>
-           </div>
         </div>
       </div>
 
@@ -150,7 +106,7 @@ interface Reminder {
           <!-- Month Filter -->
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Mese</label>
-            <select [(ngModel)]="filterMonth" (change)="applyFilters()" 
+            <select [ngModel]="filterMonth()" (ngModelChange)="filterMonth.set($event); applyFilters()" 
                     class="w-full px-3 py-2 bg-white border border-slate-200 rounded text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors shadow-sm">
               <option value="">Tutti i Mesi</option>
               <option value="01">Gennaio</option>
@@ -172,7 +128,7 @@ interface Reminder {
           @if (!selectedClient()) {
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Azienda</label>
-            <select [(ngModel)]="filterClientId" (change)="applyFilters()" 
+            <select [ngModel]="filterClientId()" (ngModelChange)="filterClientId.set($event); applyFilters()" 
                     class="w-full px-3 py-2 bg-white border border-slate-200 rounded text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors shadow-sm">
               <option value="">Tutte le Aziende</option>
               @for (client of state.clients(); track client.id) {
@@ -185,14 +141,14 @@ interface Reminder {
           <!-- Date From -->
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Data Da</label>
-            <input type="date" [(ngModel)]="filterDateFrom" (change)="applyFilters()" 
+            <input type="date" [ngModel]="filterDateFrom()" (ngModelChange)="filterDateFrom.set($event); applyFilters()" 
                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors shadow-sm">
           </div>
 
           <!-- Date To -->
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Data A</label>
-            <input type="date" [(ngModel)]="filterDateTo" (change)="applyFilters()" 
+            <input type="date" [ngModel]="filterDateTo()" (ngModelChange)="filterDateTo.set($event); applyFilters()" 
                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors shadow-sm">
           </div>
         </div>
@@ -773,122 +729,13 @@ export class AccountingViewComponent {
   showReminderModal = signal(false);
 
   // Filter properties
-  filterMonth = '';
-  filterClientId = '';
-  filterDateFrom = '';
-  filterDateTo = '';
+  // Filter signals
+  filterMonth = signal('');
+  filterClientId = signal('');
+  filterDateFrom = signal('');
+  filterDateTo = signal('');
 
-  // Mock Data - In production would come from backend
-  payments = signal<Payment[]>([
-    {
-      id: '1',
-      clientId: 'c1',
-      amount: 150,
-      frequency: 'monthly',
-      dueDate: '2026-02-15',
-      paidDate: '2026-02-10',
-      status: 'paid',
-      notes: 'Pagamento regolare'
-    },
-    {
-      id: '2',
-      clientId: 'c2',
-      amount: 200,
-      frequency: 'monthly',
-      dueDate: '2026-02-01',
-      status: 'overdue',
-      notes: 'Sollecito inviato'
-    },
-    {
-      id: '3',
-      clientId: 'c1',
-      amount: 150,
-      frequency: 'monthly',
-      dueDate: '2026-01-15',
-      paidDate: '2026-01-12',
-      status: 'paid',
-      notes: 'Pagamento Gennaio'
-    },
-    {
-      id: '4',
-      clientId: 'c2',
-      amount: 200,
-      frequency: 'monthly',
-      dueDate: '2026-03-01',
-      status: 'pending',
-      notes: 'Pagamento Marzo'
-    },
-    {
-      id: '5',
-      clientId: 'c1',
-      amount: 450,
-      frequency: 'quarterly',
-      dueDate: '2025-12-31',
-      paidDate: '2025-12-28',
-      status: 'paid',
-      notes: 'Pagamento trimestrale Q4 2025'
-    }
-  ]);
 
-  journalEntries = signal<JournalEntry[]>([
-    {
-      id: '1',
-      clientId: 'c1',
-      date: '2026-02-10',
-      description: 'Pagamento servizio HACCP Febbraio',
-      debit: 0,
-      credit: 150,
-      category: 'payment'
-    },
-    {
-      id: '2',
-      clientId: 'c2',
-      date: '2026-01-15',
-      description: 'Rimborso spese formazione',
-      debit: 50,
-      credit: 0,
-      category: 'expense'
-    },
-    {
-      id: '3',
-      clientId: 'c1',
-      date: '2026-01-12',
-      description: 'Pagamento servizio HACCP Gennaio',
-      debit: 0,
-      credit: 150,
-      category: 'payment'
-    },
-    {
-      id: '4',
-      clientId: 'c2',
-      date: '2026-02-20',
-      description: 'Spese materiale consumabile',
-      debit: 75,
-      credit: 0,
-      category: 'expense'
-    },
-    {
-      id: '5',
-      clientId: 'c1',
-      date: '2025-12-28',
-      description: 'Pagamento trimestrale Q4 2025',
-      debit: 0,
-      credit: 450,
-      category: 'payment'
-    }
-  ]);
-
-  reminders = signal<Reminder[]>([
-    {
-      id: '1',
-      clientId: 'c2',
-      type: 'payment',
-      message: 'Pagamento scaduto da 3 giorni - Inviare sollecito',
-      dueDate: '2026-02-01',
-      priority: 'high',
-      dismissed: false
-    }
-  ]);
 
   paymentForm: FormGroup;
   journalForm: FormGroup;
@@ -938,21 +785,22 @@ export class AccountingViewComponent {
   }
 
   selectedClient = computed(() => {
-    const filterId = this.state.filterCollaboratorId();
+    const filterId = this.state.filterClientId();
     if (!filterId) return null;
-    const user = this.state.systemUsers().find(u => u.id === filterId);
-    return user ? this.state.clients().find(c => c.id === user.clientId) : null;
+    return this.state.clients().find(c => c.id === filterId) || null;
   });
 
   filteredPayments = computed(() => {
-    let filtered = this.payments();
+    let filtered = this.state.payments();
 
     // Filter by client
     const client = this.selectedClient();
+    const localFilterId = this.filterClientId();
+    
     if (client) {
       filtered = filtered.filter(p => p.clientId === client.id);
-    } else if (this.filterClientId) {
-      filtered = filtered.filter(p => p.clientId === this.filterClientId);
+    } else if (localFilterId) {
+      filtered = filtered.filter(p => p.clientId === localFilterId);
     }
 
     // Apply date filters
@@ -962,14 +810,16 @@ export class AccountingViewComponent {
   });
 
   filteredJournalEntries = computed(() => {
-    let filtered = this.journalEntries();
+    let filtered = this.state.journalEntries();
 
     // Filter by client
     const client = this.selectedClient();
+    const localFilterId = this.filterClientId();
+
     if (client) {
       filtered = filtered.filter(e => e.clientId === client.id);
-    } else if (this.filterClientId) {
-      filtered = filtered.filter(e => e.clientId === this.filterClientId);
+    } else if (localFilterId) {
+      filtered = filtered.filter(e => e.clientId === localFilterId);
     }
 
     // Apply date filters
@@ -979,14 +829,16 @@ export class AccountingViewComponent {
   });
 
   filteredReminders = computed(() => {
-    let filtered = this.reminders();
+    let filtered = this.state.reminders();
 
     // Filter by client
     const client = this.selectedClient();
+    const localFilterId = this.filterClientId();
+
     if (client) {
       filtered = filtered.filter(r => r.clientId === client.id);
-    } else if (this.filterClientId) {
-      filtered = filtered.filter(r => r.clientId === this.filterClientId);
+    } else if (localFilterId) {
+      filtered = filtered.filter(r => r.clientId === localFilterId);
     }
 
     // Apply date filters
@@ -996,7 +848,7 @@ export class AccountingViewComponent {
   });
 
 
-  activeReminders = computed(() => this.reminders().filter(r => !r.dismissed));
+  activeReminders = computed(() => this.state.reminders().filter(r => !r.dismissed));
 
   totalPaid = computed(() => {
     return this.filteredPayments()
@@ -1025,7 +877,7 @@ export class AccountingViewComponent {
   });
 
   overdueClients = computed(() => {
-    const overduePayments = this.payments().filter(p => p.status === 'overdue');
+    const overduePayments = this.state.payments().filter(p => p.status === 'overdue');
     const clientIds = [...new Set(overduePayments.map(p => p.clientId))];
     return this.state.clients().filter(c => clientIds.includes(c.id));
   });
@@ -1073,15 +925,33 @@ export class AccountingViewComponent {
   }
 
   openPaymentModal() {
-    this.paymentForm.reset({ frequency: 'monthly', amount: 0 });
+    const currentFilterId = this.state.filterClientId() || this.filterClientId();
+    this.paymentForm.reset({ 
+      clientId: currentFilterId,
+      frequency: 'monthly', 
+      amount: 0 
+    });
     this.showPaymentModal.set(true);
   }
 
   openJournalModal() {
+    const currentFilterId = this.state.filterClientId() || this.filterClientId();
+    this.journalForm.reset({
+      clientId: currentFilterId,
+      date: new Date().toISOString().split('T')[0],
+      debit: 0,
+      credit: 0
+    });
     this.showJournalModal.set(true);
   }
 
   openReminderModal() {
+    const currentFilterId = this.state.filterClientId() || this.filterClientId();
+    this.reminderForm.reset({
+      clientId: currentFilterId,
+      type: 'payment',
+      priority: 'medium'
+    });
     this.showReminderModal.set(true);
   }
 
@@ -1099,17 +969,22 @@ export class AccountingViewComponent {
         ...formValue,
         status: 'pending'
       };
-      this.payments.update(p => [...p, newPayment]);
+      this.state.syncPayment(newPayment);
       this.toastService.success('Pagamento Aggiunto', 'Il pagamento è stato registrato con successo.');
       this.closeModals();
     }
   }
 
   markAsPaid(paymentId: string) {
-    this.payments.update(payments =>
-      payments.map(p => p.id === paymentId ? { ...p, status: 'paid' as const, paidDate: new Date().toISOString().split('T')[0] } : p)
-    );
-    this.toastService.success('Pagamento Confermato', 'Il pagamento è stato segnato come ricevuto.');
+    const payment = this.state.payments().find(p => p.id === paymentId);
+    if (payment) {
+      this.state.syncPayment({ 
+        ...payment, 
+        status: 'paid', 
+        paidDate: new Date().toISOString().split('T')[0] 
+      });
+      this.toastService.success('Pagamento Confermato', 'Il pagamento è stato segnato come ricevuto.');
+    }
   }
 
   sendReminder(clientId: string) {
@@ -1124,7 +999,7 @@ export class AccountingViewComponent {
         id: Math.random().toString(36).substr(2, 9),
         ...formValue
       };
-      this.journalEntries.update(entries => [...entries, newEntry]);
+      this.state.syncJournalEntry(newEntry);
       this.toastService.success('Registrazione Aggiunta', 'La registrazione è stata salvata in prima nota.');
       this.closeModals();
     }
@@ -1138,17 +1013,18 @@ export class AccountingViewComponent {
         ...formValue,
         dismissed: false
       };
-      this.reminders.update(reminders => [...reminders, newReminder]);
+      this.state.syncReminder(newReminder);
       this.toastService.success('Promemoria Creato', 'Il promemoria è stato aggiunto con successo.');
       this.closeModals();
     }
   }
 
   dismissReminder(reminderId: string) {
-    this.reminders.update(reminders =>
-      reminders.map(r => r.id === reminderId ? { ...r, dismissed: true } : r)
-    );
-    this.toastService.success('Promemoria Archiviato', 'Il promemoria è stato archiviato.');
+    const reminder = this.state.reminders().find(r => r.id === reminderId);
+    if (reminder) {
+      this.state.syncReminder({ ...reminder, dismissed: true });
+      this.toastService.success('Promemoria Archiviato', 'Il promemoria è stato archiviato.');
+    }
   }
 
   // Filter helper methods
@@ -1156,29 +1032,32 @@ export class AccountingViewComponent {
     let filtered = items;
 
     // Filter by month
-    if (this.filterMonth) {
+    const month = this.filterMonth();
+    if (month) {
       filtered = filtered.filter(item => {
         const date = dateGetter(item);
         const itemDate = new Date(date);
         const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
 
-        if (this.filterMonth && itemMonth !== this.filterMonth) return false;
+        if (month && itemMonth !== month) return false;
         return true;
       });
     }
 
     // Filter by date range
-    if (this.filterDateFrom) {
+    const dateFrom = this.filterDateFrom();
+    if (dateFrom) {
       filtered = filtered.filter(item => {
         const date = dateGetter(item);
-        return date >= this.filterDateFrom;
+        return date >= dateFrom;
       });
     }
 
-    if (this.filterDateTo) {
+    const dateTo = this.filterDateTo();
+    if (dateTo) {
       filtered = filtered.filter(item => {
         const date = dateGetter(item);
-        return date <= this.filterDateTo;
+        return date <= dateTo;
       });
     }
 
@@ -1191,14 +1070,14 @@ export class AccountingViewComponent {
   }
 
   hasActiveFilters(): boolean {
-    return !!(this.filterMonth || this.filterClientId || this.filterDateFrom || this.filterDateTo);
+    return !!(this.filterMonth() || this.filterClientId() || this.filterDateFrom() || this.filterDateTo());
   }
 
   resetFilters() {
-    this.filterMonth = '';
-    this.filterClientId = '';
-    this.filterDateFrom = '';
-    this.filterDateTo = '';
+    this.filterMonth.set('');
+    this.filterClientId.set('');
+    this.filterDateFrom.set('');
+    this.filterDateTo.set('');
     this.applyFilters();
   }
 }

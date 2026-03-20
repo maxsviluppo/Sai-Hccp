@@ -92,7 +92,7 @@
               <input type="text" [value]="loginUsername()" (input)="loginUsername.set($any($event.target).value)"
                 (keyup.enter)="doLogin()"
                 class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                placeholder="Username">
+                placeholder="User">
             </div>
           </div>
 
@@ -103,7 +103,7 @@
               <input type="password" [value]="loginPassword()" (input)="loginPassword.set($any($event.target).value)"
                 (keyup.enter)="doLogin()"
                 class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                placeholder="••••••••">
+                placeholder="Password">
             </div>
           </div>
 
@@ -183,21 +183,21 @@
       }
     </nav>
 
-    <!-- User Profile Summary (Sidebar Footer) -->
     <div class="p-6 border-t border-white/5 bg-slate-950/80 backdrop-blur-md">
       <div class="bg-white/5 p-4 rounded-3xl border border-white/10 group hover:border-red-500/30 transition-all">
           <button (click)="state.logout()" class="w-full flex items-center gap-4 text-left group">
-            <div class="relative flex-shrink-0">
-              <img [src]="state.currentUser()?.avatar"
-                class="w-11 h-11 rounded-2xl object-cover ring-2 ring-white/10 group-hover:ring-red-500/30 transition-all shadow-lg">
-              <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-950 rounded-full shadow-lg"></div>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 overflow-hidden shrink-0">
+               <img [src]="state.isAdmin() ? state.adminCompany().logo : (state.currentUser()?.avatar || 'https://ui-avatars.com/api/?name=' + state.currentUser()?.name)" 
+                    class="w-full h-full object-cover">
             </div>
             <div class="flex-1 min-w-0">
-              <div class="font-black text-[13px] truncate text-white tracking-tight">{{ state.currentUser()?.name }}</div>
+              <div class="font-black text-[13px] truncate text-white tracking-tight">
+                {{ state.isAdmin() ? state.adminCompany().name : state.currentUser()?.name }}
+              </div>
               <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1 opacity-70 group-hover:text-red-400 transition-colors">Disconnetti</div>
             </div>
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 group-hover:bg-red-500/10 group-hover:text-red-500 transition-all border border-white/5">
-                <i class="fa-solid fa-power-off text-sm"></i>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 group-hover:bg-red-500/10 group-hover:text-red-500 transition-all border border-white/5 shrink-0">
+                <i class="fa-solid fa-power-off text-[10px]"></i>
             </div>
           </button>
       </div>
@@ -251,31 +251,64 @@
         </div>
 
         <!-- Collaborator Filter (Context Switcher) -->
-        <!-- Collaborator Filter (Context Switcher) - ADMIN ONLY -->
         @if (state.isAdmin()) {
+        <!-- Company Filter (Unique Brand) -->
         <div
-          class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2 hover:border-slate-300 transition-colors cursor-pointer group"
-          [class.border-orange-300]="!state.isContextEditable()" [class.bg-orange-50]="!state.isContextEditable()">
-
-          <i class="fa-solid fa-building-user text-slate-400 text-sm mr-3 group-hover:text-emerald-500"
-            [class.text-orange-400]="!state.isContextEditable()"></i>
-
-          <select [value]="state.filterCollaboratorId()"
-            (change)="state.setCollaboratorFilter($any($event.target).value)"
-            class="bg-transparent text-sm text-slate-700 font-semibold focus:outline-none cursor-pointer border-none p-0 outline-none pr-4 min-w-[200px]"
-            [class.text-orange-800]="!state.isContextEditable()">
-            <option value="">-- Seleziona Unità Operativa --</option>
-            @for (user of contextUsers(); track user.id) {
-            <option [value]="user.id">{{ user.displayName }}</option>
+          class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2 hover:border-slate-300 transition-colors cursor-pointer group mr-2">
+          <i class="fa-solid fa-hotel text-slate-400 text-sm mr-2 group-hover:text-emerald-500"></i>
+          <select [value]="state.filterClientId() || ''"
+            (change)="state.setClientIdFilter($any($event.target).value)"
+            class="bg-transparent text-sm text-slate-700 font-bold focus:outline-none cursor-pointer border-none p-0 outline-none pr-4 min-w-[160px]">
+            <option value="">-- Seleziona Azienda --</option>
+            @for (client of state.groupedViewClients(); track client.id) {
+            <option [value]="client.id">
+              {{ client.piva ? client.name.split(' ')[0] : client.name }}
+            </option>
             }
           </select>
         </div>
+
+        <!-- Operative Unit (if brand has multiple) -->
+        @if (state.filterClientId() && state.activeBrandUnits().length > 1) {
+        <div
+          class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2 hover:border-slate-300 transition-colors cursor-pointer group mr-2">
+          <i class="fa-solid fa-building-circle-check text-slate-400 text-sm mr-2 group-hover:text-blue-500"></i>
+          <select [value]="state.filterClientId()"
+            (change)="state.setClientIdFilter($any($event.target).value)"
+            class="bg-transparent text-sm text-slate-700 font-bold focus:outline-none cursor-pointer border-none p-0 outline-none pr-4 min-w-[140px]">
+            @for (unit of state.activeBrandUnits(); track unit.id) {
+            <option [value]="unit.id">{{ unit.name }}</option>
+            }
+          </select>
+        </div>
+        }
+
+        <!-- Unit/Collaborator Filter -->
+        @if (state.filterClientId()) {
+        <div
+          class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-4 py-2 hover:border-slate-300 transition-colors cursor-pointer group"
+          [class.border-orange-300]="!state.isContextEditable()" [class.bg-orange-50]="!state.isContextEditable()">
+          <i class="fa-solid fa-users-gear text-slate-400 text-sm mr-2 group-hover:text-emerald-500"></i>
+          <select [value]="state.filterCollaboratorId()"
+            (change)="state.setCollaboratorFilter($any($event.target).value)"
+            class="bg-transparent text-sm text-slate-700 font-semibold focus:outline-none cursor-pointer border-none p-0 outline-none pr-4 min-w-[160px]"
+            [class.text-orange-800]="!state.isContextEditable()">
+            <option value="">-- Tutte le Unità --</option>
+            @for (user of state.filteredSystemUsers(); track user.id) {
+            <option [value]="user.id">{{ user.name }}</option>
+            }
+          </select>
+        </div>
+        }
         } @else {
         <!-- Operator: Static Context Display -->
         <div
           class="flex items-center px-4 py-2 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm">
-          <i class="fa-solid fa-user-tag text-slate-400 mr-2"></i>
-          {{ state.currentUser()?.name }} <span class="mx-2 text-slate-300">|</span> {{ state.companyConfig().name }}
+          <i class="fa-solid fa-building text-slate-400 mr-2 border-r pr-2"></i>
+          <span class="font-bold text-slate-900">{{ state.companyConfig().name }}</span>
+          <span class="mx-3 text-slate-300">|</span> 
+          <i class="fa-solid fa-user text-slate-400 mr-2"></i>
+          {{ state.currentUser()?.name }}
         </div>
         }
 

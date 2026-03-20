@@ -88,46 +88,46 @@ interface ChecklistItem {
         </div>
 
         <!-- UI CONTENT (Hidden on print) -->
-        <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
-            <!-- MINIMAL HERO HEADER -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8 relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-white/20 pointer-events-none"></div>
+        <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">            <!-- Premium Hero Header -->
+            <div class="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 p-8 rounded-3xl shadow-xl border border-indigo-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                    <i class="fa-solid fa-briefcase text-9xl text-white"></i>
+                </div>
                 
-                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 shadow-sm shrink-0">
-                            <i class="fa-solid fa-briefcase text-xl text-indigo-600"></i>
+                <div class="relative z-10 flex items-center gap-6">
+                    <div class="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 text-white shrink-0">
+                        <i class="fa-solid fa-briefcase text-3xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h2 class="text-3xl font-black text-white tracking-tight">Fase Operativa</h2>
+                            <button (click)="state.setModule('production-log')" 
+                                    class="px-3 py-1 bg-white/20 hover:bg-white text-white hover:text-indigo-700 rounded text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 border border-white/30 backdrop-blur-md">
+                                <i class="fa-solid fa-barcode"></i> Rintracciabilità
+                            </button>
                         </div>
-                        <div>
-                            <div class="flex flex-wrap items-center gap-2 mb-1">
-                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Fase <span class="text-indigo-600">Operativa</span></h2>
-                                <button (click)="state.setModule('production-log')" 
-                                        class="px-3 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded text-[11px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border border-slate-200">
-                                    <i class="fa-solid fa-barcode text-indigo-500"></i> Rintracciabilità
-                                </button>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-3">
-                                <span class="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                    <i class="fa-solid fa-circle text-[10px] text-amber-500 animate-pulse"></i>
-                                    Monitoraggio Attivo
-                                </span>
-                                <span class="w-1 h-1 rounded-full bg-slate-200"></span>
-                                <span class="flex items-center gap-1.5 text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                                    <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name }}
-                                </span>
-                            </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="flex items-center gap-1.5 text-[10px] font-black text-indigo-100 uppercase tracking-widest">
+                                <i class="fa-solid fa-circle text-[10px] text-amber-400 animate-pulse"></i>
+                                Monitoraggio Attivo
+                            </span>
+                            <span class="w-1 h-1 rounded-full bg-white/30"></span>
+                            <span class="flex items-center gap-1.5 text-[10px] font-black text-white uppercase tracking-widest">
+                                <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name }}
+                            </span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="flex items-center gap-4">
-                        <div class="text-right">
-                            <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Completamento</p>
-                            <div class="flex items-center justify-end gap-3">
-                                <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" [style.width.%]="progressPercentage()"></div>
-                                </div>
-                                <span class="text-lg font-black text-slate-700 whitespace-nowrap">{{ completedCount() }}/{{ items().length }}</span>
-                            </div>
+                <div class="w-full md:w-auto relative z-10">
+                    <div class="flex flex-col gap-2 min-w-[200px]">
+                        <div class="flex items-center justify-between mb-1">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-indigo-100 opacity-80">Completamento</p>
+                            <span class="text-lg font-black text-white leading-none whitespace-nowrap">{{ completedCount() }}/{{ items().length }}</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden border border-white/10 p-0.5 backdrop-blur-sm">
+                            <div class="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+                                 [style.width.%]="progressPercentage()"></div>
                         </div>
                     </div>
                 </div>
@@ -387,7 +387,7 @@ export class OperativeChecklistComponent {
 
    isModalOpen = signal(false);
    currentItem = signal<ChecklistItem | null>(null);
-   selectedDate = signal(new Date().toISOString().split('T')[0]);
+   selectedDate = signal(this.state.filterDate());
    isSubmitted = signal(false);
    currentRecordId = signal<string | undefined>(undefined);
 
@@ -550,7 +550,7 @@ export class OperativeChecklistComponent {
       this.pozzettoCount.set(0);
       this.isSubmitted.set(false);
       this.currentRecordId.set(undefined);
-      this.selectedDate.set(new Date().toISOString().split('T')[0]);
+      this.selectedDate.set(this.state.filterDate());
    }
 
    loadByDate() {
@@ -563,6 +563,7 @@ export class OperativeChecklistComponent {
          this.frigoCount.set(0);
          this.congelatoreCount.set(0);
          this.pozzettoCount.set(0);
+         this.selectedDate.set(this.state.filterDate());
       }
    }
 

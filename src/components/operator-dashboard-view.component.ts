@@ -35,6 +35,63 @@ import { AppStateService } from '../services/app-state.service';
            </div>
         </div>
       </div>
+      <!-- Highly Visible Payment Alert Box -->
+      @if (state.companyConfig().paymentBalanceDue || state.latestActivePayment()) {
+        <div [class]="'rounded-3xl p-6 shadow-xl animate-fade-in mb-6 relative overflow-hidden group border-2 transition-all duration-500 ' + 
+            (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 
+            'bg-gradient-to-br from-red-600 to-red-800 border-red-400 text-white shake-card' : 
+            'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 text-slate-900')">
+          
+          <div class="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div class="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+            <div class="flex items-center gap-6">
+              <div [class]="'h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform animate-bounce ' + 
+                  (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white text-red-600' : 'bg-amber-500 text-white')">
+                <i class="fa-solid fa-credit-card text-2xl"></i>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span [class]="'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse ' + 
+                      (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white text-red-700' : 'bg-red-600 text-white')">
+                    @if (state.latestActivePayment()) {
+                      Importo: {{ state.latestActivePayment()?.amount | currency:'EUR' }}
+                    } @else {
+                      Scadenza Imminente
+                    }
+                  </span>
+                  <h4 class="text-xl font-black tracking-tight" [class.text-white]="state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5">
+                    Avviso di Scadenza Pagamento
+                  </h4>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+                  <div [class]="'flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl ' + 
+                      (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-red-900/40 text-red-50 border border-red-400/30' : 'bg-red-100 text-red-700')">
+                    <i class="fa-solid fa-calendar-day"></i>
+                    Scadenza: {{ state.latestActivePayment()?.dueDate || state.companyConfig().licenseExpiryDate || 'In attesa' }}
+                  </div>
+                  @if (state.latestActivePayment()) {
+                    <div [class]="'text-xs font-bold px-3 py-1.5 rounded-xl ' + 
+                        (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800')">
+                      <i class="fa-solid fa-clock"></i>
+                      Mancano {{ state.getDaysRemaining(state.latestActivePayment()!.dueDate) }} giorni
+                    </div>
+                  }
+                  @if (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5) {
+                    <div class="text-xs font-black uppercase tracking-widest text-red-200 animate-pulse">AZIONE RICHIESTA IMMEDIATA</div>
+                  }
+                </div>
+              </div>
+            </div>
+            
+            <button [class]="'px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3 group/btn whitespace-nowrap hover:scale-105 active:scale-95 ' + 
+                (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white text-red-700 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-slate-800')">
+              Rinnova Ora
+              <i class="fa-solid fa-arrow-right text-xs group-hover/btn:translate-x-1 transition-transform"></i>
+            </button>
+          </div>
+        </div>
+      }
 
       <!-- Main Operational Phases -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">

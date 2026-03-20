@@ -87,40 +87,39 @@ interface AreaChecklist {
     <!-- UI CONTENT (Hidden on print) -->
     <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">
         
-        <!-- MINIMAL HERO HEADER -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-8 relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-br from-pink-50/50 to-white/20 pointer-events-none"></div>
+        <!-- Premium Hero Header -->
+        <div class="bg-gradient-to-r from-rose-600 via-pink-600 to-orange-600 p-8 rounded-3xl shadow-xl border border-rose-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <i class="fa-solid fa-hourglass-end text-9xl text-white"></i>
+            </div>
             
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center border border-pink-100 shadow-sm shrink-0">
-                        <i class="fa-solid fa-hourglass-end text-xl text-pink-600"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-2xl font-black text-slate-800 tracking-tight mb-1">Fase <span class="text-pink-600">Post-Operativa</span></h2>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <span class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500">
-                                <i class="fa-solid fa-circle text-[10px]" [class.text-emerald-500]="isSubmitted()" [class.text-amber-500]="!isSubmitted()" [class.animate-pulse]="!isSubmitted()"></i>
-                                {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
-                            </span>
-                            <span class="w-1 h-1 rounded-full bg-slate-200"></span>
-                            <span class="flex items-center gap-1.5 text-xs font-bold text-pink-600 uppercase tracking-widest">
-                                <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name }}
-                            </span>
-                        </div>
+            <div class="relative z-10 flex items-center gap-6">
+                <div class="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 text-white shrink-0">
+                    <i class="fa-solid fa-hourglass-end text-3xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-white tracking-tight mb-1">Fase Post-Operativa</h2>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white rounded-lg border border-white/30 text-[10px] font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-circle text-[10px] animate-pulse" [class.text-emerald-400]="isSubmitted()" [class.text-amber-400]="!isSubmitted()"></i>
+                            {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white rounded-lg border border-white/30 text-[10px] font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name || 'Operatore' }}
+                        </span>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex items-center gap-6">
-                    <!-- Completamento -->
-                    <div class="text-right">
-                        <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Avanzamento</p>
-                        <div class="flex items-center justify-end gap-3">
-                            <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-pink-500 rounded-full transition-all duration-500" [style.width.%]="progressPercentage()"></div>
-                            </div>
-                            <span class="text-lg font-black text-slate-700 whitespace-nowrap">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
-                        </div>
+            <div class="w-full md:w-auto relative z-10">
+                <div class="flex flex-col gap-2 min-w-[200px]">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-rose-100 opacity-80">Completamento</p>
+                        <span class="text-lg font-black text-white leading-none whitespace-nowrap">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
+                    </div>
+                    <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden border border-white/10 p-0.5 backdrop-blur-sm">
+                        <div class="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+                             [style.width.%]="progressPercentage()"></div>
                     </div>
                 </div>
             </div>
@@ -408,7 +407,7 @@ export class PostOperationalChecklistComponent {
                 const existingIds = new Set(filtered.map((s: any) => s.id));
                 const missing = currentStepsDef.filter(d => !existingIds.has(d.id));
 
-                return { ...a, steps: [...filtered, ...missing], expanded: saved.expanded };
+                return { ...a, steps: [...filtered, ...missing], expanded: false };
             });
             this.areas.set(merged);
             this.isSubmitted.set(false);
@@ -535,7 +534,7 @@ export class PostOperationalChecklistComponent {
     }
 
     getFormattedDate() {
-        return new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return new Date(this.state.filterDate()).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
     submitChecklist() {
@@ -583,7 +582,7 @@ export class PostOperationalChecklistComponent {
         this.areas.update(areas => areas.map(a => ({
             ...a,
             steps: this.getInitialSteps(a.id),
-            expanded: a.id === 'cucina-sala'
+            expanded: false
         })));
     }
 

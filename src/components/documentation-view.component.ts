@@ -121,7 +121,7 @@ import { ToastService } from '../services/toast.service';
                             <h3 class="text-base font-bold text-slate-800 mb-2">Selezione Unità Richiesta</h3>
                             <p class="text-sm text-slate-500 max-w-sm mx-auto mb-6">Per gestire l'archivio documentale come amministratore, seleziona l'unità operativa in alto.</p>
                             <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                                <i class="fa-solid fa-arrow-up animate-bounce"></i> Seleziona Unità Operativa
+                                <i class="fa-solid fa-arrow-up animate-bounce"></i> Seleziona Sede / Azienda
                             </div>
                          </div>
                     } @else {
@@ -330,22 +330,22 @@ export class DocumentationViewComponent {
     }
 
     getTargetUnitName(): string {
-        const adminSelectedId = this.state.filterCollaboratorId();
+        const adminSelectedId = this.state.filterClientId();
         const user = this.state.currentUser();
         
         if (this.state.isAdmin()) {
             if (adminSelectedId) {
-                const target = this.state.systemUsers().find(u => u.id === adminSelectedId);
-                return target ? target.name : 'Unità Selezionata';
+                const target = this.state.clients().find(c => c.id === adminSelectedId);
+                return target ? target.name : 'Sede Selezionata';
             }
-            return 'Nessuna Unità Selezionata';
+            return 'Nessuna Sede Selezionata';
         }
         return user?.name || 'Mia Unità';
     }
 
     isTargetUnitSelected(): boolean {
         if (!this.state.isAdmin()) return true;
-        return !!this.state.filterCollaboratorId();
+        return !!this.state.filterClientId();
     }
 
     getDocsByType(type: string) {

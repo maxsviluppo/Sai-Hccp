@@ -70,7 +70,7 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
               </div>
               <div>
                 <h2 class="text-base font-black text-slate-800 flex items-center">
-                   Azienda Amministratore (Master)
+                    {{ state.adminCompany().name }}
                 </h2>
                 <p class="text-slate-500 text-[11px] font-bold mt-0.5">Gestisci i dati della sede centrale e il logo globale</p>
               </div>

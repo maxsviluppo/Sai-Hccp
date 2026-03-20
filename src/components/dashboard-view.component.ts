@@ -55,7 +55,7 @@ interface SystemAlert {
            </div>
         </div>
       </div>
-
+      
       <!-- Compact KPI Summary Bar -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Aziende -->

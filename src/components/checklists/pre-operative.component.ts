@@ -89,39 +89,39 @@ interface AreaChecklist {
     <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
         
         <!-- Premium Hero Header -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-            <div class="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-blue-50 to-transparent pointer-events-none"></div>
+        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-8 rounded-3xl shadow-xl border border-emerald-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <i class="fa-solid fa-clipboard-check text-9xl text-white"></i>
+            </div>
             
-            <div class="relative z-10 flex items-center gap-5">
-                <div class="h-14 w-14 rounded-xl bg-white border border-blue-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0">
-                    <i class="fa-solid fa-eye text-2xl"></i>
+            <div class="relative z-10 flex items-center gap-6">
+                <div class="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 text-white shrink-0">
+                    <i class="fa-solid fa-eye text-3xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Fase Pre-Operativa</h2>
-                    <div class="flex flex-wrap items-center gap-2 mt-1">
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-xs font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-circle text-[10px] animate-pulse" [class.text-emerald-500]="isSubmitted()" [class.text-amber-500]="!isSubmitted()"></i>
+                    <h2 class="text-3xl font-black text-white tracking-tight mb-1">Fase Pre-Operativa</h2>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white rounded-lg border border-white/30 text-[10px] font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-circle text-[10px] animate-pulse" [class.text-emerald-400]="isSubmitted()" [class.text-amber-400]="!isSubmitted()"></i>
                             {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
                         </span>
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100 text-xs font-black uppercase tracking-widest leading-none">
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white rounded-lg border border-white/30 text-[10px] font-black uppercase tracking-widest leading-none">
                             <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name || 'Operatore' }}
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div class="w-full md:w-auto relative z-10 flex gap-4 pr-1">
-                <div class="flex items-center gap-4 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 w-full justify-between">
-                    <div class="min-w-[120px]">
-                        <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Avanzamento Ispezione</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                <div class="h-full bg-blue-500 rounded-full transition-all duration-1000" [style.width.%]="progressPercentage()"></div>
-                            </div>
-                            <span class="text-lg font-bold text-slate-700 leading-none whitespace-nowrap">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
-                        </div>
+            <div class="w-full md:w-auto relative z-10">
+                <div class="flex flex-col gap-2 min-w-[200px]">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-100 opacity-80">Avanzamento Ispezione</p>
+                        <span class="text-lg font-black text-white leading-none whitespace-nowrap">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
                     </div>
-                    <i class="fa-solid fa-chart-pie text-slate-300 text-xl ml-2"></i>
+                    <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden border border-white/10 p-0.5 backdrop-blur-sm">
+                        <div class="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+                             [style.width.%]="progressPercentage()"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -752,7 +752,7 @@ export class PreOperationalChecklistComponent {
                 const existingIds = new Set(filteredSteps.map((s: any) => s.id));
                 const missingSteps = this.getInitialSteps(area.id).filter(d => !existingIds.has(d.id));
 
-                return { ...area, steps: [...filteredSteps, ...missingSteps] };
+                return { ...area, steps: [...filteredSteps, ...missingSteps], expanded: false };
             });
 
             this.areas.set(relabeledAreas);
@@ -851,7 +851,7 @@ export class PreOperationalChecklistComponent {
         this.areas.update(areas => areas.map(a => ({
             ...a,
             steps: this.getInitialSteps(a.id),
-            expanded: a.id === 'cucina-sala'
+            expanded: false
         })));
         this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' })));
     }

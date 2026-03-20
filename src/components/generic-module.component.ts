@@ -11,6 +11,7 @@ interface MockData {
   operatorId: string;
   detail: string;
   status: 'Conforme' | 'Attenzione' | 'Non Conforme';
+  clientId: string;
 }
 
 @Component({
@@ -62,13 +63,23 @@ interface MockData {
       </div>
 
       <!-- Active Filter Badge -->
+      @if (state.isAdmin() && state.filterClientId()) {
+         <div class="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl flex items-center justify-between animate-fade-in mb-6">
+           <div class="flex items-center gap-2">
+             <i class="fa-solid fa-building-circle-check"></i>
+             <span class="text-sm font-medium">Visualizzazione Sede: <strong>{{ getCompanyName() }}</strong></span>
+           </div>
+           <button (click)="state.setClientFilter(null)" class="text-xs hover:underline">Cambia Sede</button>
+         </div>
+      }
+
       @if (state.filterCollaboratorId()) {
          <div class="bg-blue-50 border border-blue-100 text-blue-800 px-4 py-3 rounded-xl flex items-center justify-between animate-fade-in">
            <div class="flex items-center gap-2">
-             <i class="fa-solid fa-filter"></i>
-             <span class="text-sm font-medium">Filtrato per: <strong>{{ getFilterName() }}</strong></span>
+             <i class="fa-solid fa-id-card"></i>
+             <span class="text-sm font-medium">Operatore: <strong>{{ getFilterName() }}</strong></span>
            </div>
-           <button (click)="state.setCollaboratorFilter('')" class="text-xs hover:underline">Rimuovi Filtro</button>
+           <button (click)="state.setCollaboratorFilter('')" class="text-xs hover:underline">Tutti gli Operatori</button>
          </div>
       }
 
@@ -285,10 +296,11 @@ export class GenericModuleComponent {
       return {
         id: i + 1,
         date: dateStr,
-        operator: user.name,
-        operatorId: user.id,
+        operator: user?.name || 'Sconosciuto',
+        operatorId: user?.id || 'demo',
         detail,
-        status
+        status,
+        clientId: user?.clientId || 'demo'
       };
     });
 
@@ -298,16 +310,30 @@ export class GenericModuleComponent {
   // Filtered Data Logic
   filteredData = computed(() => {
     const allData = this.items();
-    const filterId = this.state.filterCollaboratorId();
+    const activeClientId = this.state.activeTargetClientId();
+    const filterUserId = this.state.filterCollaboratorId();
 
-    if (!filterId) return allData;
+    // 1. If we have a collaborator filter, that is most specific.
+    if (filterUserId) {
+      return allData.filter(item => item.operatorId === filterUserId);
+    }
 
-    return allData.filter(item => item.operatorId === filterId);
+    // 2. Otherwise filter by active client (calculated from firm filter in Admin mode or user's client in Operator mode)
+    if (activeClientId) {
+       return allData.filter(item => item.clientId === activeClientId);
+    }
+
+    return allData;
   });
 
   getFilterName() {
     const id = this.state.filterCollaboratorId();
     return this.state.systemUsers().find(u => u.id === id)?.name || 'Sconosciuto';
+  }
+
+  getCompanyName() {
+    const id = this.state.activeTargetClientId();
+    return this.state.clients().find(c => c.id === id)?.name || 'Azienda';
   }
 
   getInitials(name: string): string {
@@ -352,9 +378,10 @@ export class GenericModuleComponent {
         id: Date.now(), // simple unique id
         date: formVal.date.replace('T', ' '),
         operator: currentUser?.name || 'Sconosciuto',
-        operatorId: 'CURRENT_USER_ID', // In a real app this would be the ID
+        operatorId: currentUser?.id || 'demo',
         detail: formVal.detail,
-        status: formVal.status
+        status: formVal.status,
+        clientId: this.state.activeTargetClientId() || 'demo'
       };
 
       // Add to list (prepend)

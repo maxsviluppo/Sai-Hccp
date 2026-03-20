@@ -80,17 +80,6 @@ export class AppComponent {
     );
   });
 
-  // Users List formatted for Context Selector
-  readonly contextUsers = computed(() => {
-    return this.state.systemUsers().map(u => {
-      const client = this.state.clients().find(c => c.id === u.clientId);
-      return {
-        ...u,
-        displayName: client ? `${client.name} - ${u.name}` : u.name
-      };
-    }).sort((a, b) => a.displayName.localeCompare(b.displayName));
-  });
-
   getClientName(id?: string) {
     if (!id) return '';
     const c = this.state.clients().find(c => c.id === id);
@@ -103,19 +92,8 @@ export class AppComponent {
 
   setLoginMode(mode: 'SELECT' | 'ADMIN' | 'OPERATOR') {
     this.loginMode.set(mode);
-
-    // Auto-fill for Development Convenience ("Accessi aperti")
-    if (mode === 'ADMIN') {
-      this.loginUsername.set('dev');
-      this.loginPassword.set('dev');
-    } else if (mode === 'OPERATOR') {
-      this.loginUsername.set('mario');
-      this.loginPassword.set('password');
-    } else {
-      this.loginUsername.set('');
-      this.loginPassword.set('');
-    }
-
+    this.loginUsername.set('');
+    this.loginPassword.set('');
     this.loginError.set(false);
   }
 

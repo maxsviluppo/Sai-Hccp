@@ -325,16 +325,20 @@ export class GeneralChecksViewComponent {
         return user ? this.state.clients().find(c => c.id === user.clientId) : null;
     });
 
-    // Mock data - in production this would come from the state/database
-    categories = computed((): CheckCategory[] => {
+    // Real logic to check if a specific checklist is completed for current selection
+    checkIsCompleted(moduleId: string): boolean {
         const client = this.selectedClient();
-        const clientId = client?.id || 'default';
+        const date = this.state.filterDate();
+        if (!client) return false;
 
-        // Simulating different data per company for visual feedback
-        const isC1 = clientId === 'c1';
-        const isC2 = clientId === 'c2';
-        const isAll = clientId === 'default';
+        return this.state.checklistRecords().some(r => 
+            r.moduleId === moduleId && 
+            r.clientId === client.id && 
+            r.date === date
+        );
+    }
 
+    categories = computed((): CheckCategory[] => {
         return [
             {
                 id: 'pre-operative',
@@ -342,9 +346,9 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-eye',
                 color: '#3b82f6',
                 items: [
-                    { id: 'pre-1', label: 'Verifica igiene degli ambienti e attrezzature', moduleId: 'pre-op-checklist', completed: isC1 || isAll },
-                    { id: 'pre-2', label: 'Controllo stoccaggio e materie prime', moduleId: 'pre-op-checklist', completed: isC1 || isC2 },
-                    { id: 'pre-3', label: 'Verifica DPI e abbigliamento idoneo', moduleId: 'pre-op-checklist', completed: isC2 }
+                    { id: 'pre-1', label: 'Monitoraggio Igiene Ambienti / Attrezzature', moduleId: 'pre-op-checklist', completed: this.checkIsCompleted('pre-op-checklist') },
+                    { id: 'pre-2', label: 'Controllo Stoccaggio e Materie Prime', moduleId: 'pre-op-checklist', completed: this.checkIsCompleted('pre-op-checklist') },
+                    { id: 'pre-3', label: 'Verifica DPI e Abbigliamento Operatori', moduleId: 'pre-op-checklist', completed: this.checkIsCompleted('pre-op-checklist') }
                 ]
             },
             {
@@ -353,10 +357,10 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-fire-burner',
                 color: '#6366f1',
                 items: [
-                    { id: 'op-1', label: 'Monitoraggio temperature di lavorazione', moduleId: 'operative-checklist', completed: isC1 || isAll },
-                    { id: 'op-2', label: 'Gestione separazione prodotti (Allergeni)', moduleId: 'operative-checklist', completed: isC2 },
-                    { id: 'op-3', label: 'Rispetto tempistiche di ricettazione', moduleId: 'operative-checklist', completed: isC1 },
-                    { id: 'op-4', label: 'Procedure di rintracciabilità operativa', moduleId: 'operative-checklist', completed: isC2 || isAll }
+                    { id: 'op-1', label: 'Monitoraggio Temperature in Fase di Lavoro', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') },
+                    { id: 'op-2', label: 'Procedure di Rispetto Allergeni', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') },
+                    { id: 'op-3', label: 'Rispetto Tempistiche di Preparazione', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') },
+                    { id: 'op-4', label: 'Gestione Rintracciabilità Operativa', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') }
                 ]
             },
             {
@@ -365,10 +369,10 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-broom',
                 color: '#8b5cf6',
                 items: [
-                    { id: 'post-1', label: 'Sanificazione fine turno superfici di lavoro', moduleId: 'post-op-checklist', completed: true },
-                    { id: 'post-2', label: 'Rimozione scarti e rifiuti da produzione', moduleId: 'post-op-checklist', completed: isC1 || isAll },
-                    { id: 'post-3', label: 'Sigillatura e stoccaggio semilavorati', moduleId: 'post-op-checklist', completed: isC2 || isAll },
-                    { id: 'post-4', label: 'Spegnimento e messa in sicurezza attrezzature', moduleId: 'post-op-checklist', completed: isC1 }
+                    { id: 'post-1', label: 'Sanificazione Superfici e Fine Turno', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') },
+                    { id: 'post-2', label: 'Smaltimento Scarti e Rifiuti Alimentari', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') },
+                    { id: 'post-3', label: 'Stoccaggio Semilavorati e Coperture', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') },
+                    { id: 'post-4', label: 'Messa in Sicurezza Utenze e Impianti', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') }
                 ]
             }
         ];

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService, Message } from '../services/app-state.service';
@@ -29,23 +29,39 @@ import { AppStateService, Message } from '../services/app-state.service';
           </div>
 
           <div class="flex gap-4 items-center z-10 w-full md:w-auto justify-between md:justify-end">
-             <div class="flex -space-x-2 items-center">
-                 @for (user of state.systemUsers().slice(0, 4); track user.id) {
-                     <img [src]="user.avatar" class="w-8 h-8 rounded-full border-2 border-white shadow-sm" [title]="user.name">
-                 }
-                 @if (state.systemUsers().length > 4) {
-                     <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600 z-10">
-                         +{{ state.systemUsers().length - 4 }}
-                     </div>
-                 }
-             </div>
+              <div class="hidden lg:flex items-center">
+                  <!-- User avatars list removed to clean up visual noise -->
+              </div>
              
-             <button (click)="openNewMessageForm()" 
-                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 text-sm shrink-0">
-                 <i class="fa-solid fa-pen text-xs"></i>
-                 <span class="hidden sm:inline">Nuovo Messaggio</span>
-             </button>
+             <div class="flex items-center gap-2">
+                <div class="relative group hidden sm:block">
+                    <input type="text" placeholder="Cerca..." 
+                           class="w-32 lg:w-48 px-3 py-2 pl-9 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] group-focus-within:text-blue-500 transition-colors"></i>
+                </div>
+
+                <button (click)="openNewMessageForm()" 
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 text-sm shrink-0">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span class="hidden sm:inline">Nuovo Messaggio</span>
+                </button>
+             </div>
           </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-2 mb-6 bg-slate-100 p-1 rounded-xl w-fit border border-slate-200">
+            <button (click)="activeFilter.set('RECEIVED')" 
+                    [class]="'px-6 py-2 rounded-lg font-bold text-sm transition-all ' + (activeFilter() === 'RECEIVED' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
+                <i class="fa-solid fa-inbox mr-2"></i> Ricevuti
+                @if (activeFilter() === 'RECEIVED' && state.unreadMessagesCount() > 0) {
+                    <span class="ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] rounded-full">{{ state.unreadMessagesCount() }}</span>
+                }
+            </button>
+            <button (click)="activeFilter.set('SENT')" 
+                    [class]="'px-6 py-2 rounded-lg font-bold text-sm transition-all ' + (activeFilter() === 'SENT' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
+                <i class="fa-solid fa-paper-plane-share mr-2"></i> Inviati
+            </button>
         </div>
 
         <!-- New Message Form -->
@@ -219,10 +235,20 @@ import { AppStateService, Message } from '../services/app-state.service';
                             </div>
                         </div>
                         
-                        <!-- Toggle Icon -->
-                        <div class="w-8 h-8 flex items-center justify-center text-slate-400 shrink-0">
-                            <i class="fa-solid text-sm transition-transform duration-300" [class.fa-chevron-down]="!isMessageExpanded(message.id)" 
-                               [class.fa-chevron-up]="isMessageExpanded(message.id)"></i>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <!-- Trash Icon -->
+                            <button (click)="confirmDelete($event, message.id)" 
+                                    class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                            
+                            <!-- Toggle Icon -->
+                            <div class="w-10 h-10 flex items-center justify-center text-slate-400 transition-all rounded-xl"
+                                 [class.bg-slate-100]="isMessageExpanded(message.id)">
+                                <i class="fa-solid text-sm transition-transform duration-300" 
+                                   [class.fa-chevron-down]="!isMessageExpanded(message.id)" 
+                                   [class.fa-chevron-up]="isMessageExpanded(message.id)"></i>
+                            </div>
                         </div>
                     </div>
 
@@ -303,11 +329,40 @@ import { AppStateService, Message } from '../services/app-state.service';
                 </div>
             }
         </div>
+
+        <!-- Deletion Confirmation Modal -->
+        @if (messageToDelete()) {
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop-in">
+                    <div class="p-8 text-center">
+                        <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fa-solid fa-trash-can text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-900 mb-2">Elimina Messaggio?</h3>
+                        <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                            Sei sicuro di voler eliminare questa comunicazione? L'azione è irreversibile.
+                        </p>
+                    </div>
+                    <div class="flex border-t border-slate-100">
+                        <button (click)="messageToDelete.set(null)" 
+                                class="flex-1 py-5 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors uppercase tracking-widest">
+                            Annulla
+                        </button>
+                        <button (click)="deleteMessage()" 
+                                class="flex-1 py-5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors border-l border-slate-100 uppercase tracking-widest">
+                            Elimina ora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
     `,
     styles: [`
     .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-pop-in { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
   `]
 })
 export class MessagesViewComponent {
@@ -324,11 +379,25 @@ export class MessagesViewComponent {
         attachmentName: ''
     };
 
+    activeFilter = signal<'RECEIVED' | 'SENT'>('RECEIVED');
+    messageToDelete = signal<string | null>(null);
+
     expandedMessages = signal<Set<string>>(new Set());
     showReplyForm = signal<string | null>(null);
     replyContent = '';
 
-    messages = signal<Message[]>([]);
+    messages = computed(() => {
+        const user = this.state.currentUser();
+        if (!user) return [];
+
+        const allMessages = this.state.getMessagesForCurrentUser();
+        
+        if (this.activeFilter() === 'SENT') {
+            return allMessages.filter(m => m.senderId === user.id);
+        } else {
+            return allMessages.filter(m => m.senderId !== user.id);
+        }
+    });
 
     constructor() {
         // Load messages for current user
@@ -336,36 +405,13 @@ export class MessagesViewComponent {
     }
 
     loadMessages() {
-        this.messages.set(this.state.getMessagesForCurrentUser());
+        // Automatically handled by computed signal
     }
 
     openNewMessageForm() {
         this.showNewMessageForm = true;
-
-        // If not admin, automatically address to Admin
         if (!this.state.isAdmin()) {
-            // Find admin user (assuming role 'ADMIN')
-            // In a real scenario, this might be a specific support user ID or group
-            // For now, we look for the first user with 'ADMIN' role
-            const admin = this.state.systemUsers().find(u => u.role === 'ADMIN');
             this.newMessage.recipientType = 'SINGLE';
-            // We use the ADMIN's Client ID context or User ID depending on how messaging works.
-            // Based on 'app-state', recipientId for 'SINGLE' seems to expect a CLIENT ID usually, 
-            // but for direct messaging it might be User ID.
-            // However, the previous code used Client ID for companies.
-            // If we want to msg Admin, Admin usually doesn't have a Client ID like a customer.
-            // Let's assume Admin handles 'ALL' company but for direct message we might need a convention.
-            // Actually, looking at 'app-state.service.ts', messages are filtered by:
-            // (msg.recipientType === 'ALL' || msg.recipientId === user.clientId)
-            // So if I send to admin, I should probably NOT set recipientId to a client ID, 
-            // OR I should set it to something Admin sees.
-
-            // Re-reading logic: Admin filters: (!msg.read && msg.senderId !== user.id) -> Admin sees ALL messages not from self.
-            // So recipientId doesn't matter for Admin visibility as long as it's not broadcast 'ALL' which might confuse UI.
-            // Let's set recipientType 'SINGLE' and recipientId to 'ADMIN' or leave empty?
-            // If I leave empty, 'canSendMessage' might fail if checking for recipientId.
-            // Let's check 'canSendMessage'. It checks !recipientId if SINGLE.
-            // So we need a dummy ID.
             this.newMessage.recipientId = 'ADMIN_OFFICE';
         } else {
             this.newMessage.recipientType = 'ALL';
@@ -429,9 +475,10 @@ export class MessagesViewComponent {
                 newSet.delete(messageId);
             } else {
                 newSet.add(messageId);
-                // Mark as read when expanded
-                this.state.markMessageAsRead(messageId);
-                this.loadMessages();
+                const msg = this.state.messages().find(m => m.id === messageId);
+                if (msg && msg.senderId !== this.state.currentUser()?.id) {
+                    this.state.markMessageAsRead(messageId);
+                }
             }
             return newSet;
         });
@@ -453,10 +500,22 @@ export class MessagesViewComponent {
 
     sendReply(messageId: string) {
         if (!this.replyContent.trim()) return;
-
         this.state.replyToMessage(messageId, this.replyContent);
         this.cancelReply();
         this.loadMessages();
+    }
+
+    confirmDelete(event: MouseEvent, messageId: string) {
+        event.stopPropagation();
+        this.messageToDelete.set(messageId);
+    }
+
+    deleteMessage() {
+        const id = this.messageToDelete();
+        if (id) {
+            this.state.deleteMessage(id);
+            this.messageToDelete.set(null);
+        }
     }
 
     getClientName(clientId?: string): string {
