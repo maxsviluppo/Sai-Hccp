@@ -541,9 +541,6 @@ interface AreaChecklist {
             </div>
         }
 
-            </div>
-        }
-
         <!-- ANOMALY REPORTING MODAL -->
         @if (isAnomalyModalOpen()) {
             <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -761,42 +758,75 @@ export class PreOperationalChecklistComponent {
     constructor() {
         effect(() => {
             this.state.filterDate();
+            this.state.selectedEquipment(); // re-run when equipment changes
             this.loadData();
         }, { allowSignalWrites: true });
-
-        // Multi-doc status checking removed here as g_docs is gone from this phase
-
     }
 
     loadData() {
         const historyRecord: any = this.state.getRecord('pre-op-checklist');
 
-        if (historyRecord && historyRecord.data && historyRecord.data.areas) {
+        // Equipment areas from census (same as operative/post-operative)
+        const census = this.state.groupedEquipment();
+        const equipmentAreas: AreaChecklist[] = census.map(eq => ({
+            id: `eq-${eq.id}`,
+            label: eq.name,
+            icon: eq.type === 'freddo' ? 'fa-snowflake' : eq.type === 'caldo' ? 'fa-fire' : 'fa-microchip',
+            steps: [
+                { id: 'ispezione', label: 'Ispezione visiva', icon: 'fa-eye', status: 'pending' as const },
+                { id: 'integrita', label: 'Integrità e funzionamento', icon: 'fa-screwdriver-wrench', status: 'pending' as const }
+            ],
+            expanded: false
+        }));
+
+        if (historyRecord && historyRecord.areas) {
             // Re-apply updated labels to the saved data
-            const relabeledAreas = historyRecord.data.areas.map((area: any) => {
+            const relabeledAreas = historyRecord.areas.map((area: any) => {
                 const updatedSteps = area.steps.map((step: any) => {
-                    // Find the current definition label for this area
                     const currentDefinition = this.getInitialSteps(area.id).find(d => d.id === step.id);
                     return { ...step, label: currentDefinition?.label || step.label };
                 });
 
-                // Also handle cases where steps might have been removed or added (filter by current definition)
                 const currentStepIds = new Set(this.getInitialSteps(area.id).map(d => d.id));
                 const filteredSteps = updatedSteps.filter((s: any) => currentStepIds.has(s.id));
 
-                // Add missing steps if any (though unlikely if definitions are stable)
                 const existingIds = new Set(filteredSteps.map((s: any) => s.id));
                 const missingSteps = this.getInitialSteps(area.id).filter(d => !existingIds.has(d.id));
 
                 return { ...area, steps: [...filteredSteps, ...missingSteps], expanded: false };
             });
 
-            this.areas.set(relabeledAreas);
-            this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.data.globalItems || [])));
+            // Merge with current equipment (add new ones not yet in saved data)
+            const savedIds = new Set(relabeledAreas.map((a: any) => a.id));
+            const newEquipAreas = equipmentAreas.filter(ea => !savedIds.has(ea.id));
+            this.areas.set([...relabeledAreas, ...newEquipAreas]);
+            
+            if (historyRecord.globalItems) {
+                this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.globalItems)));
+            }
+
+            // Find and set the actual record ID
+            const rawRecord = this.state.checklistRecords().find(r => 
+                r.moduleId === 'pre-op-checklist' && 
+                r.date === this.state.filterDate() &&
+                r.userId === (this.state.isAdmin() && this.state.filterCollaboratorId() ? this.state.filterCollaboratorId() : this.state.currentUser()?.id)
+            );
+            
+            if (rawRecord) {
+              this.currentRecordId.set(rawRecord.id);
+            }
+
             this.isSubmitted.set(true);
         } else {
             this.isSubmitted.set(false);
-            this.resetForm();
+            this.currentRecordId.set(null);
+            // Start fresh: static areas + equipment areas
+            this.areas.update(areas => {
+                const staticAreas = areas.filter(a => !a.id.startsWith('eq-'));
+                const areasWithSteps = staticAreas.map(a => ({ ...a, steps: this.getInitialSteps(a.id) }));
+                return [...areasWithSteps, ...equipmentAreas];
+            });
+            this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' as const })));
         }
     }
 
@@ -823,6 +853,7 @@ export class PreOperationalChecklistComponent {
             }
             return a;
         }));
+        this.autoSave();
     }
 
     setGlobalStatus(id: string, status: 'pending' | 'ok' | 'issue') {
@@ -842,6 +873,7 @@ export class PreOperationalChecklistComponent {
             }
             return item;
         }));
+        this.autoSave();
     }
 
     closeAnomalyModal() {
@@ -876,7 +908,17 @@ export class PreOperationalChecklistComponent {
             'ALL'
         );
 
+        // Persistent record
+        this.state.saveNonConformity({
+            id: Math.random().toString(36).substring(2, 9),
+            moduleId: 'pre-op-checklist',
+            date: this.state.filterDate(),
+            description: note || 'Anomalia durante pre-operativa',
+            itemName: anomaly.label
+        });
+
         this.toast.warning('Anomalia registrata', 'Segnalazione inviata per revisione amministrativa.');
+        this.autoSave();
         this.closeAnomalyModal();
     }
 
@@ -887,6 +929,27 @@ export class PreOperationalChecklistComponent {
             }
             return a;
         }));
+        this.autoSave();
+    }
+
+    // Auto-save draft to Supabase on every step change (no user action required)
+    private autoSave() {
+        let recordId = this.currentRecordId();
+        if (!recordId) {
+            recordId = Math.random().toString(36).substring(2, 11);
+            this.currentRecordId.set(recordId);
+        }
+
+        this.state.saveChecklist({
+            id: recordId,
+            moduleId: 'pre-op-checklist',
+            date: this.state.filterDate(),
+            data: {
+                areas: this.areas(),
+                globalItems: this.globalItems(),
+                status: 'draft'
+            }
+        });
     }
 
     isAreaComplete(id: string) {
@@ -925,7 +988,11 @@ export class PreOperationalChecklistComponent {
     isAllCompleted() { return this.completedStepsCount() === this.totalStepsCount(); }
 
     submitChecklist() {
+        const recordId = this.currentRecordId() || Math.random().toString(36).substring(2, 11);
+        this.currentRecordId.set(recordId);
+
         this.state.saveChecklist({
+            id: recordId,
             moduleId: 'pre-op-checklist',
             date: this.state.filterDate(),
             data: {
@@ -941,10 +1008,13 @@ export class PreOperationalChecklistComponent {
     resetForm() {
         this.areas.update(areas => areas.map(a => ({
             ...a,
-            steps: this.getInitialSteps(a.id),
+            // For equipment areas (dynamic, from census), reset only step statuses
+            steps: a.id.startsWith('eq-')
+                ? a.steps.map(s => ({ ...s, status: 'pending' as const }))
+                : this.getInitialSteps(a.id),
             expanded: false
         })));
-        this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' })));
+        this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' as const })));
     }
 
     startNewChecklist() {

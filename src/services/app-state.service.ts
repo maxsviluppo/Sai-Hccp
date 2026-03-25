@@ -486,6 +486,22 @@ export class AppStateService {
         if (config.master_data) this.adminCompany.set(config.master_data);
       }
 
+      // 12. Non-Conformities
+      const { data: ncData } = await supabase.from('non_conformities').select('*').order('created_at', { ascending: false });
+      if (ncData) {
+        this.nonConformities.set(ncData.map((nc: any) => ({
+          id: nc.id,
+          clientId: nc.client_id,
+          moduleId: nc.module_id,
+          date: nc.date,
+          description: nc.description,
+          itemName: nc.item_name,
+          responsibleId: nc.responsible_id,
+          status: nc.status || 'OPEN',
+          createdAt: nc.created_at ? new Date(nc.created_at) : undefined
+        })));
+      }
+
     } catch (e) {
       console.error('Error refreshing data from Supabase:', e);
     }
@@ -534,10 +550,15 @@ export class AppStateService {
 
   readonly documents = signal<AppDocument[]>([]);
   readonly disabledDocs = signal<Record<string, boolean>>({}); // Map doc ID to disabled boolean
-  readonly selectedEquipment = signal<{ id: string; name: string; area: string }[]>([]);
+  readonly selectedEquipment = signal<{ id: string; name: string; area: string; type?: string }[]>([]);
   readonly groupedEquipment = computed(() => {
-    const raw = this.selectedEquipment();
-    const uniqueMap = new Map<string, { id: string; name: string; area: string }>();
+    const targetClientId = this.activeTargetClientId();
+    const raw = this.selectedEquipment().filter(e => {
+        const cid = (e as any).client_id || (e as any).clientId;
+        return cid === targetClientId;
+    });
+
+    const uniqueMap = new Map<string, { id: string; name: string; area: string; type?: string }>();
     raw.forEach(e => {
       // Clean name: remove " n.1", " 1", etc.
       const cleaned = e.name.replace(/\s+n\.\d+/i, '').replace(/\s+\d+$/i, '').trim();
@@ -548,6 +569,24 @@ export class AppStateService {
     return Array.from(uniqueMap.values());
   });
   readonly productionRecords = signal<ProductionRecord[]>([]);
+  readonly nonConformities = signal<{
+    id: string;
+    clientId: string;
+    moduleId: string;
+    date: string;
+    description: string;
+    itemName?: string;
+    responsibleId?: string;
+    status: 'OPEN' | 'CLOSED' | 'IN_PROGRESS';
+    createdAt?: Date;
+  }[]>([]);
+
+  readonly filteredNonConformities = computed(() => {
+    const targetClientId = this.activeTargetClientId();
+    return this.nonConformities()
+      .filter(nc => nc.clientId === targetClientId || !targetClientId)
+      .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
+  });
 
   // Global Filtered Documents for Admin View
   readonly filteredDocuments = computed(() => {
@@ -634,7 +673,7 @@ export class AppStateService {
   readonly menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', adminOnly: true },
     { id: 'operator-dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', operatorOnly: true },
-    { id: 'reports', label: 'Report Controlli', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
+    { id: 'reports', label: 'Report Risultati', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
     { id: 'general-checks', label: 'Controlli Generali', icon: 'fa-list-check', category: 'dashboard', adminOnly: true },
 
     // --- ARCHIVIO DOCUMENTALE ---
@@ -642,13 +681,18 @@ export class AppStateService {
 
     // --- REGISTRI E FASI OPERATIVE ---
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations' },
-    { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
+    { id: 'operative-checklist', label: 'Registri Operativi di Controllo', icon: 'fa-briefcase', category: 'operations' },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
-    { id: 'production-log', label: 'Rintracciabilità', icon: 'fa-barcode', category: 'operations' },
+    { id: 'production-log', label: 'Registri Produzione', icon: 'fa-barcode', category: 'operations' },
 
-    { id: 'cleaning-maintenance', label: 'Manutenzione', icon: 'fa-screwdriver-wrench', category: 'operations' },
+    { id: 'cleaning-maintenance', label: 'Piano Sanificazioni', icon: 'fa-broom', category: 'operations' },
+    { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'operations' },
+    { id: 'micro-bio', label: 'Analisi Microbiologiche', icon: 'fa-vial-virus', category: 'operations' },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations' },
-    { id: 'micro-bio', label: 'Monitoraggio Microbio', icon: 'fa-vial-virus', category: 'operations' },
+    { id: 'temperatures', label: 'Monitoraggio Temperature', icon: 'fa-thermometer-half', category: 'operations' },
+    { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', category: 'operations' },
+    { id: 'allergens-ue1169', label: 'Allergeni UE1169', icon: 'fa-wheat-awn-circle-exclamation', category: 'operations' },
+    { id: 'products-cleaning', label: 'Prodotti Chimici', icon: 'fa-vial', category: 'operations' },
 
     // --- STORICO ---
     { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
@@ -657,6 +701,8 @@ export class AppStateService {
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
 
     // Config
+    { id: 'equipment-census', label: 'Censimento Attrezzature', icon: 'fa-microchip', category: 'config', adminOnly: true },
+    { id: 'equipment', label: 'Monitoraggio Attrezzature', icon: 'fa-screwdriver-wrench', category: 'config', adminOnly: true },
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config', operatorOnly: true },
     { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config', operatorOnly: true },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
@@ -846,7 +892,17 @@ export class AppStateService {
     });
 
     // Supabase Sync
-    supabase.from('checklist_records').upsert(record).then();
+    supabase.from('checklist_records').upsert({
+      id: record.id,
+      user_id: record.userId,
+      client_id: record.clientId,
+      module_id: record.moduleId,
+      date: record.date,
+      timestamp: record.timestamp,
+      data: record.data
+    }).then(({ error }) => {
+        if (error) console.error('Error syncing checklist record:', error);
+    });
 
     this.toastService.success('Registrazione Salvata', 'I dati sono stati archiviati correttamente.');
 
@@ -975,19 +1031,35 @@ export class AppStateService {
     const client = this.clients().find(c => c.id === id);
     if (!client) return;
 
-    this.clients.update(clients => clients.filter(c => c.id !== id));
-    
-    // Cleanup local state
-    this.systemUsers.update(users => users.filter(u => u.clientId !== id));
-    
-    // DB sync
-    const { error } = await supabase.from('clients').delete().eq('id', id);
-    
-    if (!error) {
-        this.toastService.success('Azienda Rimossa', 'L\'anagrafica e i relativi dati sono stati cancellati.');
-    } else {
-        this.toastService.error('Errore', 'Impossibile rimuovere l\'azienda dal database.');
-        // Rollback on failure if needed (not strictly necessary here as sync will restore state)
+    // 1. Optimistic local update immediately (UI responds at once)
+    this.clients.update(list => list.filter(c => c.id !== id));
+    this.systemUsers.update(list => list.filter(u => u.clientId !== id));
+    this.selectedEquipment.update(list => list.filter((e: any) => {
+      const cid = e.client_id || e.clientId;
+      return cid !== id;
+    }));
+
+    // Reset filter if we deleted the selected client
+    if (this.filterClientId() === id) {
+      this.filterClientId.set(null);
+    }
+
+    try {
+      // 2. Cascade delete in Supabase (order matters for FK constraints)
+      await supabase.from('checklist_records').delete().eq('client_id', id);
+      await supabase.from('equipment').delete().eq('client_id', id);
+      await supabase.from('documents').delete().eq('client_id', id);
+      await supabase.from('system_users').delete().eq('client_id', id);
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+
+      if (error) throw error;
+
+      this.toastService.success('Azienda Eliminata', `"${client.name}" è stata rimossa definitivamente.`);
+    } catch (e: any) {
+      // Rollback: re-fetch from DB to restore consistent state
+      console.error('Error deleting client:', e);
+      this.toastService.error('Errore', 'Impossibile eliminare l\'azienda. I dati sono stati ripristinati.');
+      await this.refreshAllData();
     }
   }
 
@@ -1095,16 +1167,13 @@ export class AppStateService {
     const user = this.systemUsers().find(u => u.id === id);
     if (!user) return;
 
-    if (confirm(`Sei sicuro di voler eliminare definitivamente ${user.name}? Questa operazione non può essere annullata.`)) {
-      this.systemUsers.update(users => users.filter(u => u.id !== id));
-      const { error } = await supabase.from('system_users').delete().eq('id', id);
-      
-      if (!error) {
-        this.toastService.success('Eliminato', 'Il collaboratore è stato rimosso correttamente.');
-      } else {
-        this.toastService.error('Errore', 'Impossibile eliminare dal database.');
-        // Rollback state if error? For now simple.
-      }
+    this.systemUsers.update(users => users.filter(u => u.id !== id));
+    const { error } = await supabase.from('system_users').delete().eq('id', id);
+    
+    if (!error) {
+      this.toastService.success('Eliminato', 'Il collaboratore è stato rimosso correttamente.');
+    } else {
+      this.toastService.error('Errore', 'Impossibile eliminare dal database.');
     }
   }
 
@@ -1143,13 +1212,25 @@ export class AppStateService {
   }
 
   // --- Equipment Census Methods ---
-  addEquipment(area: string, name: string) {
+  async addEquipment(area: string, name: string, type: string = 'Altro') {
     const id = Math.random().toString(36).substring(2, 9);
-    this.selectedEquipment.update(list => [...list, { id, area, name }]);
+    const client_id = this.activeTargetClientId();
+    
+    this.selectedEquipment.update(list => [...list, { id, area, name, type } as any]);
+    
+    // DB sync
+    await supabase.from('equipment').insert({
+        id,
+        area,
+        name,
+        type,
+        client_id: client_id || 'demo'
+    });
   }
 
-  removeEquipment(id: string) {
+  async removeEquipment(id: string) {
     this.selectedEquipment.update(list => list.filter(e => e.id !== id));
+    await supabase.from('equipment').delete().eq('id', id);
   }
 
   getDocumentsByClient(clientId: string, category?: string) {
@@ -1382,6 +1463,60 @@ export class AppStateService {
     } catch (e) {
       console.error('Error syncing reminder:', e);
       this.toastService.error('Errore Database', 'Impossibile salvare il promemoria.');
+    }
+  }
+
+  async saveNonConformity(nc: { 
+    id: string, 
+    moduleId: string, 
+    date: string, 
+    description: string, 
+    itemName?: string,
+    responsibleId?: string 
+  }) {
+    try {
+        const client_id = this.activeTargetClientId() || 'demo';
+        const { error } = await supabase.from('non_conformities').insert({
+            id: nc.id,
+            client_id: client_id,
+            module_id: nc.moduleId,
+            date: nc.date,
+            description: nc.description,
+            item_name: nc.itemName,
+            responsible_id: nc.responsibleId || this.currentUser()?.id,
+            status: 'OPEN',
+            created_at: new Date()
+        });
+        if (error) throw error;
+        
+        // Also send a message to Admin
+        await supabase.from('messages').insert({
+            id: Math.random().toString(36).substring(2, 9),
+            sender_id: this.currentUser()?.id,
+            recipient_id: client_id,
+            recipient_type: 'ADMIN',
+            content: `NUOVA NON CONFORMITÀ: ${nc.itemName || ''} - ${nc.description}`,
+            category: 'ALERT',
+            created_at: new Date()
+        });
+
+        this.refreshAllData();
+    } catch (e) {
+        console.error('Error saving non-conformity:', e);
+    }
+  }
+
+  async updateNonConformityStatus(id: string, status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED') {
+    // Optimistic local update
+    this.nonConformities.update(list =>
+      list.map(nc => nc.id === id ? { ...nc, status } : nc)
+    );
+    // Persist to Supabase
+    try {
+      const { error } = await supabase.from('non_conformities').update({ status }).eq('id', id);
+      if (error) throw error;
+    } catch (e) {
+      console.error('Error updating non-conformity status:', e);
     }
   }
 

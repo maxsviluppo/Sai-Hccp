@@ -429,24 +429,21 @@ export class OperativeChecklistComponent {
 
       // For each equipment in census
       census.forEach(eq => {
+         const type = (eq as any).type || 'Altro';
          const nameLower = eq.name.toLowerCase();
-         const isColdStorage = nameLower.includes('frigo') ||
-            nameLower.includes('congelatore') ||
-            nameLower.includes('cella') ||
-            nameLower.includes('pozzetto');
+         const isCold = type === 'Freddo' || 
+                        nameLower.includes('frigo') || 
+                        nameLower.includes('congelatore') || 
+                        nameLower.includes('cella');
+         const isHot = type === 'Caldo' || 
+                       nameLower.includes('forno') || 
+                       nameLower.includes('cottura');
 
          let icon = 'fa-microchip';
-         if (nameLower.includes('congelatore')) {
-            icon = 'fa-icicles';
-         } else if (nameLower.includes('pozzetto')) {
-            icon = 'fa-box-archive';
-         } else if (isColdStorage) {
-            icon = 'fa-snowflake';
-         } else if (nameLower.includes('piano cottura') || nameLower.includes('forno') || nameLower.includes('griglie')) {
-            icon = 'fa-fire';
-         } else if (nameLower.includes('lavello')) {
-            icon = 'fa-sink';
-         }
+         if (isCold) icon = 'fa-snowflake';
+         if (isHot) icon = 'fa-fire';
+         if (nameLower.includes('congelatore')) icon = 'fa-icicles';
+         if (nameLower.includes('lavello')) icon = 'fa-sink';
 
          list.push({
             id: `eq-${eq.id}`,
@@ -455,7 +452,7 @@ export class OperativeChecklistComponent {
             status: s[`eq-${eq.id}`]?.status || 'pending',
             note: s[`eq-${eq.id}`]?.note,
             temperature: s[`eq-${eq.id}`]?.temperature,
-            hasTemperature: isColdStorage
+            hasTemperature: isCold || isHot
          });
       });
 
@@ -513,6 +510,17 @@ export class OperativeChecklistComponent {
             ...map,
             [id]: { ...map[id], status: 'issue', note: note || 'Anomalia riscontrata' }
          }));
+
+         // Segnalazione amministratore
+         this.state.saveNonConformity({
+            id: Math.random().toString(36).substring(2, 9),
+            moduleId: 'operative-checklist',
+            date: this.selectedDate(),
+            description: note || 'Anomalia riscontrata durante il controllo operativo',
+            itemName: this.currentItem()?.label
+         });
+         
+         this.toast.info('Anomalia Salvata', 'La non conformità è stata registrata e segnalata.');
       }
       this.closeModal();
    }

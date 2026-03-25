@@ -353,6 +353,12 @@
         @case ('collaborators') { <app-collaborators-view /> }
         @case ('messages') { <app-messages-view /> }
         @case ('accounting') { <app-accounting-view /> }
+        @case ('equipment-census') { <app-equipment-census-view /> }
+        @case ('equipment') { <app-equipment-view /> }
+        @case ('pest-control') { <app-pest-control-view /> }
+        @case ('staff-hygiene') { <app-staff-hygiene-view /> }
+        @case ('allergens-ue1169') { <app-allergens-config-view /> }
+        @case ('products-cleaning') { <app-cleaning-products-view /> }
         @default {
         <app-generic-module [moduleId]="state.currentModuleId()" />
         }

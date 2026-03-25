@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
+import { ToastService } from '../services/toast.service';
 
 interface CheckItem {
     id: string;
@@ -273,6 +274,106 @@ interface CheckCategory {
         }
       </div>
 
+      <!-- Non Conformità Section -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="h-10 w-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-500">
+              <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-slate-800">Non Conformità Segnalate</h3>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Anomalie registrate dagli operatori</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-xs font-black">
+              {{ nonConformitiesFiltered().length }} OPEN
+            </span>
+            <span class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-black">
+              {{ nonConformitiesClosed().length }} CHIUSE
+            </span>
+          </div>
+        </div>
+
+        @if (state.filteredNonConformities().length === 0) {
+          <div class="p-10 flex flex-col items-center gap-3 text-center">
+            <div class="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-400">
+              <i class="fa-solid fa-circle-check text-2xl"></i>
+            </div>
+            <p class="text-sm font-bold text-slate-500">Nessuna non conformità segnalata</p>
+            <p class="text-xs text-slate-400">Tutte le verifiche sono conformi per l'azienda selezionata</p>
+          </div>
+        } @else {
+          <div class="divide-y divide-slate-100">
+            @for (nc of state.filteredNonConformities(); track nc.id) {
+              <div class="p-4 hover:bg-slate-50 transition-colors flex gap-4">
+                <!-- Status icon -->
+                <div class="shrink-0 mt-0.5">
+                  @if (nc.status === 'OPEN') {
+                    <div class="h-8 w-8 rounded-lg bg-red-100 border border-red-200 flex items-center justify-center text-red-500">
+                      <i class="fa-solid fa-exclamation text-sm font-black"></i>
+                    </div>
+                  } @else if (nc.status === 'IN_PROGRESS') {
+                    <div class="h-8 w-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
+                      <i class="fa-solid fa-spinner text-sm"></i>
+                    </div>
+                  } @else {
+                    <div class="h-8 w-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                      <i class="fa-solid fa-check text-sm"></i>
+                    </div>
+                  }
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <span class="text-sm font-bold text-slate-800">{{ nc.itemName || 'Anomalia' }}</span>
+                    <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border"
+                          [class.bg-red-50]="nc.status === 'OPEN'" [class.text-red-600]="nc.status === 'OPEN'" [class.border-red-200]="nc.status === 'OPEN'"
+                          [class.bg-amber-50]="nc.status === 'IN_PROGRESS'" [class.text-amber-700]="nc.status === 'IN_PROGRESS'" [class.border-amber-200]="nc.status === 'IN_PROGRESS'"
+                          [class.bg-emerald-50]="nc.status === 'CLOSED'" [class.text-emerald-700]="nc.status === 'CLOSED'" [class.border-emerald-200]="nc.status === 'CLOSED'">
+                      {{ nc.status === 'OPEN' ? 'APERTA' : nc.status === 'IN_PROGRESS' ? 'IN CORSO' : 'CHIUSA' }}
+                    </span>
+                    <span class="text-[9px] font-bold uppercase text-slate-400 px-2 py-0.5 rounded bg-slate-50 border border-slate-100 tracking-widest">
+                      {{ getModuleLabel(nc.moduleId) }}
+                    </span>
+                  </div>
+
+                  <p class="text-xs text-slate-600 leading-relaxed mb-2">{{ nc.description }}</p>
+
+                  <div class="flex items-center gap-4 text-[10px] text-slate-400 font-bold">
+                    <span><i class="fa-solid fa-calendar-day mr-1"></i>{{ nc.date }}</span>
+                    @if (nc.createdAt) {
+                      <span><i class="fa-solid fa-clock mr-1"></i>{{ formatTime(nc.createdAt) }}</span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                @if (nc.status === 'OPEN') {
+                  <div class="flex flex-col gap-1.5 shrink-0">
+                    <button (click)="updateNcStatus(nc.id, 'IN_PROGRESS')"
+                            class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                      In Corso
+                    </button>
+                    <button (click)="updateNcStatus(nc.id, 'CLOSED')"
+                            class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                      Chiudi
+                    </button>
+                  </div>
+                } @else if (nc.status === 'IN_PROGRESS') {
+                  <button (click)="updateNcStatus(nc.id, 'CLOSED')"
+                          class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                    <i class="fa-solid fa-check mr-1"></i>Chiudi
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
     </div>
   `,
     styles: [`
@@ -291,6 +392,7 @@ interface CheckCategory {
 })
 export class GeneralChecksViewComponent {
     state = inject(AppStateService);
+    toast = inject(ToastService);
     showStandardInfo = signal(false);
     expandedCategoryIds = signal<Set<string>>(new Set());
 
@@ -421,12 +523,41 @@ export class GeneralChecksViewComponent {
     getModuleName(moduleId: string): string {
         const moduleNames: Record<string, string> = {
             'operational-checklist': 'Checklist Operativa',
+            'operative-checklist': 'Fase Operativa',
+            'pre-op-checklist': 'Fase Pre-Operativa',
+            'post-op-checklist': 'Fase Post-Operativa',
             'temperatures': 'Temperature',
             'staff-hygiene': 'Igiene Personale',
             'traceability': 'Rintracciabilità',
             'cleaning-maintenance': 'Pulizia/Manutenzione'
         };
         return moduleNames[moduleId] || moduleId;
+    }
+
+    getModuleLabel(moduleId: string): string {
+        return this.getModuleName(moduleId);
+    }
+
+    // Non-conformity computed signals
+    nonConformitiesFiltered = computed(() =>
+        this.state.filteredNonConformities().filter(nc => nc.status !== 'CLOSED')
+    );
+
+    nonConformitiesClosed = computed(() =>
+        this.state.filteredNonConformities().filter(nc => nc.status === 'CLOSED')
+    );
+
+    async updateNcStatus(id: string, status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED') {
+        await this.state.updateNonConformityStatus(id, status);
+        const label = status === 'CLOSED' ? 'chiusa' : status === 'IN_PROGRESS' ? 'in lavorazione' : 'aperta';
+        this.toast.success('Non Conformità Aggiornata', `La segnalazione è stata marcata come ${label}.`);
+    }
+
+    formatTime(date: Date | undefined): string {
+        if (!date) return '';
+        try {
+            return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        } catch { return ''; }
     }
 
     printCompleteList() {

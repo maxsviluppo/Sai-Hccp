@@ -24,6 +24,12 @@ import { ProductionLogViewComponent } from './components/production-log-view.com
 import { ToastContainerComponent } from './components/toast-container.component';
 import { ChecklistHistoryComponent } from './components/checklist-history.component';
 import { TemperaturesViewComponent } from './components/temperatures-view.component';
+import { EquipmentCensusViewComponent } from './components/equipment-census-view.component';
+import { EquipmentViewComponent } from './components/equipment-view.component';
+import { PestControlViewComponent } from './components/pest-control-view.component';
+import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
+import { AllergensConfigViewComponent } from './components/allergens-config-view.component';
+import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
 
 @Component({
   selector: 'app-root',
@@ -51,7 +57,13 @@ import { TemperaturesViewComponent } from './components/temperatures-view.compon
     ProductionLogViewComponent,
     ToastContainerComponent,
     ChecklistHistoryComponent,
-    TemperaturesViewComponent
+    TemperaturesViewComponent,
+    EquipmentCensusViewComponent,
+    EquipmentViewComponent,
+    PestControlViewComponent,
+    StaffHygieneViewComponent,
+    AllergensConfigViewComponent,
+    CleaningProductsViewComponent
   ],
   templateUrl: './app.component.html'
 })
