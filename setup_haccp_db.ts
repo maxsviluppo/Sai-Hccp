@@ -109,6 +109,29 @@ ALTER TABLE message_replies DISABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
 ALTER TABLE system_config DISABLE ROW LEVEL SECURITY;
 
+-- Enable Cascade Deletes for consistency
+ALTER TABLE system_users 
+  DROP CONSTRAINT IF EXISTS system_users_client_id_fkey,
+  ADD CONSTRAINT system_users_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
+
+ALTER TABLE checklist_records 
+  DROP CONSTRAINT IF EXISTS checklist_records_client_id_fkey,
+  ADD CONSTRAINT checklist_records_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+  DROP CONSTRAINT IF EXISTS checklist_records_user_id_fkey,
+  ADD CONSTRAINT checklist_records_user_id_fkey FOREIGN KEY (user_id) REFERENCES system_users(id) ON DELETE CASCADE;
+
+ALTER TABLE documents 
+  DROP CONSTRAINT IF EXISTS documents_client_id_fkey,
+  ADD CONSTRAINT documents_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
+
+ALTER TABLE messages 
+  DROP CONSTRAINT IF EXISTS messages_client_id_fkey,
+  ADD CONSTRAINT messages_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
+
+ALTER TABLE equipment 
+  DROP CONSTRAINT IF EXISTS equipment_client_id_fkey,
+  ADD CONSTRAINT equipment_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
+
 -- Insert a default dev admin if user table empty
 INSERT INTO system_users (id, name, email, role, active, username, password, avatar)
 SELECT 'dev-admin', 'Sviluppatore (Admin)', 'admin@haccppro.it', 'ADMIN', true, 'dev', 'dev', 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff'

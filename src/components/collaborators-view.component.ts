@@ -197,6 +197,36 @@ import { ToastService } from '../services/toast.service';
           </div>
         }
       </div>
+      
+      <!-- CUSTOM DELETE CONFIRMATION MODAL -->
+      @if (isDeleteConfirmOpen()) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="closeDeleteModal()"></div>
+          <div class="relative bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden p-8 animate-slide-up text-center border border-slate-200">
+            
+            <div class="w-20 h-20 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-6 border border-red-100 shadow-inner group transition-transform hover:scale-110">
+                <i class="fa-solid fa-trash-can-arrow-up text-3xl animate-bounce-short"></i>
+            </div>
+
+            <h3 class="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Conferma Eliminazione</h3>
+            <p class="text-base font-medium text-slate-500 leading-relaxed mb-8">
+                Sei sicuro di voler rimuovere <span class="text-slate-800 font-bold">"{{ itemToDelete()?.name }}"</span>?<br>
+                <span class="text-[11px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2 py-1 rounded inline-block mt-3 border border-red-100">Operazione irreversibile</span>
+            </p>
+
+            <div class="flex gap-4">
+                <button (click)="closeDeleteModal()"
+                        class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200">
+                    ANNULLA
+                </button>
+                <button (click)="confirmDeletion()"
+                        class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-[0_8px_20px_rgba(220,38,38,0.3)] active:scale-95">
+                    ELIMINA
+                </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Unit Modal -->
       @if (activeModal() === 'user') {
@@ -388,6 +418,10 @@ export class CollaboratorsViewComponent {
   isEditing = signal(false);
   editingId = signal<string | null>(null);
 
+  // Deletion Modal State
+  isDeleteConfirmOpen = signal(false);
+  itemToDelete = signal<{ id: string, name: string, type: 'user' | 'client' } | null>(null);
+
   // Accordion State: Set of open client IDs
   expandedClientIds = signal<Set<string>>(new Set());
 
@@ -506,11 +540,34 @@ export class CollaboratorsViewComponent {
     }
 
   deleteUser(id: string) {
-    this.state.deleteSystemUser(id);
+    const user = this.state.systemUsers().find(u => u.id === id);
+    if (!user) return;
+    this.itemToDelete.set({ id, name: user.name, type: 'user' });
+    this.isDeleteConfirmOpen.set(true);
   }
 
   deleteClient(id: string) {
-    this.state.deleteClient(id);
+    const client = this.state.clients().find(c => c.id === id);
+    if (!client) return;
+    this.itemToDelete.set({ id, name: client.name, type: 'client' });
+    this.isDeleteConfirmOpen.set(true);
+  }
+
+  confirmDeletion() {
+    const item = this.itemToDelete();
+    if (!item) return;
+
+    if (item.type === 'client') {
+      this.state.deleteClient(item.id);
+    } else {
+      this.state.deleteSystemUser(item.id);
+    }
+    this.closeDeleteModal();
+  }
+
+  closeDeleteModal() {
+    this.isDeleteConfirmOpen.set(false);
+    this.itemToDelete.set(null);
   }
 
   // --- Client/Company Logic ---

@@ -19,7 +19,7 @@ interface AreaChecklist {
     <!-- PRINT ONLY HEADER & TABLE -->
     <div class="hidden print:block font-sans text-black p-4">
         <div class="border-b-2 border-slate-800 pb-4 mb-6">
-            <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'Azienda' }}</h1>
+            <h1 class="text-2xl font-bold uppercase mb-1">{{ state.adminCompany().name || 'HACCP Pro' }}</h1>
             <h2 class="text-xl font-light text-slate-600">Fase Pre-operativa (Ispezione e Avvio)</h2>
             <div class="flex justify-between mt-4 text-lg text-slate-500">
                 <span><span class="font-bold">Data:</span> {{ getFormattedDate() }}</span>
@@ -541,33 +541,64 @@ interface AreaChecklist {
             </div>
         }
 
-        <!-- CUSTOM DELETE CONFIRMATION MODAL (APP STYLE) -->
-        @if (isDeleteModalOpen()) {
-            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="isDeleteModalOpen.set(false)"></div>
-                <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 animate-slide-up text-center border border-slate-200">
-                    <div class="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-100">
-                        <i class="fa-solid fa-trash-can-arrow-up text-2xl"></i>
+            </div>
+        }
+
+        <!-- ANOMALY REPORTING MODAL -->
+        @if (isAnomalyModalOpen()) {
+            <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeAnomalyModal()"></div>
+                <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+                    
+                    <!-- Header -->
+                    <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center">
+                                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black uppercase tracking-tight leading-none mb-1">Segnalazione Anomalia</h3>
+                                <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest opacity-80">Documentazione Non Conformità</p>
+                            </div>
+                        </div>
+                        <button (click)="closeAnomalyModal()" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
 
-                    <h3 class="text-lg font-bold text-slate-800 mb-2">Elimina Documento?</h3>
-                    <p class="text-base text-slate-500 leading-relaxed mb-6">
-                        Rimuovere <span class="text-slate-700 font-bold">"{{ docToDelete()?.fileName }}"</span>?<br> L'azione è irreversibile.
-                    </p>
+                    <div class="p-8 space-y-6 bg-slate-50/50">
+                        <div class="p-4 bg-white rounded-2xl border border-red-100 shadow-sm">
+                            <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info"></i> Controllo Selezionato
+                            </h4>
+                            <p class="text-lg font-bold text-slate-700 leading-tight">
+                                {{ currentAnomalyStep()?.label }}
+                            </p>
+                        </div>
 
-                    <div class="flex gap-3">
-                        <button (click)="isDeleteModalOpen.set(false)"
-                                class="flex-1 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-colors">
-                            ANNULLA
-                        </button>
-                        <button (click)="confirmDelete()"
-                                class="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-red-700 transition-colors shadow-sm">
-                            ELIMINA
-                        </button>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Dettaglio Anomalia / Azione Correttiva</label>
+                            <textarea #anomalyText
+                                      placeholder="Descrivi l'anomalia riscontrata e l'eventuale azione correttiva immediata intrapresa..."
+                                      class="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-base font-medium text-slate-700 transition-all shadow-sm bg-white resize-none"></textarea>
+                        </div>
+
+                        <div class="flex gap-4 pt-2">
+                            <button (click)="closeAnomalyModal()"
+                                    class="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                                ANNULLA
+                            </button>
+                            <button (click)="confirmAnomaly(anomalyText.value)"
+                                    class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95">
+                                REGISTRA NON CONFORMITÀ
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         }
+
+        <!-- Footer Actions -->
 
         <!-- Footer Actions -->
         <div class="fixed bottom-6 right-6 z-30">
@@ -618,6 +649,11 @@ export class PreOperationalChecklistComponent {
     // Delete confirmation state
     isDeleteModalOpen = signal(false);
     docToDelete = signal<any>(null);
+
+    // Anomaly Modal State
+    isAnomalyModalOpen = signal(false);
+    currentAnomalyStep = signal<{areaId: string, id: string, label: string} | null>(null);
+    currentAnomalyType = signal<'global' | 'step'>('step');
 
     masterEquipmentList = [
         { area: 'Area Lavaggio', items: ['Mobile pensile', 'Lavello', 'Tavolo da lavoro'] },
@@ -733,11 +769,11 @@ export class PreOperationalChecklistComponent {
     }
 
     loadData() {
-        const historyRecord = this.state.getRecord('pre-op-checklist');
+        const historyRecord: any = this.state.getRecord('pre-op-checklist');
 
-        if (historyRecord && historyRecord.areas) {
+        if (historyRecord && historyRecord.data && historyRecord.data.areas) {
             // Re-apply updated labels to the saved data
-            const relabeledAreas = historyRecord.areas.map((area: any) => {
+            const relabeledAreas = historyRecord.data.areas.map((area: any) => {
                 const updatedSteps = area.steps.map((step: any) => {
                     // Find the current definition label for this area
                     const currentDefinition = this.getInitialSteps(area.id).find(d => d.id === step.id);
@@ -756,7 +792,7 @@ export class PreOperationalChecklistComponent {
             });
 
             this.areas.set(relabeledAreas);
-            this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.globalItems || [])));
+            this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.data.globalItems || [])));
             this.isSubmitted.set(true);
         } else {
             this.isSubmitted.set(false);
@@ -771,6 +807,16 @@ export class PreOperationalChecklistComponent {
     }
 
     setStepStatus(areaId: string, stepId: string, status: 'pending' | 'ok' | 'issue') {
+        const area = this.areas().find(a => a.id === areaId);
+        const step = area?.steps.find(s => s.id === stepId);
+        
+        if (status === 'issue' && step) {
+            this.currentAnomalyStep.set({ areaId, id: stepId, label: step.label });
+            this.currentAnomalyType.set('step');
+            this.isAnomalyModalOpen.set(true);
+            return;
+        }
+
         this.areas.update(areas => areas.map(a => {
             if (a.id === areaId) {
                 return { ...a, steps: a.steps.map(s => s.id === stepId ? { ...s, status } : s) };
@@ -780,6 +826,15 @@ export class PreOperationalChecklistComponent {
     }
 
     setGlobalStatus(id: string, status: 'pending' | 'ok' | 'issue') {
+        const item = this.globalItems().find(i => i.id === id);
+        
+        if (status === 'issue' && item) {
+            this.currentAnomalyStep.set({ areaId: 'global', id, label: item.label });
+            this.currentAnomalyType.set('global');
+            this.isAnomalyModalOpen.set(true);
+            return;
+        }
+
         this.globalItems.update(items => items.map(item => {
             if (item.id === id) {
                 const newStatus = item.status === status ? 'pending' : status;
@@ -787,6 +842,42 @@ export class PreOperationalChecklistComponent {
             }
             return item;
         }));
+    }
+
+    closeAnomalyModal() {
+        this.isAnomalyModalOpen.set(false);
+        this.currentAnomalyStep.set(null);
+    }
+
+    confirmAnomaly(note: string) {
+        const anomaly = this.currentAnomalyStep();
+        if (!anomaly) return;
+
+        const type = this.currentAnomalyType();
+
+        if (type === 'step') {
+            this.areas.update(areas => areas.map(a => {
+                if (a.id === anomaly.areaId) {
+                    return { ...a, steps: a.steps.map(s => s.id === anomaly.id ? { ...s, status: 'issue', note } : s) };
+                }
+                return a;
+            }));
+        } else {
+            this.globalItems.update(items => items.map(i => {
+                if (i.id === anomaly.id) return { ...i, status: 'issue', note };
+                return i;
+            }));
+        }
+
+        // Auto-post to admin alerts
+        this.state.sendMessage(
+            `ANOMALIA: ${anomaly.label}`,
+            `Segnalata anomalia durante la fase pre-operativa.\n\nControllo: ${anomaly.label}\nNote operatore: ${note || 'Nessuna specifica'}`,
+            'ALL'
+        );
+
+        this.toast.warning('Anomalia registrata', 'Segnalazione inviata per revisione amministrativa.');
+        this.closeAnomalyModal();
     }
 
     setAllStepsInArea(areaId: string, status: 'ok' | 'issue') {

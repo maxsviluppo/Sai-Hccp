@@ -831,11 +831,17 @@ export class AppStateService {
       data: actualData
     };
 
+    // Logic to prevent duplicates and ensure updates
+    const existingIndex = this.checklistRecords().findIndex(r => 
+      r.moduleId === moduleId && r.userId === targetUserId && (r as any).date === record.date
+    );
+
+    if (existingIndex > -1) {
+      record.id = this.checklistRecords()[existingIndex].id;
+    }
+
     this.checklistRecords.update(records => {
-      // Logic to prevent duplicates for the same module/user/date if needed
-      const filtered = records.filter(r => 
-        !(r.moduleId === moduleId && r.userId === targetUserId && (r as any).date === record.date)
-      );
+      const filtered = records.filter(r => r.id !== record.id);
       return [...filtered, record as any];
     });
 
@@ -969,19 +975,19 @@ export class AppStateService {
     const client = this.clients().find(c => c.id === id);
     if (!client) return;
 
-    if (confirm(`⚠️ ATTENZIONE: Sei sicuro di voler eliminare DEFINITIVAMENTE l'azienda "${client.name}"?\n\nQuesta azione eliminerà anche TUTTI i suoi utenti e documenti collegati.`)) {
-      this.clients.update(clients => clients.filter(c => c.id !== id));
-      
-      // Cascade-like manual cleanup (Supabase should ideally have fk constraints but let's be safe)
-      this.systemUsers.update(users => users.filter(u => u.clientId !== id));
-      
-      const { error } = await supabase.from('clients').delete().eq('id', id);
-      
-      if (!error) {
-          this.toastService.success('Azienda Rimossa', 'L\'anagrafica e i relativi dati sono stati cancellati.');
-      } else {
-          this.toastService.error('Errore', 'Impossibile rimuovere l\'azienda dal database.');
-      }
+    this.clients.update(clients => clients.filter(c => c.id !== id));
+    
+    // Cleanup local state
+    this.systemUsers.update(users => users.filter(u => u.clientId !== id));
+    
+    // DB sync
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    
+    if (!error) {
+        this.toastService.success('Azienda Rimossa', 'L\'anagrafica e i relativi dati sono stati cancellati.');
+    } else {
+        this.toastService.error('Errore', 'Impossibile rimuovere l\'azienda dal database.');
+        // Rollback on failure if needed (not strictly necessary here as sync will restore state)
     }
   }
 
