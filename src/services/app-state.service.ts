@@ -319,6 +319,15 @@ export class AppStateService {
 
   async initSupabase() {
     await this.refreshAllData();
+    // Enable Real-time synchronization
+    supabase.channel('custom-db-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, () => this.refreshAllData())
+      .subscribe();
   }
 
   async refreshAllData() {
@@ -468,6 +477,13 @@ export class AppStateService {
           priority: r.priority,
           dismissed: !!r.dismissed
         })));
+      }
+
+      // 11. System Config (Admin + Settings)
+      const { data: config } = await supabase.from('system_config').select('*').eq('id', 'master').single();
+      if (config) {
+        if (config.report_email) this.reportRecipientEmail.set(config.report_email);
+        if (config.master_data) this.adminCompany.set(config.master_data);
       }
 
     } catch (e) {
@@ -754,14 +770,26 @@ export class AppStateService {
     this.filterDate.set(date);
   }
 
-  setReportRecipientEmail(email: string) {
+  async setReportRecipientEmail(email: string) {
     this.reportRecipientEmail.set(email);
-    this.toastService.success('Indirizzo Aggiornato', `Il nuovo indirizzo per i report è: ${email}`);
+    const { error } = await supabase.from('system_config').upsert({ id: 'master', report_email: email });
+    if (!error) {
+      this.toastService.success('Indirizzo Aggiornato', `Il nuovo indirizzo per i report è: ${email}`);
+    } else {
+      console.error('Error syncing report email:', error);
+      this.toastService.error('Errore Sync', 'Impossibile salvare l\'email nel database.');
+    }
   }
 
-  updateAdminCompany(data: AdminCompany) {
+  async updateAdminCompany(data: AdminCompany) {
     this.adminCompany.set(data);
-    this.toastService.success('Anagrafica Salvata', 'I dati dell\'azienda amministratore sono stati aggiornati.');
+    const { error } = await supabase.from('system_config').upsert({ id: 'master', master_data: data });
+    if (!error) {
+      this.toastService.success('Anagrafica Salvata', 'I dati dell\'azienda amministratore sono stati aggiornati.');
+    } else {
+      console.error('Error syncing admin company:', error);
+      this.toastService.error('Errore Sync', 'Impossibile salvare i dati aziendali nel database.');
+    }
   }
 
   // --- Data Access Methods ---

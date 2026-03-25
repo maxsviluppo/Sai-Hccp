@@ -72,6 +72,7 @@ export class AppComponent {
   loginUsername = signal('');
   loginPassword = signal('');
   loginError = signal(false);
+  showPassword = signal(false);
   isMobileMenuOpen = signal(false);
 
   visibleMenuItems = computed(() => {
@@ -95,6 +96,7 @@ export class AppComponent {
     this.loginUsername.set('');
     this.loginPassword.set('');
     this.loginError.set(false);
+    this.showPassword.set(false);
   }
 
   doLogin() {

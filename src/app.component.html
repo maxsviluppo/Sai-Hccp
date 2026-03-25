@@ -98,12 +98,17 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
-            <div class="relative">
+            <div class="relative group">
               <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
-              <input type="password" [value]="loginPassword()" (input)="loginPassword.set($any($event.target).value)"
+              <input [type]="showPassword() ? 'text' : 'password'" 
+                [value]="loginPassword()" (input)="loginPassword.set($any($event.target).value)"
                 (keyup.enter)="doLogin()"
-                class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                class="w-full pl-10 pr-12 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                 placeholder="Password">
+              <button (click)="showPassword.set(!showPassword())" 
+                class="absolute right-3 top-3 text-slate-400 hover:text-emerald-600 transition-colors p-0.5 focus:outline-none">
+                <i class="fa-solid" [class.fa-eye]="!showPassword()" [class.fa-eye-slash]="showPassword()"></i>
+              </button>
             </div>
           </div>
 

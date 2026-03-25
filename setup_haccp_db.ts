@@ -87,6 +87,18 @@ CREATE TABLE IF NOT EXISTS equipment (
   name TEXT
 );
 
+CREATE TABLE IF NOT EXISTS system_config (
+  id TEXT PRIMARY KEY,
+  report_email TEXT,
+  master_data JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Initialize system config if missing
+INSERT INTO system_config (id, report_email, master_data)
+SELECT 'master', 'amministrazione@haccppro.it', '{"name": "HACCP PRO - Sede Centrale", "piva": "01234567890", "address": "Via dell''Innovazione 10, Milano (MI)", "pec": "haccppro@legalmail.it", "sdi": "M5UXCR1"}'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE id = 'master');
+
 -- Disable RLS for all for now to allow local dev connection
 ALTER TABLE clients DISABLE ROW LEVEL SECURITY;
 ALTER TABLE system_users DISABLE ROW LEVEL SECURITY;
@@ -95,6 +107,7 @@ ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
 ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE message_replies DISABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
+ALTER TABLE system_config DISABLE ROW LEVEL SECURITY;
 
 -- Insert a default dev admin if user table empty
 INSERT INTO system_users (id, name, email, role, active, username, password, avatar)
