@@ -20,11 +20,14 @@ import { ToastService } from '../services/toast.service';
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Archivio Documentale</h2>
                     <div class="flex flex-wrap items-center gap-2 mt-1">
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-[10px] font-black uppercase tracking-widest leading-none">
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100 text-[10px] font-black uppercase tracking-widest leading-none">
                             <i class="fa-solid fa-cloud text-slate-400"></i> Cloud
                         </span>
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100 text-[10px] font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-id-card"></i> {{ getTargetUnitName() }}
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-100 text-[10px] font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-building"></i> {{ getTargetUnitName() }}
+                        </span>
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-100 text-[10px] font-black uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-users"></i> Condiviso
                         </span>
                     </div>
                 </div>
@@ -38,6 +41,18 @@ import { ToastService } from '../services/toast.service';
                     </div>
                     <i class="fa-solid fa-box-archive text-slate-300 text-xl"></i>
                 </div>
+            </div>
+        </div>
+
+        <!-- Shared Access Info Banner -->
+        <div class="bg-indigo-600 rounded-xl p-4 text-white flex items-center gap-4 shadow-md overflow-hidden relative group">
+            <div class="absolute right-0 top-0 h-full w-32 bg-white/10 -skew-x-12 translate-x-16 group-hover:translate-x-8 transition-transform"></div>
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-circle-info text-lg"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-bold leading-tight">Archivio Aziendale Condiviso</p>
+                <p class="text-[10px] opacity-80 leading-tight mt-0.5">Tutti i documenti caricati sono visibili e modificabili sia dall'amministrazione che dagli operatori di tutte le sedi della stessa azienda.</p>
             </div>
         </div>
 
@@ -119,9 +134,9 @@ import { ToastService } from '../services/toast.service';
                                 <i class="fa-solid fa-user-gear"></i>
                             </div>
                             <h3 class="text-base font-bold text-slate-800 mb-2">Selezione Unità Richiesta</h3>
-                            <p class="text-sm text-slate-500 max-w-sm mx-auto mb-6">Per gestire l'archivio documentale come amministratore, seleziona l'unità operativa in alto.</p>
+                            <p class="text-sm text-slate-500 max-w-sm mx-auto mb-6">Per gestire l'archivio documentale come amministratore, seleziona un'unità o l'azienda in alto. I documenti saranno condivisi tra tutte le unità della stessa azienda.</p>
                             <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                                <i class="fa-solid fa-arrow-up animate-bounce"></i> Seleziona Sede / Azienda
+                                <i class="fa-solid fa-arrow-up animate-bounce"></i> Seleziona Azienda
                             </div>
                          </div>
                     } @else {
@@ -198,14 +213,29 @@ import { ToastService } from '../services/toast.service';
                                             </button>
                                         </div>
                                     </div>
-                                } @empty {
-                                    <div class="col-span-1 md:col-span-2 text-center py-16 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                        <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-200 text-slate-300">
-                                            <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
-                                        </div>
-                                        <h4 class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-1">Nessun file presente</h4>
-                                        <p class="text-[10px] text-slate-400">Carica i documenti in questa categoria.</p>
-                                    </div>
+                                }
+
+                                <!-- State for empty or low-population archive -->
+                                @if (getDocsByType(selectedDocType() || '').length < 6) {
+                                    @for (def of docDefinitions; track def.id) {
+                                        @if (getDocsByType(def.id).length === 0 && (selectedDocType() === 'all' || selectedDocType() === def.id)) {
+                                            <div class="flex items-center justify-between bg-slate-50/40 p-4 rounded-lg border border-dashed border-slate-200 grayscale opacity-50 hover:opacity-80 transition-opacity cursor-pointer group/placeholder"
+                                                 (click)="selectedDocType.set(def.id)">
+                                                <div class="flex items-center gap-4 overflow-hidden pr-2">
+                                                    <div class="w-10 h-10 rounded-md bg-white border border-slate-100 text-slate-300 flex items-center justify-center shrink-0 group-hover/placeholder:text-blue-400 transition-colors">
+                                                        <i [class]="'fa-solid ' + def.icon + ' text-sm'"></i>
+                                                    </div>
+                                                    <div class="min-w-0">
+                                                        <span class="text-xs font-bold text-slate-400 block truncate mb-0.5 italic group-hover/placeholder:text-slate-500">{{ def.label }}</span>
+                                                        <div class="flex items-center gap-2 text-[9px] text-slate-300 font-black uppercase tracking-widest group-hover/placeholder:text-blue-400">
+                                                            <span>Disponibile al Caricamento</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <i class="fa-solid fa-arrow-up-from-bracket text-slate-200 mr-2 group-hover/placeholder:text-blue-300"></i>
+                                            </div>
+                                        }
+                                    }
                                 }
                             </div>
                         </div>
@@ -330,17 +360,15 @@ export class DocumentationViewComponent {
     }
 
     getTargetUnitName(): string {
-        const adminSelectedId = this.state.filterClientId();
-        const user = this.state.currentUser();
+        const targetClientId = this.state.activeTargetClientId();
+        const allClients = this.state.clients();
+        const target = allClients.find(c => c.id === targetClientId);
         
-        if (this.state.isAdmin()) {
-            if (adminSelectedId) {
-                const target = this.state.clients().find(c => c.id === adminSelectedId);
-                return target ? target.name : 'Sede Selezionata';
-            }
-            return 'Nessuna Sede Selezionata';
+        if (target) {
+            // Se Admin, mostra il nome dell'azienda o del brand
+            return target.name;
         }
-        return user?.name || 'Mia Unità';
+        return 'Tutte le Aziende';
     }
 
     isTargetUnitSelected(): boolean {
@@ -355,7 +383,7 @@ export class DocumentationViewComponent {
 
     handleFileSelect(event: any, type: string) {
         if (!this.isTargetUnitSelected()) {
-            this.toast.error('Errore', 'Seleziona un\'unità operativa prima di caricare documenti.');
+            this.toast.error('Errore', 'Seleziona un\'azienda prima di caricare documenti.');
             return;
         }
         const files = event.target.files;
@@ -401,13 +429,7 @@ export class DocumentationViewComponent {
             return;
         }
 
-        this.state.documents.update(allDocs => allDocs.map(d => {
-            if (d.type === type && d.clientId === targetClientId) {
-                return { ...d, expiryDate };
-            }
-            return d;
-        }));
-        this.toast.success('Sincronizzato', 'Data di scadenza aggiornata nell\'archivio.');
+        this.state.updateDocumentExpiry(type, targetClientId, expiryDate);
     }
 
     previewFile(doc: AppDocument) {

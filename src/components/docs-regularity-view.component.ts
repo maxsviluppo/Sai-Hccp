@@ -245,13 +245,7 @@ export class DocsRegularityViewComponent {
         
         if (!targetClientId) return;
 
-        this.state.documents.update(allDocs => allDocs.map(d => {
-            if (d.type === type && d.clientId === targetClientId) {
-                return { ...d, expiryDate };
-            }
-            return d;
-        }));
-        this.toast.success('Sincronizzato', 'Data di scadenza aggiornata.');
+        this.state.updateDocumentExpiry(type, targetClientId, expiryDate);
     }
 
     downloadDoc(doc: any) {

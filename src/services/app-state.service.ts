@@ -284,12 +284,18 @@ export class AppStateService {
     const activeMod = this.currentModuleId();
     const menuItem = this.menuItems.find(m => m.id === activeMod);
 
+    if (menuItem?.category === 'documentation') {
+      return true;
+    }
+
     if (menuItem?.category === 'monitoring' || menuItem?.category === 'operations') {
       return !!this.filterCollaboratorId();
     }
 
-    // Default: Admin cannot edit global modules directly
-    return false;
+    // Special case for config: collaborators can edit their own training/suppliers, admins can edit if filter is set
+    if (menuItem?.category === 'config') {
+      return !!this.filterCollaboratorId();
+    }
   });
 
   // Services
@@ -398,13 +404,54 @@ export class AppStateService {
         })));
     }
 
-      // 4. Documents
-      const { data: docs } = await supabase.from('documents').select('*');
-      if (docs) this.documents.set(docs as any);
+    // Synchronize Production Records
+    const { data: dbProdRecords } = await supabase.from('production_records').select('*');
+    if (dbProdRecords) {
+      this.productionRecords.set(dbProdRecords
+        .filter((r: any) => r.client_id === 'demo' || validClientIds.includes(r.client_id))
+        .map((r: any) => ({
+          id: r.id,
+          recordedDate: r.recorded_date,
+          mainProductName: r.main_product_name,
+          packagingDate: r.packaging_date,
+          expiryDate: r.expiry_date,
+          lotto: r.lotto,
+          ingredients: r.ingredients || [],
+          userId: r.user_id,
+          clientId: r.client_id
+        })));
+    }
+
+    // Synchronize Documents
+    const { data: dbDocs } = await supabase.from('documents').select('*');
+    if (dbDocs) {
+      this.documents.set(dbDocs
+        .filter((d: any) => d.client_id === 'demo' || validClientIds.includes(d.client_id))
+        .map((d: any) => ({
+          id: d.id,
+          clientId: d.client_id,
+          category: d.category,
+          type: d.type,
+          fileName: d.file_name,
+          fileType: d.file_type,
+          fileData: d.file_data,
+          uploadDate: new Date(d.upload_date),
+          expiryDate: d.expiry_date,
+          userId: d.user_id
+        })));
+    }
 
       // 5. Equipment
       const { data: equip } = await supabase.from('equipment').select('*');
-      if (equip) this.selectedEquipment.set(equip as any);
+      if (equip) {
+        this.selectedEquipment.set(equip.map((e: any) => ({
+          id: e.id,
+          clientId: e.client_id,
+          name: e.name,
+          area: e.area,
+          type: e.type
+        })));
+      }
 
       // 6. Messages
       const { data: dbMsgs } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
@@ -432,9 +479,6 @@ export class AppStateService {
         })));
       }
 
-      // 7. Production Records
-      const { data: prod } = await supabase.from('production_records').select('*');
-      if (prod) this.productionRecords.set(prod as any);
 
       // 8. Accounting Payments
       const { data: payData } = await supabase.from('accounting_payments').select('*');
@@ -590,10 +634,24 @@ export class AppStateService {
 
   // Global Filtered Documents for Admin View
   readonly filteredDocuments = computed(() => {
+    const user = this.currentUser();
     const targetClientId = this.activeTargetClientId();
     if (!targetClientId) return [];
 
-    return this.documents().filter(d => d.clientId === targetClientId);
+    const allClients = this.clients();
+    const target = allClients.find(c => c.id === targetClientId);
+    if (!target) return this.documents().filter(d => d.clientId === targetClientId);
+
+    // Group by Brand (PIVA or name prefix)
+    const brandKey = target.piva || target.name.split(' ')[0].toLowerCase();
+    const brandUnitIds = allClients
+      .filter(c => {
+        const cKey = c.piva || c.name.split(' ')[0].toLowerCase();
+        return cKey === brandKey;
+      })
+      .map(c => c.id);
+
+    return this.documents().filter(d => brandUnitIds.includes(d.clientId));
   });
 
   // Global Filtered Checklists for Admin View
@@ -1031,13 +1089,28 @@ export class AppStateService {
     const client = this.clients().find(c => c.id === id);
     if (!client) return;
 
-    // 1. Optimistic local update immediately (UI responds at once)
+    // 1. Get all user IDs to clean up user-related records (like messages)
+    const userIds = this.systemUsers()
+      .filter(u => u.clientId === id)
+      .map(u => u.id);
+
+    // 2. Optimistic local update immediately (UI responds at once)
     this.clients.update(list => list.filter(c => c.id !== id));
     this.systemUsers.update(list => list.filter(u => u.clientId !== id));
     this.selectedEquipment.update(list => list.filter((e: any) => {
       const cid = e.client_id || e.clientId;
       return cid !== id;
     }));
+    this.checklistRecords.update(list => list.filter(r => r.clientId !== id));
+    this.documents.update(list => list.filter(d => d.clientId !== id));
+    this.productionRecords.update(list => list.filter(p => (p as any).client_id !== id && (p as any).clientId !== id));
+    this.payments.update(list => list.filter(p => p.clientId !== id));
+    this.journalEntries.update(list => list.filter(j => j.clientId !== id));
+    this.reminders.update(list => list.filter(r => r.clientId !== id));
+    this.nonConformities.update(list => list.filter(nc => nc.clientId !== id));
+    this.messages.update(list => list.filter(m => 
+      m.recipientId !== id && !userIds.includes(m.senderId)
+    ));
 
     // Reset filter if we deleted the selected client
     if (this.filterClientId() === id) {
@@ -1045,20 +1118,58 @@ export class AppStateService {
     }
 
     try {
-      // 2. Cascade delete in Supabase (order matters for FK constraints)
-      await supabase.from('checklist_records').delete().eq('client_id', id);
-      await supabase.from('equipment').delete().eq('client_id', id);
-      await supabase.from('documents').delete().eq('client_id', id);
-      await supabase.from('system_users').delete().eq('client_id', id);
-      const { error } = await supabase.from('clients').delete().eq('id', id);
+      console.log(`Starting full cleanup for client: ${id} (${client.name})`);
+      
+      // 3. Cascade delete in Supabase (order matters for FK constraints)
+      // Delete child records from all dependent tables first
+      
+      const tablesToDelete = [
+        { name: 'checklist_records', col: 'client_id' },
+        { name: 'equipment', col: 'client_id' },
+        { name: 'documents', col: 'client_id' },
+        { name: 'production_records', col: 'client_id' },
+        { name: 'accounting_payments', col: 'client_id' },
+        { name: 'journal_entries', col: 'client_id' },
+        { name: 'accounting_reminders', col: 'client_id' },
+        { name: 'non_conformities', col: 'client_id' }
+      ];
 
-      if (error) throw error;
+      for (const table of tablesToDelete) {
+        console.log(`Deleting from ${table.name}...`);
+        const { error: tableError } = await supabase.from(table.name).delete().eq(table.col, id);
+        if (tableError) {
+          console.error(`Error deleting from ${table.name}:`, tableError);
+          throw new Error(`Errore durante la pulizia di ${table.name}: ${tableError.message}`);
+        }
+      }
+      
+      // Cleanup messages related to the client or its users
+      console.log('Cleaning up messages...');
+      await supabase.from('messages').delete().eq('recipient_id', id);
+      if (userIds.length > 0) {
+        await supabase.from('messages').delete().in('sender_id', userIds);
+        await supabase.from('messages').delete().in('recipient_user_id', userIds);
+      }
+
+      // Now delete system users (depends on messages being gone)
+      console.log('Deleting system users...');
+      const { error: userError } = await supabase.from('system_users').delete().eq('client_id', id);
+      if (userError) throw new Error(`Errore durante l'eliminazione dei collaboratori: ${userError.message}`);
+      
+      // Finally delete the client themselves
+      console.log('Deleting primary client record...');
+      const { error: clientError } = await supabase.from('clients').delete().eq('id', id);
+
+      if (clientError) throw clientError;
 
       this.toastService.success('Azienda Eliminata', `"${client.name}" è stata rimossa definitivamente.`);
     } catch (e: any) {
       // Rollback: re-fetch from DB to restore consistent state
-      console.error('Error deleting client:', e);
-      this.toastService.error('Errore', 'Impossibile eliminare l\'azienda. I dati sono stati ripristinati.');
+      console.error('Critical failure during client deletion:', e);
+      this.toastService.error('Errore Eliminazione', 
+        e.message || 'Impossibile eliminare l\'azienda. Alcuni dati potrebbero essere protetti o in uso.');
+      
+      // Attempt to restore state
       await this.refreshAllData();
     }
   }
@@ -1185,15 +1296,22 @@ export class AppStateService {
     }
   }
 
-  saveDocument(doc: Partial<AppDocument>) {
+  async saveDocument(doc: Partial<AppDocument>) {
     const user = this.currentUser();
-    if (!user) return;
+    if (!user) {
+        this.toastService.error('Errore Sessione', 'Devi essere loggato per salvare documenti.');
+        return;
+    }
 
     const targetClientId = this.activeTargetClientId();
+    if (!targetClientId && !doc.clientId) {
+        this.toastService.error('Errore Selezione', 'Seleziona un\'azienda o unità operativa prima di procedere.');
+        return;
+    }
 
     const newDoc: AppDocument = {
-      clientId: targetClientId || user.clientId || 'demo',
-      userId: user.id,
+      clientId: doc.clientId || targetClientId || user.clientId || 'demo',
+      userId: user.id || 'system',
       category: doc.category || 'general',
       type: doc.type || 'unknown',
       fileName: doc.fileName || 'documento.pdf',
@@ -1203,12 +1321,78 @@ export class AppStateService {
       uploadDate: doc.uploadDate || new Date(),
       expiryDate: doc.expiryDate
     };
-    this.documents.update(docs => [...docs, newDoc]);
+
+    // Optimistic UI Update
+    this.documents.update(docs => {
+      const filtered = docs.filter(d => d.id !== newDoc.id);
+      return [newDoc, ...filtered];
+    });
+
+    // Supabase Sync
+    try {
+        const payload = {
+            id: newDoc.id,
+            client_id: newDoc.clientId,
+            category: newDoc.category,
+            type: newDoc.type,
+            file_name: newDoc.fileName,
+            file_type: newDoc.fileType,
+            file_data: newDoc.fileData,
+            upload_date: newDoc.uploadDate instanceof Date ? newDoc.uploadDate.toISOString() : newDoc.uploadDate,
+            expiry_date: newDoc.expiryDate,
+            user_id: newDoc.userId
+        };
+
+        console.log('Sending document payload to Supabase:', { ...payload, file_data: '(base64...)' });
+        const { error } = await supabase.from('documents').upsert(payload);
+
+        if (error) {
+            console.error('Error syncing document:', error);
+            // Better error reporting
+            const detail = error.message || error.details || 'Sincronizzazione fallita (CORS, RLS or Network)';
+            this.toastService.error('Errore Cloud', `Dettaglio: ${detail}`);
+        } else {
+            console.log('Document successfully synced with Supabase.');
+        }
+    } catch (err: any) {
+        console.error('Unexpected error saving document:', err);
+        this.toastService.error('Errore Critico', err.message || 'Errore imprevisto durante il salvataggio.');
+    }
   }
 
-  deleteDocument(id: string) {
+  async deleteDocument(id: string) {
+    // Optimistic UI
     this.documents.update(docs => docs.filter(doc => doc.id !== id));
-    this.toastService.success('Eliminato', 'Documento rimosso permanentemente.');
+    
+    // DB Sync
+    const { error } = await supabase.from('documents').delete().eq('id', id);
+    if (!error) {
+       this.toastService.success('Eliminato', 'Documento rimosso permanentemente.');
+    } else {
+       console.error('Error deleting document:', error);
+       this.toastService.error('Errore', 'Impossibile completare l\'eliminazione nel cloud.');
+    }
+  }
+
+  async updateDocumentExpiry(type: string, clientId: string, expiryDate: string) {
+    // Local Update
+    this.documents.update(allDocs => allDocs.map(d => {
+        if (d.type === type && d.clientId === clientId) {
+            return { ...d, expiryDate };
+        }
+        return d;
+    }));
+
+    // DB Update for all documents of this type for this client
+    const { error } = await supabase.from('documents')
+        .update({ expiry_date: expiryDate })
+        .eq('type', type)
+        .eq('client_id', clientId);
+
+    if (error) {
+        console.error('Error updating expiry date:', error);
+        this.toastService.error('Errore Sync', 'Impossibile aggiornare la scadenza nel cloud.');
+    }
   }
 
   // --- Equipment Census Methods ---
@@ -1396,6 +1580,48 @@ export class AppStateService {
   addMessage(msg: any) {
     this.messages.update(msgs => [msg, ...msgs]);
   }
+
+  // --- Production Records Methods ---
+  async saveProductionRecord(record: ProductionRecord) {
+    // Optimistic UI
+    this.productionRecords.update(list => {
+      const others = list.filter(r => r.id !== record.id);
+      return [record, ...others];
+    });
+
+    // DB Sync
+    const { error } = await supabase.from('production_records').upsert({
+      id: record.id,
+      recorded_date: record.recordedDate,
+      main_product_name: record.mainProductName,
+      packaging_date: record.packagingDate,
+      expiry_date: record.expiryDate,
+      lotto: record.lotto,
+      ingredients: record.ingredients,
+      user_id: record.userId,
+      client_id: record.clientId
+    });
+
+    if (error) {
+      console.error('Error syncing production record:', error);
+      this.toastService.error('Errore Cloud', 'Impossibile salvare la scheda di produzione.');
+    }
+  }
+
+  async deleteProductionRecord(id: string) {
+    // Optimistic UI
+    this.productionRecords.update(list => list.filter(r => r.id !== id));
+
+    // DB Sync
+    const { error } = await supabase.from('production_records').delete().eq('id', id);
+    if (error) {
+        console.error('Error deleting production record:', error);
+        this.toastService.error('Errore', 'Impossibile eliminare la scheda dal cloud.');
+    } else {
+        this.toastService.success('Eliminato', 'Scheda di produzione rimossa correttamente.');
+    }
+  }
+
   private generateInitials(name: string): string {
     if (!name) return '??';
     return name
