@@ -16,7 +16,7 @@ export interface AdminCompany {
   sdi: string;
   licenseNumber: string;
   logo?: string;
-  labelFormat?: '62mm' | '30mm';
+  labelFormat?: '62mm' | '29mm' | '12mm';
 }
 
 export interface ClientEntity {
@@ -34,7 +34,7 @@ export interface ClientEntity {
   licenseExpiryDate?: string;
   logo?: string;
   printerModel?: string;
-  labelFormat?: '62mm' | '30mm';
+  labelFormat?: '62mm' | '29mm' | '12mm';
   printerDriverUrl?: string;
 }
 
@@ -1652,7 +1652,7 @@ export class AppStateService {
 
     if (error) {
       console.error('Error syncing production record:', error);
-      this.toastService.error('Errore Cloud', 'Impossibile salvare la scheda di produzione.');
+      this.toastService.error('Errore Cloud', `Impossibile salvare la scheda: ${error.message || 'Controlla dimensione foto o permessi'}`);
     }
   }
 

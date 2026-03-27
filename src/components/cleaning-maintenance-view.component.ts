@@ -135,7 +135,6 @@ interface CheckItem {
                         </div>
 
                         </div>
-                    </div>
                 } @empty {
                     <div class="p-12 text-center opacity-60">
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">

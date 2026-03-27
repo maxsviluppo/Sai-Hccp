@@ -303,7 +303,6 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
           </div>
         }
 
-      </div>
     </div>
   `,
   styles: [`

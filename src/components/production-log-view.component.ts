@@ -306,6 +306,9 @@ import { FormsModule } from '@angular/forms';
                                 <button (click)="openDetail(rec)" class="flex-1 py-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg font-bold text-xs uppercase hover:bg-slate-50 hover:text-teal-600 transition-all shadow-sm flex items-center justify-center gap-2">
                                     <i class="fa-solid fa-eye"></i> Apri
                                 </button>
+                                <button (click)="openLabelPreview(rec)" class="w-12 py-2.5 bg-teal-50 border border-teal-200 text-teal-600 rounded-lg hover:bg-teal-600 hover:text-white transition-all flex items-center justify-center shadow-sm tooltip" title="Etichetta">
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
                                 <button (click)="deleteRecord(rec.id)" class="w-12 py-2.5 bg-white border border-rose-200 text-rose-500 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center shadow-sm tooltip" title="Elimina">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
@@ -323,6 +326,103 @@ import { FormsModule } from '@angular/forms';
                 </div>
             </div>
         }
+
+        <!-- LABEL PREVIEW MODAL -->
+        @if (isLabelPreviewOpen() && selectedRecordForLabel()) {
+            <div class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isLabelPreviewOpen.set(false)"></div>
+                
+                <div class="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
+                    <!-- Header Modal -->
+                    <div class="px-6 py-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                           <i class="fa-solid fa-print text-teal-600"></i>
+                           <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">Anteprima Etichetta</h3>
+                        </div>
+                        <button (click)="isLabelPreviewOpen.set(false)" class="text-slate-400 hover:text-slate-600">
+                           <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- PREVIEW AREA (The Sticker) -->
+                    <div class="p-8 bg-slate-50 flex justify-center items-center overflow-auto min-h-[400px]">
+                        <!-- Simulate the Thermal Sticker -->
+                        <div id="print-label-sticker" 
+                             [class]="'bg-white border-2 border-slate-300 shadow-xl p-6 font-sans text-slate-900 transition-all overflow-hidden ' + 
+                                     (state.companyConfig().labelFormat === '12mm' ? 'w-[400px] h-[120px] scale-y-125' : 
+                                      state.companyConfig().labelFormat === '29mm' ? 'w-[400px] h-[260px]' : 
+                                      'w-[400px] h-[600px]')">
+                            
+                            <!-- Header Azienda -->
+                            <div [class]="'text-center border-b-2 border-black pb-2 mb-4 ' + (state.companyConfig().labelFormat === '12mm' ? 'hidden' : '')">
+                                <h4 class="text-xs font-black uppercase tracking-widest">{{ state.companyConfig().name }}</h4>
+                                <p class="text-[8px] font-bold opacity-70 uppercase tracking-tighter">{{ state.companyConfig().address }}</p>
+                            </div>
+
+                            <!-- Title Section (EVIDENCE) -->
+                            <div [class]="(state.companyConfig().labelFormat === '12mm' ? 'mb-2' : 'mb-4')">
+                                <p [class]="'text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ' + (state.companyConfig().labelFormat === '12mm' ? 'hidden' : '')">Denominazione Alimento</p>
+                                <h2 [class]="'font-black text-black leading-tight uppercase italic break-words ' + 
+                                          (state.companyConfig().labelFormat === '12mm' ? 'text-sm' : 'text-xl md:text-2xl')">
+                                    {{ selectedRecordForLabel()?.mainProductName }}
+                                </h2>
+                            </div>
+
+                            <!-- Dates Section (EVIDENCE) -->
+                            <div [class]="'grid grid-cols-2 gap-4 ' + (state.companyConfig().labelFormat === '12mm' ? 'mb-2' : 'mb-4')">
+                                <div class="p-2 bg-slate-100/50 rounded-lg border border-slate-200">
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Produzione</p>
+                                    <p [class]="'font-black text-black ' + (state.companyConfig().labelFormat === '12mm' ? 'text-[10px]' : 'text-xs')">
+                                        {{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}
+                                    </p>
+                                </div>
+                                <div class="p-2 bg-slate-900 text-white rounded-lg">
+                                    <p class="text-[8px] font-black text-white/60 uppercase tracking-widest mb-0.5">Scadenza</p>
+                                    <p [class]="'font-black ' + (state.companyConfig().labelFormat === '12mm' ? 'text-[10px]' : 'text-xs')">
+                                        {{ selectedRecordForLabel()?.expiryDate | date:'dd/MM/yy' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Lotto Section (EVIDENCE) -->
+                            <div [class]="(state.companyConfig().labelFormat === '12mm' ? 'mb-0' : 'mb-4') + ' flex items-center gap-3'">
+                                <div class="flex-1 bg-white border-2 border-black p-2 rounded-lg text-center">
+                                    <p [class]="'font-black text-black uppercase tracking-[0.2em] ' + (state.companyConfig().labelFormat === '12mm' ? 'text-[6px]' : 'text-[8px] mb-0.5')">LOTTO</p>
+                                    <p [class]="'font-black text-black tracking-widest font-mono uppercase ' + (state.companyConfig().labelFormat === '12mm' ? 'text-xs' : 'text-base')">
+                                        {{ selectedRecordForLabel()?.lotto }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Ingredients Section -->
+                            <div [class]="'border-t border-slate-200 pt-3 ' + (state.companyConfig().labelFormat === '12mm' ? 'hidden' : '')">
+                                <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                   <i class="fa-solid fa-list-ul text-[6px]"></i> Elenco Ingredienti
+                                </p>
+                                <div class="space-y-0.5">
+                                   @for (ing of selectedRecordForLabel()?.ingredients; track ing.id) {
+                                      <p class="text-[9px] font-bold text-slate-700 leading-tight flex items-start gap-1">
+                                         <span class="text-slate-300 italic">•</span> 
+                                         {{ ing.name }}
+                                      </p>
+                                   }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Modal Actions -->
+                    <div class="p-6 bg-white border-t border-slate-100 flex gap-4">
+                        <button (click)="isLabelPreviewOpen.set(false)" class="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">
+                           CHIUDI ANTEPRIMA
+                        </button>
+                        <button (click)="printLabel(selectedRecordForLabel()!)" class="flex-[2] py-4 bg-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                           <i class="fa-solid fa-print"></i> LANCIA STAMPA ETICHETTA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
     `,
     styles: [`
@@ -337,6 +437,8 @@ export class ProductionLogViewComponent {
     toast = inject(ToastService);
 
     isEditing = signal(false);
+    isLabelPreviewOpen = signal(false);
+    selectedRecordForLabel = signal<ProductionRecord | null>(null);
     ingredientsList = signal<ProductionIngredient[]>([]);
     tempPhoto: string | null = null;
 
@@ -405,13 +507,63 @@ export class ProductionLogViewComponent {
         };
     }
 
-    handleFile(event: any) {
+    async handleFile(event: any) {
         const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => this.tempPhoto = e.target?.result as string;
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Check size: if > 1.5MB, we must compress or warn
+        if (file.size > 1.5 * 1024 * 1024) {
+             this.toast.info('Ottimizzazione', 'La foto è grande, la sto ottimizzando...');
         }
+
+        try {
+            const base64 = await this.compressImage(file);
+            this.tempPhoto = base64;
+        } catch (err) {
+            console.error('Compression failed', err);
+            this.toast.error('Errore Foto', 'Impossibile elaborare l\'immagine.');
+        }
+    }
+
+    private compressImage(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Max dimension 1280px for ingredients photos
+                    const max_size = 1200;
+                    if (width > height) {
+                        if (width > max_size) {
+                            height *= max_size / width;
+                            width = max_size;
+                        }
+                    } else {
+                        if (height > max_size) {
+                            width *= max_size / height;
+                            height = max_size;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to JPEG with 0.7 quality
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve(dataUrl);
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
     }
 
     addIngredient() {
@@ -448,17 +600,30 @@ export class ProductionLogViewComponent {
             recordedDate: selDate + 'T' + currentTime // Archive on the filtered date
         };
 
-        this.state.productionRecords.update(list => {
-            const others = list.filter(r => r.id !== finalRecord.id);
-            return [finalRecord, ...others];
-        });
+        // Call persistent save
+        this.state.saveProductionRecord(finalRecord);
 
         this.toast.success('Archiviato', `Lotto ${finalRecord.lotto} registrato correttamente.`);
         this.isEditing.set(false);
     }
 
     deleteRecord(id: string) {
-        this.state.productionRecords.update(list => list.filter(r => r.id !== id));
-        this.toast.success('Eliminato', 'Scheda di produzione rimossa permanentemente.');
+        this.state.deleteProductionRecord(id);
+    }
+
+    openLabelPreview(rec: ProductionRecord) {
+        this.selectedRecordForLabel.set(rec);
+        this.isLabelPreviewOpen.set(true);
+    }
+
+    printLabel(rec: ProductionRecord) {
+        this.toast.info('Stampa', `Invio etichetta ${rec.lotto} alla stampante Brother...`);
+        // We'll simulate the print call here. In a real scenario, this could trigger a browser domestic print 
+        // with a specifically styled print stylesheet or use the thermal print drivers if integrated via browser (e.g. print.js).
+        setTimeout(() => {
+            window.print();
+            this.isLabelPreviewOpen.set(false);
+            this.toast.success('OK', 'Etichetta inviata con successo.');
+        }, 1000);
     }
 }

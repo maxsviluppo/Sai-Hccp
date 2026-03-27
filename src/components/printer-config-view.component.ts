@@ -9,186 +9,174 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="animate-fade-in space-y-8 pb-20">
-      <!-- HEADER CATEGORIA -->
-      <div class="relative rounded-[32px] overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-12 text-white shadow-2xl">
-        <div class="absolute inset-0 opacity-20 pointer-events-none">
-          <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
-          <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500 rounded-full blur-3xl"></div>
+    <div class="animate-fade-in space-y-6 pb-20 px-4 max-w-5xl mx-auto">
+      <!-- MINIMAL HEADER -->
+      <div class="relative rounded-[24px] overflow-hidden bg-slate-900 p-8 text-white shadow-sm border border-slate-800">
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+          <div class="absolute -top-12 -right-12 w-64 h-64 bg-indigo-500 rounded-full blur-3xl text-white"></div>
         </div>
         
-        <div class="relative z-10 flex flex-col md:flex-row items-center gap-10">
-          <div class="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center p-6 shadow-inner ring-1 ring-white/30 animate-pulse-slow">
-             <i class="fa-solid fa-print text-4xl text-blue-400 drop-shadow-lg"></i>
+        <div class="relative z-10 flex items-center gap-6">
+          <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-inner">
+             <i class="fa-solid fa-print text-2xl text-indigo-400"></i>
           </div>
-          <div class="text-center md:text-left">
-            <h1 class="text-4xl md:text-5xl font-black tracking-tighter mb-4 text-white uppercase italic">Dotazioni Hardware</h1>
-            <p class="text-blue-200/80 text-lg font-bold max-w-2xl leading-relaxed uppercase tracking-widest text-[11px]">
-               Configurazione centralizzata per stampanti termiche e periferiche di rintracciabilità. Ottimizza il tuo workflow di etichettatura.
-            </p>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white uppercase italic">Dotazioni Hardware</h1>
+            <p class="text-slate-400 text-[11px] font-bold uppercase tracking-widest mt-1">Configurazione stampanti e periferiche rintracciabilità</p>
           </div>
         </div>
       </div>
 
       <!-- MAIN CONFIG CONTENT -->
-      <div class="max-w-5xl mx-auto px-4">
-        <div class="bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-white rounded-[24px] shadow-sm border border-slate-200 overflow-hidden">
+        
+        <!-- SUB-HEADER -->
+        <div class="px-8 py-6 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
+               <i class="fa-solid fa-barcode text-xl"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-slate-800 uppercase tracking-tight">Stampante Brother QL-700</h3>
+              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Stato: <span class="text-emerald-500">Configurato</span></p>
+            </div>
+          </div>
           
-          <!-- SUB-HEADER -->
-          <div class="px-10 py-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="flex items-center gap-5">
-              <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-xl ring-1 ring-slate-100">
-                 <i class="fa-solid fa-barcode text-2xl"></i>
-              </div>
-              <div>
-                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Stampante Brother QL-700</h3>
-                <p class="text-[12px] font-bold text-slate-500 uppercase tracking-widest mt-1">Stato: <span class="text-emerald-500">Configurazione attiva</span></p>
-              </div>
-            </div>
-            
-            <div class="flex items-center gap-3">
-              <span class="px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-[0.2em] border border-emerald-200 shadow-sm">
-                 Driver Verificato &bull; Ready
-              </span>
-            </div>
-          </div>
+          <span class="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+             Ready &bull; Verificato
+          </span>
+        </div>
 
-          <div class="p-10 grid grid-cols-1 lg:grid-cols-2 gap-16">
-            
-            <!-- LEFT: DOWNLOADS -->
-            <div class="space-y-8">
-              <div class="flex items-center gap-3">
-                 <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                 <h4 class="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">Supporto Tecnico</h4>
-              </div>
+        <div class="p-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+          
+          <!-- LEFT: DOWNLOADS -->
+          <div class="space-y-6">
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+               <i class="fa-solid fa-download"></i> Supporto Tecnico
+            </h4>
 
-              <div class="bg-slate-50 rounded-3xl p-8 border border-slate-200 relative group transition-all hover:bg-white hover:shadow-xl hover:border-blue-100 overflow-hidden">
-                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                   <i class="fa-solid fa-download text-6xl text-blue-900"></i>
-                </div>
+            <div class="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 space-y-4">
+              <h5 class="text-sm font-black text-slate-800 uppercase italic">Driver Windows Ufficiali</h5>
+              <p class="text-xs font-bold text-slate-500 leading-relaxed mb-4">
+                 Necessari per la corretta gestione dei rotoli termici originali Brother.
+              </p>
 
-                <h5 class="text-lg font-black text-slate-800 mb-4 uppercase italic">Driver Ufficiali Windows</h5>
-                <p class="text-sm font-bold text-slate-600 leading-relaxed mb-8">
-                   Per garantire la massima velocità e fedeltà di stampa sulle etichette delle tue materie prime, installa i driver ottimizzati.
-                </p>
-
-                <div class="grid grid-cols-1 gap-4">
-                   <a href="/qd700w650cita.exe" download 
-                      class="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl text-xs font-black transition-all shadow-lg hover:scale-[1.02] active:scale-95 group">
-                      <i class="fa-solid fa-download text-base group-hover:bounce transition-transform"></i>
-                      DOWNLOAD PER WINDOWS (11/10/8.1)
-                   </a>
-                   <a href="https://www.brother.it/support/ql700/downloads" target="_blank"
-                      class="flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-700 text-slate-600 rounded-2xl text-xs font-black transition-all group">
-                      <i class="fa-solid fa-globe text-base group-hover:rotate-12 transition-transform"></i>
-                      PORTALE SUPPORTO BROTHER
-                   </a>
-                </div>
-              </div>
-
-              <div class="p-6 bg-yellow-50/50 rounded-2xl border border-yellow-200/50 flex items-start gap-4">
-                 <i class="fa-solid fa-triangle-exclamation text-yellow-500 mt-1"></i>
-                 <div>
-                    <h6 class="text-[10px] font-black text-yellow-800 uppercase tracking-widest mb-1">Nota importante</h6>
-                    <p class="text-[11px] font-bold text-yellow-700/80 leading-relaxed">
-                       Senza l'installazione dei driver corretti, l'anteprima di stampa potrebbe non corrispondere al supporto termico inserito nel rotolo.
-                    </p>
-                 </div>
+              <div class="flex flex-col gap-2">
+                 <a href="/qd700w650cita.exe" download 
+                    class="flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-[10px] font-black transition-all shadow-sm group">
+                    <i class="fa-solid fa-download text-xs group-hover:bounce"></i>
+                    DOWNLOAD DRIVER (W11/10)
+                 </a>
+                 <a href="https://www.brother.it/support/ql700/downloads" target="_blank"
+                    class="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 hover:text-indigo-600 text-slate-500 rounded-xl text-[10px] font-black transition-all">
+                    <i class="fa-solid fa-globe text-xs"></i>
+                    PORTALE BROTHER
+                 </a>
               </div>
             </div>
 
-            <!-- RIGHT: LABEL FORMAT -->
-            <div class="space-y-8 text-white">
-               <div class="flex items-center gap-3">
-                 <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                 <h4 class="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">Formato Consumabile</h4>
-               </div>
-
-               <div class="space-y-4">
-                  <!-- FORMAT 1 -->
-                  <div class="relative group cursor-pointer" (click)="setFormat('62mm')">
-                     <div [class]="'absolute inset-0 rounded-[28px] blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 ' + 
-                                (format() === '62mm' ? 'bg-blue-500 opacity-20' : 'bg-slate-400')"></div>
-                     <div [class]="'relative flex items-center gap-6 p-6 rounded-[28px] border-3 transition-all duration-300 ' + 
-                                (format() === '62mm' ? 'bg-white border-blue-600 shadow-2xl' : 'bg-white border-slate-100 hover:border-slate-300')">
-                        <div [class]="'w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition-all ' + 
-                                   (format() === '62mm' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400')">
-                           <i class="fa-solid fa-note-sticky"></i>
-                        </div>
-                        <div class="flex-1">
-                           <span [class]="'block text-sm font-black uppercase tracking-tight ' + (format() === '62mm' ? 'text-slate-800' : 'text-slate-500')">Standard 62mm</span>
-                           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1 block group-hover:text-slate-500 transition-colors">Ideale per schede tecniche complete</span>
-                        </div>
-                        <div [class]="'w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ' + 
-                                   (format() === '62mm' ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-200 bg-white')">
-                           @if (format() === '62mm') {
-                              <i class="fa-solid fa-check text-xs"></i>
-                           }
-                        </div>
-                     </div>
-                  </div>
-
-                  <!-- FORMAT 2 -->
-                  <div class="relative group cursor-pointer" (click)="setFormat('30mm')">
-                     <div [class]="'absolute inset-0 rounded-[28px] blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 ' + 
-                                (format() === '30mm' ? 'bg-indigo-500 opacity-20' : 'bg-slate-400')"></div>
-                     <div [class]="'relative flex items-center gap-6 p-6 rounded-[28px] border-3 transition-all duration-300 ' + 
-                                (format() === '30mm' ? 'bg-white border-indigo-600 shadow-2xl' : 'bg-white border-slate-100 hover:border-slate-300')">
-                        <div [class]="'w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition-all ' + 
-                                   (format() === '30mm' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400')">
-                           <i class="fa-solid fa-tag"></i>
-                        </div>
-                        <div class="flex-1">
-                           <span [class]="'block text-sm font-black uppercase tracking-tight ' + (format() === '30mm' ? 'text-slate-800' : 'text-slate-500')">Ridotto 30mm</span>
-                           <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1 block group-hover:text-slate-500 transition-colors">Perfetto per lotto e scadenza rapidi</span>
-                        </div>
-                        <div [class]="'w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ' + 
-                                   (format() === '30mm' ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-200 bg-white')">
-                           @if (format() === '30mm') {
-                              <i class="fa-solid fa-check text-xs"></i>
-                           }
-                        </div>
-                     </div>
-                  </div>
-               </div>
+            <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-200/50 flex items-start gap-3">
+               <i class="fa-solid fa-circle-exclamation text-amber-500 mt-0.5 text-xs"></i>
+               <p class="text-[10px] font-bold text-amber-700/80 leading-snug uppercase tracking-tight">
+                  Sempre installare i driver prima di collegare la stampante.
+               </p>
             </div>
           </div>
 
-          <!-- FOOTER ACTIONS -->
-          <div class="px-10 py-8 bg-slate-900 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
-             <!-- animated background line -->
-             <div class="absolute inset-0 bg-blue-500/5 -skew-y-3 translate-y-12"></div>
-             
-             <div class="relative z-10 flex items-center gap-4">
-                <div class="w-1.5 h-10 bg-blue-500 rounded-full"></div>
-                <div>
-                   <p class="text-[11px] font-black text-white uppercase tracking-[0.2em] mb-1">Persistenza Configurazione</p>
-                   <p class="text-[10px] font-bold text-slate-400 italic">I parametri verranno sincronizzati su tutti gli uffici operativi.</p>
+          <!-- RIGHT: LABEL FORMAT -->
+          <div class="space-y-6">
+             <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+               <i class="fa-solid fa-ruler"></i> Formato Consumabile
+             </h4>
+
+             <div class="grid grid-cols-1 gap-3">
+                <!-- FORMAT 62mm -->
+                <div class="relative group cursor-pointer" (click)="setFormat('62mm')">
+                   <div [class]="'flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ' + 
+                              (format() === '62mm' ? 'bg-indigo-50 border-indigo-500 shadow-sm' : 'bg-white border-slate-50 hover:border-slate-200')">
+                      <div [class]="'w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ' + 
+                                 (format() === '62mm' ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-100 text-slate-400')">
+                         <i class="fa-solid fa-envelope"></i>
+                      </div>
+                      <div class="flex-1">
+                         <span [class]="'block text-xs font-black uppercase tracking-tight ' + (format() === '62mm' ? 'text-indigo-900' : 'text-slate-500')">Standard 62mm</span>
+                         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ideale per spedizioni e avvisi</span>
+                      </div>
+                      @if (format() === '62mm') {
+                         <i class="fa-solid fa-check text-indigo-500 text-xs"></i>
+                      }
+                   </div>
+                </div>
+
+                <!-- FORMAT 29mm -->
+                <div class="relative group cursor-pointer" (click)="setFormat('29mm')">
+                   <div [class]="'flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ' + 
+                              (format() === '29mm' ? 'bg-indigo-50 border-indigo-500 shadow-sm' : 'bg-white border-slate-50 hover:border-slate-200')">
+                      <div [class]="'w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ' + 
+                                 (format() === '29mm' ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-100 text-slate-400')">
+                         <i class="fa-solid fa-tag"></i>
+                      </div>
+                      <div class="flex-1">
+                         <span [class]="'block text-xs font-black uppercase tracking-tight ' + (format() === '29mm' ? 'text-indigo-900' : 'text-slate-500')">Medio 29mm</span>
+                         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Segnaletica interna discreta</span>
+                      </div>
+                      @if (format() === '29mm') {
+                         <i class="fa-solid fa-check text-indigo-500 text-xs"></i>
+                      }
+                   </div>
+                </div>
+
+                <!-- FORMAT 12mm -->
+                <div class="relative group cursor-pointer" (click)="setFormat('12mm')">
+                   <div [class]="'flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ' + 
+                              (format() === '12mm' ? 'bg-indigo-50 border-indigo-500 shadow-sm' : 'bg-white border-slate-50 hover:border-slate-200')">
+                      <div [class]="'w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ' + 
+                                 (format() === '12mm' ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-100 text-slate-400')">
+                         <i class="fa-solid fa-grip-lines"></i>
+                      </div>
+                      <div class="flex-1">
+                         <span [class]="'block text-xs font-black uppercase tracking-tight ' + (format() === '12mm' ? 'text-indigo-900' : 'text-slate-500')">Sottile 12mm</span>
+                         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ideale per scaffali o cavi</span>
+                      </div>
+                      @if (format() === '12mm') {
+                         <i class="fa-solid fa-check text-indigo-500 text-xs"></i>
+                      }
+                   </div>
                 </div>
              </div>
-
-             <button (click)="save()" 
-                     class="relative z-10 w-full md:w-auto px-10 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl text-sm font-black transition-all shadow-2xl hover:scale-105 active:scale-95 flex items-center justify-center gap-4 group">
-                 <i class="fa-solid fa-cloud-arrow-up text-lg group-hover:animate-bounce"></i>
-                 SALVA E SINCRONIZZA HARDWARE
-             </button>
           </div>
-
         </div>
 
-        <!-- INFO CARD -->
-        <div class="mt-8 p-10 bg-white rounded-[32px] border border-slate-200 shadow-xl flex items-start gap-8 relative overflow-hidden">
-           <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[100px] -mr-10 -mt-10"></div>
-           <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 relative z-10">
-              <i class="fa-solid fa-lightbulb text-2xl"></i>
+        <!-- FOOTER ACTIONS -->
+        <div class="px-8 py-6 bg-slate-50 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+           <div class="flex items-center gap-3">
+              <div class="w-1.5 h-8 bg-indigo-500 rounded-full"></div>
+              <div>
+                 <p class="text-[10px] font-black text-slate-800 uppercase tracking-widest">Sincronizzazione Hardware</p>
+                 <p class="text-[9px] font-bold text-slate-400 uppercase">Aggiorna tutte le postazioni</p>
+              </div>
            </div>
-           <div class="relative z-10">
-              <h4 class="text-xl font-black text-slate-800 uppercase tracking-tight mb-3 italic">Ottimizzazione Stampa</h4>
-              <p class="text-sm font-medium text-slate-500 leading-relaxed">
-                 Per le procedure <strong>HACCP Enterprise</strong>, il formato ridotto da 30mm è consigliato per la stampa di etichette interne di batch, mentre il formato 62mm è lo standard per le schede prodotto destinate ai clienti finali o per il censimento magazzino.
-              </p>
-           </div>
+
+           <button (click)="save()" 
+                   class="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-black transition-all shadow-md flex items-center justify-center gap-3 active:scale-95 group">
+               <i class="fa-solid fa-floppy-disk group-hover:rotate-12 transition-transform"></i>
+               SALVA CONFIGURAZIONE
+           </button>
         </div>
+
+      </div>
+
+      <!-- TIP CARD -->
+      <div class="p-6 bg-slate-100 rounded-2xl border border-slate-200 flex items-start gap-4">
+         <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shrink-0 border border-slate-200">
+            <i class="fa-solid fa-lightbulb"></i>
+         </div>
+         <div>
+            <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-1 italic">Nota sulla Stampa</h4>
+            <p class="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
+               Assicurati che il rotolo inserito nella stampante corrisponda fisicamente al formato selezionato sopra per evitare errori di allineamento.
+            </p>
+         </div>
       </div>
     </div>
   `,
@@ -212,7 +200,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 export class PrinterConfigViewComponent {
   state = inject(AppStateService);
   
-  format = signal<'62mm' | '30mm'>('62mm');
+  format = signal<'62mm' | '29mm' | '12mm'>('62mm');
 
   constructor() {
     const current = this.state.isAdmin() ? 
@@ -221,7 +209,7 @@ export class PrinterConfigViewComponent {
     this.format.set(current || '62mm');
   }
 
-  setFormat(f: '62mm' | '30mm') {
+  setFormat(f: '62mm' | '29mm' | '12mm') {
     this.format.set(f);
   }
 
@@ -236,7 +224,7 @@ export class PrinterConfigViewComponent {
       await this.state.updateAdminCompany({
         ...this.state.adminCompany(),
         ...updates
-      });
+      } as any);
     } else {
       await this.state.updateCurrentCompany(updates);
     }
