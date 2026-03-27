@@ -12,24 +12,31 @@ import { FormsModule } from '@angular/forms';
     <!-- UI CONTENT (Hidden on print) -->
     <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
         
-        <!-- Minimal Hero Header -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 flex flex-col md:flex-row justify-between md:items-center gap-6 relative overflow-hidden">
-            <!-- Subtle accent -->
-            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        <!-- Sleek Professional Dashboard Header -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
-            <div class="relative z-10 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100 shadow-sm shrink-0">
-                    <i class="fa-solid fa-barcode text-xl"></i>
+            <div class="flex items-center gap-5 relative z-10">
+                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-barcode text-2xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Rintracciabilità Prodotti</h2>
-                    <div class="flex flex-wrap items-center gap-2 mt-1">
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-xs font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-circle text-[10px] animate-pulse text-teal-500"></i>
-                            Registro Produzione
-                        </span>
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-teal-50 text-teal-600 rounded border border-teal-100 text-xs font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-user-check text-[10px]"></i> {{ state.currentUser()?.name }}
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Rintracciabilità Prodotti</h2>
+                    <p class="text-sm font-medium text-slate-500 mt-1">Registro produzione e monitoraggio lotti</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 relative z-10">
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex items-center gap-6">
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Registri</p>
+                        <p class="text-sm font-bold text-slate-700 leading-none">{{ filteredRecords().length }} Schede</p>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <div class="flex flex-col items-end">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Data Filtro</p>
+                        <span class="text-[10px] font-black px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                            {{ state.filterDate() | date:'dd/MM/yyyy' }}
                         </span>
                     </div>
                 </div>

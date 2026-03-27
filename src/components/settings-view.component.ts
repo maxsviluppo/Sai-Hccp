@@ -189,10 +189,8 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
             </form>
           </div>
         </div>
-      } 
-      
-      <!-- Collaborator View: Remains Read-Only Summary of THEIR company, with EDIT possibility -->
-      @else {
+      } @else {
+        <!-- Collaborator View: Remains Read-Only Summary of THEIR company, with EDIT possibility -->
         <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
             <div class="flex items-center gap-4">
@@ -229,13 +227,14 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
                 <button (click)="cancelEditingOperator()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded text-xs font-bold transition-colors shadow-sm">
                   Annulla
                 </button>
-                <button (click)="saveOperatorData()" class="px-3 py-1.5 bg-indigo-600 border border-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
-                  <i class="fa-solid fa-save"></i> Salva
+                <button (click)="saveOperatorData()" 
+                        [disabled]="operatorForm.invalid"
+                        class="px-4 py-2 bg-indigo-600 border border-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-black transition-all shadow-md flex items-center gap-2">
+                  <i class="fa-solid fa-save text-[11px]"></i> Salva Modifiche
                 </button>
               }
             </div>
           </div>
-
           <div class="p-6">
              <div class="mb-8">
                 <h1 class="text-xl font-black text-slate-800 leading-tight mb-2">{{ state.companyConfig().name }}</h1>
@@ -293,22 +292,24 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
                  }
                </div>
              </form>
-             
-             <div class="mt-8 p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-start gap-3">
-               <i class="fa-solid fa-circle-info mt-0.5 text-indigo-400"></i>
-               <div>
-                 <p class="text-[10px] font-black uppercase text-indigo-800 tracking-widest mb-0.5">Nota Informativa</p>
-                 <p class="text-xs text-indigo-600 font-medium">Inserisci anche il logo aziendale se desiderato tramite l'icona di caricamento sull'immagine di sinistra.</p>
-               </div>
-             </div>
+                          <div class="mt-8 p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-start gap-3">
+                <i class="fa-solid fa-circle-info mt-0.5 text-indigo-400"></i>
+                <div>
+                   <h4 class="text-xs font-black text-indigo-800 uppercase tracking-wider mb-1">Nota Informativa</h4>
+                   <p class="text-[11px] font-bold text-indigo-600/80 leading-relaxed">Inserisci anche il logo aziendale se desiderato tramite l'icona di caricamento sull'immagine di sinistra.</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      }
+        }
+
+      </div>
     </div>
   `,
   styles: [`
+    :host { display: block; }
     .animate-fade-in { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
 export class SettingsViewComponent {
@@ -320,6 +321,12 @@ export class SettingsViewComponent {
 
   adminForm: FormGroup;
   operatorForm: FormGroup;
+
+  get currentLabelFormat() {
+    return this.state.isAdmin() ? 
+           this.adminForm.get('labelFormat')?.value : 
+           this.operatorForm.get('labelFormat')?.value;
+  }
 
   constructor() {
     this.adminForm = this.fb.group({
@@ -333,17 +340,35 @@ export class SettingsViewComponent {
       pec: ['', [Validators.required, Validators.email]],
       sdi: ['', [Validators.required, Validators.minLength(7)]],
       licenseNumber: [''],
-      logo: ['']
+      logo: [''],
+      labelFormat: ['62mm']
     });
 
     this.operatorForm = this.fb.group({
-      address: ['', Validators.required],
+      address: [''],
       phone: [''],
       cellphone: [''],
       whatsapp: [''],
-      email: ['', [Validators.required, Validators.email]],
-      logo: ['']
+      email: ['', [Validators.email]],
+      logo: [''],
+      labelFormat: ['62mm']
     });
+  }
+
+  setLabelFormat(format: '62mm' | '30mm') {
+    if (this.state.isAdmin()) {
+      this.adminForm.patchValue({ labelFormat: format });
+    } else {
+      this.operatorForm.patchValue({ labelFormat: format });
+    }
+  }
+
+  saveHardwareConfig() {
+    if (this.state.isAdmin()) {
+      this.state.updateAdminCompany(this.adminForm.value);
+    } else {
+      this.state.updateCurrentCompany(this.operatorForm.value);
+    }
   }
 
   // Logo Handling
@@ -389,7 +414,8 @@ export class SettingsViewComponent {
       cellphone: config.cellphone || '',
       whatsapp: config.whatsapp || '',
       email: config.email,
-      logo: config.logo || ''
+      logo: config.logo || '',
+      labelFormat: config.labelFormat || '62mm'
     });
     this.isEditingOperator.set(true);
   }

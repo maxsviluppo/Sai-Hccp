@@ -170,8 +170,11 @@ export class TemperaturesViewComponent {
     showStandardInfo = signal(false);
 
     checks = signal<CheckItem[]>([
-        { id: 'fridge', label: 'TEMPERATURE FRIGORIGERI +4°C - +8°C', checked: false },
-        { id: 'freezer', label: 'TEMPERATURE CONGELATORI -18°C – 24°C', checked: false }
+        { id: 'fridge_1', label: 'FRIGORIFERO MATERIE PRIME (+2°C / +4°C)', checked: false },
+        { id: 'fridge_2', label: 'FRIGORIFERO PRODOTTI FINITI (+4°C)', checked: false },
+        { id: 'freezer_1', label: 'CELLE SURGELATI (-18°C)', checked: false },
+        { id: 'walk_in', label: 'CELLA FRIGORIFERO WALK-IN (+4°C)', checked: false },
+        { id: 'beverage', label: 'FRIGO BEVANDE / EXPO (+6°C / +10°C)', checked: false }
     ]);
 
     checkedCount = computed<number>(() => {

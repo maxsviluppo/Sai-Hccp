@@ -157,8 +157,11 @@ export class PestControlViewComponent {
     showStandardInfo = signal(false);
 
     checks = signal<CheckItem[]>([
-        { id: 'visual', label: 'ISPEZIONE VISIVA DEGLI AMBIENTI DI LAVORO', checked: false },
-        { id: 'nets', label: 'RETI ANTI INSETTI', checked: false }
+        { id: 'rodents', label: 'MONITORAGGIO RODITORI (ESCHE E TRAPPOLE)', checked: false },
+        { id: 'crawling', label: 'INSETTI STRISCIANTI (BLATTE, FORMICHE)', checked: false },
+        { id: 'flying', label: 'INSETTI VOLANTI E LAMPADE UV', checked: false },
+        { id: 'nets', label: 'INTEGRITÀ RETI ANTI-INSETTO E SIGILLATURA', checked: false },
+        { id: 'external', label: 'VERIFICA PERIMETRO ESTERNO E RIFIUTI', checked: false }
     ]);
 
     checkedCount = computed<number>(() => {

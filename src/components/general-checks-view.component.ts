@@ -26,34 +26,37 @@ interface CheckCategory {
     template: `
     <div class="space-y-6 pb-12 max-w-7xl mx-auto p-4">
       
-      <!-- Sleek Professional Header -->
+    <div class="space-y-6 pb-12 max-w-7xl mx-auto p-4">
+      
+      <!-- Sleek White Header Banner -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
         
-        <div class="relative z-10 flex items-center gap-5">
-           <div class="h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-emerald-600 shrink-0">
+        <div class="flex items-center gap-5 relative z-10">
+          <div class="h-14 w-14 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md">
              <i class="fa-solid fa-list-check text-2xl"></i>
-           </div>
-           <div>
-             <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Controlli Generali</h2>
-             <div class="flex items-center gap-3 mt-1">
-                 <p class="text-xs font-semibold text-slate-500">Panoramica globale HACCP</p>
-                 <button (click)="showStandardInfo.set(true)" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest flex items-center gap-1.5 transition-colors">
-                     <i class="fa-solid fa-circle-info"></i> Info
-                 </button>
-             </div>
-           </div>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Controlli Generali</h2>
+            <div class="flex items-center gap-3 mt-1">
+              <p class="text-sm font-medium text-slate-500">Analisi dettagliata esiti e conformità</p>
+              <button (click)="showStandardInfo.set(true)" class="flex items-center gap-2 px-2 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all text-[9px] font-black border border-slate-200 group">
+                <i class="fa-solid fa-circle-info text-xs group-hover:scale-110 transition-transform"></i>
+                <span>INFO PROTOCOLLO</span>
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 relative z-10 w-full md:w-auto shrink-0">
-          <!-- Company Selector -->
-          <div class="bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200 flex flex-col justify-center min-w-[220px]">
-            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5 leading-none">Azienda Filtro</label>
+        
+        <div class="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+          <!-- Company Selector Glassmorphism -->
+          <div class="bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200 flex flex-col justify-center min-w-[220px] shadow-sm">
+            <label class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5 leading-none">Azienda Filtro</label>
             <select [ngModel]="selectedCompanyId()" (ngModelChange)="selectedCompanyId.set($event)"
-                    class="bg-transparent text-slate-700 font-bold text-sm focus:outline-none cursor-pointer border-none p-0 w-full">
-              <option value="">Tutte le Aziende</option>
+                    class="bg-transparent text-slate-800 font-bold text-sm focus:outline-none cursor-pointer border-none p-0 w-full appearance-none">
+              <option value="" class="text-slate-800">Tutte le Aziende</option>
               @for (client of state.clients(); track client.id) {
-                <option [value]="client.id">{{ client.name }}</option>
+                <option [value]="client.id" class="text-slate-800">{{ client.name }}</option>
               }
             </select>
           </div>
@@ -61,9 +64,9 @@ interface CheckCategory {
           <!-- Print Action -->
           <button (click)="printCompleteList()" 
                   [disabled]="!selectedCompanyId()"
-                  class="px-5 py-3 h-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale shadow-sm shrink-0">
-            <i class="fa-solid fa-print"></i>
-            <span class="hidden sm:inline">Stampa rapporto</span>
+                  class="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale shadow-lg active:scale-95 group">
+            <i class="fa-solid fa-print text-lg group-hover:rotate-12 transition-transform"></i>
+            <span class="hidden sm:inline">Report</span>
           </button>
         </div>
       </div>
@@ -219,51 +222,67 @@ interface CheckCategory {
                 <div class="border-t border-slate-100 bg-slate-50/50 p-4 md:p-6 animate-slide-down">
                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                       @for (item of category.items; track item.id) {
-                          <div class="bg-white/80 rounded-lg p-4 border transition-all flex items-center gap-3"
-                               [class.border-emerald-200]="item.completed"
-                               [class.bg-emerald-50/50]="item.completed"
-                               [class.border-slate-200]="!item.completed"
-                               [class.hover:border-slate-300]="!item.completed">
+                          <div class="bg-white/80 rounded-lg p-4 border transition-all flex flex-col gap-2 shadow-sm"
+                               [class.border-emerald-200]="item.status === 'ok'"
+                               [class.bg-emerald-50/30]="item.status === 'ok'"
+                               [class.border-red-200]="item.status === 'issue'"
+                               [class.bg-red-50/30]="item.status === 'issue'"
+                               [class.border-slate-200]="item.status === 'pending'"
+                               [class.hover:border-slate-300]="item.status === 'pending'">
                               
-                              <div class="flex items-start gap-3 flex-1">
+                              <div class="flex items-start gap-3">
                                   <!-- Status Icon -->
-                                  <div class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 border"
-                                       [class.bg-emerald-500]="item.completed"
-                                       [class.border-emerald-600]="item.completed"
-                                       [class.text-white]="item.completed"
-                                       [class.bg-slate-50]="!item.completed"
-                                       [class.border-slate-300]="!item.completed"
-                                       [class.text-slate-300]="!item.completed">
-                                      @if (item.completed) {
-                                          <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                  <div class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border"
+                                       [class.bg-emerald-500]="item.status === 'ok'"
+                                       [class.border-emerald-600]="item.status === 'ok'"
+                                       [class.text-white]="item.status === 'ok'"
+                                       [class.bg-red-500]="item.status === 'issue'"
+                                       [class.border-red-600]="item.status === 'issue'"
+                                       [class.text-white]="item.status === 'issue'"
+                                       [class.bg-slate-50]="item.status === 'pending'"
+                                       [class.border-slate-200]="item.status === 'pending'"
+                                       [class.text-slate-300]="item.status === 'pending'">
+                                      @if (item.status === 'ok') {
+                                          <i class="fa-solid fa-check text-sm font-black"></i>
+                                      } @else if (item.status === 'issue') {
+                                          <i class="fa-solid fa-triangle-exclamation text-sm font-black"></i>
                                       } @else {
-                                          <i class="fa-solid fa-minus text-[10px] font-black"></i>
+                                          <i class="fa-solid fa-clock text-sm"></i>
                                       }
                                   </div>
 
                                   <!-- Label -->
-                                  <div class="flex-1 min-w-0 pr-2">
-                                      <p class="text-sm font-semibold leading-tight mb-1"
-                                         [class.text-slate-700]="!item.completed"
-                                         [class.text-emerald-800]="item.completed">
+                                  <div class="flex-1 min-w-0">
+                                      <p class="text-sm font-bold leading-tight"
+                                         [class.text-slate-700]="item.status === 'pending'"
+                                         [class.text-emerald-900]="item.status === 'ok'"
+                                         [class.text-red-900]="item.status === 'issue'">
                                           {{ item.label }}
                                       </p>
-                                      <p class="text-[9px] text-slate-400 uppercase font-bold tracking-widest">
-                                          MOD: {{ getModuleName(item.moduleId) }}
-                                      </p>
+                                      
+                                      <div class="flex items-center gap-2 mt-1">
+                                          <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border shadow-sm"
+                                                [class.bg-emerald-100]="item.status === 'ok'" [class.text-emerald-700]="item.status === 'ok'" [class.border-emerald-200]="item.status === 'ok'"
+                                                [class.bg-red-100]="item.status === 'issue'" [class.text-red-700]="item.status === 'issue'" [class.border-red-200]="item.status === 'issue'"
+                                                [class.bg-slate-100]="item.status === 'pending'" [class.text-slate-500]="item.status === 'pending'" [class.border-slate-200]="item.status === 'pending'">
+                                              {{ item.status === 'ok' ? 'Conforme' : item.status === 'issue' ? 'Anomalia' : 'Pendente' }}
+                                          </span>
+                                      </div>
                                   </div>
-
-                                  <!-- Status Badge -->
-                                  @if (item.completed) {
-                                      <span class="shrink-0 text-[9px] font-bold uppercase px-2 py-1 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">
-                                          Check
-                                      </span>
-                                  } @else {
-                                      <span class="shrink-0 text-[9px] font-bold uppercase px-2 py-1 rounded bg-orange-100 text-orange-700 border border-orange-200">
-                                          Pendente
-                                      </span>
-                                  }
                               </div>
+
+                              <!-- Note area -->
+                              @if (item.note) {
+                                  <div class="mt-1 p-2 bg-white rounded-md border border-slate-100 text-[11px] text-slate-600 italic flex items-start gap-2">
+                                      <i class="fa-solid fa-comment-dots mt-0.5 text-slate-300"></i>
+                                      <span>{{ item.note }}</span>
+                                  </div>
+                              }
+                          </div>
+                      } @empty {
+                          <div class="col-span-full p-8 text-center bg-white/50 rounded-xl border border-dashed border-slate-200">
+                              <i class="fa-solid fa-folder-open text-slate-200 text-3xl mb-2"></i>
+                              <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Nessuna voce registrata per questa fase</p>
                           </div>
                       }
                    </div>
@@ -395,7 +414,7 @@ export class GeneralChecksViewComponent {
     toast = inject(ToastService);
     showStandardInfo = signal(false);
     expandedCategoryIds = signal<Set<string>>(new Set());
-
+    
     // Injecting effect to handle global sync
     private _syncEffect = effect(() => {
         const filterId = this.state.filterCollaboratorId();
@@ -431,51 +450,121 @@ export class GeneralChecksViewComponent {
     checkIsCompleted(moduleId: string): boolean {
         const client = this.selectedClient();
         const date = this.state.filterDate();
+        const collaboratorId = this.state.filterCollaboratorId();
         if (!client) return false;
 
         return this.state.checklistRecords().some(r => 
             r.moduleId === moduleId && 
             r.clientId === client.id && 
-            r.date === date
+            r.date === date &&
+            (!collaboratorId || r.userId === collaboratorId)
         );
     }
 
     categories = computed((): CheckCategory[] => {
+        const client = this.selectedClient();
+        const date = this.state.filterDate();
+        const records = this.state.checklistRecords();
+
+        const getItems = (moduleId: string) => {
+            const collaboratorId = this.state.filterCollaboratorId();
+            
+            // Find records matching client, date and moduleId
+            let relevantRecords = records.filter(r => 
+                r.moduleId === moduleId && 
+                r.clientId === client?.id && 
+                r.date === date
+            );
+
+            // If a specific collaborator is selected, further filter by user_id
+            if (collaboratorId) {
+                relevantRecords = relevantRecords.filter(r => r.userId === collaboratorId);
+            }
+
+            // Take the latest record for this module/user combination
+            const record = relevantRecords.at(-1);
+            if (!record) return [];
+
+            const list: any[] = [];
+            if (moduleId === 'operative-checklist') {
+                return (record.data?.items || []).map((i: any, idx: number) => ({
+                    id: `${moduleId}-${idx}`,
+                    label: i.label,
+                    status: i.status || 'pending',
+                    completed: (i.status || 'pending') !== 'pending',
+                    note: i.note || (i.temperature ? `Temperatura: ${i.temperature}°C` : null)
+                }));
+            } else if (Array.isArray(record.data)) {
+                // Handle direct array structure (e.g. cleaning-maintenance)
+                return record.data.map((item: any, idx: number) => {
+                    const status = item.status || 'pending';
+                    return {
+                        id: `${moduleId}-${idx}`,
+                        label: item.label,
+                        status: status,
+                        completed: status !== 'pending',
+                        note: item.note
+                    };
+                });
+            } else {
+                const areas = record.data?.areas || [];
+                areas.forEach((area: any) => {
+                    area.steps?.forEach((step: any, idx: number) => {
+                        const status = step.status || 'pending';
+                        list.push({
+                            id: `${moduleId}-${area.id}-${idx}`,
+                            label: `${area.label}: ${step.label}`,
+                            status: status,
+                            completed: status !== 'pending',
+                            note: step.note
+                        });
+                    });
+                });
+                if (moduleId === 'pre-op-checklist') {
+                  const globalItems = record.data?.globalItems || [];
+                  globalItems.forEach((item: any, idx: number) => {
+                      const status = item.status || 'pending';
+                      list.push({
+                          id: `global-${idx}`,
+                          label: `Generale: ${item.label}`,
+                          status: status,
+                          completed: status !== 'pending',
+                          note: item.note
+                      });
+                  });
+                }
+                return list;
+            }
+        };
+
         return [
             {
                 id: 'pre-operative',
                 name: 'Fase Pre-operativa',
-                icon: 'fa-eye',
+                icon: 'fa-hourglass-start',
                 color: '#3b82f6',
-                items: [
-                    { id: 'pre-1', label: 'Monitoraggio Igiene Ambienti / Attrezzature', moduleId: 'pre-op-checklist', completed: this.checkIsCompleted('pre-op-checklist') },
-                    { id: 'pre-2', label: 'Controllo Stoccaggio e Materie Prime', moduleId: 'pre-op-checklist', completed: this.checkIsCompleted('pre-op-checklist') },
-                    { id: 'pre-3', label: 'Verifica DPI e Abbigliamento Operatori', moduleId: 'pre-op-checklist', completed: this.checkIsCompleted('pre-op-checklist') }
-                ]
+                items: getItems('pre-op-checklist')
             },
             {
                 id: 'operative',
                 name: 'Fase Operativa',
-                icon: 'fa-fire-burner',
+                icon: 'fa-briefcase',
                 color: '#6366f1',
-                items: [
-                    { id: 'op-1', label: 'Monitoraggio Temperature in Fase di Lavoro', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') },
-                    { id: 'op-2', label: 'Procedure di Rispetto Allergeni', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') },
-                    { id: 'op-3', label: 'Rispetto Tempistiche di Preparazione', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') },
-                    { id: 'op-4', label: 'Gestione Rintracciabilità Operativa', moduleId: 'operative-checklist', completed: this.checkIsCompleted('operative-checklist') }
-                ]
+                items: getItems('operative-checklist')
             },
             {
                 id: 'post-operative',
                 name: 'Fase Post-operativa',
-                icon: 'fa-broom',
+                icon: 'fa-hourglass-end',
                 color: '#8b5cf6',
-                items: [
-                    { id: 'post-1', label: 'Sanificazione Superfici e Fine Turno', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') },
-                    { id: 'post-2', label: 'Smaltimento Scarti e Rifiuti Alimentari', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') },
-                    { id: 'post-3', label: 'Stoccaggio Semilavorati e Coperture', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') },
-                    { id: 'post-4', label: 'Messa in Sicurezza Utenze e Impianti', moduleId: 'post-op-checklist', completed: this.checkIsCompleted('post-op-checklist') }
-                ]
+                items: getItems('post-op-checklist')
+            },
+            {
+                id: 'cleaning',
+                name: 'Piano Sanificazione',
+                icon: 'fa-screwdriver-wrench',
+                color: '#8b5cf6',
+                items: getItems('cleaning-maintenance')
             }
         ];
     });

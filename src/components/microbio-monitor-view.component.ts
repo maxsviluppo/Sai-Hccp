@@ -169,8 +169,11 @@ export class MicrobioMonitorViewComponent {
     showStandardInfo = signal(false);
 
     checks = signal<CheckItem[]>([
-        { id: 'lab-test', label: 'TESTS DI LABORATORIO', checked: false },
-        { id: 'rapid-tests', label: 'TESTS RAPIDI (RILEVAMENTO RESIDUI PROTEINE, GRASSI E ZUCCHERI)', checked: false }
+        { id: 'surface-swab', label: 'TAMPONI SUPERFICI DI LAVORO E UTENSILI', checked: false },
+        { id: 'operator-swab', label: 'TAMPONI MANI / IGIENE OPERATORI', checked: false },
+        { id: 'water-analysis', label: 'ANALISI MICROBIOLOGICA ACQUA POTABILE', checked: false },
+        { id: 'product-test', label: 'ANALISI PRODOTTTO FINITO / SEMILAVORATI', checked: false },
+        { id: 'air-quality', label: 'MONITORAGGIO QUALITÀ DELL\'ARIA (AMBIENTI)', checked: false }
     ]);
 
     checkedCount = computed<number>(() => {

@@ -9,50 +9,47 @@ import { ToastService } from '../services/toast.service';
     imports: [CommonModule],
     template: `
     <div class="animate-fade-in px-2 relative space-y-6 pb-24">
-        <!-- Premium Hero Header -->
+        <!-- Sleek Professional Dashboard Header -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-            <div class="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-blue-50 to-transparent pointer-events-none"></div>
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
-            <div class="relative z-10 flex items-center gap-5">
-                <div class="h-14 w-14 rounded-xl bg-white border border-blue-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0">
+            <div class="flex items-center gap-5 relative z-10">
+                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
                     <i class="fa-solid fa-folder-tree text-2xl"></i>
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Archivio Documentale</h2>
-                    <div class="flex flex-wrap items-center gap-2 mt-1">
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100 text-[10px] font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-cloud text-slate-400"></i> Cloud
-                        </span>
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-100 text-[10px] font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-building"></i> {{ getTargetUnitName() }}
-                        </span>
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-100 text-[10px] font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-users"></i> Condiviso
-                        </span>
-                    </div>
+                    <p class="text-sm font-medium text-slate-500 mt-1">Gestione Cloud della conformità e SCIA aziendale</p>
                 </div>
             </div>
 
-            <div class="w-full md:w-auto relative z-10 flex gap-4 pr-1">
-                <div class="flex items-center gap-4 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 w-full justify-between">
-                    <div>
-                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">File Archiviati</p>
-                        <p class="text-base font-bold text-slate-700 leading-none">{{ state.filteredDocuments().length }}</p>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 relative z-10">
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex items-center gap-4">
+                    <div class="text-right flex flex-col justify-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Documenti Totali</p>
+                        <p class="text-sm font-bold text-slate-700 leading-none">{{ state.filteredDocuments().length }} file archiviati</p>
                     </div>
-                    <i class="fa-solid fa-box-archive text-slate-300 text-xl"></i>
+                    <div class="h-10 w-10 flex items-center justify-center bg-white rounded-full border border-slate-200 text-blue-600 shadow-sm shrink-0">
+                        <i class="fa-solid fa-box-archive"></i>
+                    </div>
+                </div>
+                
+                <div class="hidden lg:flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+                    <i class="fa-solid fa-building text-blue-500"></i>
+                    <span>{{ getTargetUnitName() }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Shared Access Info Banner -->
-        <div class="bg-indigo-600 rounded-xl p-4 text-white flex items-center gap-4 shadow-md overflow-hidden relative group">
-            <div class="absolute right-0 top-0 h-full w-32 bg-white/10 -skew-x-12 translate-x-16 group-hover:translate-x-8 transition-transform"></div>
-            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+        <!-- Subtle Access Info Banner -->
+        <div class="bg-slate-50 rounded-xl p-4 text-slate-600 flex items-center gap-4 border border-slate-200 shadow-sm relative overflow-hidden group">
+            <div class="absolute right-0 top-0 h-full w-32 bg-white -skew-x-12 translate-x-16 group-hover:translate-x-8 transition-transform opacity-50"></div>
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-sm">
                 <i class="fa-solid fa-circle-info text-lg"></i>
             </div>
-            <div class="min-w-0">
-                <p class="text-xs font-bold leading-tight">Archivio Aziendale Condiviso</p>
-                <p class="text-[10px] opacity-80 leading-tight mt-0.5">Tutti i documenti caricati sono visibili e modificabili sia dall'amministrazione che dagli operatori di tutte le sedi della stessa azienda.</p>
+            <div class="min-w-0 relative z-10">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-800 leading-tight">Archivio Aziendale Condiviso</p>
+                <p class="text-[10px] text-slate-500 font-medium leading-tight mt-0.5">Tutti i documenti caricati sono visibili e modificabili sia dall'amministrazione che dagli operatori di tutte le sedi della stessa azienda.</p>
             </div>
         </div>
 
@@ -92,30 +89,19 @@ import { ToastService } from '../services/toast.service';
 
                         @for (def of docDefinitions; track def.id) {
                             <button (click)="selectedDocType.set(def.id)"
-                                    class="w-full flex items-center justify-between p-2.5 rounded-lg transition-all group text-left border border-transparent"
-                                    [class.bg-blue-600]="selectedDocType() === def.id"
-                                    [class.text-white]="selectedDocType() === def.id"
-                                    [class.shadow-sm]="selectedDocType() === def.id"
-                                    [class.hover:bg-slate-50]="selectedDocType() !== def.id"
-                                    [class.hover:border-slate-200]="selectedDocType() !== def.id">
+                                    class="w-full flex items-center justify-between p-2.5 rounded-lg transition-all group text-left border border-transparent shadow-sm mb-1"
+                                    [class]="selectedDocType() === def.id ? 'bg-' + def.color + '-600 text-white translate-x-1' : 'bg-white hover:bg-slate-50 hover:border-slate-200 text-slate-700'"
+                                    [style.backgroundColor]="selectedDocType() === def.id ? '' : 'white'">
                                  <div class="flex items-center gap-3">
                                      <div class="w-7 h-7 rounded flex items-center justify-center transition-all shadow-sm"
-                                          [class.bg-white/20]="selectedDocType() === def.id"
-                                          [class.bg-white]="selectedDocType() !== def.id"
-                                          [class.border]="selectedDocType() !== def.id"
-                                          [class.border-slate-200]="selectedDocType() !== def.id"
-                                          [class.text-white]="selectedDocType() === def.id"
-                                          [class.text-blue-600]="selectedDocType() !== def.id">
+                                          [class]="selectedDocType() === def.id ? 'bg-white/20 text-white' : 'bg-white border border-' + def.color + '-100 text-' + def.color + '-600'">
                                          <i [class]="'fa-solid ' + def.icon + ' text-[10px]'"></i>
                                      </div>
                                      <span class="text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]" [title]="def.label">{{ def.label }}</span>
                                  </div>
                                  @if (getDocsByType(def.id).length > 0) {
                                      <div class="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black shadow-sm"
-                                          [class.bg-white]="selectedDocType() === def.id"
-                                          [class.text-blue-600]="selectedDocType() === def.id"
-                                          [class.bg-slate-100]="selectedDocType() !== def.id"
-                                          [class.text-slate-600]="selectedDocType() !== def.id">
+                                          [class]="selectedDocType() === def.id ? 'bg-white text-' + def.color + '-600' : 'bg-slate-100 text-slate-600'">
                                          {{ getDocsByType(def.id).length }}
                                      </div>
                                  }
@@ -187,8 +173,8 @@ import { ToastService } from '../services/toast.service';
                                 @for (doc of getDocsByType(selectedDocType() || ''); track doc.id) {
                                     <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-slate-200 hover:border-blue-300 transition-colors shadow-sm relative group">
                                         <div class="flex items-center gap-4 overflow-hidden pr-2">
-                                            <div class="w-10 h-10 rounded-md bg-slate-50 border border-slate-100 text-slate-400 flex items-center justify-center shrink-0">
-                                                <i class="fa-solid fa-file-pdf text-lg"></i>
+                                            <div [class]="'w-10 h-10 rounded-md flex items-center justify-center shrink-0 border bg-' + getDocColor(doc.type) + '-50 border-' + getDocColor(doc.type) + '-100 text-' + getDocColor(doc.type) + '-600'">
+                                                <i [class]="'fa-solid ' + getDocIcon(doc.type) + ' text-lg'"></i>
                                             </div>
                                             <div class="min-w-0">
                                                 <span class="text-sm font-bold text-slate-700 block truncate mb-0.5" [title]="doc.fileName">{{ doc.fileName }}</span>
@@ -222,17 +208,17 @@ import { ToastService } from '../services/toast.service';
                                             <div class="flex items-center justify-between bg-slate-50/40 p-4 rounded-lg border border-dashed border-slate-200 grayscale opacity-50 hover:opacity-80 transition-opacity cursor-pointer group/placeholder"
                                                  (click)="selectedDocType.set(def.id)">
                                                 <div class="flex items-center gap-4 overflow-hidden pr-2">
-                                                    <div class="w-10 h-10 rounded-md bg-white border border-slate-100 text-slate-300 flex items-center justify-center shrink-0 group-hover/placeholder:text-blue-400 transition-colors">
+                                                    <div [class]="'w-10 h-10 rounded-md bg-white border border-slate-100 flex items-center justify-center shrink-0 group-hover/placeholder:text-' + def.color + '-400 transition-colors text-slate-300'">
                                                         <i [class]="'fa-solid ' + def.icon + ' text-sm'"></i>
                                                     </div>
                                                     <div class="min-w-0">
                                                         <span class="text-xs font-bold text-slate-400 block truncate mb-0.5 italic group-hover/placeholder:text-slate-500">{{ def.label }}</span>
-                                                        <div class="flex items-center gap-2 text-[9px] text-slate-300 font-black uppercase tracking-widest group-hover/placeholder:text-blue-400">
+                                                        <div [class]="'flex items-center gap-2 text-[9px] font-black uppercase tracking-widest group-hover/placeholder:text-' + def.color + '-400 text-slate-300'">
                                                             <span>Disponibile al Caricamento</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <i class="fa-solid fa-arrow-up-from-bracket text-slate-200 mr-2 group-hover/placeholder:text-blue-300"></i>
+                                                <i [class]="'fa-solid fa-arrow-up-from-bracket text-slate-200 mr-2 group-hover/placeholder:text-' + def.color + '-300'"></i>
                                             </div>
                                         }
                                     }
@@ -261,12 +247,12 @@ import { ToastService } from '../services/toast.service';
             <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 animate-slide-up flex flex-col max-h-[90vh]">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm shrink-0">
-                            <i class="fa-solid fa-file-shield text-lg"></i>
+                        <div [class]="'w-10 h-10 rounded-lg flex items-center justify-center border shadow-sm shrink-0 bg-' + getDocColor(previewDoc()?.type || '') + '-50 text-' + getDocColor(previewDoc()?.type || '') + '-600 border-' + getDocColor(previewDoc()?.type || '') + '-100'">
+                            <i [class]="'fa-solid ' + getDocIcon(previewDoc()?.type || '') + ' text-lg'"></i>
                         </div>
                         <div class="min-w-0 pr-4">
                             <h4 class="font-bold text-slate-800 text-sm truncate" [title]="previewDoc()?.fileName">{{ previewDoc()?.fileName }}</h4>
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ previewDoc()?.type }} • {{ previewDoc()?.uploadDate | date:'dd/MM/yy HH:mm' }}</p>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ getDocTypeLabel(previewDoc()?.type || '') }} • {{ previewDoc()?.uploadDate | date:'dd/MM/yy HH:mm' }}</p>
                         </div>
                     </div>
                     <button (click)="previewDoc.set(null)" class="w-8 h-8 rounded shrink-0 bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center border border-slate-200 shadow-sm">
@@ -275,13 +261,13 @@ import { ToastService } from '../services/toast.service';
                 </div>
                 
                 <div class="flex-1 bg-slate-50 flex flex-col items-center justify-center relative p-8 md:p-12 overflow-y-auto">
-                    <div class="absolute inset-0 opacity-5 pointer-events-none select-none flex items-center justify-center text-9xl font-black text-slate-900 -rotate-12">
-                         HACCP
+                    <div class="absolute inset-0 opacity-5 pointer-events-none select-none flex items-center justify-center text-9xl font-black text-slate-900 -rotate-12 uppercase">
+                         {{ previewDoc()?.type }}
                     </div>
                     
                     <div class="relative z-10 text-center max-w-sm mx-auto">
-                        <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-200 text-4xl group">
-                             <i [class]="'fa-solid ' + (previewDoc()?.fileType?.includes('pdf') ? 'fa-file-pdf text-emerald-500' : 'fa-file-image text-blue-500')"></i>
+                        <div [class]="'w-24 h-24 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-200 text-4xl group text-' + getDocColor(previewDoc()?.type || '') + '-500'">
+                             <i [class]="'fa-solid ' + getDocIcon(previewDoc()?.type || '')"></i>
                         </div>
                         <h3 class="text-xl font-bold text-slate-800 mb-2">Anteprima Documento</h3>
                         <p class="text-xs text-slate-500 mb-8 leading-relaxed">Il documento è archiviato in modo sicuro nel cloud aziendale ed è pronto per essere consultato.</p>
@@ -333,18 +319,28 @@ export class DocumentationViewComponent {
     docToDelete = signal<any>(null);
 
     docDefinitions = [
-        { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot' },
-        { id: 'camerale', label: 'Camerale', icon: 'fa-building-columns' },
-        { id: 'haccp_plan', label: 'Piano autocontrollo sistema HACCP', icon: 'fa-file-shield' },
-        { id: 'osa', label: 'Attestato OSA', icon: 'fa-user-graduate' },
-        { id: 'pec', label: 'PEC (Posta Elettronica Certificata)', icon: 'fa-envelope-circle-check', hasExpiry: true },
-        { id: 'firma_digitale', label: 'Firma digitale', icon: 'fa-signature' },
-        { id: 'registro_personale', label: 'Registro del personale', icon: 'fa-users-rectangle' },
-        { id: 'inps_inail', label: 'Iscrizione INPS / INAIL', icon: 'fa-stamp' },
-        { id: 'messa_terra', label: 'DM 37/08 messa a terra DPR 462/01', icon: 'fa-bolt' },
-        { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation' },
-        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney' }
+        { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot', color: 'indigo' },
+        { id: 'camerale', label: 'Camerale', icon: 'fa-building-columns', color: 'amber' },
+        { id: 'haccp_plan', label: 'Piano autocontrollo sistema HACCP', icon: 'fa-file-shield', color: 'emerald' },
+        { id: 'osa', label: 'Attestato OSA', icon: 'fa-user-graduate', color: 'blue' },
+        { id: 'pec', label: 'PEC (Posta Elettronica Certificata)', icon: 'fa-envelope-circle-check', hasExpiry: true, color: 'violet' },
+        { id: 'firma_digitale', label: 'Firma digitale', icon: 'fa-signature', color: 'rose' },
+        { id: 'registro_personale', label: 'Registro del personale', icon: 'fa-users-rectangle', color: 'cyan' },
+        { id: 'inps_inail', label: 'Iscrizione INPS / INAIL', icon: 'fa-stamp', color: 'orange' },
+        { id: 'messa_terra', label: 'DM 37/08 messa a terra DPR 462/01', icon: 'fa-bolt', color: 'yellow' },
+        { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation', color: 'red' },
+        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney', color: 'teal' }
     ];
+
+    getDocColor(type: string): string {
+        const def = this.docDefinitions.find(d => d.id === type);
+        return def?.color || 'slate';
+    }
+
+    getDocIcon(type: string): string {
+        const def = this.docDefinitions.find(d => d.id === type);
+        return def?.icon || 'fa-file';
+    }
 
     getSelectedDef() {
         if (this.selectedDocType() === 'all') {

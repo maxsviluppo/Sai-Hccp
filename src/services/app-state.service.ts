@@ -16,6 +16,7 @@ export interface AdminCompany {
   sdi: string;
   licenseNumber: string;
   logo?: string;
+  labelFormat?: '62mm' | '30mm';
 }
 
 export interface ClientEntity {
@@ -30,8 +31,11 @@ export interface ClientEntity {
   licenseNumber: string;
   suspended: boolean; // Service suspension for non-payment
   paymentBalanceDue?: boolean; // New: Banner info for balance payment due
-  licenseExpiryDate?: string; // New: Expiration date for the subscription
+  licenseExpiryDate?: string;
   logo?: string;
+  printerModel?: string;
+  labelFormat?: '62mm' | '30mm';
+  printerDriverUrl?: string;
 }
 
 export interface SystemUser {
@@ -62,7 +66,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication' | 'production' | 'documentation';
+  category: 'dashboard' | 'operations' | 'history' | 'monitoring' | 'config' | 'communication' | 'production' | 'documentation' | 'hardware';
   adminOnly?: boolean;
   operatorOnly?: boolean;
 }
@@ -352,12 +356,17 @@ export class AppStateService {
           piva: c.piva,
           address: c.address,
           phone: c.phone,
+          cellphone: c.cellphone,
+          whatsapp: c.whatsapp,
           email: c.email,
           licenseNumber: c.license_number,
           suspended: c.suspended,
           paymentBalanceDue: !!c.payment_balance_due,
           licenseExpiryDate: c.license_expiry_date,
-          logo: c.logo
+          logo: c.logo,
+          printerModel: c.printer_model,
+          labelFormat: c.label_format,
+          printerDriverUrl: c.printer_driver_url
         })));
     }
 
@@ -731,7 +740,6 @@ export class AppStateService {
   readonly menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', adminOnly: true },
     { id: 'operator-dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', operatorOnly: true },
-    { id: 'reports', label: 'Report Risultati', icon: 'fa-file-contract', category: 'dashboard', adminOnly: true },
     { id: 'general-checks', label: 'Controlli Generali', icon: 'fa-list-check', category: 'dashboard', adminOnly: true },
 
     // --- ARCHIVIO DOCUMENTALE ---
@@ -739,7 +747,7 @@ export class AppStateService {
 
     // --- REGISTRI E FASI OPERATIVE ---
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations' },
-    { id: 'operative-checklist', label: 'Registri Operativi di Controllo', icon: 'fa-briefcase', category: 'operations' },
+    { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
     { id: 'production-log', label: 'Registri Produzione', icon: 'fa-barcode', category: 'operations' },
 
@@ -760,12 +768,15 @@ export class AppStateService {
 
     // Config
     { id: 'equipment-census', label: 'Censimento Attrezzature', icon: 'fa-microchip', category: 'config', adminOnly: true },
-    { id: 'equipment', label: 'Monitoraggio Attrezzature', icon: 'fa-screwdriver-wrench', category: 'config', adminOnly: true },
+    { id: 'equipment', label: 'Monitoraggio Attrezzature', icon: 'fa-screwdriver-wrench', category: 'config', operatorOnly: true },
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config', operatorOnly: true },
     { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config', operatorOnly: true },
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
     { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false },
+
+    // --- HARDWARE ---
+    { id: 'hardware-config', label: 'Dotazioni Hardware', icon: 'fa-print', category: 'hardware', adminOnly: false },
   ];
 
   loginWithCredentials(username: string, pass: string): boolean {
@@ -876,7 +887,11 @@ export class AppStateService {
 
   async setReportRecipientEmail(email: string) {
     this.reportRecipientEmail.set(email);
-    const { error } = await supabase.from('system_config').upsert({ id: 'master', report_email: email });
+    const { error } = await supabase.from('system_config').upsert({ 
+      id: 'master', 
+      report_email: email,
+      master_data: this.adminCompany() 
+    });
     if (!error) {
       this.toastService.success('Indirizzo Aggiornato', `Il nuovo indirizzo per i report è: ${email}`);
     } else {
@@ -887,7 +902,11 @@ export class AppStateService {
 
   async updateAdminCompany(data: AdminCompany) {
     this.adminCompany.set(data);
-    const { error } = await supabase.from('system_config').upsert({ id: 'master', master_data: data });
+    const { error } = await supabase.from('system_config').upsert({ 
+      id: 'master', 
+      master_data: data,
+      report_email: this.reportRecipientEmail()
+    });
     if (!error) {
       this.toastService.success('Anagrafica Salvata', 'I dati dell\'azienda amministratore sono stati aggiornati.');
     } else {
@@ -1062,19 +1081,23 @@ export class AppStateService {
   async addClient(client: Omit<ClientEntity, 'id'>) {
     const newClient = { ...client, id: Math.random().toString(36).substr(2, 9) };
     this.clients.update(c => [...c, newClient]);
-    
-    const { error } = await supabase.from('clients').insert({
+      const { error } = await supabase.from('clients').insert({
       id: newClient.id,
       name: newClient.name,
       piva: newClient.piva,
       address: newClient.address,
       phone: newClient.phone,
+      cellphone: (newClient as any).cellphone,
+      whatsapp: (newClient as any).whatsapp,
       email: newClient.email,
       license_number: newClient.licenseNumber,
       suspended: newClient.suspended,
       payment_balance_due: newClient.paymentBalanceDue,
       license_expiry_date: newClient.licenseExpiryDate,
-      logo: newClient.logo
+      logo: newClient.logo,
+      printer_model: newClient.printerModel,
+      label_format: newClient.labelFormat,
+      printer_driver_url: newClient.printerDriverUrl
     });
 
     if (!error) {
@@ -1184,12 +1207,17 @@ export class AppStateService {
     if (updates.piva !== undefined) dbUpdates.piva = updates.piva;
     if (updates.address !== undefined) dbUpdates.address = updates.address;
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+    if (updates.cellphone !== undefined) dbUpdates.cellphone = updates.cellphone;
+    if (updates.whatsapp !== undefined) dbUpdates.whatsapp = updates.whatsapp;
     if (updates.email !== undefined) dbUpdates.email = updates.email;
     if (updates.licenseNumber !== undefined) dbUpdates.license_number = updates.licenseNumber;
     if (updates.suspended !== undefined) dbUpdates.suspended = updates.suspended;
     if (updates.paymentBalanceDue !== undefined) dbUpdates.payment_balance_due = updates.paymentBalanceDue;
     if (updates.licenseExpiryDate !== undefined) dbUpdates.license_expiry_date = updates.licenseExpiryDate;
     if (updates.logo !== undefined) dbUpdates.logo = updates.logo;
+    if (updates.printerModel !== undefined) dbUpdates.printer_model = updates.printerModel;
+    if (updates.labelFormat !== undefined) dbUpdates.label_format = updates.labelFormat;
+    if (updates.printerDriverUrl !== undefined) dbUpdates.printer_driver_url = updates.printerDriverUrl;
 
     const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
     if (error) {
@@ -1398,23 +1426,43 @@ export class AppStateService {
   // --- Equipment Census Methods ---
   async addEquipment(area: string, name: string, type: string = 'Altro') {
     const id = Math.random().toString(36).substring(2, 9);
-    const client_id = this.activeTargetClientId();
+    // 1. Mandatory Client Selection Check
+    const filterId = this.filterClientId();
+    if (this.isAdmin() && !filterId) {
+      this.toastService.warning('Selezione Richiesta', 'Seleziona prima un\'azienda/sede per associare l\'attrezzatura.');
+      return;
+    }
+
+    const clientId = filterId || this.currentUser()?.clientId || 'demo';
     
-    this.selectedEquipment.update(list => [...list, { id, area, name, type } as any]);
+    // 2. Optimistic Local Update (important: include clientId so it shows up)
+    this.selectedEquipment.update(list => [...list, { id, area, name, type, clientId } as any]);
     
-    // DB sync
-    await supabase.from('equipment').insert({
+    // 3. DB sync
+    const { error } = await supabase.from('equipment').insert({
         id,
         area,
         name,
         type,
-        client_id: client_id || 'demo'
+        client_id: clientId
     });
+
+    if (error) {
+      console.error('Error syncing equipment:', error);
+      this.toastService.error('Errore Sync', 'Impossibile salvare l\'attrezzatura nel database.');
+    }
   }
 
   async removeEquipment(id: string) {
+    // 1. Optimistic Local Update
     this.selectedEquipment.update(list => list.filter(e => e.id !== id));
-    await supabase.from('equipment').delete().eq('id', id);
+    
+    // 2. DB Sync
+    const { error } = await supabase.from('equipment').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting equipment:', error);
+      this.toastService.error('Errore Sync', 'Impossibile rimuovere l\'attrezzatura dal database.');
+    }
   }
 
   getDocumentsByClient(clientId: string, category?: string) {

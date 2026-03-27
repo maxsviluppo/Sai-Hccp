@@ -12,9 +12,13 @@ CREATE TABLE IF NOT EXISTS clients (
   piva TEXT,
   address TEXT,
   phone TEXT,
+  cellphone TEXT,
+  whatsapp TEXT,
   email TEXT,
   license_number TEXT,
   suspended BOOLEAN DEFAULT FALSE,
+  payment_balance_due BOOLEAN DEFAULT FALSE,
+  license_expiry_date TEXT,
   logo TEXT
 );
 
@@ -26,7 +30,7 @@ CREATE TABLE IF NOT EXISTS system_users (
   department TEXT,
   active BOOLEAN DEFAULT TRUE,
   avatar TEXT,
-  client_id TEXT REFERENCES clients(id),
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
   username TEXT,
   password TEXT
 );
@@ -34,8 +38,8 @@ CREATE TABLE IF NOT EXISTS system_users (
 CREATE TABLE IF NOT EXISTS checklist_records (
   id TEXT PRIMARY KEY,
   module_id TEXT NOT NULL,
-  user_id TEXT,
-  client_id TEXT,
+  user_id TEXT REFERENCES system_users(id) ON DELETE CASCADE,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
   date TEXT NOT NULL,
   data JSONB,
   timestamp TIMESTAMPTZ DEFAULT NOW()
@@ -43,7 +47,7 @@ CREATE TABLE IF NOT EXISTS checklist_records (
 
 CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY,
-  client_id TEXT,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
   category TEXT,
   type TEXT,
   file_name TEXT,
@@ -59,7 +63,7 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_id TEXT,
   sender_name TEXT,
   recipient_type TEXT,
-  recipient_id TEXT,
+  recipient_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
   recipient_user_id TEXT,
   subject TEXT,
   content TEXT,
@@ -82,9 +86,65 @@ CREATE TABLE IF NOT EXISTS message_replies (
 
 CREATE TABLE IF NOT EXISTS equipment (
   id TEXT PRIMARY KEY,
-  client_id TEXT,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
   area TEXT,
-  name TEXT
+  name TEXT,
+  type TEXT DEFAULT 'Altro'
+);
+
+CREATE TABLE IF NOT EXISTS production_records (
+  id TEXT PRIMARY KEY,
+  recorded_date TEXT,
+  main_product_name TEXT,
+  packaging_date TEXT,
+  expiry_date TEXT,
+  lotto TEXT,
+  ingredients JSONB,
+  user_id TEXT,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS non_conformities (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
+  module_id TEXT,
+  date TEXT,
+  description TEXT,
+  item_name TEXT,
+  responsible_id TEXT,
+  status TEXT DEFAULT 'OPEN',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS accounting_payments (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
+  amount NUMERIC,
+  frequency TEXT,
+  due_date TEXT,
+  status TEXT,
+  paid_date TEXT,
+  notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS journal_entries (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
+  date TEXT,
+  description TEXT,
+  debit NUMERIC,
+  credit NUMERIC,
+  category TEXT
+);
+
+CREATE TABLE IF NOT EXISTS accounting_reminders (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
+  type TEXT,
+  message TEXT,
+  due_date TEXT,
+  priority TEXT,
+  dismissed BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS system_config (
@@ -107,30 +167,12 @@ ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
 ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE message_replies DISABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
+ALTER TABLE production_records DISABLE ROW LEVEL SECURITY;
+ALTER TABLE non_conformities DISABLE ROW LEVEL SECURITY;
+ALTER TABLE accounting_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE journal_entries DISABLE ROW LEVEL SECURITY;
+ALTER TABLE accounting_reminders DISABLE ROW LEVEL SECURITY;
 ALTER TABLE system_config DISABLE ROW LEVEL SECURITY;
-
--- Enable Cascade Deletes for consistency
-ALTER TABLE system_users 
-  DROP CONSTRAINT IF EXISTS system_users_client_id_fkey,
-  ADD CONSTRAINT system_users_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
-
-ALTER TABLE checklist_records 
-  DROP CONSTRAINT IF EXISTS checklist_records_client_id_fkey,
-  ADD CONSTRAINT checklist_records_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
-  DROP CONSTRAINT IF EXISTS checklist_records_user_id_fkey,
-  ADD CONSTRAINT checklist_records_user_id_fkey FOREIGN KEY (user_id) REFERENCES system_users(id) ON DELETE CASCADE;
-
-ALTER TABLE documents 
-  DROP CONSTRAINT IF EXISTS documents_client_id_fkey,
-  ADD CONSTRAINT documents_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
-
-ALTER TABLE messages 
-  DROP CONSTRAINT IF EXISTS messages_client_id_fkey,
-  ADD CONSTRAINT messages_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
-
-ALTER TABLE equipment 
-  DROP CONSTRAINT IF EXISTS equipment_client_id_fkey,
-  ADD CONSTRAINT equipment_client_id_fkey FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
 
 -- Insert a default dev admin if user table empty
 INSERT INTO system_users (id, name, email, role, active, username, password, avatar)

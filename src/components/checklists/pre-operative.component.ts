@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/app-state.service';
 import { ToastService } from '../../services/toast.service';
@@ -88,38 +88,37 @@ interface AreaChecklist {
     <!-- UI CONTENT (Hidden on print) -->
     <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
         
-        <!-- Premium Hero Header -->
-        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-8 rounded-3xl shadow-xl border border-emerald-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <i class="fa-solid fa-clipboard-check text-9xl text-white"></i>
-            </div>
+        <!-- Sleek Professional Dashboard Header -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
-            <div class="relative z-10 flex items-center gap-6">
-                <div class="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 text-white shrink-0">
-                    <i class="fa-solid fa-eye text-3xl"></i>
+            <div class="flex items-center gap-5 relative z-10">
+                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-eye text-2xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-3xl font-black text-white tracking-tight mb-1">Fase Pre-Operativa</h2>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white rounded-lg border border-white/30 text-[10px] font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-circle text-[10px] animate-pulse" [class.text-emerald-400]="isSubmitted()" [class.text-amber-400]="!isSubmitted()"></i>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Fase Pre-Operativa</h2>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-widest leading-none">
+                            <i class="fa-solid fa-circle text-[8px]" [class.text-emerald-500]="isSubmitted()" [class.text-amber-500]="!isSubmitted()"></i>
                             {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
                         </span>
-                        <span class="flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white rounded-lg border border-white/30 text-[10px] font-black uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name || 'Operatore' }}
+                        <span class="text-xs font-medium text-slate-400">|</span>
+                        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-check text-[10px]"></i> {{ state.currentUser()?.name || 'Operatore' }}
                         </span>
                     </div>
                 </div>
             </div>
 
             <div class="w-full md:w-auto relative z-10">
-                <div class="flex flex-col gap-2 min-w-[200px]">
-                    <div class="flex items-center justify-between mb-1">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-100 opacity-80">Avanzamento Ispezione</p>
-                        <span class="text-lg font-black text-white leading-none whitespace-nowrap">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex flex-col gap-2 min-w-[200px]">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Avanzamento</p>
+                        <span class="text-sm font-black text-slate-700 leading-none">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
                     </div>
-                    <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden border border-white/10 p-0.5 backdrop-blur-sm">
-                        <div class="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
+                    <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full transition-all duration-1000" 
                              [style.width.%]="progressPercentage()"></div>
                     </div>
                 </div>
@@ -759,7 +758,7 @@ export class PreOperationalChecklistComponent {
         effect(() => {
             this.state.filterDate();
             this.state.selectedEquipment(); // re-run when equipment changes
-            this.loadData();
+            untracked(() => this.loadData());
         }, { allowSignalWrites: true });
     }
 
@@ -793,7 +792,9 @@ export class PreOperationalChecklistComponent {
                 const existingIds = new Set(filteredSteps.map((s: any) => s.id));
                 const missingSteps = this.getInitialSteps(area.id).filter(d => !existingIds.has(d.id));
 
-                return { ...area, steps: [...filteredSteps, ...missingSteps], expanded: false };
+                const existingArea = this.areas().find(ea => ea.id === area.id);
+                const isExpanded = existingArea ? existingArea.expanded : (area.expanded ?? false);
+                return { ...area, steps: [...filteredSteps, ...missingSteps], expanded: isExpanded };
             });
 
             // Merge with current equipment (add new ones not yet in saved data)

@@ -56,8 +56,15 @@ import { ToastService } from '../services/toast.service';
                     </div>
 
                     <div class="p-5 space-y-4">
+                        @if (state.isAdmin() && !state.filterClientId()) {
+                            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col items-center text-center gap-2 animate-pulse">
+                                <i class="fa-solid fa-circle-exclamation text-amber-500 text-2xl"></i>
+                                <span class="text-xs font-bold text-amber-800">Seleziona prima un'AZIENDA o SEDE dal menu superiore per poter censire le attrezzature.</span>
+                            </div>
+                        }
+
                         <!-- Tipo Controllo -->
-                        <div>
+                        <div [class.opacity-40]="state.isAdmin() && !state.filterClientId()" [class.pointer-events-none]="state.isAdmin() && !state.filterClientId()">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tipologia Monitoraggio</label>
                             <div class="flex gap-2">
                                 @for (t of types; track t.value) {
@@ -86,7 +93,8 @@ import { ToastService } from '../services/toast.service';
                             <div class="relative">
                                 <select #equipSelector
                                         (change)="onAddFromSelect(equipSelector.value); equipSelector.value = ''"
-                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none cursor-pointer hover:border-indigo-200 shadow-sm">
+                                        [disabled]="state.isAdmin() && !state.filterClientId()"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none cursor-pointer hover:border-indigo-200 shadow-sm disabled:cursor-not-allowed">
                                     <option value="" disabled selected>Scegli dal catalogo...</option>
                                     @for (group of masterEquipmentList; track group.area) {
                                         <optgroup [label]="group.area">
@@ -118,10 +126,11 @@ import { ToastService } from '../services/toast.service';
                                            [(ngModel)]="customName"
                                            placeholder="Es. Abbattitore celle A"
                                            (keydown.enter)="onAddCustom()"
-                                           class="w-full pl-8 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white transition-all hover:border-indigo-200 shadow-sm placeholder:font-normal">
+                                           [disabled]="state.isAdmin() && !state.filterClientId()"
+                                           class="w-full pl-8 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white transition-all hover:border-indigo-200 shadow-sm placeholder:font-normal disabled:bg-slate-50 disabled:cursor-not-allowed">
                                 </div>
                                 <button (click)="onAddCustom()"
-                                        [disabled]="!customName.trim()"
+                                        [disabled]="!customName.trim() || (state.isAdmin() && !state.filterClientId())"
                                         class="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>

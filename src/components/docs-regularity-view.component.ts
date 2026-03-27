@@ -10,49 +10,37 @@ import { ToastService } from '../services/toast.service';
     template: `
     <div class="pb-24 animate-fade-in px-4 lg:px-8 space-y-8 max-w-7xl mx-auto">
         
-        <!-- Premium Hero Header -->
-        <div class="relative overflow-hidden rounded-[2.5rem] bg-indigo-950 p-8 lg:p-12 shadow-2xl border border-indigo-500/20">
-            <!-- Animated Background Elements -->
-            <div class="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-[80px] animate-pulse"></div>
-            <div class="absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-blue-500/10 blur-[60px]"></div>
+        <!-- Sleek Professional Dashboard Header -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div class="flex items-center gap-6">
-                    <div class="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-xl shadow-indigo-500/30 ring-2 ring-white/20">
-                        <i class="fa-solid fa-folder-tree text-4xl text-white"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-4xl lg:text-5xl font-black tracking-tight text-white mb-2">
-                            Regolarità <span class="text-indigo-400">Documentale</span>
-                        </h2>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <span class="flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-black text-indigo-100 border border-white/10 uppercase tracking-widest">
-                                <i class="fa-solid fa-check-double text-indigo-400"></i>
-                                Compliance HACCP
-                            </span>
-                            <span class="hidden md:flex items-center gap-2 rounded-full bg-indigo-500/20 px-4 py-1.5 text-xs font-black text-indigo-300 border border-indigo-500/30 uppercase tracking-widest">
-                                <i class="fa-solid fa-id-card"></i>
-                                Azienda: {{ getCompanyName() }}
-                            </span>
-                        </div>
-                    </div>
+            <div class="flex items-center gap-5 relative z-10">
+                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-folder-tree text-2xl"></i>
                 </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Regolarità Documentale</h2>
+                    <p class="text-sm font-medium text-slate-500 mt-1">Checklist di conformità e SCIA per l'unità: <span class="text-blue-600 font-bold">{{ getCompanyName() }}</span></p>
+                </div>
+            </div>
 
-                <div class="flex flex-col items-end gap-3">
-                    <div class="bg-black/20 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/5 shadow-inner flex items-center gap-6">
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Status Documenti</span>
-                            <span class="text-2xl font-black text-white tabular-nums">{{ uploadedCount() }} / {{ docDefinitions.length }}</span>
-                        </div>
-                        <div class="w-px h-10 bg-white/10"></div>
-                        <div class="flex flex-col items-end">
-                            <span class="block text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">Conformità</span>
-                            <span class="text-base font-black text-white uppercase">{{ uploadedCount() === docDefinitions.length ? 'Completo' : 'Incompleto' }}</span>
-                        </div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 relative z-10">
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex items-center gap-6">
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Status Documenti</p>
+                        <p class="text-sm font-bold text-slate-700 leading-none">{{ uploadedCount() }} / {{ docDefinitions.length }} caricati</p>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <div class="flex flex-col items-end">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Conformità</p>
+                        <span class="text-[10px] font-black px-2 py-0.5 rounded border" 
+                              [class]="uploadedCount() === docDefinitions.length ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'">
+                            {{ uploadedCount() === docDefinitions.length ? 'COMPLETA' : 'INCOMPLETA' }}
+                        </span>
                     </div>
                 </div>
             </div>
-        </div>
+        </div>v>
 
         <!-- Documents Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

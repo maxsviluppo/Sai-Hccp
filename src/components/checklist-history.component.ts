@@ -91,38 +91,43 @@ import { ToastService } from '../services/toast.service';
            </div>
         </div>
         }
-       
-       <!-- Sleek Professional Header -->
-       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden mb-6">
-         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+              <!-- Premium Header Banner -->
+       <div class="bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-700 p-8 rounded-3xl shadow-xl border border-indigo-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden mb-6">
+         <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <i class="fa-solid fa-clock-rotate-left text-9xl text-white"></i>
+         </div>
          
-         <div class="relative z-10 flex items-center gap-5">
-            <div class="h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-indigo-600 shrink-0">
-               <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
-            </div>
-            <div>
-               <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Archivio Storico</h2>
-               <p class="text-xs font-semibold text-slate-500 mt-1">Cronologia attività svolte</p>
-            </div>
-         </div>
-
-         <!-- Filter Module -->
-         <div class="relative group z-10">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fa-solid fa-filter text-slate-400"></i>
-            </div>
-            <select [value]="filterModule()" (change)="filterModule.set($any($event.target).value)" 
-                    class="pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none appearance-none font-bold cursor-pointer hover:bg-slate-100 transition-all min-w-[200px] shadow-sm">
-               <option value="all">Tutte le Liste</option>
-               <option value="pre-op-checklist">Fase Pre-operativa</option>
-               <option value="operative-checklist">Fase Operativa</option>
-               <option value="post-op-checklist">Fase Post-operativa</option>
-            </select>
-            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+         <div class="relative z-10">
+            <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
+               <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/30">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+               </span>
+               Archivio Storico
+            </h2>
+            <div class="flex items-center gap-4 mt-2">
+               <p class="text-indigo-100 text-sm font-medium ml-1">Cronologia e registro attività svolte</p>
             </div>
          </div>
-       </div>
+ 
+         <!-- Filter Module Glassmorphism -->
+         <div class="relative group z-10 w-full md:w-auto">
+            <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/20 flex flex-col justify-center min-w-[220px] shadow-lg">
+               <label class="text-[9px] text-indigo-100 font-black uppercase tracking-widest mb-0.5 leading-none">Tipo Lista</label>
+               <div class="relative">
+                  <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none text-white/50">
+                    <i class="fa-solid fa-filter text-[10px]"></i>
+                  </div>
+                  <select [value]="filterModule()" (change)="filterModule.set($any($event.target).value)" 
+                          class="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer border-none p-0 pl-5 w-full appearance-none">
+                     <option value="all" class="text-slate-800">Tutte le Liste</option>
+                     <option value="pre-op-checklist" class="text-slate-800">Fase Pre-operativa</option>
+                     <option value="operative-checklist" class="text-slate-800">Fase Operativa</option>
+                     <option value="post-op-checklist" class="text-slate-800">Fase Post-operativa</option>
+                  </select>
+               </div>
+            </div>
+         </div>
+       </div>iv>
 
        <!-- Table Container -->
        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

@@ -49,45 +49,64 @@ interface CheckItem {
             </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="divide-y divide-slate-100">
-                @for (check of checks(); track check.id) {
-                    <div class="p-8 flex flex-col lg:flex-row items-center justify-between gap-6 hover:bg-slate-50 transition-colors group relative overflow-hidden">
-                        <div class="flex items-center gap-6 w-full lg:w-auto">
-                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all border shadow-sm group-hover:scale-105"
-                                 [class.bg-rose-500]="check.checked" [class.border-rose-400]="check.checked" [class.text-white]="check.checked"
-                                 [class.bg-slate-50]="!check.checked" [class.border-slate-100]="!check.checked" [class.text-slate-300]="!check.checked">
-                                <i class="fa-solid text-2xl" [class.fa-file-circle-check]="check.checked" [class.fa-file-circle-plus]="!check.checked"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <h4 class="font-black text-slate-800 text-lg leading-tight uppercase tracking-tight">{{ check.label }}</h4>
-                                <div class="flex items-center gap-2 mt-1">
-                                   <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Procedura Operativa Standard</span>
-                                   @if (check.checked) {
-                                      <span class="h-1.5 w-1.5 rounded-full bg-rose-300"></span>
-                                      <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">ARCHIVIATO</span>
-                                   }
-                                </div>
-                            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @for (check of checks(); track check.id) {
+                <div class="bg-white p-8 rounded-[32px] shadow-sm border-2 transition-all duration-300 group flex flex-col justify-between h-full"
+                     [class.border-rose-100]="!check.checked" [class.border-rose-500]="check.checked"
+                     [class.bg-rose-50/30]="check.checked" [class.shadow-xl]="check.checked" [class.shadow-rose-100]="check.checked">
+                    
+                    <div class="flex items-start gap-5 mb-8">
+                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all border shadow-sm group-hover:scale-105 shrink-0"
+                             [class.bg-rose-500]="check.checked" [class.border-rose-400]="check.checked" [class.text-white]="check.checked"
+                             [class.bg-slate-50]="!check.checked" [class.border-slate-100]="!check.checked" [class.text-slate-300]="!check.checked">
+                            <i class="fa-solid text-2xl" [class.fa-file-circle-check]="check.checked" [class.fa-file-circle-plus]="!check.checked"></i>
                         </div>
-                        
-                        <div class="flex items-center gap-3 w-full lg:w-auto">
-                            <button (click)="downloadModule()" 
-                                    class="flex-1 lg:flex-none py-4 px-6 bg-white text-slate-600 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm group">
-                                <i class="fa-solid fa-download text-sm group-hover:-translate-y-0.5 transition-transform"></i> SCARICA MODULO
-                            </button>
-                            
-                            <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
-                                    class="flex-[2] lg:flex-none py-4 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-rose-200/50 group relative overflow-hidden flex items-center justify-center gap-2"
-                                    [class.bg-slate-100]="check.checked" [class.text-slate-400]="check.checked" [class.border-slate-200]="check.checked" [class.shadow-none]="check.checked"
-                                    [class.bg-rose-600]="!check.checked" [class.text-white]="!check.checked" [class.border-rose-500]="!check.checked" [class.hover:bg-rose-700]="!check.checked"
-                                    [class.opacity-50]="!canEdit()" [class.cursor-not-allowed]="!canEdit()">
-                                <i class="fa-solid text-sm" [class.fa-check-double]="check.checked" [class.fa-floppy-disk]="!check.checked"></i>
-                                {{ check.checked ? 'Archiviato' : 'Salva Registro' }}
-                            </button>
+                        <div class="min-w-0">
+                            <h4 class="font-black text-slate-800 text-lg leading-tight uppercase tracking-tight mb-1">{{ check.label }}</h4>
+                            <p class="text-[10px] font-black text-rose-500/60 uppercase tracking-widest">Procedura Operativa Standard</p>
                         </div>
                     </div>
-                }
+
+                    <div class="flex flex-col gap-3">
+                        <button (click)="downloadModule()" 
+                                class="w-full py-4 px-6 bg-slate-50 text-slate-600 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:border-rose-200 transition-all flex items-center justify-center gap-2 group">
+                            <i class="fa-solid fa-download text-sm group-hover:-translate-y-0.5 transition-transform"></i> SCARICA MODULO PDF
+                        </button>
+                        
+                        <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
+                                class="w-full py-5 px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95"
+                                [class.bg-white]="check.checked" [class.text-rose-600]="check.checked" [class.border-2]="check.checked" [class.border-rose-500]="check.checked"
+                                [class.bg-rose-600]="!check.checked" [class.text-white]="!check.checked" [class.hover:bg-rose-700]="!check.checked" [class.shadow-rose-200]="!check.checked"
+                                [class.opacity-50]="!canEdit()" [class.cursor-not-allowed]="!canEdit()">
+                            @if (check.checked) {
+                                <i class="fa-solid fa-check-double text-base"></i>
+                                <span>ARCHIVIATO CON SUCCESSO</span>
+                            } @else {
+                                <i class="fa-solid fa-floppy-disk text-base"></i>
+                                <span>SALVA REGISTRO ANOMALIA</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- Additional Help Card -->
+            <div class="bg-slate-900 p-8 rounded-[32px] text-white flex flex-col justify-between border border-white/10 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                    <i class="fa-solid fa-file-invoice text-7xl"></i>
+                </div>
+                <div class="relative z-10">
+                    <h4 class="text-xl font-black mb-2 italic">Supporto Qualità</h4>
+                    <p class="text-slate-400 text-xs font-medium leading-relaxed">
+                        Per anomalie non previste dai modelli standard, contattare il Responsabile Qualità per l'apertura di un fascicolo dedicato.
+                    </p>
+                </div>
+                <div class="pt-8 relative z-10">
+                    <div class="flex items-center gap-4 py-3 px-5 bg-white/5 rounded-2xl border border-white/10">
+                        <i class="fa-solid fa-phone-volume text-rose-500"></i>
+                        <span class="text-xs font-bold font-mono tracking-widest">HELP-LINE: 800 123 456</span>
+                    </div>
+                </div>
             </div>
         </div>
 

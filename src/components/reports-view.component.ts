@@ -23,25 +23,34 @@ interface CompanyReport {
   template: `
     <div class="space-y-6 pb-12 max-w-7xl mx-auto p-4">
       
-      <!-- Sleek Professional Header -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+      <!-- Premium Header Banner -->
+      <div class="bg-gradient-to-r from-slate-700 via-slate-800 to-blue-900 p-8 rounded-3xl shadow-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+          <i class="fa-solid fa-file-invoice text-9xl text-white"></i>
+        </div>
         
-        <div class="relative z-10 flex items-center gap-5">
-           <div class="h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0">
-             <i class="fa-solid fa-clipboard-list text-2xl"></i>
-           </div>
-           <div>
-             <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Report Controlli Giornalieri</h2>
-             <div class="flex items-center gap-3 mt-1 text-xs font-semibold text-slate-500">
-                @if (selectedClient()) {
-                  <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-widest font-bold text-[9px]">Azienda: {{ selectedClient()?.name }}</span>
-                } @else {
-                  <span>Aziende multiple</span>
-                }
-                <span class="flex items-center gap-1.5"><i class="fa-regular fa-calendar text-slate-400"></i> {{ state.filterDate() | date:'dd/MM/yyyy' }}</span>
-             </div>
-           </div>
+        <div class="relative z-10">
+          <h2 class="text-3xl font-black text-white flex items-center tracking-tight">
+            <span class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mr-4 shadow-lg border border-white/20">
+              <i class="fa-solid fa-file-chart-column"></i>
+            </span>
+            Report Controlli
+          </h2>
+          <div class="flex items-center gap-4 mt-2">
+            <p class="text-slate-300 text-sm font-medium ml-1">Analisi e riepilogo attività di autocontrollo</p>
+            @if (selectedClient()) {
+                <span class="bg-blue-500/20 text-blue-200 px-2 py-1 rounded border border-blue-400/30 font-black text-[9px] uppercase tracking-widest">
+                  {{ selectedClient()?.name }}
+                </span>
+            }
+          </div>
+        </div>
+        
+        <div class="relative z-10 flex flex-col gap-2">
+          <div class="flex items-center gap-3 bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-white">
+            <i class="fa-solid fa-calendar-days text-blue-400"></i>
+            <span class="font-bold">{{ state.filterDate() | date:'dd/MM/yyyy' }}</span>
+          </div>
         </div>
       </div>
 

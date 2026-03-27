@@ -12,7 +12,10 @@ CREATE TABLE IF NOT EXISTS clients (
   suspended BOOLEAN DEFAULT false,
   payment_balance_due BOOLEAN DEFAULT false,
   license_expiry_date TEXT,
-  logo TEXT
+  logo TEXT,
+  printer_model TEXT,
+  label_format TEXT,
+  printer_driver_url TEXT
 );
 
 -- System Users Table
@@ -71,12 +74,38 @@ CREATE TABLE IF NOT EXISTS messages (
   replies JSONB DEFAULT '[]'
 );
 
+-- Message Replies Table (Nested replies)
+CREATE TABLE IF NOT EXISTS message_replies (
+  id TEXT PRIMARY KEY,
+  message_id TEXT REFERENCES messages(id) ON DELETE CASCADE,
+  sender_id TEXT,
+  sender_name TEXT,
+  content TEXT,
+  attachment_url TEXT,
+  attachment_name TEXT,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Non-Conformities Table
+CREATE TABLE IF NOT EXISTS non_conformities (
+  id TEXT PRIMARY KEY,
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
+  module_id TEXT,
+  date TEXT,
+  description TEXT,
+  item_name TEXT,
+  responsible_id TEXT,
+  status TEXT DEFAULT 'OPEN',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Equipment Census
 CREATE TABLE IF NOT EXISTS equipment (
   id TEXT PRIMARY KEY,
-  client_id TEXT REFERENCES clients(id),
+  client_id TEXT REFERENCES clients(id) ON DELETE CASCADE,
   area TEXT,
-  name TEXT
+  name TEXT,
+  type TEXT DEFAULT 'Altro'
 );
 
 -- Production Records
@@ -124,30 +153,30 @@ CREATE TABLE IF NOT EXISTS accounting_reminders (
   dismissed BOOLEAN DEFAULT false
 );
 
+-- System Config Table
+CREATE TABLE IF NOT EXISTS system_config (
+  id TEXT PRIMARY KEY,
+  report_email TEXT,
+  master_data JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Disable RLS for development
 ALTER TABLE clients DISABLE ROW LEVEL SECURITY;
 ALTER TABLE system_users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE checklist_records DISABLE ROW LEVEL SECURITY;
 ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
 ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
+ALTER TABLE message_replies DISABLE ROW LEVEL SECURITY;
 ALTER TABLE equipment DISABLE ROW LEVEL SECURITY;
 ALTER TABLE production_records DISABLE ROW LEVEL SECURITY;
 ALTER TABLE accounting_payments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE journal_entries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE accounting_reminders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE non_conformities DISABLE ROW LEVEL SECURITY;
+ALTER TABLE system_config DISABLE ROW LEVEL SECURITY;
 
--- TRUNCATE TABLES (Clear all test data)
--- TRUNCATE TABLE clients CASCADE;
--- TRUNCATE TABLE system_users CASCADE;
--- TRUNCATE TABLE checklist_records CASCADE;
--- TRUNCATE TABLE documents CASCADE;
--- TRUNCATE TABLE messages CASCADE;
--- TRUNCATE TABLE equipment CASCADE;
--- TRUNCATE TABLE production_records CASCADE;
--- TRUNCATE TABLE accounting_payments CASCADE;
--- TRUNCATE TABLE journal_entries CASCADE;
--- TRUNCATE TABLE accounting_reminders CASCADE;
-
--- Insert ONLY the essential developer admin
--- INSERT INTO system_users (id, name, role, active, avatar, username, password)
--- VALUES ('dev-admin', 'Sviluppatore (Admin)', 'ADMIN', true, 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff', 'dev', 'dev');
+-- Initialize system config if missing
+INSERT INTO system_config (id, report_email, master_data)
+SELECT 'master', 'amministrazione@haccppro.it', '{"name": "HACCP PRO - Sede Centrale", "piva": "01234567890", "address": "Via dell''Innovazione 10, Milano (MI)", "pec": "haccppro@legalmail.it", "sdi": "M5UXCR1"}'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE id = 'master');

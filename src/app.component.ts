@@ -30,6 +30,7 @@ import { PestControlViewComponent } from './components/pest-control-view.compone
 import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
 import { AllergensConfigViewComponent } from './components/allergens-config-view.component';
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
+import { PrinterConfigViewComponent } from './components/printer-config-view.component';
 
 @Component({
   selector: 'app-root',
@@ -63,7 +64,8 @@ import { CleaningProductsViewComponent } from './components/cleaning-products-vi
     PestControlViewComponent,
     StaffHygieneViewComponent,
     AllergensConfigViewComponent,
-    CleaningProductsViewComponent
+    CleaningProductsViewComponent,
+    PrinterConfigViewComponent
   ],
   templateUrl: './app.component.html'
 })
@@ -76,9 +78,9 @@ export class AppComponent {
 
   hasAccessToCategory(category: string): boolean {
     if (this.state.isAdmin()) {
-      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication', 'documentation'].includes(category);
+      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication', 'documentation', 'hardware'].includes(category);
     }
-    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication', 'documentation'].includes(category);
+    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication', 'documentation', 'hardware'].includes(category);
   }
   loginMode = signal<'SELECT' | 'ADMIN' | 'OPERATOR'>('SELECT');
   loginUsername = signal('');
@@ -130,14 +132,15 @@ export class AppComponent {
 
   getCategoryLabel(category: string): string {
     const labels: Record<string, string> = {
-      'operations': 'Registri Operativi',
+      'operations': 'Fasi Operative',
       'monitoring': 'Monitoraggio Operatori',
       'history': 'Archivio Storico',
       'production': 'Rintracciabilità',
       'config': 'Configurazione',
       'communication': 'Comunicazioni',
       'documentation': 'Archivio Documentale',
-      'dashboard': 'Panoramica'
+      'dashboard': 'Panoramica',
+      'hardware': 'Dotazioni & Periferiche'
     };
     return labels[category] || category;
   }

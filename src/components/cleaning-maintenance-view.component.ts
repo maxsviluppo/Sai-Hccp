@@ -134,21 +134,7 @@ interface CheckItem {
                             </div>
                         </div>
 
-                        <!-- Anomaly Details -->
-                        @if (check.status === 'issue') {
-                            <div class="px-3 md:px-4 pb-4 pt-1 animate-slide-down ml-10">
-                                <div class="relative bg-rose-50/50 rounded-xl p-3 border border-rose-100">
-                                    <textarea [(ngModel)]="check.note" 
-                                              (ngModelChange)="onNoteUpdate()"
-                                              [disabled]="!canEdit()"
-                                              placeholder="Descrivi i dettagli dell'anomalia riscontrata per un tempestivo intervento di manutenzione..."
-                                              class="w-full bg-transparent border-0 text-xs md:text-sm font-medium text-slate-800 focus:ring-0 p-0 resize-y min-h-[60px] placeholder-slate-400"></textarea>
-                                    <div class="absolute top-3 right-3 text-rose-300">
-                                        <i class="fa-solid fa-pen-nib text-sm"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        }
+                        </div>
                     </div>
                 } @empty {
                     <div class="p-12 text-center opacity-60">
@@ -253,6 +239,60 @@ interface CheckItem {
                 </div>
             </div>
         }
+
+        <!-- ANOMALY REPORTING MODAL -->
+        @if (isAnomalyModalOpen()) {
+            <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeAnomalyModal()"></div>
+                <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+                    
+                    <!-- Header -->
+                    <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center">
+                                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black uppercase tracking-tight leading-none mb-1">Segnalazione Anomalia</h3>
+                                <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest opacity-80">Piano Sanificazione</p>
+                            </div>
+                        </div>
+                        <button (click)="closeAnomalyModal()" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-8 space-y-6 bg-slate-50/50">
+                        <div class="p-4 bg-white rounded-2xl border border-red-100 shadow-sm">
+                            <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info"></i> Controllo Selezionato
+                            </h4>
+                            <p class="text-lg font-bold text-slate-700 leading-tight">
+                                {{ currentAnomalyStep()?.label }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Dettaglio Anomalia / Azione Correttiva</label>
+                            <textarea #anomalyText
+                                      placeholder="Descrivi l'anomalia riscontrata e l'eventuale azione correttiva immediata intrapresa..."
+                                      class="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-base font-medium text-slate-700 transition-all shadow-sm bg-white resize-none"></textarea>
+                        </div>
+
+                        <div class="flex gap-4 pt-2">
+                            <button (click)="closeAnomalyModal()"
+                                    class="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                                ANNULLA
+                            </button>
+                            <button (click)="confirmAnomaly(anomalyText.value)"
+                                    class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95">
+                                REGISTRA NON CONFORMITÀ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
     `,
     styles: [`
@@ -263,7 +303,7 @@ interface CheckItem {
     .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .animate-slide-down { animation: slideDown 0.3s ease-out; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); opacity: 1; max-height: 1000px; } }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -274,8 +314,11 @@ export class CleaningMaintenanceViewComponent {
     toast = inject(ToastService);
     showStandardInfo = signal(false);
     moduleId = 'cleaning-maintenance';
-
     checks = signal<CheckItem[]>([]);
+
+    // Anomaly Modal State
+    isAnomalyModalOpen = signal(false);
+    currentAnomalyStep = signal<{id: string, label: string} | null>(null);
 
     completedCount = computed<number>(() => {
         return this.checks().filter((c: CheckItem) => c.status !== 'pending').length;
@@ -341,17 +384,52 @@ export class CleaningMaintenanceViewComponent {
     setStatus(id: string, status: 'ok' | 'issue') {
         if (!this.canEdit()) return;
 
+        if (status === 'issue') {
+            const check = this.checks().find(c => c.id === id);
+            if (check) {
+                this.currentAnomalyStep.set({ id, label: check.label });
+                this.isAnomalyModalOpen.set(true);
+            }
+            return;
+        }
+
         this.checks.update(items => items.map(item => {
             if (item.id === id) {
-                // If clicking the same status, toggle back to pending? 
-                // Or just keep it. Let's toggle to pending if already selected.
                 const newStatus = item.status === status ? 'pending' : status;
-                return { ...item, status: newStatus };
+                return { ...item, status: newStatus, note: undefined };
             }
             return item;
         }));
 
         this.save();
+    }
+
+    closeAnomalyModal() {
+        this.isAnomalyModalOpen.set(false);
+        this.currentAnomalyStep.set(null);
+    }
+
+    confirmAnomaly(note: string) {
+        const anomaly = this.currentAnomalyStep();
+        if (!anomaly) return;
+
+        this.checks.update(items => items.map(item => {
+            if (item.id === anomaly.id) {
+                return { ...item, status: 'issue', note };
+            }
+            return item;
+        }));
+
+        this.save();
+        this.state.saveNonConformity({
+            id: Math.random().toString(36).substring(2, 9),
+            moduleId: this.moduleId,
+            date: this.state.filterDate(),
+            description: note || 'Anomalia rilevata durante il controllo sanificazione',
+            itemName: anomaly.label
+        });
+
+        this.closeAnomalyModal();
     }
 
     onFinalSubmit() {

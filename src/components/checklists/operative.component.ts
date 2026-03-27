@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../../services/app-state.service';
@@ -88,50 +88,42 @@ interface ChecklistItem {
         </div>
 
         <!-- UI CONTENT (Hidden on print) -->
-        <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">            <!-- Premium Hero Header -->
-            <div class="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 p-8 rounded-3xl shadow-xl border border-indigo-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                    <i class="fa-solid fa-briefcase text-9xl text-white"></i>
+        <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-8">        <!-- Sleek Professional Dashboard Header -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+            
+            <div class="flex items-center gap-5 relative z-10">
+                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-briefcase text-2xl"></i>
                 </div>
-                
-                <div class="relative z-10 flex items-center gap-6">
-                    <div class="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 text-white shrink-0">
-                        <i class="fa-solid fa-briefcase text-3xl"></i>
-                    </div>
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2 mb-1">
-                            <h2 class="text-3xl font-black text-white tracking-tight">Fase Operativa</h2>
-                            <button (click)="state.setModule('production-log')" 
-                                    class="px-3 py-1 bg-white/20 hover:bg-white text-white hover:text-indigo-700 rounded text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 border border-white/30 backdrop-blur-md">
-                                <i class="fa-solid fa-barcode"></i> Rintracciabilità
-                            </button>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <span class="flex items-center gap-1.5 text-[10px] font-black text-indigo-100 uppercase tracking-widest">
-                                <i class="fa-solid fa-circle text-[10px] text-amber-400 animate-pulse"></i>
-                                Monitoraggio Attivo
-                            </span>
-                            <span class="w-1 h-1 rounded-full bg-white/30"></span>
-                            <span class="flex items-center gap-1.5 text-[10px] font-black text-white uppercase tracking-widest">
-                                <i class="fa-solid fa-user-check"></i> {{ state.currentUser()?.name }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full md:w-auto relative z-10">
-                    <div class="flex flex-col gap-2 min-w-[200px]">
-                        <div class="flex items-center justify-between mb-1">
-                            <p class="text-[10px] font-black uppercase tracking-widest text-indigo-100 opacity-80">Completamento</p>
-                            <span class="text-lg font-black text-white leading-none whitespace-nowrap">{{ completedCount() }}/{{ items().length }}</span>
-                        </div>
-                        <div class="w-full h-2 bg-white/20 rounded-full overflow-hidden border border-white/10 p-0.5 backdrop-blur-sm">
-                            <div class="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                                 [style.width.%]="progressPercentage()"></div>
-                        </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Fase Operativa</h2>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span class="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                            <i class="fa-solid fa-circle text-[8px] text-amber-500 animate-pulse"></i>
+                            Monitoraggio Attivo
+                        </span>
+                        <span class="text-xs font-medium text-slate-400">|</span>
+                        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-check text-[10px]"></i> {{ state.currentUser()?.name }}
+                        </span>
                     </div>
                 </div>
             </div>
+
+            <div class="w-full md:w-auto relative z-10">
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex flex-col gap-2 min-w-[200px]">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Completamento</p>
+                        <span class="text-sm font-black text-slate-700 leading-none">{{ completedCount() }}/{{ items().length }}</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
+                             [style.width.%]="progressPercentage()"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 <!-- Left Column: Informative Sidebar -->
@@ -408,7 +400,7 @@ export class OperativeChecklistComponent {
 
       effect(() => {
          this.state.filterDate();
-         this.loadByDate();
+         untracked(() => this.loadByDate());
       }, { allowSignalWrites: true });
    }
 
@@ -475,6 +467,7 @@ export class OperativeChecklistComponent {
          ...map,
          [id]: { ...map[id], status, note: status === 'ok' ? undefined : map[id]?.note }
       }));
+      this.autoSave();
    }
 
    updateTemperature(id: string, temperature: string) {
@@ -482,14 +475,21 @@ export class OperativeChecklistComponent {
          ...map,
          [id]: { ...map[id], temperature, status: map[id]?.status || 'ok' }
       }));
+      this.autoSave();
    }
 
    setAllOk() {
       const newMap: Record<string, any> = {};
-      this.items().forEach(item => {
-         newMap[item.id] = { ...this.statusMap()[item.id], status: 'ok' };
+      this.items().forEach(i => {
+         const current = this.statusMap()[i.id];
+         newMap[i.id] = { 
+            status: 'ok', 
+            temperature: current?.temperature,
+            note: undefined
+         };
       });
       this.statusMap.set(newMap);
+      this.autoSave();
       this.toast.info('HACCP OK', 'Tutte le voci impostate come conformi.');
    }
 
@@ -510,6 +510,7 @@ export class OperativeChecklistComponent {
             ...map,
             [id]: { ...map[id], status: 'issue', note: note || 'Anomalia riscontrata' }
          }));
+         this.autoSave();
 
          // Segnalazione amministratore
          this.state.saveNonConformity({
@@ -524,6 +525,21 @@ export class OperativeChecklistComponent {
       }
       this.closeModal();
    }
+
+    private autoSave() {
+        this.state.saveRecord('operative-checklist', {
+            items: this.items().map(i => ({
+                ...i,
+                temperature: this.statusMap()[i.id]?.temperature
+            })),
+            counts: {
+                frigo: this.frigoCount(),
+                congelatore: this.congelatoreCount(),
+                pozzetto: this.pozzettoCount()
+            },
+            timestamp: new Date()
+        });
+    }
 
    submitChecklist() {
       const recordId = this.currentRecordId() || Math.random().toString(36).substring(2, 11);
