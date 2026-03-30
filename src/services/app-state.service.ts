@@ -1804,6 +1804,51 @@ export class AppStateService {
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0] || null;
   });
 
+  readonly recentPaidPayment = computed(() => {
+    const user = this.currentUser();
+    if (!user || !user.clientId) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Check for settlements in payments table
+    const fromPayments = this.payments().find(p => {
+      if (p.clientId !== user.clientId || p.status !== 'paid' || !p.paidDate) return false;
+      
+      const paidDate = new Date(p.paidDate);
+      paidDate.setHours(0,0,0,0);
+      const diffTime = Math.abs(today.getTime() - paidDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 3;
+    });
+
+    if (fromPayments) return fromPayments;
+
+    // 2. Check for recent "payment" entries in Journal (in case they didn't link it to a specific payment)
+    const fromJournal = this.journalEntries().find(j => {
+      if (j.clientId !== user.clientId || j.category !== 'payment' || j.credit <= 0) return false;
+      const entryDate = new Date(j.date);
+      entryDate.setHours(0,0,0,0);
+      const diffTime = Math.abs(today.getTime() - entryDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 3;
+    });
+
+    if (fromJournal) {
+      return { 
+        id: fromJournal.id, 
+        clientId: fromJournal.clientId, 
+        amount: fromJournal.credit, 
+        status: 'paid', 
+        paidDate: fromJournal.date,
+        dueDate: fromJournal.date,
+        frequency: 'once'
+      } as Payment;
+    }
+
+    return null;
+  });
+
   getDaysRemaining(dateStr: string): number {
     if (!dateStr) return 0;
     const today = new Date();

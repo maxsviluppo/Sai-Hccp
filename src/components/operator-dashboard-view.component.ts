@@ -35,60 +35,122 @@ import { AppStateService } from '../services/app-state.service';
            </div>
         </div>
       </div>
-      <!-- Highly Visible Payment Alert Box -->
-      @if (state.companyConfig().paymentBalanceDue || state.latestActivePayment()) {
-        <div [class]="'rounded-3xl p-6 shadow-xl animate-fade-in mb-6 relative overflow-hidden group border-2 transition-all duration-500 ' + 
-            (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 
-            'bg-gradient-to-br from-red-600 to-red-800 border-red-400 text-white shake-card' : 
-            'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 text-slate-900')">
+      <!-- Highly Visible Payment Banner (Premium App Style) -->
+      @if (state.recentPaidPayment() || state.companyConfig().paymentBalanceDue || state.latestActivePayment()) {
+        <!-- Logic to determine theme -->
+        @let isPaid = state.recentPaidPayment();
+        @let activePay = state.latestActivePayment();
+        @let urgency = activePay ? state.getDaysRemaining(activePay.dueDate) : 100;
+        
+        <!-- Theme determination: 'SUCCESS' (Emerald) | 'URGENT' (Red/Dark) | 'NOTICE' (Amber) -->
+        @let theme = isPaid ? 'SUCCESS' : (activePay && urgency <= 5 ? 'URGENT' : 'NOTICE');
+
+        <div [class]="'rounded-[2.5rem] p-8 shadow-2xl animate-fade-in mb-8 relative overflow-hidden group border transition-all duration-700 ' + 
+            (theme === 'SUCCESS' ? 'bg-white border-emerald-200 text-slate-900' : 
+             theme === 'URGENT' ? 'bg-slate-900 border-red-500/50 text-white shadow-red-500/10' : 
+             'bg-white border-amber-200 text-slate-900')">
           
-          <div class="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+          <!-- Animated Background Elements based on Theme -->
+          <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div [class]="'absolute -right-20 -top-20 w-80 h-80 rounded-full blur-[100px] opacity-40 transition-colors duration-700 ' + 
+                (theme === 'SUCCESS' ? 'bg-emerald-400' : theme === 'URGENT' ? 'bg-red-600' : 'bg-amber-400')"></div>
+            <div [class]="'absolute -left-20 -bottom-20 w-80 h-80 rounded-full blur-[100px] opacity-20 transition-colors duration-700 ' + 
+                (theme === 'SUCCESS' ? 'bg-teal-300' : theme === 'URGENT' ? 'bg-rose-500' : 'bg-orange-300')"></div>
+          </div>
           
-          <div class="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-            <div class="flex items-center gap-6">
-              <div [class]="'h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform animate-bounce ' + 
-                  (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white text-red-600' : 'bg-amber-500 text-white')">
-                <i class="fa-solid fa-credit-card text-2xl"></i>
+          <div class="flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-8 text-center md:text-left">
+              <!-- Iconic Status Symbol -->
+              <div [class]="'h-20 w-20 rounded-[2rem] flex items-center justify-center shadow-2xl shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ' + 
+                  (theme === 'SUCCESS' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/40' : 
+                   theme === 'URGENT' ? 'bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-red-500/40' : 
+                   'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-amber-500/40')">
+                <i [class]="'fa-solid text-3xl ' + (theme === 'SUCCESS' ? 'fa-circle-check' : (theme === 'URGENT' ? 'fa-triangle-exclamation' : 'fa-credit-card'))"></i>
               </div>
-              <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                  <span [class]="'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter animate-pulse ' + 
-                      (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white text-red-700' : 'bg-red-600 text-white')">
-                    @if (state.latestActivePayment()) {
-                      Importo: {{ state.latestActivePayment()?.amount | currency:'EUR' }}
-                    } @else {
-                      Scadenza Imminente
+
+              <div class="space-y-4">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                    <!-- Dynamic Badge -->
+                    <span [class]="'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm ' + 
+                        (theme === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 
+                         theme === 'URGENT' ? 'bg-red-500 text-white' : 'bg-amber-100 text-amber-700')">
+                      @if (theme === 'SUCCESS') {
+                        CONFERMATO: {{ isPaid?.amount | currency:'EUR' }}
+                      } @else if (activePay) {
+                         ATTESA: {{ activePay.amount | currency:'EUR' }}
+                      } @else {
+                        PAGAMENTO SOSPESO
+                      }
+                    </span>
+                    @if (theme === 'URGENT') {
+                      <span class="px-3 py-1 rounded-full bg-white/10 text-red-100 border border-red-500/30 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
+                        Urgente
+                      </span>
                     }
-                  </span>
-                  <h4 class="text-xl font-black tracking-tight" [class.text-white]="state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5">
-                    Avviso di Scadenza Pagamento
-                  </h4>
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
-                  <div [class]="'flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl ' + 
-                      (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-red-900/40 text-red-50 border border-red-400/30' : 'bg-red-100 text-red-700')">
-                    <i class="fa-solid fa-calendar-day"></i>
-                    Scadenza: {{ state.latestActivePayment()?.dueDate || state.companyConfig().licenseExpiryDate || 'In attesa' }}
                   </div>
-                  @if (state.latestActivePayment()) {
-                    <div [class]="'text-xs font-bold px-3 py-1.5 rounded-xl ' + 
-                        (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800')">
-                      <i class="fa-solid fa-clock"></i>
-                      Mancano {{ state.getDaysRemaining(state.latestActivePayment()!.dueDate) }} giorni
+                  
+                  <h4 class="text-3xl font-black tracking-tight leading-tight mt-2">
+                    @if (theme === 'SUCCESS') {
+                      Pagamento <span class="text-emerald-500">Effettuato</span> con Successo
+                    } @else if (theme === 'URGENT') {
+                      Pagamento <span class="text-red-500">Oltre Scadenza</span>
+                    } @else {
+                      Abbonamento in <span class="text-amber-500">Scadenza</span>
+                    }
+                  </h4>
+                  
+                  <p [class]="'text-sm font-medium leading-relaxed max-w-xl ' + (theme === 'URGENT' ? 'text-slate-400' : 'text-slate-600')">
+                    @if (theme === 'SUCCESS') {
+                      Il tuo pagamento è stato registrato correttamente dalla sede centrale. Il servizio è attivo e non sono richieste ulteriori azioni.
+                    } @else if (theme === 'URGENT') {
+                      I termini di pagamento sono scaduti. Ti preghiamo di regolarizzare immediatamente per evitare la sospensione dei servizi e delle attività di controllo.
+                    } @else {
+                      Il tuo servizio scadrà a breve. Rinnova ora per garantire la continuità dei tuoi registri HACCP.
+                    }
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <!-- Info Chips -->
+                  <div [class]="'flex items-center gap-2 text-[11px] font-black px-4 py-2 rounded-2xl border backdrop-blur-md ' + 
+                      (theme === 'URGENT' ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600')">
+                    <i [class]="'fa-solid opacity-70 ' + (theme === 'SUCCESS' ? 'fa-calendar-check' : 'fa-calendar-day')"></i>
+                    @if (theme === 'SUCCESS') {
+                      PAGATO IN DATA: {{ isPaid?.paidDate | date:'dd/MM/yyyy' }}
+                    } @else {
+                      SCADE IL: {{ activePay?.dueDate || state.companyConfig().licenseExpiryDate || '---' }}
+                    }
+                  </div>
+                  
+                  @if (activePay && theme !== 'SUCCESS') {
+                    <div [class]="'flex items-center gap-2 text-[11px] font-black px-4 py-2 rounded-2xl ' + 
+                        (theme === 'URGENT' ? 'bg-red-500/10 text-red-300 border border-red-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-100')">
+                      <i class="fa-solid fa-hourglass-half"></i>
+                      {{ urgency }} GIORNI RIMANENTI
                     </div>
-                  }
-                  @if (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5) {
-                    <div class="text-xs font-black uppercase tracking-widest text-red-200 animate-pulse">AZIONE RICHIESTA IMMEDIATA</div>
                   }
                 </div>
               </div>
             </div>
             
-            <button [class]="'px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl transition-all flex items-center gap-3 group/btn whitespace-nowrap hover:scale-105 active:scale-95 ' + 
-                (state.getDaysRemaining(state.latestActivePayment()?.dueDate || '') <= 5 ? 'bg-white text-red-700 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-slate-800')">
-              Rinnova Ora
-              <i class="fa-solid fa-arrow-right text-xs group-hover/btn:translate-x-1 transition-transform"></i>
-            </button>
+            <div class="flex flex-col items-center gap-3 shrink-0">
+              @if (theme === 'SUCCESS') {
+                <div class="h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center animate-bounce shadow-inner">
+                  <i class="fa-solid fa-thumbs-up text-2xl"></i>
+                </div>
+                <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">OK! Servizio Attivo</p>
+              } @else {
+                <button [class]="'px-10 py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center gap-4 group/btn hover:scale-105 active:scale-95 ' + 
+                    (theme === 'URGENT' ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-red-600/30' : 'bg-slate-900 text-white hover:bg-black')">
+                  Procedi al Rinnovo
+                  <div class="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center group-hover/btn:translate-x-1 transition-transform">
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                  </div>
+                </button>
+                <p class="text-[10px] font-bold opacity-40 uppercase tracking-tighter">HACCP PRO - Transazione sicura</p>
+              }
+            </div>
           </div>
         </div>
       }
