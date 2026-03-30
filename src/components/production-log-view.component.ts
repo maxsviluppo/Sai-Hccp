@@ -16,29 +16,30 @@ import { FormsModule } from '@angular/forms';
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
             <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
-            <div class="flex items-center gap-5 relative z-10">
-                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+            <div class="flex items-center gap-5 relative z-10 w-full md:w-auto">
+                <div class="h-14 w-14 shrink-0 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
                     <i class="fa-solid fa-barcode text-2xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Rintracciabilità Prodotti</h2>
-                    <p class="text-sm font-medium text-slate-500 mt-1">Registro produzione e monitoraggio lotti</p>
+                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Rintracciabilità Prodotti</h2>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">I prodotti restano in memoria per max 60 giorni o fino all'eliminazione.</p>
                 </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 relative z-10">
-                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex items-center gap-6">
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Registri</p>
-                        <p class="text-sm font-bold text-slate-700 leading-none">{{ filteredRecords().length }} Schede</p>
-                    </div>
-                    <div class="w-px h-8 bg-slate-200"></div>
-                    <div class="flex flex-col items-end">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Data Filtro</p>
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
-                            {{ state.filterDate() | date:'dd/MM/yyyy' }}
-                        </span>
-                    </div>
+            <!-- Search Filters Header -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto relative z-10">
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca lotto o nome..." 
+                           class="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-50 bg-white placeholder-slate-400 shadow-sm transition-all focus:bg-white">
+                </div>
+                 
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event)" 
+                           class="w-full sm:w-auto px-2 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 shadow-sm bg-white text-slate-600 transition-all">
+                    <span class="text-slate-400 text-xs font-bold">-</span>
+                    <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event)" 
+                           class="w-full sm:w-auto px-2 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 shadow-sm bg-white text-slate-600 transition-all">
                 </div>
             </div>
         </div>
@@ -240,12 +241,11 @@ import { FormsModule } from '@angular/forms';
                 <!-- Filter & Actions -->
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <div class="flex items-center gap-4 w-full md:w-auto">
-                        <div class="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-lg border border-slate-200 hover:border-teal-400 transition-colors cursor-pointer w-full md:w-auto">
-                            <i class="fa-solid fa-calendar-alt text-teal-600"></i>
+                        <div class="bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 w-full md:w-auto inline-flex items-center gap-3">
+                            <i class="fa-solid fa-database text-teal-600 opacity-60"></i>
                             <div class="flex flex-col">
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Data Riferimento</span>
-                                <input type="date" [value]="state.filterDate()" (change)="state.filterDate.set($any($event.target).value)" 
-                                       class="bg-transparent border-none p-0 outline-none text-xs md:text-sm font-bold text-slate-800">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Totale Esplorato</span>
+                                <span class="text-xs md:text-sm font-bold text-slate-800">{{ filteredRecords().length }} Schede in Memoria</span>
                             </div>
                         </div>
                     </div>
@@ -457,13 +457,44 @@ export class ProductionLogViewComponent {
         lotto: ''
     };
 
+    searchQuery = signal('');
+    dateFrom = signal('');
+    dateTo = signal('');
+
     filteredRecords = computed(() => {
-        const selDate = this.state.filterDate(); // Format: YYYY-MM-DD
         const targetClientId = this.state.activeTargetClientId();
-        return this.state.productionRecords().filter(r =>
-            (targetClientId ? r.clientId === targetClientId : true) && 
-            r.recordedDate.startsWith(selDate)
-        ).sort((a, b) => b.recordedDate.localeCompare(a.recordedDate));
+        let records = this.state.productionRecords().filter(r =>
+            targetClientId ? r.clientId === targetClientId : true
+        );
+        
+        // 60-day auto-filtering limit
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        records = records.filter(r => {
+            const rDate = new Date(r.recordedDate.split('T')[0]);
+            return rDate >= sixtyDaysAgo;
+        });
+
+        const search = this.searchQuery().toLowerCase();
+        if (search) {
+            records = records.filter(r => 
+                (r.mainProductName && r.mainProductName.toLowerCase().includes(search)) || 
+                (r.lotto && r.lotto.toLowerCase().includes(search))
+            );
+        }
+
+        const dFrom = this.dateFrom();
+        if (dFrom) {
+            records = records.filter(r => r.recordedDate.split('T')[0] >= dFrom);
+        }
+
+        const dTo = this.dateTo();
+        if (dTo) {
+            records = records.filter(r => r.recordedDate.split('T')[0] <= dTo);
+        }
+
+        return records.sort((a, b) => b.recordedDate.localeCompare(a.recordedDate));
     });
 
     startNew() {
@@ -617,13 +648,54 @@ export class ProductionLogViewComponent {
     }
 
     printLabel(rec: ProductionRecord) {
-        this.toast.info('Stampa', `Invio etichetta ${rec.lotto} alla stampante Brother...`);
-        // We'll simulate the print call here. In a real scenario, this could trigger a browser domestic print 
-        // with a specifically styled print stylesheet or use the thermal print drivers if integrated via browser (e.g. print.js).
+        this.toast.info('Stampa', `Preparazione etichetta lotto ${rec.lotto}...`);
+
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @page { margin: 0; }
+            @media print {
+                /* Nascondi tutto il body per pulire i bordi */
+                body {
+                    visibility: hidden !important;
+                    background-color: white !important;
+                }
+                
+                /* L'etichetta prende esattamente lo spazio del formato selezionato dal driver stampante */
+                #print-label-sticker {
+                    visibility: visible !important;
+                    position: fixed !important;
+                    left: 0 !important;
+                    top: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    margin: 0 !important;
+                    padding: 2mm !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    background-color: white !important;
+                    transform: none !important;
+                    overflow: hidden !important;
+                    z-index: 999999 !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    page-break-after: always;
+                }
+
+                #print-label-sticker * {
+                    visibility: visible !important;
+                    color: black !important;
+                }
+                
+                .bg-slate-900\\/60 { display: none !important; }
+            }
+        `;
+        document.head.appendChild(style);
+
         setTimeout(() => {
             window.print();
+            document.head.removeChild(style);
             this.isLabelPreviewOpen.set(false);
-            this.toast.success('OK', 'Etichetta inviata con successo.');
-        }, 1000);
+            this.toast.success('OK', 'Etichetta inviata alla stampante.');
+        }, 500);
     }
 }

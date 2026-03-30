@@ -1740,6 +1740,39 @@ export class AppStateService {
     }
   }
 
+  async deletePayment(id: string) {
+    try {
+      const { error } = await supabase.from('accounting_payments').delete().eq('id', id);
+      if (error) throw error;
+      this.refreshAllData();
+    } catch (e) {
+      console.error('Error deleting payment:', e);
+      this.toastService.error('Errore Database', 'Impossibile eliminare il pagamento.');
+    }
+  }
+
+  async deleteJournalEntry(id: string) {
+    try {
+      const { error } = await supabase.from('journal_entries').delete().eq('id', id);
+      if (error) throw error;
+      this.refreshAllData();
+    } catch (e) {
+      console.error('Error deleting journal entry:', e);
+      this.toastService.error('Errore Database', 'Impossibile eliminare la voce dalla prima nota.');
+    }
+  }
+
+  async deleteReminder(id: string) {
+    try {
+      const { error } = await supabase.from('accounting_reminders').delete().eq('id', id);
+      if (error) throw error;
+      this.refreshAllData();
+    } catch (e) {
+      console.error('Error deleting reminder:', e);
+      this.toastService.error('Errore Database', 'Impossibile eliminare il promemoria.');
+    }
+  }
+
   async saveNonConformity(nc: { 
     id: string, 
     moduleId: string, 

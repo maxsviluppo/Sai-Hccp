@@ -268,18 +268,32 @@ import { ToastService } from '../services/toast.service';
                           <span class="text-[9px] bg-slate-100 text-slate-500 uppercase font-black px-2 py-1 rounded hidden md:inline-block border border-slate-200">
                             {{ getFrequencyLabel(payment.frequency) }}
                           </span>
-                        @if (payment.status !== 'paid') {
-                          <button (click)="markAsPaid(payment.id)" 
-                                  class="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-emerald-50 text-emerald-600 rounded text-xs font-bold transition-colors shadow-sm whitespace-nowrap group-hover:border-emerald-200">
-                            <i class="fa-solid fa-check mr-1.5"></i> Saldato
+                        
+                        <div class="flex items-center gap-1">
+                          @if (payment.status !== 'paid') {
+                            <button (click)="markAsPaid(payment.id)" 
+                                    class="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
+                              <i class="fa-solid fa-check"></i> <span class="hidden lg:inline">Saldato</span>
+                            </button>
+                          }
+                          
+                          <button (click)="openEditPaymentModal(payment)" 
+                                  class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 rounded transition-all shadow-sm">
+                            <i class="fa-solid fa-pen-to-square text-xs"></i>
                           </button>
-                        }
-                        @if (payment.status === 'overdue') {
-                          <button (click)="sendReminder(payment.clientId)" 
-                                  class="px-2.5 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 rounded text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
-                            <i class="fa-solid fa-paper-plane mr-1.5"></i> Sollecito
+                          
+                          <button (click)="confirmDelete(payment.id, 'payment')" 
+                                  class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 rounded transition-all shadow-sm">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
                           </button>
-                        }
+
+                          @if (payment.status === 'overdue') {
+                            <button (click)="sendReminder(payment.clientId)" 
+                                    class="px-2.5 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 rounded text-xs font-bold transition-colors shadow-sm">
+                              <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -320,6 +334,7 @@ import { ToastService } from '../services/toast.service';
                       <th class="px-4 py-3 w-32">Categoria</th>
                       <th class="px-4 py-3 text-right">Dare</th>
                       <th class="px-4 py-3 text-right">Avere</th>
+                      <th class="px-4 py-3 text-center w-10">Azioni</th>
                     </tr>
                   </thead>
                   <tbody class="text-sm">
@@ -345,6 +360,11 @@ import { ToastService } from '../services/toast.service';
                         </td>
                         <td class="px-4 py-2.5 text-right font-mono text-xs" [class.text-emerald-600]="entry.credit > 0" [class.font-bold]="entry.credit > 0" [class.text-slate-300]="entry.credit === 0">
                           {{ entry.credit > 0 ? '€' + (entry.credit | number:'1.2-2') : '-' }}
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <button (click)="confirmDelete(entry.id, 'journal')" class="text-slate-400 hover:text-red-500 transition-colors">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                          </button>
                         </td>
                       </tr>
                     }
@@ -413,10 +433,14 @@ import { ToastService } from '../services/toast.service';
                     </div>
 
                     @if (!reminder.dismissed) {
-                      <div class="shrink-0 flex items-center justify-end w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                      <div class="shrink-0 flex items-center justify-end w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 gap-2">
                         <button (click)="dismissReminder(reminder.id)" 
                                 class="w-8 h-8 rounded border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center shadow-sm" title="Archivia">
                           <i class="fa-solid fa-check text-sm"></i>
+                        </button>
+                        <button (click)="confirmDelete(reminder.id, 'reminder')" 
+                                class="w-8 h-8 rounded border border-slate-200 bg-white hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center shadow-sm" title="Elimina">
+                          <i class="fa-solid fa-trash-can text-xs"></i>
                         </button>
                       </div>
                     }
@@ -440,7 +464,7 @@ import { ToastService } from '../services/toast.service';
                 <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                    <i class="fa-solid fa-file-invoice text-sm"></i>
                 </div>
-                <h3 class="text-base font-black text-slate-800 tracking-tight">Nuovo Pagamento</h3>
+                <h3 class="text-base font-black text-slate-800 tracking-tight">{{ editingPaymentId() ? 'Modifica Pagamento' : 'Nuovo Pagamento' }}</h3>
               </div>
               <button (click)="closeModals()" class="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center focus:outline-none">
                 <i class="fa-solid fa-xmark text-sm"></i>
@@ -509,7 +533,7 @@ import { ToastService } from '../services/toast.service';
                   Annulla
                 </button>
                 <button type="submit" [disabled]="!paymentForm.valid" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <i class="fa-solid fa-save"></i> Salva Pagamento
+                  <i class="fa-solid fa-save"></i> {{ editingPaymentId() ? 'Aggiorna Pagamento' : 'Salva Pagamento' }}
                 </button>
               </div>
             </form>
@@ -709,6 +733,29 @@ import { ToastService } from '../services/toast.service';
         </div>
       }
 
+      <!-- Confirmation Modal -->
+      @if (showDeleteConfirm()) {
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-fadeIn" (click)="showDeleteConfirm.set(null)">
+           <div class="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center animate-scaleIn" (click)="$event.stopPropagation()">
+              <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 scale-110">
+                 <i class="fa-solid fa-trash-can text-3xl"></i>
+              </div>
+              <h3 class="text-xl font-black text-slate-800 mb-2">Confermi l'eliminazione?</h3>
+              <p class="text-sm text-slate-500 font-medium mb-8 leading-relaxed">
+                 Questa azione è irreversibile. Il record verrà rimosso permanentemente dal database cloud.
+              </p>
+              <div class="flex flex-col gap-3">
+                 <button (click)="executeDelete()" class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95">
+                    SI, ELIMINA DEFINITIVAMENTE
+                 </button>
+                 <button (click)="showDeleteConfirm.set(null)" class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95">
+                    ANNULLA
+                 </button>
+              </div>
+           </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -716,6 +763,8 @@ import { ToastService } from '../services/toast.service';
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .animate-scaleIn { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
   `]
 })
 export class AccountingViewComponent {
@@ -727,6 +776,10 @@ export class AccountingViewComponent {
   showPaymentModal = signal(false);
   showJournalModal = signal(false);
   showReminderModal = signal(false);
+  
+  // Edit/Delete state
+  editingPaymentId = signal<string | null>(null);
+  showDeleteConfirm = signal<{id: string, type: 'payment' | 'journal' | 'reminder'} | null>(null);
 
   // Filter properties
   // Filter signals
@@ -925,11 +978,24 @@ export class AccountingViewComponent {
   }
 
   openPaymentModal() {
+    this.editingPaymentId.set(null);
     const currentFilterId = this.state.filterClientId() || this.filterClientId();
     this.paymentForm.reset({ 
       clientId: currentFilterId,
       frequency: 'monthly', 
       amount: 0 
+    });
+    this.showPaymentModal.set(true);
+  }
+
+  openEditPaymentModal(payment: Payment) {
+    this.editingPaymentId.set(payment.id);
+    this.paymentForm.patchValue({
+      clientId: payment.clientId,
+      amount: payment.amount,
+      frequency: payment.frequency,
+      dueDate: payment.dueDate,
+      notes: payment.notes
     });
     this.showPaymentModal.set(true);
   }
@@ -959,20 +1025,43 @@ export class AccountingViewComponent {
     this.showPaymentModal.set(false);
     this.showJournalModal.set(false);
     this.showReminderModal.set(false);
+    this.editingPaymentId.set(null);
   }
 
   savePayment() {
     if (this.paymentForm.valid) {
       const formValue = this.paymentForm.value;
-      const newPayment: Payment = {
-        id: Math.random().toString(36).substr(2, 9),
+      const editingId = this.editingPaymentId();
+      
+      const paymentData: Payment = {
+        id: editingId || Math.random().toString(36).substr(2, 9),
         ...formValue,
-        status: 'pending'
+        status: editingId ? (this.state.payments().find(p => p.id === editingId)?.status || 'pending') : 'pending'
       };
-      this.state.syncPayment(newPayment);
-      this.toastService.success('Pagamento Aggiunto', 'Il pagamento è stato registrato con successo.');
+      
+      this.state.syncPayment(paymentData);
+      this.toastService.success(
+        editingId ? 'Pagamento Aggiornato' : 'Pagamento Aggiunto', 
+        'Le modifiche sono state salvate con successo.'
+      );
       this.closeModals();
     }
+  }
+
+  confirmDelete(id: string, type: 'payment' | 'journal' | 'reminder') {
+    this.showDeleteConfirm.set({ id, type });
+  }
+
+  executeDelete() {
+    const target = this.showDeleteConfirm();
+    if (!target) return;
+
+    if (target.type === 'payment') this.state.deletePayment(target.id);
+    else if (target.type === 'journal') this.state.deleteJournalEntry(target.id);
+    else if (target.type === 'reminder') this.state.deleteReminder(target.id);
+
+    this.showDeleteConfirm.set(null);
+    this.toastService.success('Cancellazione effettuata', 'Il record è stato rimosso.');
   }
 
   markAsPaid(paymentId: string) {

@@ -42,12 +42,12 @@ import { AppStateService } from '../services/app-state.service';
         @let activePay = state.latestActivePayment();
         @let urgency = activePay ? state.getDaysRemaining(activePay.dueDate) : 100;
         
-        <!-- Theme determination -->
-        @let theme = isPaid ? 'SUCCESS' : (activePay && urgency <= 5 ? 'URGENT' : 'NOTICE');
+        <!-- Updated Priority Logic: URGENT (7 days) > SUCCESS (Recent) > NOTICE -->
+        @let theme = (activePay && urgency <= 7) ? 'URGENT' : (isPaid ? 'SUCCESS' : 'NOTICE');
 
         <div [class]="'rounded-[2rem] p-6 mb-8 relative overflow-hidden group border-2 transition-all duration-500 ' + 
             (theme === 'SUCCESS' ? 'bg-emerald-50/30 border-emerald-500 text-slate-800' : 
-             theme === 'URGENT' ? 'bg-red-50/30 border-red-500 text-slate-800' : 
+             theme === 'URGENT' ? 'bg-red-600 border-red-700 text-white shadow-xl shadow-red-500/30' : 
              'bg-amber-50/30 border-amber-400 text-slate-800')">
           
           <!-- Subtle Glow Effects -->
@@ -61,7 +61,7 @@ import { AppStateService } from '../services/app-state.service';
               <!-- Iconic Status Symbol -->
               <div [class]="'h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-105 ' + 
                   (theme === 'SUCCESS' ? 'bg-emerald-500 text-white' : 
-                   theme === 'URGENT' ? 'bg-red-500 text-white' : 
+                   theme === 'URGENT' ? 'bg-white text-red-600 shadow-md' : 
                    'bg-amber-500 text-white')">
                 <i [class]="'fa-solid text-2xl ' + (theme === 'SUCCESS' ? 'fa-circle-check' : (theme === 'URGENT' ? 'fa-triangle-exclamation' : 'fa-credit-card'))"></i>
               </div>
@@ -71,53 +71,70 @@ import { AppStateService } from '../services/app-state.service';
                   <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
                     <span [class]="'px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ' + 
                         (theme === 'SUCCESS' ? 'bg-white text-emerald-700 border border-emerald-200' : 
-                         theme === 'URGENT' ? 'bg-white text-red-700 border border-red-200' : 
+                         theme === 'URGENT' ? 'bg-red-700 text-white border border-red-500' : 
                          'bg-white text-amber-700 border border-amber-200')">
                       @if (theme === 'SUCCESS') {
-                        Transazione Confermata
+                        Transazione Registrata
                       } @else if (activePay) {
-                         Importo: {{ activePay.amount | currency:'EUR' }}
+                         Riferimento: {{ activePay.dueDate | date:'MMMM yyyy' }}
                       } @else {
-                        Verifica Pagamento
+                        Pianificazione Pagamenti
                       }
                     </span>
                     @if (theme === 'URGENT') {
-                      <span class="px-3 py-1 rounded-lg bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-widest animate-pulse">
-                        Azione Richiesta
+                      <span class="px-3 py-1 rounded-lg bg-white text-red-700 text-[10px] font-black uppercase tracking-widest animate-pulse shadow-sm">
+                        SCADENZA IMMINENTE
                       </span>
                     }
                   </div>
                   
                   <h4 class="text-2xl font-black tracking-tight leading-tight">
                     @if (theme === 'SUCCESS') {
-                      Pagamento <span class="text-emerald-600 italic">Registrato</span>
+                      Pagamento <span class="text-emerald-600 italic">Ricevuto</span>
                     } @else if (theme === 'URGENT') {
-                      Pagamento <span class="text-red-600 italic">Scaduto</span>
+                      Prossima Rata <span class="text-red-200 italic">In Scadenza</span>
                     } @else {
-                      Attenzione <span class="text-amber-600 italic">Scadenza</span>
+                      Promemoria <span class="text-amber-600 italic">Prossima Rata</span>
                     }
                   </h4>
                   
-                  <p class="text-xs font-bold text-slate-500 max-w-lg leading-relaxed">
+                  <p [class]="'text-xs font-bold max-w-lg leading-relaxed ' + 
+                      (theme === 'URGENT' ? 'text-red-100' : 'text-slate-500')">
                     @if (theme === 'SUCCESS') {
-                      Il tuo abbonamento è attivo. La sede centrale ha confermato la ricezione del saldo in data {{ isPaid?.paidDate | date:'dd/MM/yyyy' }}.
+                      L'ultimo saldo è stato confermato. @if (activePay) { La prossima rata è programmata per il <span class="text-slate-800 font-black">{{ activePay.dueDate | date:'dd/MM/yyyy' }}</span>. } @else { Il servizio prosegue regolarmente senza interruzioni. }
                     } @else if (theme === 'URGENT') {
-                      Il termine per il rinnovo è superato. Regolarizza la posizione per evitare la sospensione dei servizi digitali.
+                      Attenzione: mancano meno di 7 giorni alla scadenza della prossima rata. Ti invitiamo a regolarizzare entro il <span class="text-white bg-red-800/40 px-1 py-0.5 rounded">{{ activePay?.dueDate | date:'dd/MM/yyyy' }}</span>.
                     } @else {
-                      Il servizio è in scadenza tra {{ urgency }} giorni. Ti consigliamo di procedere al rinnovo anticipato.
+                      Ti informiamo che la prossima quota di abbonamento è prevista per il {{ activePay?.dueDate | date:'dd/MM/yyyy' }}. Puoi gestire il rinnovo dall'area riservata.
                     }
                   </p>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[10px] font-black uppercase tracking-tighter">
-                  <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-100 text-slate-400">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
+                  <div [class]="'flex items-center gap-2 px-3 py-1.5 rounded-xl border ' + 
+                      (theme === 'URGENT' ? 'bg-red-800/50 border-red-500 text-white' : 'bg-white border-slate-100 text-slate-400')">
+                    <i class="fa-solid fa-calendar-day"></i>
                     @if (theme === 'SUCCESS') {
-                      Saldo effettuato con successo
+                      @if (activePay) {
+                        PROSSIMA SCADENZA: {{ activePay.dueDate | date:'dd/MM/yyyy' }}
+                      } @else {
+                        OPERATIVITÀ GARANTITA
+                      }
                     } @else {
-                      Scadenza prevista: {{ activePay?.dueDate || '---' }}
+                      @if (activePay?.dueDate) {
+                        PROSSIMA SCADENZA: {{ activePay!.dueDate | date:'dd/MM/yyyy' }}
+                      } @else {
+                        DATA SCADENZA: ---
+                      }
                     }
                   </div>
+                  @if (activePay && theme !== 'SUCCESS') {
+                    <div [class]="'flex items-center gap-2 px-3 py-1.5 rounded-xl border ' + 
+                        (theme === 'URGENT' ? 'bg-red-900/60 border-red-500 text-white shadow-inner' : 'bg-slate-50 border-slate-100 text-slate-500')">
+                      <i class="fa-solid fa-hourglass-half"></i>
+                      {{ urgency <= 0 ? 'SCADUTA' : urgency + ' GIORNI AL TERMINE' }}
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -128,15 +145,15 @@ import { AppStateService } from '../services/app-state.service';
                   <i class="fa-solid fa-check text-lg"></i>
                 </div>
                 <div class="px-4 py-1.5 rounded-full bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest">
-                  Servizio Attivo
+                  Gestito
                 </div>
               } @else {
                 <button [class]="'px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-md hover:shadow-lg active:scale-95 ' + 
-                    (theme === 'URGENT' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-900 text-white hover:bg-black')">
+                    (theme === 'URGENT' ? 'bg-white text-red-700 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-black')">
                   @if (theme === 'URGENT') {
                     PAGA ORA
                   } @else {
-                    RINNOVA SERVIZIO
+                    MIGLIORA PIANO
                   }
                 </button>
               }

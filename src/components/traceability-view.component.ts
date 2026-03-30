@@ -68,9 +68,29 @@ interface ProductionBatch {
       <!-- MAIN VIEW: LIST OF PRODUCTIONS -->
       @if (viewMode() === 'list') {
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in-up">
-             <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                 <h3 class="font-bold text-slate-700">Produzioni Recenti</h3>
-                 <div class="text-xs text-slate-400">Ordina per: Data Prep.</div>
+             <div class="p-4 bg-slate-50 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+                 <div>
+                   <h3 class="font-bold text-slate-700">Produzioni Recenti</h3>
+                   <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wide mt-0.5">I prodotti restano in memoria per 60 giorni o fino all'eliminazione manuale.</div>
+                 </div>
+                 
+                 <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                    <!-- Search Input -->
+                    <div class="relative w-full lg:w-64">
+                       <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                       <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca nome o lotto..." 
+                              class="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white">
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div class="flex items-center gap-2">
+                       <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event)" 
+                              class="w-full sm:w-auto px-2 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-emerald-500 bg-white text-slate-600">
+                       <span class="text-slate-400 text-xs font-bold">-</span>
+                       <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event)" 
+                              class="w-full sm:w-auto px-2 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-emerald-500 bg-white text-slate-600">
+                    </div>
+                 </div>
              </div>
              
              <div class="overflow-x-auto">
@@ -85,7 +105,7 @@ interface ProductionBatch {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        @for (batch of allBatches(); track batch.id) {
+                        @for (batch of filteredBatches(); track batch.id) {
                             <tr class="hover:bg-slate-50 transition-colors group cursor-pointer" (click)="openProduction(batch)">
                                 <td class="px-4 py-3 text-slate-600 font-medium whitespace-nowrap">
                                     {{ batch.preparationDate | date:'dd/MM/yyyy' }}
@@ -112,11 +132,11 @@ interface ProductionBatch {
                                 </td>
                             </tr>
                         }
-                        @if (allBatches().length === 0) {
+                        @if (filteredBatches().length === 0) {
                             <tr>
                                 <td colspan="5" class="p-10 text-center text-slate-400">
                                     <div class="mb-2"><i class="fa-solid fa-clipboard-list text-3xl opacity-20"></i></div>
-                                    Nessuna produzione registrata. Crea la prima scheda per iniziare.
+                                    Nessuna produzione trovata. Crea la prima scheda o adatta i filtri di ricerca.
                                 </td>
                             </tr>
                         }
@@ -149,6 +169,7 @@ interface ProductionBatch {
                                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Prep.</label>
                                   <input type="date" [(ngModel)]="currentBatch()!.preparationDate"
                                          class="w-full p-2 rounded border border-slate-300 focus:border-emerald-500 outline-none text-sm">
+                                  <p class="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-wider">*In memoria max 60 gg.</p>
                               </div>
                               <div>
                                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Scadenza</label>
@@ -361,6 +382,35 @@ export class TraceabilityViewComponent implements OnInit {
   allBatches = signal<ProductionBatch[]>([]);
   currentBatch = signal<ProductionBatch | null>(null);
 
+  // Filters
+  searchQuery = signal('');
+  dateFrom = signal('');
+  dateTo = signal('');
+
+  filteredBatches = computed(() => {
+    let bs = this.allBatches();
+
+    const search = this.searchQuery().toLowerCase();
+    if (search) {
+      bs = bs.filter(b => 
+        b.productName.toLowerCase().includes(search) || 
+        b.internalLot.toLowerCase().includes(search)
+      );
+    }
+
+    const dFrom = this.dateFrom();
+    if (dFrom) {
+       bs = bs.filter(b => b.preparationDate >= dFrom);
+    }
+
+    const dTo = this.dateTo();
+    if (dTo) {
+       bs = bs.filter(b => b.preparationDate <= dTo);
+    }
+
+    return bs.sort((a, b) => new Date(b.preparationDate).getTime() - new Date(a.preparationDate).getTime());
+  });
+
   // AI & New Ingredient State
   selectedFile = signal<File | null>(null);
   scannedImage = signal<string | null>(null);
@@ -381,7 +431,21 @@ export class TraceabilityViewComponent implements OnInit {
     const stored = localStorage.getItem('haccp_traceability_productions');
     if (stored) {
       try {
-        this.allBatches.set(JSON.parse(stored));
+        let batches: ProductionBatch[] = JSON.parse(stored);
+        
+        // Remove batches older than 60 days automatically
+        const originalLength = batches.length;
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        batches = batches.filter(b => new Date(b.preparationDate) >= sixtyDaysAgo);
+        
+        this.allBatches.set(batches);
+
+        // If items got purged, immediately persist the state
+        if (batches.length !== originalLength) {
+           this.saveAll();
+        }
       } catch (e) {
         console.error('Error loading productions', e);
       }
