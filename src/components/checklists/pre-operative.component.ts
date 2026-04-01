@@ -685,7 +685,7 @@ export class PreOperationalChecklistComponent {
     ];
 
     areas = signal<AreaChecklist[]>([
-
+        { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', steps: this.getInitialSteps('staff-hygiene'), expanded: false },
         { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps('cucina-sala'), expanded: false },
         { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps('area-lavaggio'), expanded: false },
         { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps('deposito'), expanded: false },
@@ -699,10 +699,11 @@ export class PreOperationalChecklistComponent {
     ]);
 
     getInitialSteps(areaId: string) {
+        if (areaId === 'staff-hygiene') return this.getStaffHygieneSteps();
         return this.stepDefinitions
             .filter(def => {
-                // Area Lavaggio: elimina Integrità attrezzature
-                if (areaId === 'area-lavaggio' && def.id === 'integrita') return false;
+                // Area Lavaggio and Pavimenti: elimina Integrità attrezzature
+                if ((areaId === 'area-lavaggio' || areaId === 'pavimenti') && def.id === 'integrita') return false;
                 // Deposito, Spogliatoio e Pavimenti: elimina Disponibilità prodotti
                 if ((areaId === 'deposito' || areaId === 'spogliatoio' || areaId === 'pavimenti') && def.id === 'materiali') return false;
                 // Pareti: elimina integrità, pulizia e materiali
@@ -731,7 +732,7 @@ export class PreOperationalChecklistComponent {
                 // Pavimenti: ispezione e pulizia
                 if (areaId === 'pavimenti') {
                     if (def.id === 'ispezione') label = 'ispezione integrità della pavimentazione';
-                    if (def.id === 'pulizia') label = 'assenza di trasporto';
+                    if (def.id === 'pulizia') label = 'assenza di sporco';
                 }
                 // Pareti: ispezione
                 if (areaId === 'pareti' && def.id === 'ispezione') {
@@ -752,6 +753,13 @@ export class PreOperationalChecklistComponent {
                 }
                 return { ...def, label, status: 'pending' as const };
             });
+    }
+
+    getStaffHygieneSteps() {
+        return [
+            { id: 'work-clothes', label: 'PULIZIA ABITI DA LAVORO', icon: 'fa-shirt', status: 'pending' as const },
+            { id: 'personal-hygiene', label: 'IGIENE DELLA PERSONA (CAPELLI RACCOLTI, UNGHIE PULITE, ASSENZA FERITE, TOSSE O ALTRO)', icon: 'fa-hand-sparkles', status: 'pending' as const }
+        ];
     }
 
     constructor() {
@@ -797,10 +805,33 @@ export class PreOperationalChecklistComponent {
                 return { ...area, steps: [...filteredSteps, ...missingSteps], expanded: isExpanded };
             });
 
-            // Merge with current equipment (add new ones not yet in saved data)
+            const currentStaticAreas = [
+                { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', steps: this.getStaffHygieneSteps(), expanded: false },
+                { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps('cucina-sala'), expanded: false },
+                { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps('area-lavaggio'), expanded: false },
+                { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps('deposito'), expanded: false },
+                { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: this.getInitialSteps('spogliatoio'), expanded: false },
+                { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: this.getInitialSteps('antibagno-bagno-personale'), expanded: false },
+                { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: this.getInitialSteps('bagno-clienti'), expanded: false },
+                { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps('pavimenti'), expanded: false },
+                { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps('pareti'), expanded: false },
+                { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps('soffitto'), expanded: false },
+                { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps('infissi'), expanded: false }
+            ];
+
             const savedIds = new Set(relabeledAreas.map((a: any) => a.id));
+            const missingStaticAreas = currentStaticAreas.filter(a => !savedIds.has(a.id));
             const newEquipAreas = equipmentAreas.filter(ea => !savedIds.has(ea.id));
-            this.areas.set([...relabeledAreas, ...newEquipAreas]);
+            
+            // Compose final areas list, with missing static areas at the top
+            this.areas.set([...relabeledAreas, ...missingStaticAreas, ...newEquipAreas].sort((a, b) => {
+                const aIndex = currentStaticAreas.findIndex(cs => cs.id === a.id);
+                const bIndex = currentStaticAreas.findIndex(cs => cs.id === b.id);
+                if (aIndex === -1 && bIndex === -1) return 0;
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+            }));
             
             if (historyRecord.globalItems) {
                 this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.globalItems)));

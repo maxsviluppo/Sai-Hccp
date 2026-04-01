@@ -165,12 +165,12 @@ interface ProductionBatch {
                           </div>
 
                           <div class="grid grid-cols-2 gap-3">
-                              <div>
-                                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Prep.</label>
-                                  <input type="date" [(ngModel)]="currentBatch()!.preparationDate"
-                                         class="w-full p-2 rounded border border-slate-300 focus:border-emerald-500 outline-none text-sm">
-                                  <p class="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-wider">*In memoria max 60 gg.</p>
-                              </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Prep.</label>
+                                    <input type="date" [(ngModel)]="currentBatch()!.preparationDate" (change)="onDateChange()"
+                                           class="w-full p-2 rounded border border-slate-300 focus:border-emerald-500 outline-none text-sm">
+                                    <p class="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-wider">*In memoria max 60 gg.</p>
+                                </div>
                               <div>
                                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Scadenza</label>
                                   <input type="date" [(ngModel)]="currentBatch()!.expiryDate"
@@ -178,14 +178,14 @@ interface ProductionBatch {
                               </div>
                           </div>
 
-                          <div>
-                              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lotto Interno</label>
-                              <div class="flex">
-                                <span class="bg-slate-100 border border-r-0 border-slate-300 rounded-l p-2 text-slate-500 font-mono text-sm">INT-</span>
-                                <input type="text" [(ngModel)]="currentBatch()!.internalLot"
-                                       class="w-full p-2 rounded-r border border-slate-300 focus:border-emerald-500 outline-none font-mono text-sm capitalize">
+                              <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lotto Interno</label>
+                                <div class="relative">
+                                  <i class="fa-solid fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                  <input type="text" [(ngModel)]="currentBatch()!.internalLot" placeholder="es. 30-04-2026-01"
+                                         class="w-full pl-8 p-2 rounded border border-slate-300 focus:border-emerald-500 outline-none font-mono text-sm uppercase shadow-sm">
+                                </div>
                               </div>
-                          </div>
 
                           <div>
                               <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Note / Operatore</label>
@@ -459,12 +459,26 @@ export class TraceabilityViewComponent implements OnInit {
   // --- Production Management ---
 
   createNewProduction() {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0]; // yyyy-mm-dd for the preparationDate field
+    
+    // Generate automatic lot: gg-mm-aaaa-xx
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const datePrefix = `${day}-${month}-${year}`;
+
+    // Find how many batches exist for TODAY to get the progressive XX
+    const todayBatches = this.allBatches().filter(b => b.preparationDate === dateStr);
+    const progressive = String(todayBatches.length + 1).padStart(2, '0');
+    const generatedLot = `${datePrefix}-${progressive}`;
+
     const newBatch: ProductionBatch = {
       id: crypto.randomUUID(),
       productName: '',
-      preparationDate: new Date().toISOString().split('T')[0],
+      preparationDate: dateStr,
       expiryDate: '',
-      internalLot: '', // Default empty as requested
+      internalLot: generatedLot,
       operator: this.state.currentUser()?.name || '',
       notes: '',
       ingredients: []
@@ -472,6 +486,23 @@ export class TraceabilityViewComponent implements OnInit {
     this.currentBatch.set(newBatch);
     this.viewMode.set('detail');
     this.resetIngredientForm();
+  }
+
+  onDateChange() {
+    const batch = this.currentBatch();
+    if (!batch || !batch.preparationDate) return;
+
+    // Recalculate lot based on the NEW selected date
+    const selectedDate = new Date(batch.preparationDate);
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    const datePrefix = `${day}-${month}-${year}`;
+
+    const sameDayBatches = this.allBatches().filter(b => b.preparationDate === batch.preparationDate);
+    const progressive = String(sameDayBatches.length + 1).padStart(2, '0');
+    
+    batch.internalLot = `${datePrefix}-${progressive}`;
   }
 
   openProduction(batch: ProductionBatch) {

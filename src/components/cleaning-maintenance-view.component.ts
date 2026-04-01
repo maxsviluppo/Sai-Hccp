@@ -31,8 +31,9 @@ interface CheckItem {
                         <i class="fa-solid fa-screwdriver-wrench text-lg md:text-xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Manutenzione & Igiene</h2>
-                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight leading-tight">Manutenzione & Igiene</h2>
+                        <p class="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Vedi manuale d'uso e manutenzione</p>
+                        <div class="flex flex-wrap items-center gap-2 mt-2">
                             <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">
                                 <i class="fa-solid fa-circle text-[8px] animate-pulse text-violet-500"></i>
                                 Registro Attrezzature
@@ -341,7 +342,7 @@ export class CleaningMaintenanceViewComponent {
 
         // Static items for Work Environments
         const staticItems: CheckItem[] = [
-            { id: 'env-pavimenti', label: 'Pavimenti e Scarichi', icon: 'fa-border-all', status: 'pending', note: '' },
+            { id: 'env-pavimenti', label: 'Pavimenti', icon: 'fa-border-all', status: 'pending', note: '' },
             { id: 'env-mattonelle', label: 'Pareti e Mattonelle', icon: 'fa-grip-lines-vertical', status: 'pending', note: '' },
             { id: 'env-infissi', label: 'Infissi e Zanzariere', icon: 'fa-window-maximize', status: 'pending', note: '' },
             { id: 'env-illuminazione', label: 'Sistemi di Illuminazione', icon: 'fa-lightbulb', status: 'pending', note: '' },

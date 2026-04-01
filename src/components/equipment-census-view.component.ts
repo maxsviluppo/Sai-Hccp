@@ -63,29 +63,6 @@ import { ToastService } from '../services/toast.service';
                             </div>
                         }
 
-                        <!-- Tipo Controllo -->
-                        <div [class.opacity-40]="state.isAdmin() && !state.filterClientId()" [class.pointer-events-none]="state.isAdmin() && !state.filterClientId()">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tipologia Monitoraggio</label>
-                            <div class="flex gap-2">
-                                @for (t of types; track t.value) {
-                                    <button (click)="selectedType.set(t.value)"
-                                            class="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5"
-                                            [class.bg-indigo-600]="selectedType() === t.value && t.value === 'Altro'"
-                                            [class.text-white]="selectedType() === t.value"
-                                            [class.border-indigo-600]="selectedType() === t.value && t.value === 'Altro'"
-                                            [class.bg-sky-500]="selectedType() === t.value && t.value === 'Freddo'"
-                                            [class.border-sky-500]="selectedType() === t.value && t.value === 'Freddo'"
-                                            [class.bg-orange-500]="selectedType() === t.value && t.value === 'Caldo'"
-                                            [class.border-orange-500]="selectedType() === t.value && t.value === 'Caldo'"
-                                            [class.bg-white]="selectedType() !== t.value"
-                                            [class.text-slate-500]="selectedType() !== t.value"
-                                            [class.border-slate-200]="selectedType() !== t.value">
-                                        <i [class]="'fa-solid text-xs ' + t.icon"></i>
-                                        {{ t.label }}
-                                    </button>
-                                }
-                            </div>
-                        </div>
 
                         <!-- Selettore rapido -->
                         <div>
@@ -137,14 +114,6 @@ import { ToastService } from '../services/toast.service';
                             </div>
                         </div>
 
-                        <!-- Info box -->
-                        <div class="p-3 rounded-xl border text-[10px] font-bold leading-relaxed flex items-start gap-2 transition-all"
-                             [class.bg-sky-50]="selectedType() === 'Freddo'" [class.border-sky-100]="selectedType() === 'Freddo'" [class.text-sky-600]="selectedType() === 'Freddo'"
-                             [class.bg-orange-50]="selectedType() === 'Caldo'" [class.border-orange-100]="selectedType() === 'Caldo'" [class.text-orange-600]="selectedType() === 'Caldo'"
-                             [class.bg-slate-50]="selectedType() === 'Altro'" [class.border-slate-100]="selectedType() === 'Altro'" [class.text-slate-500]="selectedType() === 'Altro'">
-                            <i [class]="'fa-solid mt-0.5 ' + currentTypeIcon()"></i>
-                            <span>{{ currentTypeInfo() }}</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -193,7 +162,7 @@ import { ToastService } from '../services/toast.service';
                                 </div>
 
                                 <!-- Delete -->
-                                <button (click)="onRemoveByName(eq.name)"
+                                <button (click)="onRemove(eq.id, eq.name)"
                                         class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 active:scale-90">
                                     <i class="fa-solid fa-trash-can text-xs"></i>
                                 </button>
@@ -204,6 +173,40 @@ import { ToastService } from '../services/toast.service';
             </div>
         </div>
     </div>
+
+    <!-- ===== PREMIUM CONFIRMATION MODAL ===== -->
+    @if (showDeleteModal()) {
+        <div class="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" (click)="cancelDelete()"></div>
+            
+            <!-- Modal Card -->
+            <div class="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-slide-up">
+                <div class="p-8 text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-6 shadow-sm border border-red-100">
+                        <i class="fa-solid fa-trash-can text-2xl"></i>
+                    </div>
+                    
+                    <h3 class="text-xl font-black text-slate-800 mb-2">Conferma Eliminazione</h3>
+                    <p class="text-sm text-slate-500 font-medium px-4">
+                        Sei sicuro di voler rimuovere <span class="text-slate-800 font-bold">"{{ itemToDelete()?.name }}"</span>?
+                        <span class="block mt-2 text-[10px] text-red-400 font-bold uppercase tracking-wider italic">Questa azione non può essere annullata</span>
+                    </p>
+                </div>
+                
+                <div class="flex border-t border-slate-100 h-16">
+                    <button (click)="cancelDelete()" 
+                            class="flex-1 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-colors border-r border-slate-100">
+                        Annulla
+                    </button>
+                    <button (click)="confirmDelete()" 
+                            class="flex-1 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors active:scale-95">
+                        Elimina Ora
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
     `,
     styles: [`
         .animate-fade-in { animation: fadeIn 0.4s ease-out; }
@@ -216,17 +219,14 @@ export class EquipmentCensusViewComponent {
     state = inject(AppStateService);
     toast = inject(ToastService);
 
-    selectedType = signal<string>('Altro');
     customName = '';
+    
+    // Modal State
+    showDeleteModal = signal(false);
+    itemToDelete = signal<{id: string, name: string} | null>(null);
 
-    types = [
-        { value: 'Altro', label: 'Semplice', icon: 'fa-circle-check' },
-        { value: 'Freddo', label: 'Freddo', icon: 'fa-snowflake' },
-        { value: 'Caldo', label: 'Caldo', icon: 'fa-fire' }
-    ];
-
-    coldCount = computed(() => this.state.selectedEquipment().filter((e: any) => e.type === 'Freddo').length);
-    hotCount  = computed(() => this.state.selectedEquipment().filter((e: any) => e.type === 'Caldo').length);
+    coldCount = computed(() => this.state.groupedEquipment().filter((e: any) => e.type === 'Freddo').length);
+    hotCount  = computed(() => this.state.groupedEquipment().filter((e: any) => e.type === 'Caldo').length);
 
     masterEquipmentList = [
         { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Banchi lavori', 'Forno a legna', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante', 'Abbattitore'] },
@@ -236,19 +236,6 @@ export class EquipmentCensusViewComponent {
         { area: 'Spogliatoi', items: ['Microonde'] }
     ];
 
-    currentTypeIcon = computed(() => {
-        const t = this.selectedType();
-        if (t === 'Freddo') return 'fa-snowflake';
-        if (t === 'Caldo') return 'fa-fire';
-        return 'fa-circle-check';
-    });
-
-    currentTypeInfo = computed(() => {
-        const t = this.selectedType();
-        if (t === 'Freddo') return 'Monitoraggio catena del freddo: richiederà inserimento temperatura nel registro operativo (target: ≤ +4°C / ≤ -18°C).';
-        if (t === 'Caldo') return 'Monitoraggio catena del caldo: richiederà inserimento temperatura nel registro operativo (target: ≥ 65°C).';
-        return 'Controllo semplice: nessuna rilevazione temperatura richiesta.';
-    });
 
     getType(eq: any): string {
         return (eq as any).type || 'Altro';
@@ -278,22 +265,54 @@ export class EquipmentCensusViewComponent {
         this.customName = '';
     }
 
-    private addEquipment(name: string) {
-        if (this.state.groupedEquipment().some(eq => eq.name === name)) {
-            this.toast.info('Già Presente', `"${name}" è già nel censimento.`);
-            return;
+    private addEquipment(baseName: string) {
+        const nameLower = baseName.toLowerCase();
+        let inferredType = 'Altro';
+        
+        if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('congelatore') || 
+            nameLower.includes('abbattitore') || nameLower.includes('pozzetto') || nameLower.includes('vetrina')) {
+            inferredType = 'Freddo';
+        } else if (nameLower.includes('forno') || nameLower.includes('cottura') || nameLower.includes('griglie') || 
+                   nameLower.includes('friggitrice') || nameLower.includes('fuochi')) {
+            inferredType = 'Caldo';
         }
-        this.state.addEquipment('Generale', name, this.selectedType());
-        this.toast.success('Aggiunto ✓', `${name} — ${this.selectedType() === 'Freddo' ? 'Catena Freddo' : this.selectedType() === 'Caldo' ? 'Catena Caldo' : 'Controllo Semplice'}`);
+
+        const existing = this.state.groupedEquipment();
+        let finalName = baseName;
+        let count = 1;
+
+        // Pattern logic: check if baseName already exists as-is, then append " 2", " 3", etc.
+        const matches = existing.filter(eq => 
+            eq.name === baseName || 
+            eq.name.startsWith(baseName + ' ')
+        );
+
+        if (matches.length > 0) {
+            count = matches.length + 1;
+            finalName = `${baseName} ${count}`;
+        }
+
+        this.state.addEquipment('Generale', finalName, inferredType).then(() => {
+            this.toast.success('Aggiunto ✓', `${finalName} salvato.`);
+        });
     }
 
-    onRemoveByName(name: string) {
-        const raw = this.state.selectedEquipment();
-        const toRemove = raw.filter((e: any) => {
-            const cleaned = e.name.replace(/\s+n\.\d+/i, '').replace(/\s+\d+$/i, '').trim();
-            return cleaned === name;
-        });
-        toRemove.forEach((e: any) => this.state.removeEquipment(e.id));
-        this.toast.info('Rimosso', `"${name}" eliminato dal censimento.`);
+    onRemove(id: string, name: string) {
+        this.itemToDelete.set({ id, name });
+        this.showDeleteModal.set(true);
+    }
+
+    cancelDelete() {
+        this.showDeleteModal.set(false);
+        this.itemToDelete.set(null);
+    }
+
+    confirmDelete() {
+        const item = this.itemToDelete();
+        if (item) {
+            this.state.removeEquipment(item.id);
+            this.toast.info('Rimosso', `"${item.name}" eliminato dal censimento.`);
+            this.cancelDelete();
+        }
     }
 }

@@ -68,24 +68,11 @@ interface CheckItem {
                     </div>
 
                     <div class="flex flex-col gap-3">
-                        <button (click)="downloadModule()" 
-                                class="w-full py-4 px-6 bg-slate-50 text-slate-600 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:border-rose-200 transition-all flex items-center justify-center gap-2 group">
-                            <i class="fa-solid fa-download text-sm group-hover:-translate-y-0.5 transition-transform"></i> SCARICA MODULO PDF
-                        </button>
-                        
-                        <button (click)="toggleCheck(check.id)" [disabled]="!canEdit()"
-                                class="w-full py-5 px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95"
-                                [class.bg-white]="check.checked" [class.text-rose-600]="check.checked" [class.border-2]="check.checked" [class.border-rose-500]="check.checked"
-                                [class.bg-rose-600]="!check.checked" [class.text-white]="!check.checked" [class.hover:bg-rose-700]="!check.checked" [class.shadow-rose-200]="!check.checked"
-                                [class.opacity-50]="!canEdit()" [class.cursor-not-allowed]="!canEdit()">
-                            @if (check.checked) {
-                                <i class="fa-solid fa-check-double text-base"></i>
-                                <span>ARCHIVIATO CON SUCCESSO</span>
-                            } @else {
-                                <i class="fa-solid fa-floppy-disk text-base"></i>
-                                <span>SALVA REGISTRO ANOMALIA</span>
-                            }
-                        </button>
+                        <a href="assets/mod_RICHIAMO.pdf" target="_blank"
+                           class="w-full py-5 px-8 bg-rose-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3 shadow-lg hover:bg-rose-700 active:scale-95 group shadow-rose-200">
+                             <i class="fa-solid fa-eye text-base group-hover:scale-110 transition-transform"></i>
+                             <span>ANTEPRIMA MODULO PDF</span>
+                        </a>
                     </div>
                 </div>
             }
@@ -235,7 +222,11 @@ export class NonComplianceViewComponent {
     }
 
     downloadModule() {
-        window.open('/mod_RICHIAMO.pdf', '_blank');
+        const link = document.createElement('a');
+        link.href = 'assets/mod_RICHIAMO.pdf';
+        link.download = 'mod_RICHIAMO.pdf';
+        link.target = '_blank';
+        link.click();
     }
 
     printModel(label: string) {

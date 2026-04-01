@@ -343,10 +343,10 @@ export class PostOperationalChecklistComponent {
         { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: [], expanded: false },
         { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: [], expanded: false },
         { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: [], expanded: false },
-        { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: [], expanded: false },
-        { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: [], expanded: false },
-        { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: [], expanded: false },
-        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione', icon: 'fa-shield-cat', steps: [], expanded: false },
+        { id: 'pareti', label: 'Pareti (All\'occorrenza)', icon: 'fa-border-all', steps: [], expanded: false },
+        { id: 'soffitto', label: 'Soffitto (All\'occorrenza)', icon: 'fa-cloud', steps: [], expanded: false },
+        { id: 'infissi', label: 'Infissi (All\'occorrenza)', icon: 'fa-door-closed', steps: [], expanded: false },
+        { id: 'reti-antiintrusione', label: 'Reti Anti-intrusione (All\'occorrenza)', icon: 'fa-shield-cat', steps: [], expanded: false },
     ];
 
     areas = signal<AreaChecklist[]>([]);

@@ -130,6 +130,22 @@ export interface ProductionRecord {
   userId: string;
   clientId: string;
 }
+export interface RecipeIngredient {
+  name: string;
+  percentage: number;
+  allergens: string[];
+}
+
+export interface Recipe {
+  id: string;
+  clientId: string;
+  name: string;
+  category?: string;
+  description?: string;
+  ingredients: RecipeIngredient[];
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface Payment {
   id: string;
@@ -329,15 +345,44 @@ export class AppStateService {
 
   async initSupabase() {
     await this.refreshAllData();
-    // Enable Real-time synchronization
+
     supabase.channel('custom-db-channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentInsert(payload.new))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentUpdate(payload.new))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentDelete(payload.old.id))
       .subscribe();
+  }
+
+  private handleEquipmentInsert(newEq: any) {
+    this.selectedEquipment.update(list => {
+        if (list.some(e => e.id === newEq.id)) return list; // Already added optimistically
+        return [...list, {
+            id: newEq.id,
+            clientId: newEq.client_id,
+            name: newEq.name,
+            area: newEq.area,
+            type: newEq.type
+        }];
+    });
+  }
+
+  private handleEquipmentUpdate(newEq: any) {
+    this.selectedEquipment.update(list => list.map(e => e.id === newEq.id ? {
+        id: newEq.id,
+        clientId: newEq.client_id,
+        name: newEq.name,
+        area: newEq.area,
+        type: newEq.type
+    } : e));
+  }
+
+  private handleEquipmentDelete(id: string) {
+    this.selectedEquipment.update(list => list.filter(e => e.id !== id));
   }
 
   async refreshAllData() {
@@ -414,10 +459,24 @@ export class AppStateService {
     }
 
     // Synchronize Production Records
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
+
     const { data: dbProdRecords } = await supabase.from('production_records').select('*');
     if (dbProdRecords) {
+      // Automatic cleanup: Delete records older than 30 days from DB
+      const idsToDelete = dbProdRecords
+        .filter((r: any) => r.recorded_date < dateLimit)
+        .map((r: any) => r.id);
+      
+      if (idsToDelete.length > 0) {
+        console.log(`Auto-cleaning ${idsToDelete.length} expired production records...`);
+        await supabase.from('production_records').delete().in('id', idsToDelete);
+      }
+
       this.productionRecords.set(dbProdRecords
-        .filter((r: any) => r.client_id === 'demo' || validClientIds.includes(r.client_id))
+        .filter((r: any) => (r.client_id === 'demo' || validClientIds.includes(r.client_id)) && r.recorded_date >= dateLimit)
         .map((r: any) => ({
           id: r.id,
           recordedDate: r.recorded_date,
@@ -554,7 +613,20 @@ export class AppStateService {
           createdAt: nc.created_at ? new Date(nc.created_at) : undefined
         })));
       }
-
+      // 12. Recipes (Libro Ingredienti)
+      const { data: recipeData } = await supabase.from('ingredients_book').select('*');
+      if (recipeData) {
+        this.recipes.set(recipeData.map((r: any) => ({
+          id: r.id,
+          clientId: r.client_id,
+          name: r.name,
+          category: r.category,
+          description: r.description,
+          ingredients: r.ingredients || [],
+          createdAt: new Date(r.created_at || r.updated_at),
+          updatedAt: new Date(r.updated_at)
+        })));
+      }
     } catch (e) {
       console.error('Error refreshing data from Supabase:', e);
     }
@@ -601,25 +673,28 @@ export class AppStateService {
     timestamp: any;
   }[]>([]);
 
+  readonly recipes = signal<Recipe[]>([]);
+  readonly filteredRecipes = computed(() => {
+    const targetClientId = this.activeTargetClientId();
+    return this.recipes().filter(r => r.clientId === targetClientId);
+  });
+
   readonly documents = signal<AppDocument[]>([]);
   readonly disabledDocs = signal<Record<string, boolean>>({}); // Map doc ID to disabled boolean
   readonly selectedEquipment = signal<{ id: string; name: string; area: string; type?: string }[]>([]);
   readonly groupedEquipment = computed(() => {
     const targetClientId = this.activeTargetClientId();
-    const raw = this.selectedEquipment().filter(e => {
-        const cid = (e as any).client_id || (e as any).clientId;
-        return cid === targetClientId;
-    });
+    const all = this.selectedEquipment();
+    
+    // Debug log for troubleshooting immediately in browser console
+    if (this.isAdmin()) {
+        console.log('[HACCP] Current Filter:', targetClientId, 'Total Equipment:', all.length);
+    }
 
-    const uniqueMap = new Map<string, { id: string; name: string; area: string; type?: string }>();
-    raw.forEach(e => {
-      // Clean name: remove " n.1", " 1", etc.
-      const cleaned = e.name.replace(/\s+n\.\d+/i, '').replace(/\s+\d+$/i, '').trim();
-      if (!uniqueMap.has(cleaned)) {
-        uniqueMap.set(cleaned, { ...e, name: cleaned });
-      }
+    return all.filter(e => {
+        const cid = (e as any).client_id || (e as any).clientId;
+        return String(cid) === String(targetClientId);
     });
-    return Array.from(uniqueMap.values());
   });
   readonly productionRecords = signal<ProductionRecord[]>([]);
   readonly nonConformities = signal<{
@@ -749,28 +824,27 @@ export class AppStateService {
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations' },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
-    { id: 'production-log', label: 'Registri Produzione', icon: 'fa-barcode', category: 'operations' },
+    { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'production' },
+    { id: 'ingredients-book', label: 'Libro Ingredienti', icon: 'fa-book-open', category: 'production' },
 
     { id: 'cleaning-maintenance', label: 'Piano Sanificazioni', icon: 'fa-broom', category: 'operations' },
-    { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'operations' },
+    { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'operations', adminOnly: true },
     { id: 'micro-bio', label: 'Analisi Microbiologiche', icon: 'fa-vial-virus', category: 'operations' },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations' },
-    { id: 'temperatures', label: 'Monitoraggio Temperature', icon: 'fa-thermometer-half', category: 'operations' },
-    { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', category: 'operations' },
-    { id: 'allergens-ue1169', label: 'Allergeni UE1169', icon: 'fa-wheat-awn-circle-exclamation', category: 'operations' },
-    { id: 'products-cleaning', label: 'Prodotti Chimici', icon: 'fa-vial', category: 'operations' },
+    { id: 'temperatures', label: 'Monitoraggio Temperature', icon: 'fa-thermometer-half', category: 'operations', adminOnly: true },
+    { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', category: 'operations', adminOnly: true },
+    { id: 'allergens-ue1169', label: 'Allergeni UE1169', icon: 'fa-wheat-awn-circle-exclamation', category: 'operations', adminOnly: true },
+    { id: 'products-cleaning', label: 'Prodotti Chimici', icon: 'fa-vial', category: 'operations', adminOnly: true },
 
-    // --- STORICO ---
-    { id: 'history', label: 'Archivio Checklist', icon: 'fa-clock-rotate-left', category: 'history' },
 
     // --- CONSUMABILI E MESSAGGI ---
     { id: 'messages', label: 'Messaggistica', icon: 'fa-comments', category: 'communication', adminOnly: false },
 
     // Config
     { id: 'equipment-census', label: 'Censimento Attrezzature', icon: 'fa-microchip', category: 'config', adminOnly: true },
-    { id: 'equipment', label: 'Monitoraggio Attrezzature', icon: 'fa-screwdriver-wrench', category: 'config', operatorOnly: true },
+
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config', operatorOnly: true },
-    { id: 'staff-training', label: 'Formazione Personale', icon: 'fa-user-graduate', category: 'config', operatorOnly: true },
+
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
     { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false },
@@ -1425,9 +1499,9 @@ export class AppStateService {
 
   // --- Equipment Census Methods ---
   async addEquipment(area: string, name: string, type: string = 'Altro') {
-    const id = Math.random().toString(36).substring(2, 9);
-    // 1. Mandatory Client Selection Check
+    const id = Math.random().toString(36).substring(2, 10);
     const filterId = this.filterClientId();
+    
     if (this.isAdmin() && !filterId) {
       this.toastService.warning('Selezione Richiesta', 'Seleziona prima un\'azienda/sede per associare l\'attrezzatura.');
       return;
@@ -1435,21 +1509,33 @@ export class AppStateService {
 
     const clientId = filterId || this.currentUser()?.clientId || 'demo';
     
-    // 2. Optimistic Local Update (important: include clientId so it shows up)
-    this.selectedEquipment.update(list => [...list, { id, area, name, type, clientId } as any]);
-    
-    // 3. DB sync
-    const { error } = await supabase.from('equipment').insert({
-        id,
-        area,
-        name,
-        type,
-        client_id: clientId
-    });
+    // Explicit signal update with string coercion for safety
+    const newItem = { 
+        id, 
+        area, 
+        name, 
+        type, 
+        clientId: String(clientId) 
+    };
 
-    if (error) {
-      console.error('Error syncing equipment:', error);
-      this.toastService.error('Errore Sync', 'Impossibile salvare l\'attrezzatura nel database.');
+    this.selectedEquipment.update(list => [...list, newItem as any]);
+    
+    // DB sync
+    try {
+        const { error } = await supabase.from('equipment').insert({
+            id,
+            area,
+            name,
+            type,
+            client_id: clientId
+        });
+        
+        if (error) {
+            console.error('[HACCP] DB Error:', error);
+            this.toastService.error('Errore DB', 'L\'attrezzatura è stata aggiunta localmente ma il salvataggio remoto è fallito.');
+        }
+    } catch (err) {
+      console.error('Final flush error:', err);
     }
   }
 
@@ -1771,6 +1857,37 @@ export class AppStateService {
       console.error('Error deleting reminder:', e);
       this.toastService.error('Errore Database', 'Impossibile eliminare il promemoria.');
     }
+  }
+
+  // --- Recipe Management ---
+  async syncRecipe(recipe: Recipe) {
+    this.recipes.update(list => {
+      const filtered = list.filter(r => r.id !== recipe.id);
+      return [recipe, ...filtered];
+    });
+
+    const { error } = await supabase.from('ingredients_book').upsert({
+      id: recipe.id,
+      client_id: recipe.clientId,
+      name: recipe.name,
+      category: recipe.category,
+      description: recipe.description,
+      ingredients: recipe.ingredients,
+      updated_at: new Date().toISOString()
+    });
+
+    if (error) {
+       console.error('Error syncing recipe:', error);
+       this.toastService.error('Errore Sync', `Salvataggio fallito: ${error.message}`);
+    } else {
+       this.toastService.success('Salvato', `Scheda "${recipe.name}" aggiornata.`);
+    }
+  }
+
+  async deleteRecipe(id: string) {
+    this.recipes.update(list => list.filter(r => r.id !== id));
+    const { error } = await supabase.from('ingredients_book').delete().eq('id', id);
+    if (!error) this.toastService.success('Eliminato', 'Ricetta rimossa.');
   }
 
   async saveNonConformity(nc: { 

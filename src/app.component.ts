@@ -13,7 +13,7 @@ import { AccountingViewComponent } from './components/accounting-view.component'
 import { PreOperationalChecklistComponent } from './components/checklists/pre-operative.component';
 import { OperativeChecklistComponent } from './components/checklists/operative.component';
 import { PostOperationalChecklistComponent } from './components/checklists/post-operative.component';
-import { StaffTrainingChecklistComponent } from './components/staff-training-checklist.component';
+
 import { SuppliersViewComponent } from './components/suppliers-view.component';
 import { NonComplianceViewComponent } from './components/non-compliance-view.component';
 import { CleaningMaintenanceViewComponent } from './components/cleaning-maintenance-view.component';
@@ -31,6 +31,7 @@ import { StaffHygieneViewComponent } from './components/staff-hygiene-view.compo
 import { AllergensConfigViewComponent } from './components/allergens-config-view.component';
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
 import { PrinterConfigViewComponent } from './components/printer-config-view.component';
+import { IngredientsBookViewComponent } from './components/ingredients-book-view.component';
 
 @Component({
   selector: 'app-root',
@@ -48,7 +49,7 @@ import { PrinterConfigViewComponent } from './components/printer-config-view.com
     PreOperationalChecklistComponent,
     OperativeChecklistComponent,
     PostOperationalChecklistComponent,
-    StaffTrainingChecklistComponent,
+
     SuppliersViewComponent,
     NonComplianceViewComponent,
     CleaningMaintenanceViewComponent,
@@ -65,7 +66,8 @@ import { PrinterConfigViewComponent } from './components/printer-config-view.com
     StaffHygieneViewComponent,
     AllergensConfigViewComponent,
     CleaningProductsViewComponent,
-    PrinterConfigViewComponent
+    PrinterConfigViewComponent,
+    IngredientsBookViewComponent
   ],
   templateUrl: './app.component.html'
 })

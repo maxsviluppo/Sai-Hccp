@@ -81,12 +81,12 @@ import { ToastService } from '../services/toast.service';
           </div>
         </div>
 
-        <!-- Solleciti -->
+        <!-- Solleciti (Aziende con insoluti questo mese) -->
         <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
           <div class="absolute -right-4 -top-4 w-16 h-16 bg-indigo-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
           <div class="flex items-center justify-between relative z-10">
             <div>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Solleciti</p>
+              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Insoluti Mese</p>
               <p class="text-2xl font-black text-indigo-500 mt-1 truncate">{{ overdueClients().length }}</p>
             </div>
             <div class="w-10 h-10 rounded border border-indigo-100 bg-white shadow-sm flex items-center justify-center">
@@ -175,7 +175,16 @@ import { ToastService } from '../services/toast.service';
                   [class.border-b-2]="activeTab() === 'payments'"
                   [class.border-indigo-500]="activeTab() === 'payments'"
                   [class.text-slate-500]="activeTab() !== 'payments'">
-            <i class="fa-solid fa-money-bill-wave"></i> <span class="hidden sm:inline">Pagamenti</span>
+            <i class="fa-solid fa-money-bill-wave"></i> <span class="hidden sm:inline">Gestione Pagamenti</span>
+          </button>
+          <button (click)="activeTab.set('paid_payments')" 
+                  class="flex-1 px-4 py-3 text-[11px] uppercase tracking-widest font-black transition-all flex items-center justify-center gap-2 border-l border-slate-100"
+                  [class.bg-white]="activeTab() === 'paid_payments'"
+                  [class.text-emerald-600]="activeTab() === 'paid_payments'"
+                  [class.border-b-2]="activeTab() === 'paid_payments'"
+                  [class.border-emerald-500]="activeTab() === 'paid_payments'"
+                  [class.text-slate-500]="activeTab() !== 'paid_payments'">
+            <i class="fa-solid fa-check-double"></i> <span class="hidden sm:inline">Pagamenti Eseguiti</span>
           </button>
           <button (click)="activeTab.set('journal')" 
                   class="flex-1 px-4 py-3 text-[11px] uppercase tracking-widest font-black transition-all flex items-center justify-center gap-2 border-l border-slate-100"
@@ -294,6 +303,64 @@ import { ToastService } from '../services/toast.service';
                             </button>
                           }
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Paid Payments Tab -->
+        @if (activeTab() === 'paid_payments') {
+          <div class="p-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+              <h3 class="text-[13px] font-black tracking-widest uppercase text-slate-800 flex items-center gap-2">
+                 <i class="fa-solid fa-check-double text-emerald-500"></i> Storico Pagamenti Saldati
+              </h3>
+            </div>
+
+            @if (filteredPaidPayments().length === 0) {
+              <div class="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                <i class="fa-solid fa-receipt text-slate-300 text-4xl mb-3"></i>
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nessun pagamento saldato trovato</p>
+              </div>
+            } @else {
+              <div class="space-y-2">
+                @for (payment of filteredPaidPayments(); track payment.id) {
+                  @let client = getClient(payment.clientId);
+                  <div class="bg-emerald-50/20 border border-emerald-100 rounded shadow-sm hover:shadow-md transition-all group overflow-hidden">
+                    <div class="p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2.5 mb-1.5">
+                          <h4 class="font-bold text-sm text-slate-800 truncate">{{ client?.name || 'Cliente Sconosciuto' }}</h4>
+                          <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">
+                            Saldato
+                          </span>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                          <span class="font-bold text-slate-800">
+                             <span class="text-[10px] text-slate-400 font-normal uppercase mr-1">Importo:</span>€{{ payment.amount }}
+                          </span>
+                          <span class="hidden sm:inline text-slate-200">•</span>
+                          <span class="font-bold text-emerald-600 whitespace-nowrap">
+                            <span class="text-[10px] text-emerald-400 font-normal uppercase mr-1">Pagato il:</span> <i class="fa-solid fa-calendar-check mr-1 text-[10px]"></i>{{ payment.paidDate | date:'dd/MM/yyyy' }}
+                          </span>
+                          @if (payment.notes) {
+                            <span class="hidden md:inline text-slate-200">•</span>
+                            <span class="truncate max-w-[200px]" title="{{ payment.notes }}">
+                              <span class="text-[10px] text-slate-400 uppercase mr-1">Note:</span>{{ payment.notes }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                         <button (click)="confirmDelete(payment.id, 'payment')" 
+                                  class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 rounded transition-all shadow-sm">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                          </button>
                       </div>
                     </div>
                   </div>
@@ -772,7 +839,7 @@ export class AccountingViewComponent {
   toastService = inject(ToastService);
   fb = inject(FormBuilder);
 
-  activeTab = signal<'payments' | 'journal' | 'reminders'>('payments');
+  activeTab = signal<'payments' | 'paid_payments' | 'journal' | 'reminders'>('payments');
   showPaymentModal = signal(false);
   showJournalModal = signal(false);
   showReminderModal = signal(false);
@@ -844,7 +911,7 @@ export class AccountingViewComponent {
   });
 
   filteredPayments = computed(() => {
-    let filtered = this.state.payments();
+    let filtered = this.state.payments().filter(p => p.status !== 'paid');
 
     // Filter by client
     const client = this.selectedClient();
@@ -860,6 +927,30 @@ export class AccountingViewComponent {
     filtered = this.applyDateFilters(filtered, (p) => p.dueDate);
 
     return filtered;
+  });
+
+  filteredPaidPayments = computed(() => {
+    let filtered = this.state.payments().filter(p => p.status === 'paid');
+
+    // Filter by client
+    const client = this.selectedClient();
+    const localFilterId = this.filterClientId();
+    
+    if (client) {
+      filtered = filtered.filter(p => p.clientId === client.id);
+    } else if (localFilterId) {
+      filtered = filtered.filter(p => p.clientId === localFilterId);
+    }
+
+    // Apply date filters
+    filtered = this.applyDateFilters(filtered, (p) => p.paidDate || p.dueDate);
+
+    // Sort by paidDate DESC (most recent first)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.paidDate || a.dueDate).getTime();
+      const dateB = new Date(b.paidDate || b.dueDate).getTime();
+      return dateB - dateA;
+    });
   });
 
   filteredJournalEntries = computed(() => {
@@ -904,20 +995,47 @@ export class AccountingViewComponent {
   activeReminders = computed(() => this.state.reminders().filter(r => !r.dismissed));
 
   totalPaid = computed(() => {
-    return this.filteredPayments()
-      .filter(p => p.status === 'paid')
+    const now = new Date();
+    const currMonth = now.getMonth();
+    const currYear = now.getFullYear();
+
+    return this.state.payments()
+      .filter(p => {
+        const pDate = new Date(p.paidDate || p.dueDate);
+        const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
+        const matchClient = this.selectedClient() ? p.clientId === this.selectedClient()?.id : (this.filterClientId() ? p.clientId === this.filterClientId() : true);
+        return p.status === 'paid' && matchMonth && matchClient;
+      })
       .reduce((sum, p) => sum + p.amount, 0);
   });
 
   totalPending = computed(() => {
-    return this.filteredPayments()
-      .filter(p => p.status === 'pending')
+    const now = new Date();
+    const currMonth = now.getMonth();
+    const currYear = now.getFullYear();
+
+    return this.state.payments()
+      .filter(p => {
+        const pDate = new Date(p.dueDate);
+        const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
+        const matchClient = this.selectedClient() ? p.clientId === this.selectedClient()?.id : (this.filterClientId() ? p.clientId === this.filterClientId() : true);
+        return p.status === 'pending' && matchMonth && matchClient;
+      })
       .reduce((sum, p) => sum + p.amount, 0);
   });
 
   totalOverdue = computed(() => {
-    return this.filteredPayments()
-      .filter(p => p.status === 'overdue')
+    const now = new Date();
+    const currMonth = now.getMonth();
+    const currYear = now.getFullYear();
+
+    return this.state.payments()
+      .filter(p => {
+        const pDate = new Date(p.dueDate);
+        const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
+        const matchClient = this.selectedClient() ? p.clientId === this.selectedClient()?.id : (this.filterClientId() ? p.clientId === this.filterClientId() : true);
+        return p.status === 'overdue' && matchMonth && matchClient;
+      })
       .reduce((sum, p) => sum + p.amount, 0);
   });
 
@@ -930,7 +1048,16 @@ export class AccountingViewComponent {
   });
 
   overdueClients = computed(() => {
-    const overduePayments = this.state.payments().filter(p => p.status === 'overdue');
+    const now = new Date();
+    const currMonth = now.getMonth();
+    const currYear = now.getFullYear();
+
+    const overduePayments = this.state.payments().filter(p => {
+      const pDate = new Date(p.dueDate);
+      const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
+      return p.status === 'overdue' && matchMonth;
+    });
+    
     const clientIds = [...new Set(overduePayments.map(p => p.clientId))];
     return this.state.clients().filter(c => clientIds.includes(c.id));
   });

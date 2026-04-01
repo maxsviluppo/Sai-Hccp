@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer } from '@angular/platform-browser';
 import { AppStateService, AppDocument } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
 
@@ -87,25 +88,39 @@ import { ToastService } from '../services/toast.service';
 
                         <div class="h-px bg-slate-100 mx-2 mb-2"></div>
 
+                        <div class="h-px bg-slate-100 mx-2 mb-2"></div>
+
                         @for (def of docDefinitions; track def.id) {
-                            <button (click)="selectedDocType.set(def.id)"
-                                    class="w-full flex items-center justify-between p-2.5 rounded-lg transition-all group text-left border border-transparent shadow-sm mb-1"
-                                    [class]="selectedDocType() === def.id ? 'bg-' + def.color + '-600 text-white translate-x-1' : 'bg-white hover:bg-slate-50 hover:border-slate-200 text-slate-700'"
-                                    [style.backgroundColor]="selectedDocType() === def.id ? '' : 'white'">
-                                 <div class="flex items-center gap-3">
-                                     <div class="w-7 h-7 rounded flex items-center justify-center transition-all shadow-sm"
-                                          [class]="selectedDocType() === def.id ? 'bg-white/20 text-white' : 'bg-white border border-' + def.color + '-100 text-' + def.color + '-600'">
-                                         <i [class]="'fa-solid ' + def.icon + ' text-[10px]'"></i>
+                            @if (def.type === 'divider') {
+                                <div class="py-4 px-3">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="h-px flex-1 bg-slate-100"></div>
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">{{ def.label }}</span>
+                                        <div class="h-px flex-1 bg-slate-100"></div>
+                                    </div>
+                                </div>
+                            } @else {
+                                <button (click)="selectedDocType.set(def.id)"
+                                        class="w-full flex items-center justify-between p-2.5 rounded-lg transition-all group text-left border border-transparent shadow-sm mb-1"
+                                        [class.bg-emerald-600]="selectedDocType() === def.id && def.isTraining"
+                                        [class.text-white]="selectedDocType() === def.id && def.isTraining"
+                                        [class]="selectedDocType() === def.id && !def.isTraining ? 'bg-' + def.color + '-600 text-white translate-x-1' : 'bg-white hover:bg-slate-50 hover:border-slate-200 text-slate-700'"
+                                        [style.backgroundColor]="selectedDocType() === def.id ? '' : 'white'">
+                                     <div class="flex items-center gap-3">
+                                         <div class="w-7 h-7 rounded flex items-center justify-center transition-all shadow-sm"
+                                              [class]="selectedDocType() === def.id ? 'bg-white/20 text-white' : 'bg-white border border-' + (def.isTraining ? 'emerald' : def.color) + '-100 text-' + (def.isTraining ? 'emerald' : def.color) + '-600'">
+                                             <i [class]="'fa-solid ' + def.icon + ' text-[10px]'"></i>
+                                         </div>
+                                         <span class="text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]" [title]="def.label">{{ def.label }}</span>
                                      </div>
-                                     <span class="text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]" [title]="def.label">{{ def.label }}</span>
-                                 </div>
-                                 @if (getDocsByType(def.id).length > 0) {
-                                     <div class="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black shadow-sm"
-                                          [class]="selectedDocType() === def.id ? 'bg-white text-' + def.color + '-600' : 'bg-slate-100 text-slate-600'">
-                                         {{ getDocsByType(def.id).length }}
-                                     </div>
-                                 }
-                            </button>
+                                     @if (getDocsByType(def.id).length > 0) {
+                                         <div class="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black shadow-sm"
+                                              [class]="selectedDocType() === def.id ? 'bg-white text-' + (def.isTraining ? 'emerald' : def.color) + '-600' : 'bg-slate-100 text-slate-600'">
+                                             {{ getDocsByType(def.id).length }}
+                                         </div>
+                                     }
+                                </button>
+                            }
                         }
                     </div>
                 </div>
@@ -134,18 +149,43 @@ import { ToastService } from '../services/toast.service';
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-bold text-slate-800 leading-none mb-1">{{ getSelectedDef()?.label }}</h3>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Gestione Documentazione Compliance</p>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ getSelectedDef()?.isTraining ? 'FORMAZIONE E QUALIFICA LAVORO' : 'Gestione Documentazione Compliance' }}</p>
                                 </div>
                             </div>
                             
-                            <label class="cursor-pointer group/btn w-full sm:w-auto">
-                                <input type="file" class="hidden" (change)="handleFileSelect($event, selectedDocType() || '')" multiple>
-                                <div class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2 w-full">
-                                    <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-                                    Carica
-                                </div>
-                            </label>
+                            <div class="flex items-center gap-3 w-full sm:w-auto">
+                                @if (getSelectedDef()?.isTraining) {
+                                    <div class="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-100 text-[10px] font-bold text-emerald-600 uppercase tracking-tight">
+                                        <i class="fa-solid fa-graduation-cap"></i> Highlight Formazione
+                                    </div>
+                                }
+                                <label class="cursor-pointer group/btn flex-1 sm:flex-initial">
+                                    <input type="file" class="hidden" (change)="handleFileSelect($event, selectedDocType() || '')" multiple>
+                                    <div class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2 w-full"
+                                         [class.bg-emerald-600]="getSelectedDef()?.isTraining"
+                                         [class.hover:bg-emerald-700]="getSelectedDef()?.isTraining">
+                                        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+                                        Carica Documento
+                                    </div>
+                                </label>
+                            </div>
                         </div>
+
+                        <!-- Training Highlight Description -->
+                        @if (getSelectedDef()?.isTraining) {
+                            <div class="px-6 py-4 bg-emerald-50/30 border-b border-emerald-100/50">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-white border border-emerald-100 text-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
+                                        <i class="fa-solid fa-circle-info text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-600 font-medium leading-relaxed italic">
+                                            {{ getTrainingDescription(selectedDocType() || '') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
 
                         <div class="p-6">
                             @if (getSelectedDef()?.hasExpiry) {
@@ -173,8 +213,12 @@ import { ToastService } from '../services/toast.service';
                                 @for (doc of getDocsByType(selectedDocType() || ''); track doc.id) {
                                     <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-slate-200 hover:border-blue-300 transition-colors shadow-sm relative group">
                                         <div class="flex items-center gap-4 overflow-hidden pr-2">
-                                            <div [class]="'w-10 h-10 rounded-md flex items-center justify-center shrink-0 border bg-' + getDocColor(doc.type) + '-50 border-' + getDocColor(doc.type) + '-100 text-' + getDocColor(doc.type) + '-600'">
-                                                <i [class]="'fa-solid ' + getDocIcon(doc.type) + ' text-lg'"></i>
+                                            <div [class]="'w-12 h-12 rounded-md flex items-center justify-center shrink-0 border overflow-hidden shadow-sm bg-' + getDocColor(doc.type) + '-50 border-' + getDocColor(doc.type) + '-100 text-' + getDocColor(doc.type) + '-600'">
+                                                @if (isImage(doc.fileType)) {
+                                                    <img [src]="doc.fileData" class="w-full h-full object-cover">
+                                                } @else {
+                                                    <i [class]="'fa-solid ' + getDocIcon(doc.type) + ' text-xl'"></i>
+                                                }
                                             </div>
                                             <div class="min-w-0">
                                                 <span class="text-sm font-bold text-slate-700 block truncate mb-0.5" [title]="doc.fileName">{{ doc.fileName }}</span>
@@ -244,7 +288,7 @@ import { ToastService } from '../services/toast.service';
     @if (previewDoc()) {
         <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" (click)="previewDoc.set(null)"></div>
-            <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 animate-slide-up flex flex-col max-h-[90vh]">
+            <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-slide-up flex flex-col h-[85vh]">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-3">
                         <div [class]="'w-10 h-10 rounded-lg flex items-center justify-center border shadow-sm shrink-0 bg-' + getDocColor(previewDoc()?.type || '') + '-50 text-' + getDocColor(previewDoc()?.type || '') + '-600 border-' + getDocColor(previewDoc()?.type || '') + '-100'">
@@ -260,22 +304,28 @@ import { ToastService } from '../services/toast.service';
                     </button>
                 </div>
                 
-                <div class="flex-1 bg-slate-50 flex flex-col items-center justify-center relative p-8 md:p-12 overflow-y-auto">
-                    <div class="absolute inset-0 opacity-5 pointer-events-none select-none flex items-center justify-center text-9xl font-black text-slate-900 -rotate-12 uppercase">
-                         {{ previewDoc()?.type }}
-                    </div>
-                    
-                    <div class="relative z-10 text-center max-w-sm mx-auto">
-                        <div [class]="'w-24 h-24 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-200 text-4xl group text-' + getDocColor(previewDoc()?.type || '') + '-500'">
-                             <i [class]="'fa-solid ' + getDocIcon(previewDoc()?.type || '')"></i>
+                <div class="flex-1 bg-slate-50 flex flex-col items-center justify-center relative overflow-hidden">
+                    @if (isImage(previewDoc()?.fileType || '')) {
+                        <div class="w-full h-full flex items-center justify-center p-4">
+                            <img [src]="previewDoc()?.fileData" class="max-w-full max-h-full object-contain rounded shadow-lg border border-slate-200">
                         </div>
-                        <h3 class="text-xl font-bold text-slate-800 mb-2">Anteprima Documento</h3>
-                        <p class="text-xs text-slate-500 mb-8 leading-relaxed">Il documento è archiviato in modo sicuro nel cloud aziendale ed è pronto per essere consultato.</p>
-                        
-                        <button (click)="downloadDoc(previewDoc())" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-black text-[10px] tracking-widest uppercase shadow-sm transition-all hover:bg-blue-700 active:scale-95 flex items-center justify-center gap-2 w-full max-w-[200px] mx-auto">
-                            <i class="fa-solid fa-cloud-arrow-down"></i> Scarica
-                        </button>
-                    </div>
+                    } @else if (isPdf(previewDoc()?.fileType || '')) {
+                        <iframe [src]="getSafeUrl(previewDoc()?.fileData || '')" class="w-full h-full border-none shadow-inner bg-white"></iframe>
+                    } @else if (isText(previewDoc()?.fileType || '')) {
+                        <div class="w-full h-full p-8 overflow-y-auto">
+                            <pre class="w-full p-6 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl shadow-2xl border border-slate-800 leading-relaxed overflow-x-auto whitespace-pre-wrap">
+{{ previewDoc()?.fileData }}
+                            </pre>
+                        </div>
+                    } @else {
+                        <div class="text-center max-w-sm mx-auto">
+                            <div [class]="'w-24 h-24 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-200 text-4xl group text-' + getDocColor(previewDoc()?.type || '') + '-500'">
+                                 <i [class]="'fa-solid ' + getDocIcon(previewDoc()?.type || '')"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">Anteprima Documento</h3>
+                            <p class="text-xs text-slate-500 mb-8 leading-relaxed">Il formato del file non supporta l'anteprima diretta. Scarica il file per visualizzarlo.</p>
+                        </div>
+                    }
                 </div>
                 
                 <div class="p-3 bg-white border-t border-slate-100 flex items-center justify-between text-[10px]">
@@ -312,6 +362,7 @@ import { ToastService } from '../services/toast.service';
 export class DocumentationViewComponent {
     state = inject(AppStateService);
     toast = inject(ToastService);
+    sanitizer = inject(DomSanitizer);
 
     selectedDocType = signal<string | 'all'>('all');
     previewDoc = signal<AppDocument | null>(null);
@@ -329,8 +380,23 @@ export class DocumentationViewComponent {
         { id: 'inps_inail', label: 'Iscrizione INPS / INAIL', icon: 'fa-stamp', color: 'orange' },
         { id: 'messa_terra', label: 'DM 37/08 messa a terra DPR 462/01', icon: 'fa-bolt', color: 'yellow' },
         { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation', color: 'red' },
-        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney', color: 'teal' }
+        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney', color: 'teal' },
+        
+        { id: 'training_divider', type: 'divider', label: 'Formazione Lavoro' },
+        
+        { id: 'haccp_cert', label: 'Attestato HACCP / Sicurezza', icon: 'fa-graduation-cap', color: 'emerald', isTraining: true },
+        { id: 'haccp_update', label: 'Aggiornamenti Sicurezza', icon: 'fa-arrows-rotate', color: 'emerald', isTraining: true },
+        { id: 'haccp_procedures', label: 'Procedure Operative Standard', icon: 'fa-book-open-reader', color: 'emerald', isTraining: true }
     ];
+
+    getTrainingDescription(id: string): string {
+        switch (id) {
+            case 'haccp_cert': return 'Archiviazione degli attestati di formazione obbligatoria HACCP e Sicurezza sul Lavoro per tutto il personale operativo.';
+            case 'haccp_update': return 'Documentazione relativa ai corsi di aggiornamento periodico e refresh formativi in ambito sicurezza alimentare.';
+            case 'haccp_procedures': return 'Raccolta delle istruzioni di lavoro specifiche (SOP) e procedure operative approvate per le attività quotidiane.';
+            default: return '';
+        }
+    }
 
     getDocColor(type: string): string {
         const def = this.docDefinitions.find(d => d.id === type);
@@ -432,15 +498,28 @@ export class DocumentationViewComponent {
         this.previewDoc.set(doc);
     }
 
+    isImage(type: string): boolean {
+        return type.startsWith('image/');
+    }
+
+    isPdf(type: string): boolean {
+        return type === 'application/pdf';
+    }
+
+    isText(type: string): boolean {
+        return type.startsWith('text/') || type === 'application/json';
+    }
+
+    getSafeUrl(base64: string) {
+        return this.sanitizer.bypassSecurityTrustResourceUrl(base64);
+    }
+
     downloadDoc(doc: any | null) {
         if (!doc) return;
-        this.toast.info('Download in corso', `Preparazione di ${doc.fileName}...`);
-        setTimeout(() => {
-            const link = document.createElement('a');
-            link.href = '#';
-            link.download = doc.fileName;
-            link.click();
-        }, 800);
+        const link = document.createElement('a');
+        link.href = doc.fileData;
+        link.download = doc.fileName;
+        link.click();
     }
 
     askDeleteDoc(doc: any) {

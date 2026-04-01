@@ -268,14 +268,21 @@ interface ChecklistItem {
 
                     <div class="flex items-center gap-3 flex-1 justify-end shrink-0">
                         @if (item.hasTemperature) {
-                            <div class="w-20 bg-white rounded border border-slate-200 px-2 flex items-center gap-1.5 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-shadow h-7 shadow-sm">
-                                <i class="fa-solid fa-temperature-half text-[11px] text-slate-400"></i>
-                                <input type="number" 
-                                       [ngModel]="statusMap()[item.id]?.temperature"
-                                       (ngModelChange)="updateTemperature(item.id, $event)"
-                                       placeholder="°C"
-                                       [disabled]="isSubmitted()"
-                                       class="w-full font-bold text-slate-700 bg-transparent h-full focus:outline-none text-sm disabled:opacity-50">
+                            <div class="flex flex-col items-end gap-1">
+                                <div class="w-24 bg-white rounded border border-slate-200 px-2 flex items-center gap-1.5 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-shadow h-7 shadow-sm">
+                                    <i class="fa-solid fa-temperature-half text-[11px] text-slate-400"></i>
+                                    <input type="number" 
+                                           [ngModel]="statusMap()[item.id]?.temperature"
+                                           (ngModelChange)="updateTemperature(item.id, $event, item.label)"
+                                           placeholder="°C"
+                                           [disabled]="isSubmitted()"
+                                           class="w-full font-bold text-slate-700 bg-transparent h-full focus:outline-none text-sm disabled:opacity-50">
+                                </div>
+                                @if (statusMap()[item.id]?.isAutomaticIssue) {
+                                    <span class="text-[9px] font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 uppercase tracking-tight animate-pulse">
+                                        Parametro HACCP Fuori Norma
+                                    </span>
+                                }
                             </div>
                         }
 
@@ -470,11 +477,53 @@ export class OperativeChecklistComponent {
       this.autoSave();
    }
 
-   updateTemperature(id: string, temperature: string) {
+   updateTemperature(id: string, temperature: string, label: string) {
+      if (!temperature) {
+          this.statusMap.update(map => ({
+              ...map,
+              [id]: { ...map[id], temperature: '', status: 'pending', isAutomaticIssue: false, note: undefined }
+          }));
+          return;
+      }
+
+      const tempValue = parseFloat(temperature);
+      const nameLower = label.toLowerCase();
+      
+      let isIssue = false;
+      let alertMsg = '';
+
+      if (nameLower.includes('congelatore')) {
+          if (tempValue > -18) {
+              isIssue = true;
+              alertMsg = 'Prodotto Congelato fuori parametro (deve essere ≤ -18°C)';
+          }
+      } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella')) {
+          if (tempValue < 4 || tempValue > 8) {
+              isIssue = true;
+              alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
+          }
+      } else if (nameLower.includes('caldo') || nameLower.includes('cottura') || nameLower.includes('forno')) {
+          if (tempValue < 65) {
+              isIssue = true;
+              alertMsg = 'Catena del Caldo fuori parametro (deve essere ≥ 65°C)';
+          }
+      }
+
       this.statusMap.update(map => ({
          ...map,
-         [id]: { ...map[id], temperature, status: map[id]?.status || 'ok' }
+         [id]: { 
+             ...map[id], 
+             temperature, 
+             status: isIssue ? 'issue' : 'ok',
+             isAutomaticIssue: isIssue,
+             note: isIssue ? alertMsg : undefined
+         }
       }));
+
+      if (isIssue) {
+          this.toast.error('HACCP Warning', alertMsg);
+      }
+      
       this.autoSave();
    }
 

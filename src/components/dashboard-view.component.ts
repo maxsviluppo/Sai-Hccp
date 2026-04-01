@@ -112,27 +112,28 @@ interface SystemAlert {
                  <i class="fa-solid fa-chart-line text-blue-500"></i> Riepilogo Globale
                </div>
             </div>
-            
-            <div class="space-y-5">
-               @for (phase of [
-                  {id: 'pre', label: 'Fase Pre-Operativa', data: phaseRecap().pre, color: 'text-sky-600', bg: 'bg-sky-50', bgFill: 'bg-sky-500'},
-                  {id: 'op', label: 'Fase Operativa', data: phaseRecap().op, color: 'text-indigo-600', bg: 'bg-indigo-50', bgFill: 'bg-indigo-500'},
-                  {id: 'post', label: 'Fase Post-Operativa', data: phaseRecap().post, color: 'text-purple-600', bg: 'bg-purple-50', bgFill: 'bg-purple-500'}
-                ]; track phase.id) {
-                <div class="flex items-center gap-4">
-                  <div class="w-36 flex-shrink-0">
-                    <p class="text-sm font-semibold text-slate-700">{{ phase.label }}</p>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-wide">{{ phase.data.count }} su {{ (filteredUsers() || []).length || 1 }} completati</p>
-                  </div>
-                  <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                     <div class="h-full rounded-full transition-all duration-1000" [class]="phase.bgFill" [style.width.%]="phase.data.pct"></div>
-                  </div>
-                  <div class="w-12 text-right">
-                    <span class="text-sm font-bold text-slate-700 tabular-nums">{{ (phase.data.pct | number:'1.0-0') }}%</span>
-                  </div>
-                </div>
-               }
-            </div>
+                        <div class="space-y-5">
+                @for (phase of [
+                   {id: 'pre', label: 'Apertura (Pre-Op)', data: phaseRecap().pre, color: 'text-sky-600', bgFill: 'bg-sky-500'},
+                   {id: 'op', label: 'Monitoraggio (Op)', data: phaseRecap().op, color: 'text-indigo-600', bgFill: 'bg-indigo-500'},
+                   {id: 'post', label: 'Chiusura (Post-Op)', data: phaseRecap().post, color: 'text-purple-600', bgFill: 'bg-purple-500'}
+                 ]; track phase.id) {
+                 <div class="flex items-center gap-4">
+                   <div class="w-40 flex-shrink-0">
+                     <p class="text-sm font-semibold text-slate-700">{{ phase.label }}</p>
+                     <p class="text-[10px] text-slate-500 uppercase tracking-wide">
+                        {{ phase.data.count }} su {{ phase.data.total }} operazioni
+                     </p>
+                   </div>
+                   <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all duration-1000" [class]="phase.bgFill" [style.width.%]="phase.data.pct"></div>
+                   </div>
+                   <div class="w-12 text-right">
+                     <span class="text-sm font-bold text-slate-700 tabular-nums">{{ (phase.data.pct | number:'1.0-0') }}%</span>
+                   </div>
+                 </div>
+                }
+             </div>
           </div>
 
           <!-- Quick Access Links -->
@@ -185,21 +186,12 @@ interface SystemAlert {
           <div class="bg-slate-900 rounded-2xl p-6 shadow-md text-white border border-slate-800 relative overflow-hidden">
             <div class="absolute right-0 top-0 h-32 w-32 bg-blue-500/20 rounded-full blur-2xl"></div>
             <h3 class="text-lg font-bold mb-2 relative z-10 tracking-tight">Esportazione Ufficiale</h3>
-            <p class="text-xs text-slate-400 mb-6 relative z-10">Genera ed invia i registri conformi per la giornata odierna.</p>
+            <p class="text-xs text-slate-400 mb-6 relative z-10">Genera i registri conformi in formato PDF per la giornata odierna.</p>
             
             <div class="space-y-3 relative z-10">
-               @if (isSendingReport()) {
-                <div class="py-3 px-4 bg-white/10 rounded-xl text-center border border-white/5 data-loading animate-pulse">
-                   <p class="text-xs font-bold text-blue-300 uppercase tracking-widest">Elaborazione in corso...</p>
-                </div>
-               } @else {
-                 <button (click)="sendDailyReport()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-                   <i class="fa-solid fa-paper-plane"></i> INVIA PEC
+                 <button (click)="printDailyReport()" class="w-full py-3 bg-white hover:bg-slate-100 text-slate-900 text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
+                   <i class="fa-solid fa-file-pdf text-red-500"></i> GENERA REPORTE PDF
                  </button>
-                 <button (click)="printDailyReport()" class="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl transition-colors border border-white/10 flex items-center justify-center gap-2">
-                   <i class="fa-solid fa-print"></i> ANTEPRIMA A4
-                 </button>
-               }
             </div>
           </div>
 
@@ -264,7 +256,7 @@ export class DashboardViewComponent {
   state = inject(AppStateService);
   private toastService = inject(ToastService);
 
-  isSendingReport = signal(false);
+
 
   // --- KPI Methods ---
   getFilteredClientsCount() {
@@ -298,13 +290,7 @@ export class DashboardViewComponent {
   }
 
   // --- Report Methods ---
-  sendDailyReport() {
-    this.isSendingReport.set(true);
-    setTimeout(() => {
-      this.isSendingReport.set(false);
-      this.toastService.success('Report Inviato', `Il report delle verifiche per il ${this.getCurrentDate()} è stato inviato via email all'amministrazione.`);
-    }, 2000);
-  }
+
 
   printDailyReport() {
     const currentCompanyId = this.state.companyConfig()?.id;
@@ -423,25 +409,14 @@ export class DashboardViewComponent {
   });
 
   kpiData = computed(() => {
-    const activities = this.collaboratorActivities();
-    const currentDate = this.state.filterDate();
-    const currentUsers = this.filteredUsers();
-    const phaseIds = ['pre-op-checklist', 'operative-checklist', 'post-op-checklist'];
-
-    let completedCount = 0;
-    currentUsers.forEach(user => {
-      const userPhases = this.state.checklistRecords()
-        .filter(r => r.userId === user.id && r.date === currentDate && phaseIds.includes(r.moduleId))
-        .map(r => r.moduleId);
-      completedCount += new Set(userPhases).size;
-    });
-
-    const totalExpectedPhases = currentUsers.length * 3;
+    const recap = this.phaseRecap();
+    const totalPossible = recap.pre.total + recap.op.total + recap.post.total;
+    const totalCompleted = recap.pre.count + recap.op.count + recap.post.count;
 
     return {
-      completed: completedCount,
-      total: totalExpectedPhases || 3,
-      activeUsers: activities.filter(a => a.status !== 'inactive').length
+      completed: totalCompleted,
+      total: totalPossible || 3,
+      activeUsers: this.collaboratorActivities().filter(a => a.status !== 'inactive').length
     };
   });
 
@@ -505,22 +480,70 @@ export class DashboardViewComponent {
   phaseRecap = computed(() => {
     const allRecords = this.state.checklistRecords();
     const currentDate = this.state.filterDate();
-    const users = this.filteredUsers();
-    const userCount = users.length || 1;
+    
+    // Determine the relevant clients (base entities)
+    const currentCompanyId = this.state.companyConfig()?.id;
+    let targetClients = this.state.clients();
+    
+    if (currentCompanyId) {
+      targetClients = targetClients.filter(c => c.id === currentCompanyId);
+    }
+    
+    const allEquipment = this.state.selectedEquipment();
+
+    const getModulePossibleChecks = (clientId: string, moduleId: string) => {
+      const clientEquipmentCount = allEquipment.filter(e => {
+        const cid = (e as any).client_id || (e as any).clientId;
+        return String(cid) === String(clientId);
+      }).length;
+
+      if (moduleId === 'pre-op-checklist') return 42 + (clientEquipmentCount * 2);
+      if (moduleId === 'operative-checklist') return 2 + clientEquipmentCount;
+      if (moduleId === 'post-op-checklist') return 22 + (clientEquipmentCount * 2);
+      return 1;
+    };
+
+    const countCompletedItemsInRecord = (record: any) => {
+      const data = record.data;
+      if (!data) return 0;
+      if (record.moduleId === 'pre-op-checklist') {
+        const areaDone = (data.areas || []).reduce((acc: number, a: any) => acc + (a.steps || []).filter((s: any) => s.status !== 'pending').length, 0);
+        const globalDone = (data.globalItems || []).filter((i: any) => i.status !== 'pending').length;
+        return areaDone + globalDone;
+      }
+      if (record.moduleId === 'operative-checklist') {
+        return (data.items || []).filter((i: any) => i.status !== 'pending').length;
+      }
+      if (record.moduleId === 'post-op-checklist') {
+        return (data.areas || []).reduce((acc: number, a: any) => acc + (a.steps || []).filter((s: any) => s.status !== 'pending').length, 0);
+      }
+      return 0;
+    };
 
     const getPhaseStats = (moduleId: string) => {
-      const records = allRecords.filter(r =>
-        r.moduleId === moduleId &&
-        r.date === currentDate &&
-        users.some(u => u.id === r.userId)
-      );
-      const uniqueCompletedUsers = new Set(records.map(r => r.userId)).size;
-      const issues = records.filter(r => r.data.status === 'Non Conforme').length;
+      const moduleRecords = allRecords.filter(r => r.moduleId === moduleId && r.date === currentDate);
+      let totalPossible = 0;
+      let totalDone = 0;
+      let issueCount = 0;
+
+      targetClients.forEach(client => {
+        totalPossible += getModulePossibleChecks(client.id, moduleId);
+        const clientRec = moduleRecords.find(r => {
+           const user = this.state.systemUsers().find(u => u.id === r.userId);
+           return user?.clientId === client.id;
+        });
+        if (clientRec) {
+          totalDone += countCompletedItemsInRecord(clientRec);
+          const hasIssue = (clientRec.data?.status === 'Non Conforme' || clientRec.data?.areas?.some((a: any) => a.steps?.some((s: any) => s.status === 'issue')) || clientRec.data?.items?.some((i: any) => i.status === 'issue'));
+          if (hasIssue) issueCount++;
+        }
+      });
 
       return {
-        pct: userCount > 0 ? Math.min(100, (uniqueCompletedUsers / userCount) * 100) : 0,
-        count: uniqueCompletedUsers,
-        issues
+        pct: totalPossible > 0 ? (totalDone / totalPossible) * 100 : 0,
+        count: totalDone,
+        total: totalPossible,
+        issues: issueCount
       };
     };
 
