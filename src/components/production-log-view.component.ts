@@ -673,7 +673,7 @@ export class ProductionLogViewComponent {
             ],
             'Uova': [
                 'uova', 'uovo', 'albume', 'tuorlo', 'uovo in polvere', 'uovo liquido', 'uovo pastorizzato', 
-                'lecitina di uovo', 'E1105', 'albumina', 'vitellina', 'globulina', 'maionese', 'pasta all\\'uovo', 
+                'lecitina di uovo', 'E1105', 'albumina', 'vitellina', 'globulina', 'maionese', "pasta all'uovo", 
                 'meringhe', 'zabaione', 'creme pasticcere', 'bignè', 'panatura', 'doratura', 'olandese', 'tartara'
             ],
             'Pesce': [
@@ -682,7 +682,7 @@ export class ProductionLogViewComponent {
                 'caesar salad', 'dado pesce', 'zuppa pesce'
             ],
             'Arachidi': [
-                'arachidi', 'spagnolette', 'noccioline americane', 'olio di arachidi', 'burro d\\'arachidi', 
+                'arachidi', 'spagnolette', 'noccioline americane', 'olio di arachidi', "burro d'arachidi", 
                 'farina di arachidi', 'granella di arachidi', 'satay'
             ],
             'Soia': [
