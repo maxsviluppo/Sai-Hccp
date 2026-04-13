@@ -77,21 +77,43 @@ interface CheckItem {
                 </div>
             }
 
-            <!-- Additional Help Card -->
-            <div class="bg-slate-900 p-8 rounded-[32px] text-white flex flex-col justify-between border border-white/10 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-500">
-                    <i class="fa-solid fa-file-invoice text-7xl"></i>
-                </div>
+            <!-- Supporto Qualità SAI -->
+            <div class="bg-slate-900 p-8 rounded-[32px] text-white flex flex-col justify-between border border-white/10 relative overflow-hidden group shadow-2xl">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-rose-500/10 blur-[60px] rounded-full group-hover:bg-rose-500/20 transition-all duration-700"></div>
+                
                 <div class="relative z-10">
-                    <h4 class="text-xl font-black mb-2 italic">Supporto Qualità</h4>
-                    <p class="text-slate-400 text-xs font-medium leading-relaxed">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-white p-2 shadow-lg border border-white/20 shrink-0">
+                            <img [src]="state.adminCompany().logo" class="w-full h-full object-contain">
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-black italic tracking-tight leading-none">Supporto Qualità</h4>
+                            <p class="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-1.5">{{ state.adminCompany().name }}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-slate-400 text-xs font-medium leading-relaxed mb-6">
                         Per anomalie non previste dai modelli standard, contattare il Responsabile Qualità per l'apertura di un fascicolo dedicato.
                     </p>
                 </div>
-                <div class="pt-8 relative z-10">
-                    <div class="flex items-center gap-4 py-3 px-5 bg-white/5 rounded-2xl border border-white/10">
-                        <i class="fa-solid fa-phone-volume text-rose-500"></i>
-                        <span class="text-xs font-bold font-mono tracking-widest">HELP-LINE: 800 123 456</span>
+
+                <div class="relative z-10 space-y-3">
+                    <div class="flex items-center gap-4 py-3 px-5 bg-white/5 rounded-2xl border border-white/10 group-hover:bg-white/10 transition-colors">
+                        <i class="fa-solid fa-phone-volume text-rose-500 animate-pulse text-sm"></i>
+                        <div class="flex flex-col">
+                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Help-line diretta</span>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-black font-mono tracking-widest text-white">{{ state.adminCompany().cellphone }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 py-3 px-5 bg-white/5 rounded-2xl border border-white/10 group-hover:bg-white/10 transition-colors">
+                        <i class="fa-solid fa-envelope-open-text text-blue-400 text-sm"></i>
+                        <div class="flex flex-col">
+                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Supporto Tecnico</span>
+                            <span class="text-[10px] font-bold text-slate-200">{{ state.adminCompany().email }}</span>
+                        </div>
                     </div>
                 </div>
             </div>

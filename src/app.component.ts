@@ -30,7 +30,6 @@ import { PestControlViewComponent } from './components/pest-control-view.compone
 import { StaffHygieneViewComponent } from './components/staff-hygiene-view.component';
 import { AllergensConfigViewComponent } from './components/allergens-config-view.component';
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
-import { PrinterConfigViewComponent } from './components/printer-config-view.component';
 import { IngredientsBookViewComponent } from './components/ingredients-book-view.component';
 
 @Component({
@@ -66,7 +65,6 @@ import { IngredientsBookViewComponent } from './components/ingredients-book-view
     StaffHygieneViewComponent,
     AllergensConfigViewComponent,
     CleaningProductsViewComponent,
-    PrinterConfigViewComponent,
     IngredientsBookViewComponent
   ],
   templateUrl: './app.component.html'
@@ -80,9 +78,9 @@ export class AppComponent {
 
   hasAccessToCategory(category: string): boolean {
     if (this.state.isAdmin()) {
-      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication', 'documentation', 'hardware'].includes(category);
+      return ['dashboard', 'monitoring', 'history', 'production', 'config', 'communication', 'documentation', 'operations'].includes(category);
     }
-    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication', 'documentation', 'hardware'].includes(category);
+    return ['dashboard', 'operations', 'history', 'production', 'config', 'communication', 'documentation'].includes(category);
   }
   loginMode = signal<'SELECT' | 'ADMIN' | 'OPERATOR'>('SELECT');
   loginUsername = signal('');
@@ -141,8 +139,7 @@ export class AppComponent {
       'config': 'Configurazione',
       'communication': 'Comunicazioni',
       'documentation': 'Archivio Documentale',
-      'dashboard': 'Panoramica',
-      'hardware': 'Dotazioni & Periferiche'
+      'dashboard': 'Panoramica'
     };
     return labels[category] || category;
   }

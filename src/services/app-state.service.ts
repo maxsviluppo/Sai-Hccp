@@ -82,6 +82,7 @@ export interface Message {
   content: string;
   attachmentUrl?: string;
   attachmentName?: string;
+  fileData?: string; // Base64 data stored in DB
   timestamp: Date;
   read: boolean;
   replies: MessageReply[];
@@ -94,6 +95,7 @@ export interface MessageReply {
   content: string;
   attachmentUrl?: string;
   attachmentName?: string;
+  fileData?: string;
   timestamp: Date;
 }
 
@@ -346,16 +348,29 @@ export class AppStateService {
   async initSupabase() {
     await this.refreshAllData();
 
-    supabase.channel('custom-db-channel')
+    // Comprehensive Real-time Subscriptions
+    supabase.channel('haccp-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => this.refreshAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'production_records' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients_book' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounting_payments' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'journal_entries' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounting_reminders' }, () => this.refreshAllData())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentInsert(payload.new))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentUpdate(payload.new))
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentDelete(payload.old.id))
       .subscribe();
+
+    // Polling Fallback Every 10 Seconds (Ensures eventual consistency if Realtime is muted)
+    setInterval(() => {
+        this.refreshAllData();
+    }, 10000);
   }
 
   private handleEquipmentInsert(newEq: any) {
@@ -385,7 +400,11 @@ export class AppStateService {
     this.selectedEquipment.update(list => list.filter(e => e.id !== id));
   }
 
+  private isRefreshingData = false;
   async refreshAllData() {
+    if (this.isRefreshingData) return;
+    this.isRefreshingData = true;
+
     console.log('Refreshing HACCP PRO Data from Supabase...');
     try {
       // Synchronize Clients
@@ -535,6 +554,7 @@ export class AppStateService {
           content: m.content,
           attachmentUrl: m.attachment_url,
           attachmentName: m.attachment_name,
+          fileData: m.file_data,
           timestamp: new Date(m.timestamp || m.created_at),
           read: m.read,
           replies: (m.replies || []).map((r: any) => ({
@@ -542,6 +562,9 @@ export class AppStateService {
             senderId: r.sender_id || r.senderId,
             senderName: r.sender_name || r.senderName,
             content: r.content,
+            attachmentUrl: r.attachment_url,
+            attachmentName: r.attachment_name,
+            fileData: r.file_data,
             timestamp: new Date(r.timestamp)
           }))
         })));
@@ -627,8 +650,52 @@ export class AppStateService {
           updatedAt: new Date(r.updated_at)
         })));
       }
+
+      // 14. Run automated suspension checks
+      await this.syncSuspenseStatuses();
+      
     } catch (e) {
       console.error('Error refreshing data from Supabase:', e);
+    } finally {
+      this.isRefreshingData = false;
+    }
+  }
+
+  /**
+   * Automates the suspension and reactivation of clients based on payment regularity.
+   * Rules: 
+   * - Overdue > 5 days: SUSPEND
+   * - All settled: REACTIVATE
+   */
+  private async syncSuspenseStatuses() {
+    const clients = this.clients();
+    const payments = this.payments();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (const client of clients) {
+      // Skip internal demo context
+      if (client.id === 'demo' || client.name.toLowerCase().includes('demo')) continue;
+
+      // Check for any "blocking debt": not paid and past due date by more than 5 days
+      const hasBlockingDebt = payments.some(p => {
+        if (p.clientId !== client.id || p.status === 'paid') return false;
+        
+        const dueDate = new Date(p.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = today.getTime() - dueDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        return diffDays > 5;
+      });
+
+      // Update if state changes
+      if (client.suspended !== hasBlockingDebt) {
+        console.log(`[HACCP-PRO] Auto-suspense change for ${client.name}: ${hasBlockingDebt}`);
+        // We call updateClient directly which handles DB sync
+        await this.updateClient(client.id, { suspended: hasBlockingDebt });
+      }
     }
   }
 
@@ -724,7 +791,7 @@ export class AppStateService {
 
     const allClients = this.clients();
     const target = allClients.find(c => c.id === targetClientId);
-    if (!target) return this.documents().filter(d => d.clientId === targetClientId);
+    if (!target) return this.documents().filter(d => d.clientId === targetClientId && d.category !== 'microbio');
 
     // Group by Brand (PIVA or name prefix)
     const brandKey = target.piva || target.name.split(' ')[0].toLowerCase();
@@ -735,7 +802,16 @@ export class AppStateService {
       })
       .map(c => c.id);
 
-    return this.documents().filter(d => brandUnitIds.includes(d.clientId));
+    return this.documents()
+      .filter(d => brandUnitIds.includes(d.clientId))
+      .filter(d => d.category !== 'microbio'); // Keep separated from general archive
+  });
+
+  readonly microbioDocuments = computed(() => {
+    const targetClientId = this.activeTargetClientId();
+    if (!targetClientId) return [];
+    
+    return this.documents().filter(d => d.clientId === targetClientId && d.category === 'microbio');
   });
 
   // Global Filtered Checklists for Admin View
@@ -819,22 +895,17 @@ export class AppStateService {
 
     // --- ARCHIVIO DOCUMENTALE ---
     { id: 'documentation', label: 'Archivio Documentale', icon: 'fa-folder-tree', category: 'documentation' },
+    { id: 'micro-bio', label: 'Analisi Microbiologiche', icon: 'fa-vial-virus', category: 'documentation' },
 
     // --- REGISTRI E FASI OPERATIVE ---
-    { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations' },
-    { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations' },
-    { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations' },
+    { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
+    { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
+    { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations', operatorOnly: true },
+    { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations', operatorOnly: true },
+
+    // --- PRODUZIONE E TRACCIABILITÀ ---
     { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'production' },
     { id: 'ingredients-book', label: 'Libro Ingredienti', icon: 'fa-book-open', category: 'production' },
-
-    { id: 'cleaning-maintenance', label: 'Piano Sanificazioni', icon: 'fa-broom', category: 'operations' },
-    { id: 'pest-control', label: 'Controllo Infestanti', icon: 'fa-bug', category: 'operations', adminOnly: true },
-    { id: 'micro-bio', label: 'Analisi Microbiologiche', icon: 'fa-vial-virus', category: 'operations' },
-    { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations' },
-    { id: 'temperatures', label: 'Monitoraggio Temperature', icon: 'fa-thermometer-half', category: 'operations', adminOnly: true },
-    { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', category: 'operations', adminOnly: true },
-    { id: 'allergens-ue1169', label: 'Allergeni UE1169', icon: 'fa-wheat-awn-circle-exclamation', category: 'operations', adminOnly: true },
-    { id: 'products-cleaning', label: 'Prodotti Chimici', icon: 'fa-vial', category: 'operations', adminOnly: true },
 
 
     // --- CONSUMABILI E MESSAGGI ---
@@ -847,14 +918,11 @@ export class AppStateService {
 
     { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
-    { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false },
-
-    // --- HARDWARE ---
-    { id: 'hardware-config', label: 'Dotazioni Hardware', icon: 'fa-print', category: 'hardware', adminOnly: false },
+    { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false }
   ];
 
   loginWithCredentials(username: string, pass: string): boolean {
-    // Backdoor for Development ("Accessi Aperti")
+    // Master Admin Access (Only via dev/dev)
     if (username === 'dev' && pass === 'dev') {
       this.currentUser.set({
         id: 'dev-admin',
@@ -864,15 +932,23 @@ export class AppStateService {
         initials: 'Adm',
         clientId: 'demo' // Default to demo context
       });
-      // companyConfig is now computed
-
       this.currentModuleId.set('dashboard');
       return true;
     }
 
+    // Standard User Access (Collaborators only)
     const user = this.systemUsers().find(u => u.username === username && u.password === pass && u.active);
 
     if (user) {
+      // BLOCK: Admins cannot log in through this standard path
+      if (user.role === 'ADMIN') {
+        this.toastService.error(
+          'Accesso Negato',
+          'L\'account amministratore non è accessibile con queste credenziali.'
+        );
+        return false;
+      }
+
       // Check if user's company is suspended
       const userClient = this.clients().find(c => c.id === user.clientId);
       if (userClient?.suspended) {
@@ -1153,6 +1229,15 @@ export class AppStateService {
   // --- Client/Company Management Methods ---
 
   async addClient(client: Omit<ClientEntity, 'id'>) {
+    const existing = this.clients().find(c => c.name.toLowerCase() === client.name.toLowerCase());
+    if (existing) {
+      this.toastService.warning(
+        'Nome Già In Uso',
+        `Esiste già un'azienda con il nome "${client.name}". Per favore, scegli un nome differente o aggiungi un riferimento per distinguerla (es. sede, città).`
+      );
+      return;
+    }
+
     const newClient = { ...client, id: Math.random().toString(36).substr(2, 9) };
     this.clients.update(c => [...c, newClient]);
       const { error } = await supabase.from('clients').insert({
@@ -1411,6 +1496,12 @@ export class AppStateService {
         return;
     }
 
+    // CHECK FILE SIZE (Limit to ~20MB)
+    if (doc.fileData && doc.fileData.length > 25 * 1024 * 1024) {
+        this.toastService.error('File troppo grande', 'Il file supera i 20MB. Riduci le dimensioni del PDF per il salvataggio cloud.');
+        return;
+    }
+
     const newDoc: AppDocument = {
       clientId: doc.clientId || targetClientId || user.clientId || 'demo',
       userId: user.id || 'system',
@@ -1473,6 +1564,28 @@ export class AppStateService {
     } else {
        console.error('Error deleting document:', error);
        this.toastService.error('Errore', 'Impossibile completare l\'eliminazione nel cloud.');
+    }
+  }
+
+  async updateDocumentName(id: string, newName: string) {
+    // Local Update
+    this.documents.update(allDocs => allDocs.map(d => {
+        if (d.id === id) {
+            return { ...d, fileName: newName };
+        }
+        return d;
+    }));
+
+    // DB Update
+    const { error } = await supabase.from('documents')
+        .update({ file_name: newName })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating file name:', error);
+        this.toastService.error('Errore Sync', 'Impossibile rinominare il file nel cloud.');
+    } else {
+        this.toastService.success('Rinomina Completata', 'Il nome del file è stato aggiornato.');
     }
   }
 
@@ -1588,10 +1701,17 @@ export class AppStateService {
       content,
       attachmentUrl: attachment?.url,
       attachmentName: attachment?.name,
+      fileData: attachment?.url,
       timestamp: new Date(),
       read: false,
       replies: []
     };
+
+    // Size check for message attachments (Limit to ~20MB)
+    if (newMessage.fileData && newMessage.fileData.length > 25 * 1024 * 1024) {
+      this.toastService.error('Allegato troppo pesante', 'Riduci le dimensioni del file sotto i 20MB per inviarlo via messaggio.');
+      return;
+    }
 
     this.messages.update(msgs => [newMessage, ...msgs]);
 
@@ -1607,6 +1727,7 @@ export class AppStateService {
       content: newMessage.content,
       attachment_url: newMessage.attachmentUrl,
       attachment_name: newMessage.attachmentName,
+      file_data: newMessage.fileData,
       timestamp: newMessage.timestamp.toISOString(),
       read: newMessage.read,
       replies: newMessage.replies

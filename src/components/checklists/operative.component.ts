@@ -221,7 +221,7 @@ interface ChecklistItem {
                         <div class="flex items-center gap-2 px-2">
                             <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fa-solid fa-temperature-arrow-up text-indigo-500"></i>
-                                Verifica Temperature e Conservazione
+                                Verifica Temperature, Conservazione e Attrezzature
                             </h3>
                         </div>
 

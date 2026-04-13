@@ -38,6 +38,10 @@ import { ToastService } from '../services/toast.service';
             <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca piatto o ingrediente..." 
                    class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
           </div>
+          <button (click)="printIngredientsBook()" 
+                  class="h-11 px-6 bg-white border-2 border-slate-900 text-slate-900 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 shrink-0">
+            <i class="fa-solid fa-print text-lg"></i> STAMPA LIBRO
+          </button>
           <button (click)="openAddModal()" 
                   class="h-11 px-6 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 shrink-0">
             <i class="fa-solid fa-plus-circle text-lg"></i> NUOVA SCHEDA
@@ -87,7 +91,10 @@ import { ToastService } from '../services/toast.service';
                     }
                   </div>
                 </td>
-                <td class="px-6 py-4 text-right space-x-2">
+                <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                  <button (click)="printSingleRecipe(recipe)" class="w-9 h-9 bg-white border border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 rounded-lg transition-all shadow-sm" title="Stampa singola scheda">
+                    <i class="fa-solid fa-print text-sm"></i>
+                  </button>
                   <button (click)="openEditModal(recipe)" class="w-9 h-9 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 rounded-lg transition-all shadow-sm">
                     <i class="fa-solid fa-pen-to-square text-sm"></i>
                   </button>
@@ -930,5 +937,312 @@ export class IngredientsBookViewComponent {
     if (confirm(`Eliminare "${recipe.name}"?`)) {
       this.state.deleteRecipe(recipe.id);
     }
+  }
+
+  printSingleRecipe(recipe: Recipe) {
+    const company = this.state.companyConfig();
+    const logoUrl = this.state.currentLogo();
+    const allergens = this.getAllergensForRecipe(recipe);
+    const ingredientsList = recipe.ingredients
+        .map(i => `${i.name}${i.percentage > 0 ? ' (' + i.percentage + '%)' : ''}`)
+        .join(', ');
+
+    const recipesHtml = `
+        <div class="recipe-entry">
+          <div class="recipe-header">
+            <div class="recipe-name">${recipe.name}</div>
+            <div class="recipe-category">${recipe.category || 'Generale'}</div>
+          </div>
+          
+          <div class="recipe-content">
+            <div class="section">
+              <strong>Ingredienti:</strong>
+              <span class="ingredients-text">${ingredientsList || 'Nessun ingrediente specificato.'}</span>
+            </div>
+
+            ${allergens.length > 0 ? `
+              <div class="section allergens-section">
+                <strong>Allergeni presenti:</strong>
+                <span class="allergens-list">${allergens.map(a => a.label).join(', ')}</span>
+              </div>
+            ` : `
+              <div class="section">
+                <strong>Allergeni:</strong> <span class="no-allergens">Nessun allergene rilevato ai sensi del Reg. UE 1169/2011.</span>
+              </div>
+            `}
+
+            ${recipe.description ? `
+              <div class="section description">
+                <strong>Note/Preparazione:</strong>
+                <p>${recipe.description}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+    const frameId = 'print-frame-ingredients-single';
+    let frame = document.getElementById(frameId) as HTMLIFrameElement;
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = frameId;
+      frame.style.display = 'none';
+      document.body.appendChild(frame);
+    }
+
+    const doc = frame.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>Scheda Piatto - ${recipe.name}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4; margin: 15mm; }
+            body { font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 0; line-height: 1.5; font-size: 11pt; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 10mm; margin-bottom: 10mm; }
+            .logo { max-height: 25mm; max-width: 60mm; object-fit: contain; }
+            .company-info { text-align: right; }
+            .company-info h1 { margin: 0; font-size: 16pt; font-weight: 900; text-transform: uppercase; color: #0f172a; }
+            .company-info p { margin: 2pt 0; font-size: 9pt; color: #64748b; font-weight: 600; }
+            .report-title { text-align: center; margin-bottom: 12mm; }
+            .report-title h2 { margin: 0; font-size: 20pt; font-weight: 900; text-transform: uppercase; color: #0f172a; }
+            .report-title p { margin: 5pt 0; font-size: 10pt; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+            .recipe-entry { border: 1px solid #f1f5f9; border-radius: 4mm; overflow: hidden; margin-top: 5mm; }
+            .recipe-header { background: #f8fafc; padding: 4mm 6mm; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+            .recipe-name { font-size: 13pt; font-weight: 900; text-transform: uppercase; color: #1e293b; }
+            .recipe-category { font-size: 8pt; font-weight: 900; text-transform: uppercase; padding: 1mm 3mm; background: #e2e8f0; border-radius: 2mm; color: #475569; }
+            .recipe-content { padding: 5mm 6mm; }
+            .section { margin-bottom: 3mm; }
+            .section strong { display: block; font-size: 8pt; text-transform: uppercase; color: #64748b; margin-bottom: 1mm; letter-spacing: 0.5px; }
+            .ingredients-text { font-size: 10pt; text-align: justify; display: block; }
+            .allergens-section { background: #fff1f2; border: 1px solid #fecdd3; padding: 2mm 3mm; border-radius: 2mm; }
+            .allergens-section strong { color: #be123c; }
+            .allergens-list { font-weight: 800; color: #9f1239; font-size: 10pt; text-transform: uppercase; }
+            .no-allergens { color: #94a3b8; font-style: italic; font-size: 9pt; }
+            .description { font-style: italic; color: #475569; font-size: 9pt; }
+            .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 8pt; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 5mm; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <img src="${logoUrl}" class="logo" onerror="this.style.display='none'">
+            <div class="company-info">
+              <h1>${company.name}</h1>
+              <p>${company.address}</p>
+              <p>PIVA: ${company.piva} | Tel: ${company.phone}</p>
+              <p>${company.email}</p>
+            </div>
+          </div>
+          <div class="report-title">
+            <h2>Scheda Tecnica Prodotto</h2>
+            <p>Conforme al Regolamento UE n. 1169/2011</p>
+          </div>
+          <div class="recipes-container">
+            ${recipesHtml}
+          </div>
+          <div class="footer">
+            Documento generato da HACCP PRO Traceability System
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+    setTimeout(() => {
+      frame.contentWindow?.print();
+    }, 1000);
+  }
+
+  printIngredientsBook() {
+    const recipes = this.state.filteredRecipes();
+    if (recipes.length === 0) {
+      this.toast.error('Errore', 'Nessuna ricetta da stampare.');
+      return;
+    }
+
+    const company = this.state.companyConfig();
+    const logoUrl = this.state.currentLogo();
+
+    const recipesHtml = recipes.map(r => {
+      const allergens = this.getAllergensForRecipe(r);
+      const ingredientsList = r.ingredients
+        .map(i => `${i.name}${i.percentage > 0 ? ' (' + i.percentage + '%)' : ''}`)
+        .join(', ');
+
+      return `
+        <div class="recipe-entry">
+          <div class="recipe-header">
+            <div class="recipe-name">${r.name}</div>
+            <div class="recipe-category">${r.category || 'Generale'}</div>
+          </div>
+          
+          <div class="recipe-content">
+            <div class="section">
+              <strong>Ingredienti:</strong>
+              <span class="ingredients-text">${ingredientsList || 'Nessun ingrediente specificato.'}</span>
+            </div>
+
+            ${allergens.length > 0 ? `
+              <div class="section allergens-section">
+                <strong>Allergeni presenti:</strong>
+                <span class="allergens-list">${allergens.map(a => a.label).join(', ')}</span>
+              </div>
+            ` : `
+              <div class="section">
+                <strong>Allergeni:</strong> <span class="no-allergens">Nessun allergene rilevato ai sensi del Reg. UE 1169/2011.</span>
+              </div>
+            `}
+
+            ${r.description ? `
+              <div class="section description">
+                <strong>Note/Preparazione:</strong>
+                <p>${r.description}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const frameId = 'print-frame-ingredients';
+    let frame = document.getElementById(frameId) as HTMLIFrameElement;
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = frameId;
+      frame.style.display = 'none';
+      document.body.appendChild(frame);
+    }
+
+    const doc = frame.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>Libro Ingredienti - ${company.name}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4; margin: 15mm; }
+            body { 
+              font-family: 'Inter', sans-serif; 
+              color: #1e293b; 
+              margin: 0; 
+              padding: 0; 
+              line-height: 1.5;
+              font-size: 11pt;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 10mm;
+              margin-bottom: 10mm;
+            }
+            .logo { max-height: 25mm; max-width: 60mm; object-fit: contain; }
+            .company-info { text-align: right; }
+            .company-info h1 { margin: 0; font-size: 16pt; font-weight: 900; text-transform: uppercase; color: #0f172a; }
+            .company-info p { margin: 2pt 0; font-size: 9pt; color: #64748b; font-weight: 600; }
+            
+            .report-title {
+              text-align: center;
+              margin-bottom: 12mm;
+            }
+            .report-title h2 { 
+              margin: 0; 
+              font-size: 22pt; 
+              font-weight: 900; 
+              text-transform: uppercase; 
+              letter-spacing: 1px;
+              color: #0f172a;
+            }
+            .report-title p { margin: 5pt 0; font-size: 10pt; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+
+            .recipe-entry {
+              margin-bottom: 15mm;
+              page-break-inside: avoid;
+              border: 1px solid #f1f5f9;
+              border-radius: 4mm;
+              overflow: hidden;
+            }
+            .recipe-header {
+              background: #f8fafc;
+              padding: 4mm 6mm;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .recipe-name { font-size: 13pt; font-weight: 900; text-transform: uppercase; color: #1e293b; }
+            .recipe-category { 
+              font-size: 8pt; 
+              font-weight: 900; 
+              text-transform: uppercase; 
+              padding: 1mm 3mm; 
+              background: #e2e8f0; 
+              border-radius: 2mm;
+              color: #475569;
+            }
+            .recipe-content { padding: 5mm 6mm; }
+            .section { margin-bottom: 3mm; }
+            .section strong { display: block; font-size: 8pt; text-transform: uppercase; color: #64748b; margin-bottom: 1mm; letter-spacing: 0.5px; }
+            .ingredients-text { font-size: 10pt; text-align: justify; display: block; }
+            .allergens-section { 
+              background: #fff1f2; 
+              border: 1px solid #fecdd3; 
+              padding: 2mm 3mm; 
+              border-radius: 2mm;
+            }
+            .allergens-section strong { color: #be123c; }
+            .allergens-list { font-weight: 800; color: #9f1239; font-size: 10pt; text-transform: uppercase; }
+            .no-allergens { color: #94a3b8; font-style: italic; font-size: 9pt; }
+            .description { font-style: italic; color: #475569; font-size: 9pt; }
+            
+            .footer {
+              position: fixed;
+              bottom: 0;
+              width: 100%;
+              text-align: center;
+              font-size: 8pt;
+              color: #94a3b8;
+              border-top: 1px solid #f1f5f9;
+              padding-top: 5mm;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <img src="${logoUrl}" class="logo" onerror="this.style.display='none'">
+            <div class="company-info">
+              <h1>${company.name}</h1>
+              <p>${company.address}</p>
+              <p>PIVA: ${company.piva} | Tel: ${company.phone}</p>
+              <p>${company.email}</p>
+            </div>
+          </div>
+
+          <div class="report-title">
+            <h2>Libro degli Ingredienti</h2>
+            <p>Conforme al Regolamento UE n. 1169/2011</p>
+          </div>
+
+          <div class="recipes-container">
+            ${recipesHtml}
+          </div>
+
+          <div class="footer">
+            Documento generato da HACCP PRO Traceability System - Pagina 1
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      frame.contentWindow?.print();
+    }, 1000);
   }
 }

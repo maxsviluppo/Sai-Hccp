@@ -262,38 +262,38 @@ import { FormsModule } from '@angular/forms';
 
                     <div class="p-8 bg-slate-50 flex justify-center items-center overflow-auto min-h-[400px]">
                         @if (labelFormat() === '62mm') {
-                            <!-- FORMAT 62mm (Continuous Standard - COMPACT) -->
-                            <div id="print-label-sticker" class="bg-white border-2 border-slate-300 p-2 font-sans text-black w-[300px] min-h-0 shadow-sm flex flex-col">
-                                <div class="text-center border-b border-black pb-1 mb-2">
-                                    <h4 class="text-[9px] font-black uppercase leading-tight">{{ state.companyConfig().name }}</h4>
-                                    <p class="text-[7.5px] font-bold leading-tight">{{ state.companyConfig().address }}</p>
+                            <!-- FORMAT 62mm (Continuous Standard) -->
+                            <div id="print-label-sticker" class="bg-white border-2 border-slate-300 p-6 font-sans text-black w-[350px] min-h-[500px] shadow-sm">
+                                <div class="text-center border-b-2 border-black pb-2 mb-4">
+                                    <h4 class="text-[10px] font-black uppercase">{{ state.companyConfig().name }}</h4>
+                                    <p class="text-[8px] font-bold">{{ state.companyConfig().address }}</p>
                                 </div>
-                                <div class="mb-2">
-                                    <p class="text-[7.5px] font-black uppercase text-slate-400 mb-0.5">PRODOTTO</p>
-                                    <h2 class="text-lg font-black uppercase italic leading-tight text-teal-900">{{ selectedRecordForLabel()?.mainProductName }}</h2>
+                                <div class="mb-4">
+                                    <p class="text-[8px] font-black uppercase text-slate-400 mb-0.5">PRODOTTO</p>
+                                    <h2 class="text-xl font-black uppercase italic leading-tight">{{ selectedRecordForLabel()?.mainProductName }}</h2>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2 mb-2">
-                                    <div class="p-1.5 border border-black rounded"><p class="text-[6.5px] font-black uppercase">PROD.</p><p class="text-[10px] font-black">{{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}</p></div>
-                                    <div class="p-1.5 bg-black text-white rounded"><p class="text-[6.5px] font-black uppercase text-slate-300">SCAD.</p><p class="text-[10px] font-black">{{ selectedRecordForLabel()?.expiryDate | date:'dd/MM/yy' }}</p></div>
+                                <div class="grid grid-cols-2 gap-3 mb-4">
+                                    <div class="p-2 border border-black rounded"><p class="text-[7px] font-black uppercase">PROD.</p><p class="text-[11px] font-black">{{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}</p></div>
+                                    <div class="p-2 bg-black text-white rounded"><p class="text-[7px] font-black uppercase">SCAD.</p><p class="text-[11px] font-black">{{ selectedRecordForLabel()?.expiryDate | date:'dd/MM/yy' }}</p></div>
                                 </div>
-                                <div class="border border-black p-1.5 rounded text-center mb-2">
-                                    <p class="text-[6.5px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">LOTTO INTERNO</p>
-                                    <p class="text-sm font-black font-mono leading-none">{{ selectedRecordForLabel()?.lotto }}</p>
+                                <div class="border-2 border-black p-2 rounded text-center mb-4">
+                                    <p class="text-[7px] font-black uppercase tracking-widest">LOTTO INTERNO</p>
+                                    <p class="text-base font-black font-mono leading-none">{{ selectedRecordForLabel()?.lotto }}</p>
                                 </div>
                                  
-                                <div class="border-t border-slate-200 pt-2 flex-grow">
-                                    <p class="text-[6.5px] font-black uppercase text-slate-400 mb-1.5">INGREDIENTI & TRACCIABILITA</p>
-                                    <div class="space-y-0.5">
+                                <div class="border-t border-slate-200 pt-3">
+                                    <p class="text-[7px] font-black uppercase text-slate-400 mb-2">INGREDIENTI & TRACCIABILITA</p>
+                                    <div class="space-y-1">
                                         @for (ing of selectedRecordForLabel()?.ingredients; track ing.id) {
-                                            <div class="text-[9px] font-bold border-b border-dotted border-slate-100 pb-0.5 flex justify-between gap-2">
-                                                <span class="truncate">• {{ ing.name }}</span>
-                                                <span class="font-mono text-[8.5px] opacity-60 shrink-0">L: {{ ing.lotto || 'N/A' }}</span>
+                                            <div class="text-[10px] font-bold border-b border-dotted border-slate-200 pb-0.5 flex justify-between">
+                                                <span>• {{ ing.name }}</span>
+                                                <span class="font-mono text-[9px] opacity-60">L: {{ ing.lotto || 'N/A' }}</span>
                                             </div>
                                         }
                                     </div>
                                 </div>
 
-                                <div class="mt-2 pt-2 border-t border-black">
+                                <div class="mt-4 pt-3 border-t-2 border-black">
                                     @let labelAllergens = getAllergens();
                                     @if (labelAllergens.length > 0) {
                                         <p class="text-[8px] font-black text-white bg-black px-1 uppercase inline-block mb-1">ATTENZIONE: contiene allergeni</p>
@@ -304,63 +304,55 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </div>
                         } @else {
-                            <!-- FORMAT 29x90mm (HORIZONTAL Layout - 90mm width x 29mm height) -->
-                            <div id="print-label-sticker" class="bg-white border border-black font-sans text-black w-[340px] h-[110px] flex flex-row overflow-hidden p-2 shadow-sm">
-                                <!-- LEFT COLUMN: Brand, Product & Ingredients -->
-                                <div class="flex-[1.5] flex flex-col min-w-0 pr-2 border-r border-black">
-                                    <div class="mb-1">
-                                        <h4 class="text-[8px] font-black uppercase leading-tight truncate">{{ state.companyConfig().name }}</h4>
-                                    </div>
-                                    
-                                    <div class="mb-1.5">
-                                        <h2 class="text-[11px] font-black uppercase leading-tight italic truncate text-teal-900">{{ selectedRecordForLabel()?.mainProductName }}</h2>
-                                    </div>
+                            <!-- FORMAT 29x90mm (Strict Vertical Stack for 29mm Tape) -->
+                            <div id="print-label-sticker" class="bg-white border border-black font-sans text-black w-[110px] h-[340px] flex flex-col items-center overflow-hidden p-2 shadow-sm">
+                                <div class="w-full text-center border-b-2 border-black pb-1 mb-2">
+                                    <h4 class="text-[10px] font-black uppercase leading-tight">{{ state.companyConfig().name }}</h4>
+                                    <p class="text-[7.5px] font-bold leading-tight opacity-70">{{ state.companyConfig().address }}</p>
+                                </div>
 
-                                    <div class="flex-grow overflow-hidden">
-                                        <p class="text-[6px] font-black uppercase text-slate-400 mb-0.5">Ingredienti:</p>
-                                        <div class="flex flex-wrap gap-x-1 gap-y-0.5">
-                                            @for (ing of selectedRecordForLabel()?.ingredients; track ing.id; let last = $last) {
-                                                <span class="text-[7.5px] font-bold leading-none capitalize">{{ ing.name }}{{ !last ? ',' : '' }}</span>
-                                            }
-                                            @if (!selectedRecordForLabel()?.ingredients?.length) {
-                                                <span class="text-[7px] italic opacity-40">Nessun ingrediente inserito</span>
-                                            }
-                                        </div>
+                                <div class="w-full mb-3 text-center">
+                                    <p class="text-[7.5px] font-black uppercase text-slate-400 mb-1">PRODOTTO</p>
+                                    <h2 class="text-[16px] font-black uppercase leading-[1.1] italic">{{ selectedRecordForLabel()?.mainProductName }}</h2>
+                                </div>
+
+                                <div class="w-full space-y-2 mb-3">
+                                    <div class="py-2.5 border-2 border-black rounded flex flex-col items-center bg-slate-50">
+                                        <p class="text-[6.5px] font-black uppercase leading-none mb-1">PROD.</p>
+                                        <p class="text-[14.5px] font-black leading-none">{{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}</p>
                                     </div>
-                                    
-                                    <div class="mt-1 opacity-50">
-                                        <p class="text-[5.5px] font-medium truncate">{{ state.companyConfig().address }}</p>
+                                    <div class="py-2.5 bg-black text-white rounded flex flex-col items-center">
+                                        <p class="text-[6.5px] font-black uppercase leading-none mb-1 text-slate-300">SCAD.</p>
+                                        <p class="text-[14.5px] font-black leading-none">{{ selectedRecordForLabel()?.expiryDate | date:'dd/MM/yy' }}</p>
                                     </div>
                                 </div>
 
-                                <!-- RIGHT COLUMN: Dates, Lotto & Allergeni -->
-                                <div class="flex-1 flex flex-col justify-between pl-2 text-center">
-                                    <div class="space-y-1">
-                                        <div class="py-1 px-1.5 border border-black rounded bg-slate-50 flex justify-between items-center">
-                                            <span class="text-[6px] font-black uppercase">PROD:</span>
-                                            <span class="text-[9.5px] font-black">{{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}</span>
-                                        </div>
-                                        <div class="py-1 px-1.5 bg-black text-white rounded flex justify-between items-center border border-black">
-                                            <span class="text-[6px] font-black uppercase text-slate-300">SCAD:</span>
-                                            <span class="text-[9.5px] font-black">{{ selectedRecordForLabel()?.expiryDate | date:'dd/MM/yy' }}</span>
-                                        </div>
-                                    </div>
+                                <div class="w-full border-t-2 border-b-2 border-black py-2.5 mb-3 text-center">
+                                    <p class="text-[7.5px] font-black uppercase leading-none text-slate-400 mb-1.5">LOTTO INTERNO</p>
+                                    <p class="text-[13.5px] font-black font-mono leading-none tracking-tight">{{ selectedRecordForLabel()?.lotto }}</p>
+                                </div>
 
-                                    <div class="py-1 border-y border-black my-1">
-                                        <p class="text-[6px] font-black uppercase text-slate-400 leading-none mb-0.5">LOTTO</p>
-                                        <p class="text-[11px] font-black font-mono leading-none tracking-tight">{{ selectedRecordForLabel()?.lotto }}</p>
+                                <div class="w-full mb-3 flex-grow min-h-0">
+                                    @let labelAllergens = getAllergens();
+                                    @if (labelAllergens.length > 0) {
+                                        <div class="text-center mb-2">
+                                            <p class="text-[7.5px] font-black uppercase bg-black text-white px-1.5 inline-block mb-1">ALLERGENI</p>
+                                            <p class="text-[10px] font-black leading-tight uppercase">{{ labelAllergens.join(', ') }}</p>
+                                        </div>
+                                    }
+                                    
+                                    <div class="border-t border-slate-300 pt-2 text-center">
+                                        <p class="text-[7.5px] font-black uppercase text-slate-400 mb-1.5">INGREDIENTI</p>
+                                        <div class="flex flex-wrap justify-center gap-x-1.5 gap-y-1.5">
+                                            @for (ing of selectedRecordForLabel()?.ingredients; track ing.id) {
+                                                <span class="text-[9px] font-bold leading-none capitalize">• {{ ing.name }}</span>
+                                            }
+                                        </div>
                                     </div>
-
-                                    <div class="min-h-[14px] flex flex-col justify-center">
-                                        @let labelAllergens = getAllergens();
-                                        @if (labelAllergens.length > 0) {
-                                            <div class="bg-red-600 text-white rounded-[2px] px-1 py-0.5">
-                                                <p class="text-[6.5px] font-black uppercase leading-none truncate">{{ labelAllergens.join(', ') }}</p>
-                                            </div>
-                                        } @else {
-                                            <p class="text-[6px] font-bold text-slate-300 uppercase italic">Allergeni: Assenti</p>
-                                        }
-                                    </div>
+                                </div>
+                                
+                                <div class="mt-auto pt-2 opacity-20 text-center">
+                                    <i class="fa-solid fa-barcode text-3xl"></i>
                                 </div>
                             </div>
                         }
@@ -561,17 +553,12 @@ export class ProductionLogViewComponent {
         let pageCss = '';
         if (format === '62mm') {
             pageCss = `
-                @page { 
-                    size: 62mm auto; 
-                    margin: 0mm !important; 
-                }
-                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                @page { size: 62mm; margin: 0 !important; }
                 html, body { 
                     margin: 0 !important; 
                     padding: 0 !important; 
-                    width: 62mm !important; 
+                    width: 62mm; 
                     background: white;
-                    overflow: visible !important;
                 }
                 body { 
                     display: flex; 
@@ -584,16 +571,15 @@ export class ProductionLogViewComponent {
                     margin: 0 !important;
                     border: none !important; 
                     box-shadow: none !important;
-                    padding: 3mm !important;
+                    padding: 5mm !important;
                     flex-shrink: 0;
-                    min-height: 0 !important;
                 }
             `;
         } else {
-            // 90x29 HORIZONTAL - PERFECT FIT
+            // 29x90 VERTICAL - PERFECT FIT
             pageCss = `
                 @page { 
-                    size: 90mm 29mm !important; 
+                    size: 29mm 90mm !important; 
                     margin: 0 !important; 
                 }
                 *, *::before, *::after {
@@ -602,20 +588,22 @@ export class ProductionLogViewComponent {
                 html, body {
                     margin: 0 !important;
                     padding: 0 !important;
-                    width: 90mm !important;
-                    height: 29mm !important;
+                    width: 29mm !important;
+                    height: 90mm !important;
                     background: white !important;
                     overflow: hidden !important;
                 }
                 #print-label-sticker { 
-                    width: 90mm !important; 
-                    height: 29mm !important;
+                    width: 29mm !important; 
+                    height: 90mm !important;
                     margin: 0 !important;
                     border: none !important; 
                     box-shadow: none !important;
-                    padding: 2mm !important;
+                    padding: 0.5mm 1.5mm 5mm 1.5mm !important; /* Shifted UP: only 0.5mm top padding */
+                    transform: none !important;
+                    flex-shrink: 0;
                     display: flex !important;
-                    flex-direction: row !important;
+                    flex-direction: column !important;
                 }
             `;
         }
@@ -624,7 +612,6 @@ export class ProductionLogViewComponent {
         doc.write(`
             <html>
                 <head>
-                    <title></title>
                     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
                     <script src="https://cdn.tailwindcss.com"></script>
                     <style>
@@ -635,12 +622,11 @@ export class ProductionLogViewComponent {
                 <body>
                     ${printContent}
                     <script>
-                        document.title = "";
                         window.onload = function() {
                             setTimeout(() => {
                                 window.print();
                                 setTimeout(() => window.parent.document.getElementById('print-iframe').remove(), 1000);
-                            }, 700);
+                            }, 500);
                         };
                     </script>
                 </body>
@@ -673,7 +659,7 @@ export class ProductionLogViewComponent {
             ],
             'Uova': [
                 'uova', 'uovo', 'albume', 'tuorlo', 'uovo in polvere', 'uovo liquido', 'uovo pastorizzato', 
-                'lecitina di uovo', 'E1105', 'albumina', 'vitellina', 'globulina', 'maionese', 'pasta all\\'uovo', 
+                'lecitina di uovo', 'E1105', 'albumina', 'vitellina', 'globulina', 'maionese', 'pasta all\'uovo', 
                 'meringhe', 'zabaione', 'creme pasticcere', 'bignè', 'panatura', 'doratura', 'olandese', 'tartara'
             ],
             'Pesce': [
@@ -682,7 +668,7 @@ export class ProductionLogViewComponent {
                 'caesar salad', 'dado pesce', 'zuppa pesce'
             ],
             'Arachidi': [
-                'arachidi', 'spagnolette', 'noccioline americane', 'olio di arachidi', 'burro d\\'arachidi', 
+                'arachidi', 'spagnolette', 'noccioline americane', 'olio di arachidi', 'burro d\'arachidi', 
                 'farina di arachidi', 'granella di arachidi', 'satay'
             ],
             'Soia': [

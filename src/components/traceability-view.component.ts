@@ -179,7 +179,8 @@ interface ProductionBatch {
                           </div>
 
                               <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lotto Interno</label>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-0.5">Lotto Interno (Automatico)</label>
+                                <p class="text-[10px] text-slate-400 mb-1 leading-tight italic">Il numero del lotto di ogni preparato corrisponde alla data di produzione.</p>
                                 <div class="relative">
                                   <i class="fa-solid fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                   <input type="text" [(ngModel)]="currentBatch()!.internalLot" placeholder="es. 30-04-2026-01"

@@ -67,30 +67,30 @@ import { ToastService } from '../services/toast.service';
           </div>
         </div>
 
-        <!-- Scaduti -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-          <div class="absolute -right-4 -top-4 w-16 h-16 bg-red-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+        <!-- Scaduti (Entro 5gg) -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
+          <div class="absolute -right-4 -top-4 w-16 h-16 bg-amber-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
           <div class="flex items-center justify-between relative z-10">
             <div>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Scaduti</p>
-              <p class="text-2xl font-black text-red-500 mt-1 truncate">€{{ totalOverdue() }}</p>
+              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Scaduti (&le;5gg)</p>
+              <p class="text-2xl font-black text-amber-500 mt-1 truncate">€{{ totalOverdue() }}</p>
             </div>
-            <div class="w-10 h-10 rounded border border-red-100 bg-white shadow-sm flex items-center justify-center">
-              <i class="fa-solid fa-triangle-exclamation text-red-400 text-sm"></i>
+            <div class="w-10 h-10 rounded border border-amber-100 bg-white shadow-sm flex items-center justify-center">
+              <i class="fa-solid fa-clock text-amber-400"></i>
             </div>
           </div>
         </div>
 
-        <!-- Solleciti (Aziende con insoluti questo mese) -->
-        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
-          <div class="absolute -right-4 -top-4 w-16 h-16 bg-indigo-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+        <!-- Insoluti (Oltre 5gg) -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
+          <div class="absolute -right-4 -top-4 w-16 h-16 bg-red-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
           <div class="flex items-center justify-between relative z-10">
             <div>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Insoluti Mese</p>
-              <p class="text-2xl font-black text-indigo-500 mt-1 truncate">{{ overdueClients().length }}</p>
+              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Insoluti Mese (>5gg)</p>
+              <p class="text-2xl font-black text-red-500 mt-1 truncate">€{{ totalInsolvent() }}</p>
             </div>
-            <div class="w-10 h-10 rounded border border-indigo-100 bg-white shadow-sm flex items-center justify-center">
-              <i class="fa-regular fa-bell text-indigo-400"></i>
+            <div class="w-10 h-10 rounded border border-red-100 bg-white shadow-sm flex items-center justify-center">
+              <i class="fa-solid fa-triangle-exclamation text-red-500 text-sm"></i>
             </div>
           </div>
         </div>
@@ -232,21 +232,23 @@ import { ToastService } from '../services/toast.service';
             } @else {
               <div class="space-y-2">
                 @for (payment of filteredPayments(); track payment.id) {
-                  @let client = getClient(payment.clientId);
+                  @let ageStatus = getPaymentAgeStatus(payment);
                   <div class="bg-white border rounded shadow-sm hover:shadow-md transition-all group overflow-hidden"
-                       [class.border-emerald-200]="payment.status === 'paid'"
-                       [class.border-amber-200]="payment.status === 'pending'"
-                       [class.border-red-200]="payment.status === 'overdue'">
+                       [class.border-emerald-200]="ageStatus === 'paid'"
+                       [class.border-slate-200]="ageStatus === 'pending'"
+                       [class.border-amber-200]="ageStatus === 'overdue'"
+                       [class.border-red-200]="ageStatus === 'insolvent'">
                     
                     <div class="p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2.5 mb-1.5">
                           <h4 class="font-bold text-sm text-slate-800 truncate">{{ client?.name || 'Cliente Sconosciuto' }}</h4>
                           <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-                                [class.bg-emerald-50]="payment.status === 'paid'" [class.text-emerald-600]="payment.status === 'paid'"
-                                [class.bg-amber-50]="payment.status === 'pending'" [class.text-amber-600]="payment.status === 'pending'"
-                                [class.bg-red-50]="payment.status === 'overdue'" [class.text-red-600]="payment.status === 'overdue'">
-                            {{ getStatusLabel(payment.status) }}
+                                [class.bg-emerald-50]="ageStatus === 'paid'" [class.text-emerald-600]="ageStatus === 'paid'"
+                                [class.bg-slate-50]="ageStatus === 'pending'" [class.text-slate-500]="ageStatus === 'pending'"
+                                [class.bg-amber-50]="ageStatus === 'overdue'" [class.text-amber-600]="ageStatus === 'overdue'"
+                                [class.bg-red-500]="ageStatus === 'insolvent'" [class.text-white]="ageStatus === 'insolvent'">
+                            {{ getStatusLabel(ageStatus) }}
                           </span>
                         </div>
                         
@@ -279,10 +281,11 @@ import { ToastService } from '../services/toast.service';
                           </span>
                         
                         <div class="flex items-center gap-1">
-                          @if (payment.status !== 'paid') {
+                          @if (ageStatus !== 'paid') {
                             <button (click)="markAsPaid(payment.id)" 
-                                    class="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5">
-                              <i class="fa-solid fa-check"></i> <span class="hidden lg:inline">Saldato</span>
+                                    class="px-2.5 py-1.5 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 border border-slate-200 hover:border-emerald-200"
+                                    [class.bg-red-50]="ageStatus === 'insolvent'" [class.border-red-200]="ageStatus === 'insolvent'" [class.text-red-600]="ageStatus === 'insolvent'">
+                              <i class="fa-solid fa-euro-sign"></i> <span class="hidden lg:inline">DA SALDARE</span>
                             </button>
                           }
                           
@@ -1010,32 +1013,20 @@ export class AccountingViewComponent {
   });
 
   totalPending = computed(() => {
-    const now = new Date();
-    const currMonth = now.getMonth();
-    const currYear = now.getFullYear();
-
     return this.state.payments()
-      .filter(p => {
-        const pDate = new Date(p.dueDate);
-        const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
-        const matchClient = this.selectedClient() ? p.clientId === this.selectedClient()?.id : (this.filterClientId() ? p.clientId === this.filterClientId() : true);
-        return p.status === 'pending' && matchMonth && matchClient;
-      })
+      .filter(p => this.getPaymentAgeStatus(p) === 'pending')
       .reduce((sum, p) => sum + p.amount, 0);
   });
 
   totalOverdue = computed(() => {
-    const now = new Date();
-    const currMonth = now.getMonth();
-    const currYear = now.getFullYear();
-
     return this.state.payments()
-      .filter(p => {
-        const pDate = new Date(p.dueDate);
-        const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
-        const matchClient = this.selectedClient() ? p.clientId === this.selectedClient()?.id : (this.filterClientId() ? p.clientId === this.filterClientId() : true);
-        return p.status === 'overdue' && matchMonth && matchClient;
-      })
+      .filter(p => this.getPaymentAgeStatus(p) === 'overdue')
+      .reduce((sum, p) => sum + p.amount, 0);
+  });
+
+  totalInsolvent = computed(() => {
+    return this.state.payments()
+      .filter(p => this.getPaymentAgeStatus(p) === 'insolvent')
       .reduce((sum, p) => sum + p.amount, 0);
   });
 
@@ -1048,17 +1039,8 @@ export class AccountingViewComponent {
   });
 
   overdueClients = computed(() => {
-    const now = new Date();
-    const currMonth = now.getMonth();
-    const currYear = now.getFullYear();
-
-    const overduePayments = this.state.payments().filter(p => {
-      const pDate = new Date(p.dueDate);
-      const matchMonth = pDate.getMonth() === currMonth && pDate.getFullYear() === currYear;
-      return p.status === 'overdue' && matchMonth;
-    });
-    
-    const clientIds = [...new Set(overduePayments.map(p => p.clientId))];
+    const insolventPayments = this.state.payments().filter(p => this.getPaymentAgeStatus(p) === 'insolvent');
+    const clientIds = [...new Set(insolventPayments.map(p => p.clientId))];
     return this.state.clients().filter(c => clientIds.includes(c.id));
   });
 
@@ -1066,11 +1048,29 @@ export class AccountingViewComponent {
     return this.state.clients().find(c => c.id === clientId);
   }
 
+  getPaymentAgeStatus(payment: Payment): 'paid' | 'pending' | 'overdue' | 'insolvent' {
+    if (payment.status === 'paid') return 'paid';
+    
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const dueDate = new Date(payment.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    if (dueDate > now) return 'pending';
+    
+    const diffTime = now.getTime() - dueDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 5) return 'overdue';
+    return 'insolvent';
+  }
+
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'paid': 'Pagato',
-      'pending': 'In Attesa',
-      'overdue': 'Scaduto'
+      'paid': 'SALDATO',
+      'pending': 'IN ATTESA',
+      'overdue': 'SCADUTO',
+      'insolvent': 'INSOLUTO'
     };
     return labels[status] || status;
   }
@@ -1194,12 +1194,30 @@ export class AccountingViewComponent {
   markAsPaid(paymentId: string) {
     const payment = this.state.payments().find(p => p.id === paymentId);
     if (payment) {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 1. Update Payment Status
       this.state.syncPayment({ 
         ...payment, 
         status: 'paid', 
-        paidDate: new Date().toISOString().split('T')[0] 
+        paidDate: today 
       });
-      this.toastService.success('Pagamento Confermato', 'Il pagamento è stato segnato come ricevuto.');
+
+      // 2. Automated Prima Nota Entry
+      const client = this.getClient(payment.clientId);
+      const journalEntry: JournalEntry = {
+        id: 'auto-' + Math.random().toString(36).substr(2, 7),
+        clientId: payment.clientId,
+        date: today,
+        description: `INCASSO QUOTA: ${client?.name || 'Azienda'} (Rif. ${payment.notes || 'Saldato'})`,
+        debit: 0,
+        credit: payment.amount,
+        category: 'payment'
+      };
+      
+      this.state.syncJournalEntry(journalEntry);
+      
+      this.toastService.success('Pagamento Confermato', 'Il pagamento è stato saldato e registrato in Prima Nota.');
     }
   }
 

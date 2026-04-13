@@ -92,7 +92,11 @@ import { AppStateService } from '../services/app-state.service';
                     @if (theme === 'SUCCESS') {
                       Pagamento <span class="text-emerald-600 italic">Ricevuto</span>
                     } @else if (theme === 'URGENT') {
-                      Prossima Rata <span class="text-red-200 italic">In Scadenza</span>
+                      @if (urgency <= 0) {
+                        ATTENZIONE: <span class="text-red-200 italic">SISTEMA SCADUTO</span>
+                      } @else {
+                        Prossima Rata <span class="text-red-200 italic">In Scadenza</span>
+                      }
                     } @else {
                       Promemoria <span class="text-amber-600 italic">Prossima Rata</span>
                     }
@@ -103,7 +107,11 @@ import { AppStateService } from '../services/app-state.service';
                     @if (theme === 'SUCCESS') {
                       L'ultimo saldo è stato confermato. @if (activePay) { La prossima rata è programmata per il <span class="text-slate-800 font-black">{{ activePay.dueDate | date:'dd/MM/yyyy' }}</span>. } @else { Il servizio prosegue regolarmente senza interruzioni. }
                     } @else if (theme === 'URGENT') {
-                      Attenzione: mancano meno di 7 giorni alla scadenza della prossima rata. Ti invitiamo a regolarizzare entro il <span class="text-white bg-red-800/40 px-1 py-0.5 rounded">{{ activePay?.dueDate | date:'dd/MM/yyyy' }}</span>.
+                      @if (urgency <= 0) {
+                        AVVISO CRITICO: Il pagamento risulta scaduto. Si informa che, in caso di mancato adeguamento entro 5 giorni dalla scadenza, l'accesso al sistema verrà automaticamente sospeso.
+                      } @else {
+                        Attenzione: mancano meno di 7 giorni alla scadenza della prossima rata. Ti invitiamo a regolarizzare entro il <span class="text-white bg-red-800/40 px-1 py-0.5 rounded">{{ activePay?.dueDate | date:'dd/MM/yyyy' }}</span> per evitare interruzioni del servizio.
+                      }
                     } @else {
                       Ti informiamo che la prossima quota di abbonamento è prevista per il {{ activePay?.dueDate | date:'dd/MM/yyyy' }}. Puoi gestire il rinnovo dall'area riservata.
                     }
@@ -212,6 +220,17 @@ import { AppStateService } from '../services/app-state.service';
                 <p class="text-xs text-slate-500">Apri un ticket di non conformità</p>
              </div>
           </button>
+
+          <!-- Export Official Report -->
+          <div class="bg-slate-900 rounded-2xl p-6 shadow-md text-white border border-slate-800 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-32 w-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
+            <h3 class="text-base font-bold mb-2 relative z-10 tracking-tight">Esportazione PDF</h3>
+            <p class="text-[11px] text-slate-400 mb-5 relative z-10 leading-relaxed">Genera il riepilogo ufficiale delle tue verifiche odierne per l'archivio cartaceo.</p>
+            
+            <button (click)="printDailyReport()" class="w-full py-3 bg-white hover:bg-slate-100 text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm relative z-10 active:scale-95">
+              <i class="fa-solid fa-file-pdf text-red-500"></i> Stampa Verifiche
+            </button>
+          </div>
 
           <!-- Personal Insights snippet -->
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex-1 flex flex-col">
@@ -325,22 +344,144 @@ export class OperatorDashboardViewComponent {
   });
 
   getCurrentDay(): string {
-    return new Date().toLocaleDateString('it-IT', { weekday: 'long' });
+    return new Date(this.state.filterDate()).toLocaleDateString('it-IT', { weekday: 'long' });
   }
 
   getCurrentMonth(): string {
-    return new Date().toLocaleDateString('it-IT', { month: 'short' });
+    return new Date(this.state.filterDate()).toLocaleDateString('it-IT', { month: 'short' });
   }
 
   getCurrentDayNumber(): string {
-    return new Date().toLocaleDateString('it-IT', { day: 'numeric' });
+    return new Date(this.state.filterDate()).toLocaleDateString('it-IT', { day: 'numeric' });
   }
 
   getCurrentDateFormatted(): string {
-    return new Date().toLocaleDateString('it-IT', {
+    return new Date(this.state.filterDate()).toLocaleDateString('it-IT', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     });
+  }
+
+  printDailyReport() {
+    const currentUser = this.state.currentUser();
+    if (!currentUser) return;
+
+    const today = this.state.filterDate();
+    const records = this.state.checklistRecords().filter(r => 
+      r.userId === currentUser.id && r.date === today
+    );
+
+    const detailedChecks = records.map(r => {
+      const module = this.state.menuItems.find(m => m.id === r.moduleId);
+      return {
+        moduleName: module?.label || r.moduleId,
+        timestamp: r.timestamp,
+        data: r.data
+      };
+    });
+
+    const report = {
+      userName: currentUser.name,
+      department: currentUser.department || 'Staff Operativo',
+      date: today,
+      detailedChecks
+    };
+
+    const printContent = this.generatePrintHTML(report);
+    const printWindow = window.open('', '_blank');
+
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  }
+
+  private generatePrintHTML(report: any): string {
+    const dateStr = new Date(report.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Report Operatore - ${report.userName}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 1.5cm; color: #1e293b; line-height: 1.5; }
+          .header { border-bottom: 3px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end; }
+          .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+          .info-item { font-size: 13px; }
+          .info-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 4px; }
+          .info-value { font-weight: 700; color: #0f172a; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; }
+          td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 12px; color: #334155; }
+          .status { font-weight: 800; color: #10b981; font-size: 10px; }
+          .timestamp { font-family: monospace; font-weight: 600; color: #64748b; }
+          @media print { body { padding: 0; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <h1 style="margin:0; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase;">Registro Verifiche Giornaliere</h1>
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; margin-top: 4px;">HACCP PRO Compliance System</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${dateStr}</div>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Operatore Responsabile</div>
+            <div class="info-value">${report.userName}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Unità Operativa / Reparto</div>
+            <div class="info-value">${report.department}</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 100px;">Orario</th>
+              <th>Modulo di Controllo</th>
+              <th style="width: 120px;">Esito</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${report.detailedChecks.length > 0 ? report.detailedChecks.map((c: any) => `
+              <tr>
+                <td class="timestamp">${new Date(c.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</td>
+                <td style="font-weight: 600;">${c.moduleName}</td>
+                <td><span class="status">✓ CONFORME</span></td>
+              </tr>
+            `).join('') : '<tr><td colspan="3" style="text-align:center; padding: 40px; color: #94a3b8; font-weight: 600;">Nessuna verifica registrata nella data odierna.</td></tr>'}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="width: 250px;">
+                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 30px;">Firma del Responsabile</div>
+                <div style="border-bottom: 1px solid #0f172a;"></div>
+            </div>
+            <div style="width: 250px; text-align: right;">
+                <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 30px;">Firma dell'Operatore</div>
+                <div style="border-bottom: 1px solid #0f172a;"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+          Documento generato digitalmente da HACCP PRO Traceability System — Copia conforme all'originale informatico.
+        </div>
+      </body>
+      </html>
+    `;
   }
 }

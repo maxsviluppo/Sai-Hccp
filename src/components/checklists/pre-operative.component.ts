@@ -186,34 +186,15 @@ interface AreaChecklist {
                                                     </span>
                                                 }
                                             </div>
-                                        </div>
-
-                                        <div class="flex items-center gap-2 shrink-0">
+                                                                              <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                                             <button (click)="item.id === 'g_cleaning_sanit' ? showCleaningInfo.set(true) : showPestInfo.set(true)" 
-                                                    class="w-7 h-7 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-blue-600 flex items-center justify-center transition-colors tooltip" title="Info Standard">
+                                                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center justify-center gap-2 transition-all font-bold text-xs uppercase tracking-tight group-hover:shadow-md">
                                                 <i class="fa-solid fa-circle-info text-base"></i>
+                                                <span>{{ item.status === 'ok' ? 'Info Standard' : 'Visualizza Info e Conferma' }}</span>
                                             </button>
-
-                                            <div class="w-px h-5 bg-slate-200 mx-1"></div>
-
-                                            <div class="flex gap-1.5">
-                                                <button (click)="setGlobalStatus(item.id, 'ok')" 
-                                                        class="w-7 h-7 rounded flex items-center justify-center transition-all border shrink-0"
-                                                        [class.bg-emerald-500]="item.status === 'ok'" [class.text-white]="item.status === 'ok'" [class.border-emerald-600]="item.status === 'ok'"
-                                                        [class.bg-white]="item.status !== 'ok'" [class.text-emerald-500]="item.status !== 'ok'" [class.border-emerald-200]="item.status !== 'ok'"
-                                                        [class.hover:bg-emerald-50]="item.status !== 'ok'">
-                                                    <i class="fa-solid fa-check text-xs"></i>
-                                                </button>
-                                                <button (click)="setGlobalStatus(item.id, 'issue')" 
-                                                        class="w-7 h-7 rounded flex items-center justify-center transition-all border shrink-0"
-                                                        [class.bg-red-500]="item.status === 'issue'" [class.text-white]="item.status === 'issue'" [class.border-red-600]="item.status === 'issue'"
-                                                        [class.bg-white]="item.status !== 'issue'" [class.text-red-500]="item.status !== 'issue'" [class.border-red-200]="item.status !== 'issue'"
-                                                        [class.hover:bg-red-50]="item.status !== 'issue'">
-                                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                                                </button>
-                                            </div>
                                         </div>
                                     </div>
+    </div>
                                 }
                             </div>
                         </div>
@@ -461,9 +442,9 @@ interface AreaChecklist {
                     </div>
 
                     <div class="px-6 py-4 bg-white border-t border-slate-200 flex-shrink-0 flex justify-end">
-                        <button (click)="showCleaningInfo.set(false)"
+                        <button (click)="showCleaningInfo.set(false); setGlobalStatus('g_cleaning_sanit', 'ok')"
                                 class="px-6 py-2 bg-slate-800 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all shadow-sm">
-                            <i class="fa-solid fa-check mr-2"></i> HO PRESO VISIONE
+                            <i class="fa-solid fa-check mr-2"></i> HO PRESO VISIONE E CONFERMO
                         </button>
                     </div>
                 </div>
@@ -531,9 +512,9 @@ interface AreaChecklist {
                     </div>
 
                     <div class="px-6 py-4 bg-white border-t border-slate-200 flex-shrink-0 flex justify-end">
-                        <button (click)="showPestInfo.set(false)"
+                        <button (click)="showPestInfo.set(false); setGlobalStatus('g_pest_control', 'ok')"
                                 class="px-6 py-2 bg-slate-800 text-white rounded-lg font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all shadow-sm">
-                            <i class="fa-solid fa-check mr-2"></i> HO PRESO VISIONE
+                            <i class="fa-solid fa-check mr-2"></i> HO PRESO VISIONE E CONFERMO
                         </button>
                     </div>
                 </div>
@@ -900,8 +881,7 @@ export class PreOperationalChecklistComponent {
 
         this.globalItems.update(items => items.map(item => {
             if (item.id === id) {
-                const newStatus = item.status === status ? 'pending' : status;
-                return { ...item, status: newStatus };
+                return { ...item, status };
             }
             return item;
         }));

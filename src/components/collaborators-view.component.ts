@@ -228,6 +228,71 @@ import { ToastService } from '../services/toast.service';
         </div>
       }
 
+      <!-- DUPLICATE NAME WARNING MODAL -->
+      @if (isDuplicateModalOpen()) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isDuplicateModalOpen.set(false)"></div>
+          <div class="relative bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden p-8 animate-slide-up text-center border border-slate-200">
+            
+            <div class="w-20 h-20 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-6 border border-amber-100 shadow-inner group transition-transform hover:scale-110">
+                <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+            </div>
+
+            <h3 class="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Nome Già In Uso</h3>
+            <p class="text-sm font-medium text-slate-500 leading-relaxed mb-8">
+                Esiste già un'azienda registrata come <span class="text-indigo-600 font-bold">"{{ duplicateName() }}"</span>.<br><br>
+                Ti suggeriamo di aggiungere un riferimento (es. la città o il nome della via) per distinguere le sedi.
+            </p>
+
+            <button (click)="isDuplicateModalOpen.set(false)"
+                    class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95">
+                HO CAPITO, MODIFICO
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- SUSPENSION CONFIRMATION MODAL -->
+      @if (isSuspensionModalOpen()) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isSuspensionModalOpen.set(false)"></div>
+          <div class="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden p-8 animate-slide-up border border-slate-200">
+            
+            <div [class]="clientToSuspend()?.suspended ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-amber-50 text-amber-500 border-amber-100'"
+                 class="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border shadow-inner transition-transform hover:scale-110">
+                <i [class]="clientToSuspend()?.suspended ? 'fa-solid fa-unlock' : 'fa-solid fa-user-slash'" class="text-3xl"></i>
+            </div>
+
+            <h3 class="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight text-center">
+                {{ clientToSuspend()?.suspended ? 'Riattiva Servizio' : 'Sospendi Servizio' }}
+            </h3>
+            
+            <p class="text-sm font-medium text-slate-500 leading-relaxed mb-8 text-center px-4">
+                @if (clientToSuspend()?.suspended) {
+                    Vuoi ripristinare l'accesso per <span class="text-slate-800 font-bold">"{{ clientToSuspend()?.name }}"</span>? 
+                    Gli utenti potranno tornare ad operare immediatamente.
+                } @else {
+                    Stai per sospendere <span class="text-slate-800 font-bold">"{{ clientToSuspend()?.name }}"</span>.<br><br>
+                    <span class="text-amber-600 font-bold uppercase text-[10px] tracking-widest bg-amber-50 px-2 py-1 rounded inline-block border border-amber-100 mb-2">Azione Reversibile</span><br>
+                    Tutti gli account collegati a questa azienda verranno <span class="text-slate-800 font-bold">BLOCCATI</span> e non potranno più accedere.
+                }
+            </p>
+
+            <div class="flex gap-4">
+                <button (click)="isSuspensionModalOpen.set(false)"
+                        class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200">
+                    ANNULLA
+                </button>
+                <button (click)="confirmSuspension()"
+                        [class]="clientToSuspend()?.suspended ? 'bg-emerald-600 hover:bg-emerald-700 shadow-[0_8px_20px_rgba(16,185,129,0.3)]' : 'bg-amber-600 hover:bg-amber-700 shadow-[0_8px_20px_rgba(217,119,6,0.3)]'"
+                        class="flex-1 py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95">
+                    CONFERMA
+                </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Unit Modal -->
       @if (activeModal() === 'user') {
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -422,6 +487,14 @@ export class CollaboratorsViewComponent {
   isDeleteConfirmOpen = signal(false);
   itemToDelete = signal<{ id: string, name: string, type: 'user' | 'client' } | null>(null);
 
+  // Duplicate Check Modal
+  isDuplicateModalOpen = signal(false);
+  duplicateName = signal('');
+
+  // Suspension Modal State
+  isSuspensionModalOpen = signal(false);
+  clientToSuspend = signal<ClientEntity | null>(null);
+
   // Accordion State: Set of open client IDs
   expandedClientIds = signal<Set<string>>(new Set());
 
@@ -595,6 +668,17 @@ export class CollaboratorsViewComponent {
   saveClient() {
     if (this.clientForm.valid) {
       const formValue = this.clientForm.value;
+
+      // Duplicate Check
+      if (!this.isEditing()) {
+          const exists = this.state.clients().some(c => c.name.toLowerCase() === formValue.name.trim().toLowerCase());
+          if (exists) {
+              this.duplicateName.set(formValue.name);
+              this.isDuplicateModalOpen.set(true);
+              return;
+          }
+      }
+
       if (this.isEditing() && this.editingId()) {
         this.state.updateClient(this.editingId()!, formValue);
       } else {
@@ -605,13 +689,16 @@ export class CollaboratorsViewComponent {
   }
 
   toggleSuspension(client: ClientEntity) {
-    const message = client.suspended
-      ? `Confermi di voler RIATTIVARE il servizio per "${client.name}"? Gli utenti potranno nuovamente accedere.`
-      : `⚠️ ATTENZIONE: Stai per SOSPENDERE il servizio per "${client.name}".\n\nTutti gli utenti di questa azienda verranno BLOCCATI e non potranno più accedere al sistema.\n\nConfermi l'operazione?`;
+    this.clientToSuspend.set(client);
+    this.isSuspensionModalOpen.set(true);
+  }
 
-    if (confirm(message)) {
-      this.state.toggleClientSuspension(client.id, !client.suspended);
-    }
+  confirmSuspension() {
+    const client = this.clientToSuspend();
+    if (!client) return;
+    this.state.toggleClientSuspension(client.id, !client.suspended);
+    this.isSuspensionModalOpen.set(false);
+    this.clientToSuspend.set(null);
   }
 
   closeModal() {

@@ -201,6 +201,36 @@ interface Supplier {
           </div>
         </div>
       }
+
+      <!-- Delete Confirmation Modal (Modern & Safe) -->
+      @if (supplierToDelete()) {
+        <div class="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="supplierToDelete.set(null)"></div>
+          <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+            <div class="p-8 text-center">
+              <div class="h-16 w-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-rose-100 shadow-sm animate-pulse">
+                <i class="fa-solid fa-trash-can"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-800 mb-2">Conferma Eliminazione</h3>
+              <p class="text-sm text-slate-500 leading-relaxed mb-6">
+                Sei sicuro di voler rimuovere <span class="font-bold text-slate-700">{{ supplierToDelete()?.ragioneSociale }}</span>?<br>
+                Questa operazione non può essere annullata.
+              </p>
+              
+              <div class="flex gap-3">
+                <button (click)="supplierToDelete.set(null)" 
+                        class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                  No, Annulla
+                </button>
+                <button (click)="confirmDelete()" 
+                        class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-md shadow-rose-100">
+                  Sì, Elimina
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -221,6 +251,7 @@ export class SuppliersViewComponent {
 
   suppliers = signal<Supplier[]>([]);
   isAddModalOpen = signal(false);
+  supplierToDelete = signal<Supplier | null>(null);
 
   newSupplier = {
     ragioneSociale: '',
@@ -279,8 +310,19 @@ export class SuppliersViewComponent {
   }
 
   removeSupplier(id: string) {
-    this.suppliers.update(current => current.filter(s => s.id !== id));
+    const supplier = this.suppliers().find(s => s.id === id);
+    if (supplier) {
+      this.supplierToDelete.set(supplier);
+    }
+  }
+
+  confirmDelete() {
+    const supplier = this.supplierToDelete();
+    if (!supplier) return;
+
+    this.suppliers.update(current => current.filter(s => s.id !== supplier.id));
     this.saveData();
+    this.supplierToDelete.set(null);
   }
 
   setStatus(id: string, status: 'ok' | 'issue') {
