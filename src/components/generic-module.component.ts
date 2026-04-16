@@ -230,8 +230,9 @@ export class GenericModuleComponent {
     // React to moduleId changes to reload data
     effect(() => {
       const id = this.moduleId();
-      // Simulate fetching data
-      this.items.set(this.generateMockData(id));
+      // Per garantire che le nuove aziende partano con un archivio vuoto,
+      // non generiamo più dati mock in automatico.
+      this.items.set([]);
     }, { allowSignalWrites: true });
   }
 

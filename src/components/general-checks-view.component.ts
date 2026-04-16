@@ -305,27 +305,36 @@ interface CheckCategory {
               <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Anomalie registrate dagli operatori</p>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-xs font-black">
-              {{ nonConformitiesFiltered().length }} OPEN
-            </span>
-            <span class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-black">
-              {{ nonConformitiesClosed().length }} CHIUSE
-            </span>
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
+            <button (click)="ncActiveTab.set('ACTIVE')"
+                    [class]="'px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ' + 
+                             (ncActiveTab() === 'ACTIVE' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700')">
+              Attive ({{ nonConformitiesFiltered().length }})
+            </button>
+            <button (click)="ncActiveTab.set('CLOSED')"
+                    [class]="'px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ' + 
+                             (ncActiveTab() === 'CLOSED' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700')">
+              Archivio ({{ nonConformitiesClosed().length }})
+            </button>
           </div>
         </div>
 
-        @if (state.filteredNonConformities().length === 0) {
+        @if (ncActiveTab() === 'ACTIVE' ? nonConformitiesFiltered().length === 0 : nonConformitiesClosed().length === 0) {
           <div class="p-10 flex flex-col items-center gap-3 text-center">
-            <div class="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-400">
-              <i class="fa-solid fa-circle-check text-2xl"></i>
+            <div [class]="'h-14 w-14 rounded-full flex items-center justify-center text-2xl ' + 
+                          (ncActiveTab() === 'ACTIVE' ? 'bg-emerald-50 text-emerald-400' : 'bg-slate-50 text-slate-300')">
+              <i [class]="'fa-solid ' + (ncActiveTab() === 'ACTIVE' ? 'fa-circle-check' : 'fa-folder-open')"></i>
             </div>
-            <p class="text-sm font-bold text-slate-500">Nessuna non conformità segnalata</p>
-            <p class="text-xs text-slate-400">Tutte le verifiche sono conformi per l'azienda selezionata</p>
+            <p class="text-sm font-bold text-slate-500">
+                {{ ncActiveTab() === 'ACTIVE' ? 'Nessuna non conformità attiva' : 'Archivio vuoto' }}
+            </p>
+            <p class="text-xs text-slate-400">
+                {{ ncActiveTab() === 'ACTIVE' ? 'Tutte le segnalazioni sono state gestite o non ne sono ancora arrivate.' : 'Le segnalazioni chiuse appariranno qui.' }}
+            </p>
           </div>
         } @else {
           <div class="divide-y divide-slate-100">
-            @for (nc of state.filteredNonConformities(); track nc.id) {
+            @for (nc of (ncActiveTab() === 'ACTIVE' ? nonConformitiesFiltered() : nonConformitiesClosed()); track nc.id) {
               <div class="p-4 hover:bg-slate-50 transition-colors flex gap-4">
                 <!-- Status icon -->
                 <div class="shrink-0 mt-0.5">
@@ -357,6 +366,11 @@ interface CheckCategory {
                     <span class="text-[9px] font-bold uppercase text-slate-400 px-2 py-0.5 rounded bg-slate-50 border border-slate-100 tracking-widest">
                       {{ getModuleLabel(nc.moduleId) }}
                     </span>
+                    @if (!selectedCompanyId()) {
+                      <span class="text-[9px] font-black px-2 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 uppercase tracking-widest">
+                        {{ getClientName(nc.clientId) }}
+                      </span>
+                    }
                   </div>
 
                   <p class="text-xs text-slate-600 leading-relaxed mb-2">{{ nc.description }}</p>
@@ -370,23 +384,28 @@ interface CheckCategory {
                 </div>
 
                 <!-- Actions -->
-                @if (nc.status === 'OPEN') {
-                  <div class="flex flex-col gap-1.5 shrink-0">
-                    <button (click)="updateNcStatus(nc.id, 'IN_PROGRESS')"
-                            class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
-                      In Corso
-                    </button>
+                <div class="flex flex-col gap-1.5 shrink-0">
+                  @if (nc.status === 'OPEN') {
+                      <button (click)="updateNcStatus(nc.id, 'IN_PROGRESS')"
+                              class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                        In Corso
+                      </button>
+                      <button (click)="updateNcStatus(nc.id, 'CLOSED')"
+                              class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                        Chiudi
+                      </button>
+                  } @else if (nc.status === 'IN_PROGRESS') {
                     <button (click)="updateNcStatus(nc.id, 'CLOSED')"
                             class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
-                      Chiudi
+                      <i class="fa-solid fa-check mr-1"></i>Chiudi
                     </button>
-                  </div>
-                } @else if (nc.status === 'IN_PROGRESS') {
-                  <button (click)="updateNcStatus(nc.id, 'CLOSED')"
-                          class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
-                    <i class="fa-solid fa-check mr-1"></i>Chiudi
+                  }
+                  
+                  <button (click)="printNonConformity(nc)"
+                          class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Stampa
                   </button>
-                }
+                </div>
               </div>
             }
           </div>
@@ -430,6 +449,7 @@ export class GeneralChecksViewComponent {
 
     // Local filter state
     selectedCompanyId = signal<string>('');
+    ncActiveTab = signal<'ACTIVE' | 'CLOSED'>('ACTIVE');
 
     // Use global filter instead of local selector
     selectedClient = computed(() => {
@@ -558,13 +578,6 @@ export class GeneralChecksViewComponent {
                 icon: 'fa-hourglass-end',
                 color: '#8b5cf6',
                 items: getItems('post-op-checklist')
-            },
-            {
-                id: 'cleaning',
-                name: 'Piano Sanificazione',
-                icon: 'fa-screwdriver-wrench',
-                color: '#8b5cf6',
-                items: getItems('cleaning-maintenance')
             }
         ];
     });
@@ -627,13 +640,40 @@ export class GeneralChecksViewComponent {
         return this.getModuleName(moduleId);
     }
 
+    getClientName(clientId: string): string {
+        const client = this.state.clients().find(c => c.id === clientId);
+        return client ? client.name : 'Azienda';
+    }
+
     // Non-conformity computed signals
+    localNonConformities = computed(() => {
+        const client = this.selectedClient();
+        const allNc = this.state.nonConformities();
+        
+        if (!client) {
+            // If no company selected, show all anomalies for the admin to oversee everything
+            return allNc.sort((a,b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            });
+        }
+        
+        return allNc
+            .filter(nc => nc.clientId === client.id)
+            .sort((a,b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            });
+    });
+
     nonConformitiesFiltered = computed(() =>
-        this.state.filteredNonConformities().filter(nc => nc.status !== 'CLOSED')
+        this.localNonConformities().filter(nc => nc.status !== 'CLOSED')
     );
 
     nonConformitiesClosed = computed(() =>
-        this.state.filteredNonConformities().filter(nc => nc.status === 'CLOSED')
+        this.localNonConformities().filter(nc => nc.status === 'CLOSED')
     );
 
     async updateNcStatus(id: string, status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED') {
@@ -647,6 +687,159 @@ export class GeneralChecksViewComponent {
         try {
             return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         } catch { return ''; }
+    }
+
+    printNonConformity(nc: any) {
+        // Find client either from selection or from the NC itself
+        const client = this.selectedClient() || this.state.clients().find(c => c.id === nc.clientId);
+        if (!client) {
+            this.toast.error('Errore', 'Impossibile trovare i dati dell\'azienda associata.');
+            return;
+        }
+
+        const printContent = this.generateAnomalyPrintHTML(nc, client);
+        const printWindow = window.open('', '_blank');
+
+        if (printWindow) {
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+    }
+
+    private generateAnomalyPrintHTML(nc: any, client: any): string {
+        const admin = this.state.adminCompany();
+        const dateStr = new Date(nc.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+        const timeStr = nc.createdAt ? new Date(nc.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Segnalazione Anomalia - ${client.name}</title>
+            <style>
+                @page { size: A4; margin: 1cm; }
+                body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 1cm; color: #1e293b; line-height: 1.5; }
+                
+                /* Letterhead */
+                .letterhead { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 40px; }
+                .sai-logo { width: 150px; }
+                .sai-logo img { width: 100%; height: auto; object-fit: contain; }
+                .company-info { text-align: right; font-size: 11px; color: #475569; }
+                .company-name { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 4px; text-transform: uppercase; }
+
+                /* Report Title */
+                .report-header { text-align: center; margin-bottom: 40px; }
+                .report-title { font-size: 22px; font-weight: 900; color: #be123c; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+                .report-subtitle { font-size: 12px; color: #64748b; font-weight: 700; margin-top: 5px; }
+
+                /* Details Grid */
+                .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+                .detail-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 15px; border-radius: 12px; }
+                .detail-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+                .detail-value { font-size: 14px; font-weight: 700; color: #0f172a; }
+
+                /* Anomaly Card */
+                .anomaly-card { border: 2px solid #ef4444; border-radius: 16px; padding: 30px; position: relative; overflow: hidden; }
+                .anomaly-card::before { content: ""; position: absolute; left: 0; top: 0; width: 6px; height: 100%; background: #ef4444; }
+                .section-label { font-size: 10px; font-weight: 900; color: #ef4444; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 15px; display: block; }
+                
+                .content-block { margin-bottom: 25px; }
+                .content-label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px; }
+                .content-text { font-size: 14px; color: #1e293b; background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; min-height: 60px; }
+
+                /* Status Banner */
+                .status-banner { position: absolute; top: 15px; right: 15px; padding: 5px 15px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+                .status-OPEN { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+                .status-IN_PROGRESS { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+                .status-CLOSED { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+                /* Signatures */
+                .signatures { margin-top: 30px; display: flex; justify-content: space-between; gap: 100px; }
+                .sign-box { flex: 1; text-align: center; }
+                .sign-line { border-top: 1px solid #0f172a; margin-top: 40px; padding-top: 5px; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+                /* Footer */
+                .footer { position: fixed; bottom: 1cm; left: 1cm; right: 1cm; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+                
+                @media print { .no-print { display: none; } }
+            </style>
+        </head>
+        <body>
+            <div class="letterhead">
+                <div class="sai-logo">
+                    <img src="${admin.logo}" alt="SAI Logo">
+                </div>
+                <div class="company-info">
+                    <div class="company-name">${client.name}</div>
+                    <div>P.IVA: ${client.piva}</div>
+                    <div>Indirizzo: ${client.address}</div>
+                    <div>Email: ${client.email}</div>
+                    <div>Tel: ${client.phone}</div>
+                </div>
+            </div>
+
+            <div class="report-header">
+                <h1 class="report-title">Verbale di Non Conformità</h1>
+                <div class="report-subtitle">Sistema Gestione Qualità HACCP PRO Compliance</div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-box">
+                    <div class="detail-label">Data Segnalazione</div>
+                    <div class="detail-value">${dateStr} ${timeStr ? 'ore ' + timeStr : ''}</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">Modulo di Origine</div>
+                    <div class="detail-value">${this.getModuleLabel(nc.moduleId)}</div>
+                </div>
+            </div>
+
+            <div class="anomaly-card">
+                <span class="status-banner status-${nc.status}">
+                    ${nc.status === 'OPEN' ? 'Segnalazione Aperta' : nc.status === 'IN_PROGRESS' ? 'In Lavorazione' : 'Risolto / Chiuso'}
+                </span>
+                
+                <span class="section-label">Dettagli Anomalia</span>
+
+                <div class="content-block">
+                    <div class="content-label">Oggetto / Attrezzatura Interrata</div>
+                    <div class="content-text" style="font-weight: 700;">${nc.itemName || 'Non specificato'}</div>
+                </div>
+
+                <div class="content-block">
+                    <div class="content-label">Descrizione dell'Anomalia (Motivazione)</div>
+                    <div class="content-text">${nc.description}</div>
+                </div>
+
+                <div class="content-block" style="margin-bottom: 0;">
+                    <div class="content-label">Azioni Correttive Intraprese / Note</div>
+                    <div class="content-text" style="color: #94a3b8; font-style: italic;">
+                        ${nc.status === 'CLOSED' ? 'L\'anomalia è stata gestita e risolta secondo protocollo.' : 'Da compilare a cura del responsabile...'}
+                    </div>
+                </div>
+            </div>
+
+            <div class="signatures">
+                <div class="sign-box">
+                    <div class="sign-line">Firma dell'Operatore Segnalante</div>
+                </div>
+                <div class="sign-box">
+                    <div class="sign-line">Firma del Responsabile Qualità</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                Documento generato digitalmente da HACCP PRO Traceability System mod. NC/2024. <br>
+                Ai sensi del Reg. CE 852/04 - Autocontrollo dei pericoli igienico-sanitari.
+            </div>
+        </body>
+        </html>
+        `;
     }
 
     printCompleteList() {

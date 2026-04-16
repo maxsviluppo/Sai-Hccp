@@ -307,7 +307,7 @@ import { ToastService } from '../services/toast.service';
 
                       <!-- Lit-up Tags Area -->
                       <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-                        @for (all of ALLERGEN_LIST; track all.id) {
+                        @for (all of state.ALLERGEN_LIST; track all.id) {
                           <button (click)="toggleAllergen(ing, all.id)"
                                   [class]="'flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-tight transition-all duration-300 ' + 
                                            (ing.allergens.includes(all.id) ? all.active : 'bg-white border-slate-100 text-slate-300 border-dashed hover:border-slate-300 hover:text-slate-400 opacity-60')">
@@ -357,22 +357,6 @@ export class IngredientsBookViewComponent {
   editingRecipe = signal(false);
   isGenerating = false;
 
-  readonly ALLERGEN_LIST = [
-    { id: 'Glutine', label: 'Glutine', code: 'GLU', icon: 'fa-wheat-awn', color: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', active: 'bg-amber-100 border-amber-400 text-amber-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Crostacei', label: 'Crostacei', code: 'CRO', icon: 'fa-shrimp', color: 'rose', bg: 'bg-rose-50', text: 'text-rose-700', active: 'bg-rose-100 border-rose-400 text-rose-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Uova', label: 'Uova', code: 'UOV', icon: 'fa-egg', color: 'yellow', bg: 'bg-yellow-50', text: 'text-yellow-700', active: 'bg-yellow-100 border-yellow-400 text-yellow-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Pesce', label: 'Pesce', code: 'PES', icon: 'fa-fish', color: 'blue', bg: 'bg-blue-50', text: 'text-blue-700', active: 'bg-blue-100 border-blue-400 text-blue-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Arachidi', label: 'Arachidi', code: 'ARA', icon: 'fa-heart-crack', color: 'orange', bg: 'bg-orange-50', text: 'text-orange-700', active: 'bg-orange-200 border-orange-500 text-orange-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Soia', label: 'Soia', code: 'SOI', icon: 'fa-leaf', color: 'green', bg: 'bg-green-50', text: 'text-green-700', active: 'bg-green-100 border-green-400 text-green-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Latte', label: 'Latte', code: 'LAT', icon: 'fa-cow', color: 'sky', bg: 'bg-sky-50', text: 'text-sky-700', active: 'bg-sky-100 border-sky-400 text-sky-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Frutta a guscio', label: 'Frutta G.', code: 'FRU', icon: 'fa-box-open', color: 'amber', bg: 'bg-amber-100/50', text: 'text-amber-900', active: 'bg-amber-200 border-amber-600 text-amber-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Sedano', label: 'Sedano', code: 'SED', icon: 'fa-carrot', color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', active: 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Senape', label: 'Senape', code: 'SEN', icon: 'fa-jar', color: 'yellow', bg: 'bg-yellow-100', text: 'text-yellow-800', active: 'bg-yellow-200 border-yellow-500 text-yellow-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Sesamo', label: 'Sesamo', code: 'SES', icon: 'fa-ellipsis-vertical', color: 'slate', bg: 'bg-slate-50', text: 'text-slate-700', active: 'bg-slate-200 border-slate-400 text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Solfiti', label: 'Solfiti', code: 'SOL', icon: 'fa-wine-glass', color: 'indigo', bg: 'bg-indigo-50', text: 'text-indigo-700', active: 'bg-indigo-100 border-indigo-400 text-indigo-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Lupini', label: 'Lupini', code: 'LUP', icon: 'fa-circle-dot', color: 'lime', bg: 'bg-lime-50', text: 'text-lime-700', active: 'bg-lime-100 border-lime-400 text-lime-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
-    { id: 'Molluschi', label: 'Molluschi', code: 'MOL', icon: 'fa-otter', color: 'cyan', bg: 'bg-cyan-50', text: 'text-cyan-700', active: 'bg-cyan-100 border-cyan-400 text-cyan-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' }
-  ];
   // --- PRESET RECIPES DATABASE (40+ PRÌMI + CATEGORIES) ---
   readonly PRESET_RECIPES: Record<string, any> = {
     // --- ANTIPASTI (50) ---
@@ -870,7 +854,7 @@ export class IngredientsBookViewComponent {
   getAllergensForRecipe(recipe: Recipe): any[] {
     const allergenIds = new Set<string>();
     recipe.ingredients.forEach(i => i.allergens.forEach(a => allergenIds.add(a)));
-    return this.ALLERGEN_LIST.filter(a => allergenIds.has(a.id));
+    return this.state.ALLERGEN_LIST.filter(a => allergenIds.has(a.id));
   }
 
   async simulateAIAutocomplete() {
@@ -997,11 +981,11 @@ export class IngredientsBookViewComponent {
     doc.write(`
       <html>
         <head>
-          <title>Scheda Piatto - ${recipe.name}</title>
+          <title> </title>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
           <style>
-            @page { size: A4; margin: 15mm; }
-            body { font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 0; line-height: 1.5; font-size: 11pt; }
+            @page { size: A4; margin: 0; }
+            body { font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 15mm; line-height: 1.5; font-size: 11pt; }
             .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 10mm; margin-bottom: 10mm; }
             .logo { max-height: 25mm; max-width: 60mm; object-fit: contain; }
             .company-info { text-align: right; }
@@ -1122,15 +1106,15 @@ export class IngredientsBookViewComponent {
     doc.write(`
       <html>
         <head>
-          <title>Libro Ingredienti - ${company.name}</title>
+          <title> </title>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
           <style>
-            @page { size: A4; margin: 15mm; }
+            @page { size: A4; margin: 0; }
             body { 
               font-family: 'Inter', sans-serif; 
               color: #1e293b; 
               margin: 0; 
-              padding: 0; 
+              padding: 15mm; 
               line-height: 1.5;
               font-size: 11pt;
             }

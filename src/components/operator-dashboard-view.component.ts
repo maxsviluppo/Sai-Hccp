@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../services/app-state.service';
 
@@ -35,8 +35,8 @@ import { AppStateService } from '../services/app-state.service';
            </div>
         </div>
       </div>
-      <!-- Highly Visible Payment Banner (Adapted to App Modal/Card Style) -->
-      @if (state.recentPaidPayment() || state.companyConfig().paymentBalanceDue || state.latestActivePayment()) {
+      <!-- Highly Visible Payment Banner (Always Present) -->
+      @if (true) {
         <!-- Logic to determine theme -->
         @let isPaid = state.recentPaidPayment();
         @let activePay = state.latestActivePayment();
@@ -173,10 +173,11 @@ import { AppStateService } from '../services/app-state.service';
       <!-- Main Operational Phases -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
          <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-6">Controlli Obbligatori Giornalieri</h3>
-         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             @for (phase of [
               {id: 'pre-op-checklist', label: 'Apertura', sub: 'Pre-Operativa', icon: 'fa-sun', iconColor: 'text-sky-500', bg: 'bg-sky-50', bgFill: 'bg-sky-500'},
               {id: 'operative-checklist', label: 'Monitoraggio', sub: 'Operativa', icon: 'fa-briefcase', iconColor: 'text-indigo-500', bg: 'bg-indigo-50', bgFill: 'bg-indigo-500'},
+              {id: 'production-log', label: 'Rintracciabilità', sub: 'Prodotti', icon: 'fa-barcode', iconColor: 'text-amber-500', bg: 'bg-amber-50', bgFill: 'bg-amber-500'},
               {id: 'post-op-checklist', label: 'Chiusura', sub: 'Post-Operativa', icon: 'fa-moon', iconColor: 'text-purple-500', bg: 'bg-purple-50', bgFill: 'bg-purple-500'}
             ]; track phase.id) {
               <button (click)="state.setModule(phase.id)" 
@@ -240,10 +241,10 @@ import { AppStateService } from '../services/app-state.service';
                  <div>
                      <div class="flex items-center justify-between mb-1.5">
                          <span class="text-xs font-bold text-slate-500">Avanzamento Globale</span>
-                         <span class="text-sm font-bold text-slate-800 tabular-nums border border-slate-100 bg-slate-50 rounded-md px-1.5">{{ completedPhasesCount() }}/3</span>
+                         <span class="text-sm font-bold text-slate-800 tabular-nums border border-slate-100 bg-slate-50 rounded-md px-1.5">{{ completedPhasesCount() }}/4</span>
                      </div>
                      <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
-                         <div class="h-full bg-emerald-500 transition-all duration-1000" [style.width.%]="(completedPhasesCount() / 3) * 100"></div>
+                         <div class="h-full bg-emerald-500 transition-all duration-1000" [style.width.%]="(completedPhasesCount() / 4) * 100"></div>
                      </div>
                  </div>
 
@@ -253,10 +254,23 @@ import { AppStateService } from '../services/app-state.service';
                  </div>
              </div>
 
-             <button (click)="state.setModule('history')" class="group w-full mt-6 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2">
+             <!-- Documentazione Rapida Operatore -->
+             <div class="grid grid-cols-2 gap-3 mt-5">
+                 <button (click)="state.setModule('documentation')" class="p-3 bg-blue-50 border border-blue-100 rounded-xl hover:bg-blue-100 hover:shadow-sm transition-all text-left group">
+                     <i class="fa-solid fa-folder-tree text-lg text-blue-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                     <h4 class="text-xs font-bold text-blue-900 leading-tight">Archivio Cloud</h4>
+                 </button>
+                 <button (click)="state.setModule('micro-bio')" class="p-3 bg-violet-50 border border-violet-100 rounded-xl hover:bg-violet-100 hover:shadow-sm transition-all text-left group">
+                     <i class="fa-solid fa-vial-virus text-lg text-violet-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                     <h4 class="text-xs font-bold text-violet-900 leading-tight">Analisi Lab</h4>
+                 </button>
+             </div>
+
+             <button (click)="state.setModule('history')" class="group w-full mt-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2">
                 VEDI STORICO LISTE
              </button>
           </div>
+
         </div>
 
         <!-- Messaging Center -->
@@ -302,6 +316,139 @@ import { AppStateService } from '../services/app-state.service';
              </div>
         </div>
       </div>
+
+      <!-- Maintenance & Security Section -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+         <div class="flex items-center justify-between mb-6">
+            <div>
+               <h3 class="text-lg font-bold text-slate-800 tracking-tight">Manutenzione e Sicurezza Dati</h3>
+               <p class="text-xs text-slate-500">Gestisci i tuoi dati localmente per massima sicurezza</p>
+            </div>
+            <div class="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+               <i class="fa-solid fa-shield-halved"></i>
+            </div>
+         </div>
+
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Backup Card -->
+            <div class="p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
+               <div class="flex items-center gap-4 mb-4">
+                  <div class="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110">
+                     <i class="fa-solid fa-cloud-arrow-down"></i>
+                  </div>
+                  <div>
+                     <h4 class="text-sm font-bold text-slate-800">Crea Backup Locale</h4>
+                     @if (isBackupOverdue()) {
+                        <p class="text-[10px] text-red-600 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+                           <i class="fa-solid fa-clock"></i> Consigliato ora (Scaduto)
+                        </p>
+                     } @else {
+                        <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Altamente raccomandato</p>
+                     }
+                  </div>
+               </div>
+               <p class="text-xs text-slate-600 leading-relaxed mb-4">Scarica una copia completa di tutti i tuoi registri, prodotti e messaggi sul tuo computer. Utile per archiviazione personale o per lavorare offline.</p>
+               
+               <div class="bg-white/50 rounded-xl p-3 border border-slate-100 mb-6 flex items-center justify-between">
+                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ultimo Backup</span>
+                  <span [class]="'text-[10px] font-bold px-2 py-0.5 rounded-md ' + (isBackupOverdue() ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600')">
+                     {{ lastBackupDate() ? (lastBackupDate() | date:'dd/MM/yyyy') : 'Mai eseguito' }}
+                  </span>
+               </div>
+
+               <button (click)="exportData()" class="w-full py-3 bg-white border border-emerald-200 text-emerald-700 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-download"></i> Scarica Archivio .json
+               </button>
+            </div>
+
+            <!-- Restore Card -->
+            <div class="p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
+               <div class="flex items-center gap-4 mb-4">
+                  <div class="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110">
+                     <i class="fa-solid fa-clock-rotate-left"></i>
+                  </div>
+                  <div>
+                     <h4 class="text-sm font-bold text-slate-800">Ripristina da Backup</h4>
+                     <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Procedura di emergenza</p>
+                  </div>
+               </div>
+               <p class="text-xs text-slate-600 leading-relaxed mb-6">Recupera i dati da un file salvato in precedenza. Attenzione: questa operazione sovrascriverà i dati attuali con quelli del file selezionato.</p>
+               <button (click)="fileInput.click()" class="w-full py-3 bg-white border border-blue-200 text-blue-700 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-upload"></i> Carica ed Esamina
+               </button>
+               <input #fileInput type="file" class="hidden" accept=".json" (change)="onFileSelected($event)">
+            </div>
+         </div>
+      </div>
+
+      <!-- Advanced Restore Confirmation Modal -->
+      @if (showRestoreModal) {
+         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="closeModal()"></div>
+            <div class="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl relative z-10 animate-scale-in border border-white/20">
+               <!-- Modal Header with Pattern -->
+               <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-800 relative flex items-center justify-center">
+                  <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+                  <div class="h-20 w-20 rounded-3xl bg-white shadow-xl flex items-center justify-center text-blue-600 text-3xl animate-bounce-slow">
+                     <i class="fa-solid fa-triangle-exclamation"></i>
+                  </div>
+               </div>
+               
+               <div class="p-8 pt-10 text-center">
+                  <h3 class="text-2xl font-black text-slate-800 tracking-tight mb-2">Conferma Ripristino?</h3>
+                  <p class="text-sm text-slate-500 leading-relaxed mb-6">
+                     Stai per sovrascrivere l'intero database locale con i dati del file: <br>
+                     <span class="font-black text-blue-600 mt-2 block break-all bg-blue-50 py-2 px-4 rounded-xl border border-blue-100 text-xs">{{ pendingFileName }}</span>
+                  </p>
+
+                  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8 text-left flex gap-4">
+                     <div class="h-8 w-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="fa-solid fa-lightbulb"></i>
+                     </div>
+                     <p class="text-[10px] text-amber-900 font-bold leading-relaxed">
+                        IMPORTANTE: Questa azione non può essere annullata. Assicurati che il file sia corretto e recente. Per sicurezza, ti consigliamo di scaricare un backup dei dati attuali prima di procedere.
+                     </p>
+                  </div>
+
+                  <div class="flex flex-col gap-3">
+                     <button (click)="confirmRestore()" 
+                             class="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-check-double"></i> CONFERMA E RIPRISTINA
+                     </button>
+                     <button (click)="closeModal()" 
+                             class="w-full py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-[11px] uppercase tracking-[0.1em] hover:bg-slate-50 transition-all">
+                        ANNULLA OPERAZIONE
+                     </button>
+                  </div>
+               </div>
+            </div>
+         </div>
+      }
+
+      <!-- Success Notification Modal -->
+      @if (showSuccessModal) {
+         <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-fade-in" (click)="showSuccessModal = false"></div>
+            <div class="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl relative z-10 animate-scale-in border border-white/20">
+               <div [class]="'h-24 relative flex items-center justify-center ' + successModalConfig.color">
+                  <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 16px 16px;"></div>
+                  <div class="h-16 w-16 rounded-2xl bg-white shadow-lg flex items-center justify-center text-2xl animate-bounce-slow">
+                     <i [class]="'fa-solid ' + successModalConfig.icon"></i>
+                  </div>
+               </div>
+               
+               <div class="p-8 text-center">
+                  <h3 class="text-xl font-black text-slate-800 tracking-tight mb-2">{{ successModalConfig.title }}</h3>
+                  <p class="text-[11px] text-slate-500 leading-relaxed mb-6">{{ successModalConfig.message }}</p>
+
+                  <button (click)="showSuccessModal = false" 
+                          class="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all active:scale-95">
+                     CHIUDI E CONTINUA
+                  </button>
+               </div>
+            </div>
+         </div>
+      }
     </div>
   `,
   styles: [`
@@ -311,20 +458,63 @@ import { AppStateService } from '../services/app-state.service';
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .animate-scale-in {
+      animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-bounce-slow {
+      animation: bounceSlow 3s infinite;
+    }
+    @keyframes bounceSlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
   `]
 })
 export class OperatorDashboardViewComponent {
   state = inject(AppStateService);
 
+  // Modal State for Restore
+  showRestoreModal = false;
+  showSuccessModal = false;
+  successModalConfig = { title: '', message: '', icon: '', color: '' };
+  pendingFileName = '';
+  pendingData: any = null;
+  lastBackupDate = signal<string | null>(localStorage.getItem('haccp_last_backup_date'));
+
+  isBackupOverdue = computed(() => {
+    const last = this.lastBackupDate();
+    if (!last) return true;
+    const diff = new Date().getTime() - new Date(last).getTime();
+    const days = diff / (1000 * 60 * 60 * 24);
+    return days >= 30;
+  });
+
+  daysSinceLastBackup = computed(() => {
+    const last = this.lastBackupDate();
+    if (!last) return null;
+    const diff = new Date().getTime() - new Date(last).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  });
+
   isPhaseComplete = (moduleId: string): boolean => {
-    const records = this.state.checklistRecords();
     const today = this.state.filterDate();
     const userId = this.state.currentUser()?.id;
+
+    if (moduleId === 'production-log') {
+      const prodRecords = this.state.productionRecords();
+      return prodRecords.some(r => r.recordedDate === today && r.userId === userId);
+    }
+
+    const records = this.state.checklistRecords();
     return records.some(r => r.moduleId === moduleId && r.date === today && r.userId === userId);
   };
 
   completedPhasesCount = computed(() => {
-    const phases = ['pre-op-checklist', 'operative-checklist', 'post-op-checklist'];
+    const phases = ['pre-op-checklist', 'operative-checklist', 'post-op-checklist', 'production-log'];
     return phases.filter(p => this.isPhaseComplete(p)).length;
   });
 
@@ -483,5 +673,129 @@ export class OperatorDashboardViewComponent {
       </body>
       </html>
     `;
+  }
+
+  // --- Backup & Restore Logic ---
+
+  exportData() {
+    const today = new Date().toISOString().split('T')[0];
+    const data = {
+      backupDate: new Date().toISOString(),
+      version: '1.0',
+      user: this.state.currentUser()?.name,
+      clientId: this.state.currentUser()?.clientId,
+      // Core state modules
+      checklistRecords: this.state.checklistRecords(),
+      productionRecords: this.state.productionRecords(),
+      messages: this.state.messages(),
+      documents: this.state.documents(),
+      nonConformities: this.state.nonConformities(),
+      recipes: this.state.recipes(),
+      selectedEquipment: this.state.selectedEquipment(),
+      baseIngredients: this.state.baseIngredients(),
+      accounting: {
+        payments: this.state.payments(),
+        journalEntries: this.state.journalEntries(),
+        reminders: this.state.reminders()
+      }
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `HACCP_PRO_BACKUP_${this.state.currentUser()?.name?.replace(/\s/g, '_')}_${today}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    // Update last backup date
+    const now = new Date().toISOString();
+    this.lastBackupDate.set(now);
+    localStorage.setItem('haccp_last_backup_date', now);
+
+    this.successModalConfig = {
+      title: 'Backup Creato!',
+      message: 'Il file è stato scaricato correttamente nella tua cartella Download. Conservalo con cura.',
+      icon: 'fa-cloud-arrow-down',
+      color: 'bg-gradient-to-br from-emerald-500 to-teal-700'
+    };
+    this.showSuccessModal = true;
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.pendingFileName = file.name;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        this.pendingData = JSON.parse(e.target.result);
+        if (!this.pendingData.backupDate || !this.pendingData.checklistRecords) {
+          throw new Error('Formato file non valido');
+        }
+        this.showRestoreModal = true;
+      } catch (err) {
+        this.successModalConfig = {
+          title: 'Errore File',
+          message: 'Il file selezionato non è un backup valido di HACCP Pro.',
+          icon: 'fa-file-circle-xmark',
+          color: 'bg-gradient-to-br from-red-500 to-rose-700'
+        };
+        this.showSuccessModal = true;
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  confirmRestore() {
+    if (!this.pendingData) return;
+
+    try {
+      const s = this.state;
+      
+      if (this.pendingData.checklistRecords) s.checklistRecords.set(this.pendingData.checklistRecords);
+      if (this.pendingData.productionRecords) s.productionRecords.set(this.pendingData.productionRecords);
+      if (this.pendingData.messages) s.messages.set(this.pendingData.messages);
+      if (this.pendingData.documents) s.documents.set(this.pendingData.documents);
+      if (this.pendingData.nonConformities) s.nonConformities.set(this.pendingData.nonConformities);
+      if (this.pendingData.recipes) s.recipes.set(this.pendingData.recipes);
+      if (this.pendingData.selectedEquipment) s.selectedEquipment.set(this.pendingData.selectedEquipment);
+      if (this.pendingData.baseIngredients) {
+        s.baseIngredients.set(this.pendingData.baseIngredients);
+        localStorage.setItem('haccp_base_ingredients', JSON.stringify(this.pendingData.baseIngredients));
+      }
+      
+      if (this.pendingData.accounting) {
+        if (this.pendingData.accounting.payments) s.payments.set(this.pendingData.accounting.payments);
+        if (this.pendingData.accounting.journalEntries) s.journalEntries.set(this.pendingData.accounting.journalEntries);
+        if (this.pendingData.accounting.reminders) s.reminders.set(this.pendingData.accounting.reminders);
+      }
+
+      this.closeModal();
+      this.successModalConfig = {
+        title: 'Dati Ripristinati!',
+        message: 'Il database locale è stato aggiornato con successo con le informazioni del backup.',
+        icon: 'fa-check-double',
+        color: 'bg-gradient-to-br from-blue-600 to-indigo-800'
+      };
+      this.showSuccessModal = true;
+    } catch (err) {
+      this.successModalConfig = {
+        title: 'Errore Ripristino',
+        message: 'Si è verificato un errore durante il ripristino dei dati. Verifica l\'integrità del file.',
+        icon: 'fa-circle-exclamation',
+        color: 'bg-gradient-to-br from-orange-500 to-red-600'
+      };
+      this.showSuccessModal = true;
+      console.error(err);
+    }
+  }
+
+  closeModal() {
+    this.showRestoreModal = false;
+    this.pendingData = null;
+    this.pendingFileName = '';
   }
 }

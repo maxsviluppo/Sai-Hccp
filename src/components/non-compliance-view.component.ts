@@ -118,6 +118,74 @@ interface CheckItem {
                 </div>
             </div>
         </div>
+        
+        <!-- Recent Anomalies List for Operator -->
+        <div class="bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-rose-500">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800 tracking-tight">Ultime Segnalazioni</h3>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Storico anomalie inviate</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-wider">
+                        {{ userAnomalies().length }} Totali
+                    </span>
+                </div>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                @if (userAnomalies().length === 0) {
+                    <div class="p-12 text-center">
+                        <div class="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-200">
+                            <i class="fa-solid fa-clipboard-check text-3xl"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-500">Nessuna segnalazione registrata</p>
+                        <p class="text-xs text-slate-400 mt-1">Le tue non conformità appariranno qui per la stampa.</p>
+                    </div>
+                } @else {
+                    @for (nc of userAnomalies(); track nc.id) {
+                        <div class="p-5 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-start gap-4 flex-1 min-w-0">
+                                <div [class]="'h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border ' + 
+                                    (nc.status === 'OPEN' ? 'bg-red-50 border-red-100 text-red-500' : 
+                                     nc.status === 'IN_PROGRESS' ? 'bg-amber-50 border-amber-100 text-amber-600' : 
+                                     'bg-emerald-50 border-emerald-100 text-emerald-600')">
+                                    <i [class]="'fa-solid ' + (nc.status === 'OPEN' ? 'fa-exclamation' : nc.status === 'IN_PROGRESS' ? 'fa-spinner' : 'fa-check')"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h4 class="text-sm font-black text-slate-800 truncate">{{ nc.itemName || 'Anomalia Generica' }}</h4>
+                                        <span [class]="'text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider ' + 
+                                            (nc.status === 'OPEN' ? 'bg-red-50 border-red-200 text-red-600' : 
+                                             nc.status === 'IN_PROGRESS' ? 'bg-amber-50 border-amber-200 text-amber-700' : 
+                                             'bg-emerald-50 border-emerald-200 text-emerald-700')">
+                                            {{ nc.status === 'OPEN' ? 'Aperta' : nc.status === 'IN_PROGRESS' ? 'In lavorazione' : 'Chiusa' }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 line-clamp-1 mb-2">{{ nc.description }}</p>
+                                    <div class="flex items-center gap-3 text-[9px] font-bold text-slate-400">
+                                        <span><i class="fa-solid fa-calendar mr-1"></i>{{ nc.date | date:'dd/MM/yyyy' }}</span>
+                                        @if (nc.createdAt) {
+                                            <span><i class="fa-solid fa-clock mr-1"></i>{{ formatTime(nc.createdAt) }}</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button (click)="printAnomaly(nc)" 
+                                    class="shrink-0 h-10 px-5 bg-slate-900 hover:bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                <i class="fa-solid fa-print"></i> Stampa Verbale
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
 
         @if (!canEdit()) {
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
@@ -199,6 +267,16 @@ export class NonComplianceViewComponent {
         { id: 'nc_model', label: 'COMPILAZIONE MODELLO NON CONFORMITÀ / RICHIAMO', checked: false }
     ]);
 
+    userAnomalies = computed(() => {
+        const user = this.state.currentUser();
+        if (!user) return [];
+        
+        // Filter anomalies for the current user's client
+        return this.state.nonConformities()
+            .filter(nc => nc.clientId === user.clientId)
+            .sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+    });
+
     checkedCount = computed<number>(() => {
         return this.checks().filter((c: CheckItem) => c.checked).length;
     });
@@ -249,6 +327,166 @@ export class NonComplianceViewComponent {
         link.download = 'mod_RICHIAMO.pdf';
         link.target = '_blank';
         link.click();
+    }
+
+    formatTime(date: any): string {
+        if (!date) return '';
+        try {
+            return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        } catch { return ''; }
+    }
+
+    printAnomaly(nc: any) {
+        const client = this.state.clients().find(c => c.id === nc.clientId);
+        if (!client) return;
+
+        const printContent = this.generateAnomalyPrintHTML(nc, client);
+        const printWindow = window.open('', '_blank');
+
+        if (printWindow) {
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+    }
+
+    private generateAnomalyPrintHTML(nc: any, client: any): string {
+        const admin = this.state.adminCompany();
+        const dateStr = new Date(nc.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+        const timeStr = nc.createdAt ? new Date(nc.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+        const moduleLabel = this.getModuleLabel(nc.moduleId);
+
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Segnalazione Anomalia - ${client.name}</title>
+            <style>
+                @page { size: A4; margin: 1cm; }
+                body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 1cm; color: #1e293b; line-height: 1.5; }
+                
+                .letterhead { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 40px; }
+                .sai-logo { width: 150px; }
+                .sai-logo img { width: 100%; height: auto; object-fit: contain; }
+                .company-info { text-align: right; font-size: 11px; color: #475569; }
+                .company-name { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 4px; text-transform: uppercase; }
+
+                .report-header { text-align: center; margin-bottom: 40px; }
+                .report-title { font-size: 22px; font-weight: 900; color: #be123c; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+                .report-subtitle { font-size: 12px; color: #64748b; font-weight: 700; margin-top: 5px; }
+
+                .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+                .detail-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 15px; border-radius: 12px; }
+                .detail-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+                .detail-value { font-size: 14px; font-weight: 700; color: #0f172a; }
+
+                .anomaly-card { border: 2px solid #ef4444; border-radius: 16px; padding: 30px; position: relative; overflow: hidden; }
+                .anomaly-card::before { content: ""; position: absolute; left: 0; top: 0; width: 6px; height: 100%; background: #ef4444; }
+                .section-label { font-size: 10px; font-weight: 900; color: #ef4444; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 15px; display: block; }
+                
+                .content-block { margin-bottom: 25px; }
+                .content-label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px; }
+                .content-text { font-size: 14px; color: #1e293b; background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; min-height: 60px; }
+
+                .status-banner { position: absolute; top: 15px; right: 15px; padding: 5px 15px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+                .status-OPEN { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+                .status-IN_PROGRESS { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+                .status-CLOSED { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+                .signatures { margin-top: 30px; display: flex; justify-content: space-between; gap: 100px; }
+                .sign-box { flex: 1; text-align: center; }
+                .sign-line { border-top: 1px solid #0f172a; margin-top: 40px; padding-top: 5px; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+                .footer { position: fixed; bottom: 1cm; left: 1cm; right: 1cm; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+            </style>
+        </head>
+        <body>
+            <div class="letterhead">
+                <div class="sai-logo">
+                    <img src="${admin.logo}" alt="SAI Logo">
+                </div>
+                <div class="company-info">
+                    <div class="company-name">${client.name}</div>
+                    <div>P.IVA: ${client.piva}</div>
+                    <div>Indirizzo: ${client.address}</div>
+                    <div>Email: ${client.email}</div>
+                    <div>Tel: ${client.phone}</div>
+                </div>
+            </div>
+
+            <div class="report-header">
+                <h1 class="report-title">Verbale di Non Conformità</h1>
+                <div class="report-subtitle">Sistema Gestione Qualità HACCP PRO Compliance</div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-box">
+                    <div class="detail-label">Data Segnalazione</div>
+                    <div class="detail-value">${dateStr} ${timeStr ? 'ore ' + timeStr : ''}</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">Modulo di Origine</div>
+                    <div class="detail-value">${moduleLabel}</div>
+                </div>
+            </div>
+
+            <div class="anomaly-card">
+                <span class="status-banner status-${nc.status}">
+                    ${nc.status === 'OPEN' ? 'Segnalazione Aperta' : nc.status === 'IN_PROGRESS' ? 'In Lavorazione' : 'Risolto / Chiuso'}
+                </span>
+                
+                <span class="section-label">Dettagli Anomalia</span>
+
+                <div class="content-block">
+                    <div class="content-label">Oggetto / Attrezzatura Interrata</div>
+                    <div class="content-text" style="font-weight: 700;">${nc.itemName || 'Non specificato'}</div>
+                </div>
+
+                <div class="content-block">
+                    <div class="content-label">Descrizione dell'Anomalia (Motivazione)</div>
+                    <div class="content-text">${nc.description}</div>
+                </div>
+
+                <div class="content-block" style="margin-bottom: 0;">
+                    <div class="content-label">Azioni Correttive Intraprese / Note</div>
+                    <div class="content-text" style="color: #94a3b8; font-style: italic;">
+                        ${nc.status === 'CLOSED' ? 'L\'anomalia è stata gestita e risolta secondo protocollo.' : 'Da compilare a cura del responsabile...'}
+                    </div>
+                </div>
+            </div>
+
+            <div class="signatures">
+                <div class="sign-box">
+                    <div class="sign-line">Firma dell'Operatore Segnalante</div>
+                </div>
+                <div class="sign-box">
+                    <div class="sign-line">Firma del Responsabile Qualità</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                 Documento generato digitalmente da HACCP PRO Traceability System mod. NC/2024. <br>
+                Ai sensi del Reg. CE 852/04 - Autocontrollo dei pericoli igienico-sanitari.
+            </div>
+        </body>
+        </html>
+        `;
+    }
+
+    private getModuleLabel(moduleId: string): string {
+        const moduleNames: Record<string, string> = {
+            'operative-checklist': 'Fase Operativa',
+            'pre-op-checklist': 'Fase Pre-Operativa',
+            'post-op-checklist': 'Fase Post-Operativa',
+            'temperatures': 'Temperature',
+            'traceability': 'Rintracciabilità',
+            'cleaning-maintenance': 'Pulizia/Manutenzione'
+        };
+        return moduleNames[moduleId] || moduleId;
     }
 
     printModel(label: string) {

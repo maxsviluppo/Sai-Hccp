@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AppStateService, AppDocument } from '../services/app-state.service';
@@ -31,7 +31,6 @@ import { FormsModule } from '@angular/forms';
                 </button>
             </div>
         </div>
-
         <!-- Search & Control Bar -->
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
             <div class="relative w-full md:max-w-md">
@@ -40,12 +39,6 @@ import { FormsModule } from '@angular/forms';
                        [(ngModel)]="searchQuery"
                        placeholder="Cerca per nome file o data..." 
                        class="w-full pl-11 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all text-sm font-medium shadow-inner bg-slate-50/50">
-            </div>
-            
-            <div class="flex items-center gap-3">
-                 <button (click)="printGeneralReport()" class="px-4 py-2 bg-slate-50 text-slate-600 rounded-lg border border-slate-200 hover:bg-white hover:shadow-md transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-print"></i> Stampa Elenco
-                </button>
             </div>
         </div>
 
@@ -61,7 +54,23 @@ import { FormsModule } from '@angular/forms';
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
-                    @for (doc of filteredDocs(); track doc.id) {
+                    @if (state.isAdmin() && !state.filterClientId()) {
+                        <tr>
+                            <td colspan="4" class="p-8">
+                                <div class="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden p-8 text-center flex flex-col items-center justify-center min-h-[250px]">
+                                    <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-500 text-2xl border border-amber-100">
+                                        <i class="fa-solid fa-user-gear"></i>
+                                    </div>
+                                    <h3 class="text-base font-bold text-slate-800 mb-2">Selezione Azienda Richiesta</h3>
+                                    <p class="text-sm text-slate-500 max-w-sm mx-auto mb-6">Per visualizzare i rapporti microbiologici sincronizzati dagli operatori, seleziona prima un'azienda dal filtro globale in alto.</p>
+                                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                                        <i class="fa-solid fa-arrow-up animate-bounce"></i> Seleziona Azienda
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    } @else {
+                        @for (doc of filteredDocs(); track doc.id) {
                         <tr class="hover:bg-violet-50/30 transition-colors group">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex flex-col">
@@ -111,7 +120,7 @@ import { FormsModule } from '@angular/forms';
                             </td>
                         </tr>
                     }
-                    @if (filteredDocs().length === 0) {
+                    @if (filteredDocs().length === 0 && (!state.isAdmin() || state.filterClientId())) {
                         <tr>
                             <td colspan="4" class="py-20 text-center">
                                 <div class="flex flex-col items-center justify-center text-slate-400">
@@ -123,6 +132,7 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </td>
                         </tr>
+                    }
                     }
                 </tbody>
             </table>
@@ -318,10 +328,15 @@ import { FormsModule } from '@angular/forms';
     @keyframes slideUp { from { transform: translateY(10%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     `]
 })
-export class MicrobioMonitorViewComponent {
+export class MicrobioMonitorViewComponent implements OnInit {
     state = inject(AppStateService);
     toast = inject(ToastService);
     sanitizer = inject(DomSanitizer);
+
+    ngOnInit() {
+        // Sync data when opening the monitor
+        this.state.refreshAllData();
+    }
 
     searchQuery = '';
     previewDoc = signal<AppDocument | null>(null);
@@ -331,7 +346,9 @@ export class MicrobioMonitorViewComponent {
     docToDelete = signal<AppDocument | null>(null);
 
     microBioDocs = computed(() => {
-        return this.state.microbioDocuments();
+        return [...this.state.microbioDocuments()].sort((a, b) => 
+            new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
+        );
     });
 
     filteredDocs = computed(() => {
@@ -518,51 +535,5 @@ export class MicrobioMonitorViewComponent {
 
     getSafeUrl(base64: string) {
         return this.sanitizer.bypassSecurityTrustResourceUrl(base64);
-    }
-
-    printGeneralReport() {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
-        const tableRows = this.filteredDocs().map(d => `
-            <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${new Date(d.uploadDate).toLocaleDateString()}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${d.fileName}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${d.fileType}</td>
-            </tr>
-        `).join('');
-
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Report Microbiologico</title>
-                    <style>
-                        body { font-family: sans-serif; padding: 20px; color: #333; }
-                        h1 { color: #5b21b6; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th { background: #f3f4f6; text-align: left; padding: 10px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>HACCP Pro - Registro Analisi Microbiologiche</h1>
-                    <p>Azienda: ${this.state.companyConfig().name}</p>
-                    <p>Generato il: ${new Date().toLocaleString()}</p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Documento</th>
-                                <th>Tipo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
     }
 }

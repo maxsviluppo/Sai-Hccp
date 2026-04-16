@@ -410,17 +410,25 @@ export class MessagesViewComponent {
     }
 
     toggleMessageExpanded(messageId: string) {
+        const isExpanded = this.expandedMessages().has(messageId);
+        
         this.expandedMessages.update(set => {
             const newSet = new Set(set);
-            if (newSet.has(messageId)) {
+            if (isExpanded) {
                 newSet.delete(messageId);
             } else {
                 newSet.add(messageId);
-                const msg = this.state.messages().find(m => m.id === messageId);
-                if (msg && msg.senderId !== this.state.currentUser()?.id) this.state.markMessageAsRead(messageId);
             }
             return newSet;
         });
+
+        // Eseguiamo la marcatura come letto fuori dall'update() per non bloccare il render
+        if (!isExpanded) {
+            const msg = this.state.messages().find(m => m.id === messageId);
+            if (msg && msg.senderId !== this.state.currentUser()?.id && !msg.read) {
+                this.state.markMessageAsRead(messageId);
+            }
+        }
     }
 
     isMessageExpanded(messageId: string): boolean {

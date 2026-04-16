@@ -511,12 +511,19 @@ export class PostOperationalChecklistComponent {
             return a;
         }));
 
-        // Auto-save the state to the record store
-        this.state.saveRecord('post-op-checklist', {
-            areas: this.areas(),
-            totalSteps: this.totalStepsCount(),
-            completedSteps: this.completedStepsCount()
-        });
+        this.autoSave();
+    }
+
+    private autoSaveTimeout: any;
+    private autoSave() {
+        if (this.autoSaveTimeout) clearTimeout(this.autoSaveTimeout);
+        this.autoSaveTimeout = setTimeout(() => {
+            this.state.saveRecord('post-op-checklist', {
+                areas: this.areas(),
+                totalSteps: this.totalStepsCount(),
+                completedSteps: this.completedStepsCount()
+            });
+        }, 2000);
     }
 
     setAllStepsInArea(areaId: string, status: 'ok' | 'issue') {

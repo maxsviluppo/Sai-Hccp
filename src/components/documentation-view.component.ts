@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AppStateService, AppDocument } from '../services/app-state.service';
@@ -111,7 +111,7 @@ import { ToastService } from '../services/toast.service';
                                               [class]="selectedDocType() === def.id ? 'bg-white/20 text-white' : 'bg-white border border-' + (def.isTraining ? 'emerald' : def.color) + '-100 text-' + (def.isTraining ? 'emerald' : def.color) + '-600'">
                                              <i [class]="'fa-solid ' + def.icon + ' text-[10px]'"></i>
                                          </div>
-                                         <span class="text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]" [title]="def.label">{{ def.label }}</span>
+                                         <span class="text-[10px] font-black uppercase tracking-widest flex-1 leading-tight" [title]="def.label">{{ def.label }}</span>
                                      </div>
                                      @if (getDocsByType(def.id).length > 0) {
                                          <div class="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black shadow-sm"
@@ -225,7 +225,7 @@ import { ToastService } from '../services/toast.service';
                                                 <div class="flex items-center gap-2 text-[10px] text-slate-500">
                                                     <span>{{ doc.uploadDate | date:'dd/MM/yy' }}</span>
                                                     <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                    <span class="truncate">{{ getDocTypeLabel(doc.type) }}</span>
+                                                    <span class="leading-tight">{{ getDocTypeLabel(doc.type) }}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -256,7 +256,7 @@ import { ToastService } from '../services/toast.service';
                                                         <i [class]="'fa-solid ' + def.icon + ' text-sm'"></i>
                                                     </div>
                                                     <div class="min-w-0">
-                                                        <span class="text-xs font-bold text-slate-400 block truncate mb-0.5 italic group-hover/placeholder:text-slate-500">{{ def.label }}</span>
+                                                        <span class="text-xs font-bold text-slate-400 block mb-0.5 italic group-hover/placeholder:text-slate-500 leading-tight">{{ def.label }}</span>
                                                         <div [class]="'flex items-center gap-2 text-[9px] font-black uppercase tracking-widest group-hover/placeholder:text-' + def.color + '-400 text-slate-300'">
                                                             <span>Disponibile al Caricamento</span>
                                                         </div>
@@ -359,10 +359,15 @@ import { ToastService } from '../services/toast.service';
     
     `
 })
-export class DocumentationViewComponent {
+export class DocumentationViewComponent implements OnInit {
     state = inject(AppStateService);
     toast = inject(ToastService);
     sanitizer = inject(DomSanitizer);
+
+    ngOnInit() {
+        // Background sync on navigation to ensure consistency between users
+        this.state.refreshAllData();
+    }
 
     selectedDocType = signal<string | 'all'>('all');
     previewDoc = signal<AppDocument | null>(null);
@@ -386,7 +391,9 @@ export class DocumentationViewComponent {
         
         { id: 'haccp_cert', label: 'Attestato HACCP / Sicurezza', icon: 'fa-graduation-cap', color: 'emerald', isTraining: true },
         { id: 'haccp_update', label: 'Aggiornamenti Sicurezza', icon: 'fa-arrows-rotate', color: 'emerald', isTraining: true },
-        { id: 'haccp_procedures', label: 'Procedure Operative Standard', icon: 'fa-book-open-reader', color: 'emerald', isTraining: true }
+        { id: 'haccp_procedures', label: 'Procedure Operative Standard', icon: 'fa-book-open-reader', color: 'emerald', isTraining: true },
+        { id: 'manuali', label: 'Manuali', icon: 'fa-book', color: 'emerald', isTraining: true },
+        { id: 'multe_verbali', label: 'Multe e Verbali', icon: 'fa-gavel', color: 'red' }
     ];
 
     getTrainingDescription(id: string): string {
@@ -394,6 +401,7 @@ export class DocumentationViewComponent {
             case 'haccp_cert': return 'Archiviazione degli attestati di formazione obbligatoria HACCP e Sicurezza sul Lavoro per tutto il personale operativo.';
             case 'haccp_update': return 'Documentazione relativa ai corsi di aggiornamento periodico e refresh formativi in ambito sicurezza alimentare.';
             case 'haccp_procedures': return 'Raccolta delle istruzioni di lavoro specifiche (SOP) e procedure operative approvate per le attività quotidiane.';
+            case 'manuali': return 'Manuali tecnici, guide operative e documentazione di supporto per attrezzature e processi aziendali.';
             default: return '';
         }
     }
@@ -453,7 +461,15 @@ export class DocumentationViewComponent {
 
         const uploadType = type === 'all' ? 'generale' : type;
 
+        // Custom size limit: 10MB for manuali, 2MB default for others
+        const maxSize = uploadType === 'manuali' ? 10 * 1024 * 1024 : 2 * 1024 * 1024;
+
         Array.from(files).forEach((file: any) => {
+            if (file.size > maxSize) {
+                this.toast.error('File troppo grande', `Il file "${file.name}" supera il limite di ${maxSize / (1024 * 1024)}MB.`);
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e: any) => {
                 this.state.saveDocument({

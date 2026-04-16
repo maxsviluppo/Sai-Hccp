@@ -59,8 +59,9 @@ import { FormsModule } from '@angular/forms';
                             <div class="space-y-1.5">
                                 <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Nome Alimento Principale</label>
                                 <input type="text" [(ngModel)]="currentRecord.mainProductName" 
+                                       (ngModelChange)="currentRecord.mainProductName = formatName(currentRecord.mainProductName)"
                                        placeholder="es. Sugo alla Genovese"
-                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100">
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
@@ -140,8 +141,17 @@ import { FormsModule } from '@angular/forms';
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Nome Ingrediente *</label>
-                                        <input type="text" [(ngModel)]="newIngredient.name"
-                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm">
+                                        <div class="relative">
+                                            <input type="text" [(ngModel)]="newIngredient.name"
+                                                (ngModelChange)="newIngredient.name = formatName(newIngredient.name)"
+                                                list="common-ingredients"
+                                                class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
+                                            <datalist id="common-ingredients">
+                                                @for (base of state.baseIngredients(); track base) {
+                                                    <option [value]="base"></option>
+                                                }
+                                            </datalist>
+                                        </div>
                                     </div>
                                     <div>
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto/Scadenza</label>
@@ -150,10 +160,24 @@ import { FormsModule } from '@angular/forms';
                                         <input type="date" [(ngModel)]="newIngredient.expiryDate"
                                                class="w-full bg-white border border-rose-200 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-slate-800 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all shadow-sm">
                                     </div>
-                                    <div class="flex items-end">
+                                    <div class="md:col-span-2">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Associa Allergeni (Opzionale)</label>
+                                        <div class="flex flex-wrap gap-2">
+                                            @for (alg of state.ALLERGEN_LIST; track alg.id) {
+                                                <button (click)="toggleNewIngredientAllergen(alg.id)"
+                                                        [class]="'px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-tight transition-all duration-300 ' + 
+                                                                 (newIngredient.allergens?.includes(alg.id) ? alg.active : 'bg-white border-slate-200 text-slate-300 hover:border-slate-300 hover:text-slate-400 opacity-60')">
+                                                    <i [class]="'fa-solid ' + alg.icon"></i>
+                                                    {{ alg.label }}
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-end md:col-span-2">
                                         <button (click)="addIngredient()" [disabled]="!newIngredient.name"
-                                                class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700 disabled:opacity-50">
-                                            <i class="fa-solid fa-plus text-teal-400"></i> Aggiungi
+                                                class="w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700 disabled:opacity-50 shadow-lg">
+                                            <i class="fa-solid fa-plus text-teal-400 mr-2"></i> Aggiungi Ingrediente alla Lista
                                         </button>
                                     </div>
                                 </div>
@@ -459,13 +483,19 @@ export class ProductionLogViewComponent {
         this.isEditing.set(false);
     }
 
+    formatName(val: string): string {
+        if (!val) return '';
+        return val.charAt(0).toUpperCase() + val.slice(1);
+    }
+
     resetIngredientForm() {
         this.tempPhoto = null;
         this.newIngredient = {
             name: '',
             packingDate: new Date().toISOString().split('T')[0],
             expiryDate: '',
-            lotto: ''
+            lotto: '',
+            allergens: []
         };
     }
 
@@ -489,16 +519,31 @@ export class ProductionLogViewComponent {
         }
 
         const capitalized = this.newIngredient.name.charAt(0).toUpperCase() + this.newIngredient.name.slice(1);
+        
+        // --- Memorize New Ingredient ---
+        this.state.addBaseIngredient(capitalized);
+
         const ing: ProductionIngredient = {
             id: Math.random().toString(36).substring(2, 9),
             name: capitalized,
             packingDate: this.newIngredient.packingDate || '',
             expiryDate: this.newIngredient.expiryDate || '',
             lotto: this.newIngredient.lotto || '',
-            photo: this.tempPhoto || undefined
+            photo: this.tempPhoto || undefined,
+            allergens: this.newIngredient.allergens || []
         };
         this.ingredientsList.update(list => [ing, ...list]);
         this.resetIngredientForm();
+    }
+
+    toggleNewIngredientAllergen(allergenId: string) {
+        if (!this.newIngredient.allergens) this.newIngredient.allergens = [];
+        const idx = this.newIngredient.allergens.indexOf(allergenId);
+        if (idx >= 0) {
+            this.newIngredient.allergens.splice(idx, 1);
+        } else {
+            this.newIngredient.allergens.push(allergenId);
+        }
     }
 
     removeIngredient(id: string) {
@@ -613,7 +658,7 @@ export class ProductionLogViewComponent {
                     margin: 0 !important;
                     border: none !important; 
                     box-shadow: none !important;
-                    padding: 2mm !important;
+                    padding: 2mm 2mm 2mm 4mm !important;
                     display: flex !important;
                     flex-direction: row !important;
                 }
@@ -650,12 +695,24 @@ export class ProductionLogViewComponent {
     }
 
     getUIAllergens(): string[] {
-        return this.detectAllergens(this.ingredientsList().map(i => i.name));
+        const manual = new Set<string>();
+        this.ingredientsList().forEach(i => i.allergens?.forEach(a => manual.add(a)));
+        
+        const detected = this.detectAllergens(this.ingredientsList().map(i => i.name));
+        detected.forEach(d => manual.add(d));
+        
+        return Array.from(manual);
     }
 
     getAllergens(): string[] {
         const ingredients = this.selectedRecordForLabel()?.ingredients || [];
-        return this.detectAllergens(ingredients.map(i => i.name));
+        const manual = new Set<string>();
+        ingredients.forEach(i => i.allergens?.forEach(a => manual.add(a)));
+        
+        const detected = this.detectAllergens(ingredients.map(i => i.name));
+        detected.forEach(d => manual.add(d));
+        
+        return Array.from(manual);
     }
 
     private detectAllergens(names: string[]): string[] {
@@ -693,7 +750,9 @@ export class ProductionLogViewComponent {
             'Latte': [
                 'latte', 'panna', 'burro', 'yogurt', 'kefir', 'mozzarella', 'parmigiano', 'gorgonzola', 'pecorino', 
                 'ricotta', 'vaccino', 'capra', 'pecora', 'bufala', 'lattosio', 'caseina', 'caseinati', 'sieroproteine', 
-                'siero di latte', 'lattoalbumina', 'lattoglobulina', 'besciamella', 'cioccolato al latte', 'margarina'
+                'siero di latte', 'lattoalbumina', 'lattoglobulina', 'besciamella', 'cioccolato al latte', 'margarina',
+                'formaggio', 'provola', 'scamorza', 'asiago', 'fontina', 'emmental', 'caciocavallo', 'taleggio', 'mascarpone',
+                'stracchino', 'squacquerone', 'robiola', 'philadelphia', 'tilsit', 'feta', 'edam', 'gouda', 'cheddar'
             ],
             'Frutta a Guscio': [
                 'mandorle', 'nocciole', 'noci', 'anacardi', 'pecan', 'brasile', 'pistacchi', 'macadamia', 'queensland', 

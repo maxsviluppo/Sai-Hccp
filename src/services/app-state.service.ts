@@ -119,6 +119,7 @@ export interface ProductionIngredient {
   expiryDate: string;
   lotto: string; // or invoice ref
   photo?: string; // base64 jpg
+  allergens?: string[];
 }
 
 export interface ProductionRecord {
@@ -180,12 +181,102 @@ export interface Reminder {
   dismissed: boolean;
 }
 
+export interface AllergenDef {
+  id: string;
+  label: string;
+  code: string;
+  icon: string;
+  color: string;
+  bg: string;
+  text: string;
+  active: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AppStateService {
+
+  readonly ALLERGEN_LIST: AllergenDef[] = [
+    { id: 'Glutine', label: 'Glutine', code: 'GLU', icon: 'fa-wheat-awn', color: 'amber', bg: 'bg-amber-50', text: 'text-amber-700', active: 'bg-amber-100 border-amber-400 text-amber-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Crostacei', label: 'Crostacei', code: 'CRO', icon: 'fa-shrimp', color: 'rose', bg: 'bg-rose-50', text: 'text-rose-700', active: 'bg-rose-100 border-rose-400 text-rose-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Uova', label: 'Uova', code: 'UOV', icon: 'fa-egg', color: 'yellow', bg: 'bg-yellow-50', text: 'text-yellow-700', active: 'bg-yellow-100 border-yellow-400 text-yellow-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Pesce', label: 'Pesce', code: 'PES', icon: 'fa-fish', color: 'blue', bg: 'bg-blue-50', text: 'text-blue-700', active: 'bg-blue-100 border-blue-400 text-blue-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Arachidi', label: 'Arachidi', code: 'ARA', icon: 'fa-heart-crack', color: 'orange', bg: 'bg-orange-50', text: 'text-orange-700', active: 'bg-orange-200 border-orange-500 text-orange-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Soia', label: 'Soia', code: 'SOI', icon: 'fa-leaf', color: 'green', bg: 'bg-green-50', text: 'text-green-700', active: 'bg-green-100 border-green-400 text-green-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Latte', label: 'Latte', code: 'LAT', icon: 'fa-cow', color: 'sky', bg: 'bg-sky-50', text: 'text-sky-700', active: 'bg-sky-100 border-sky-400 text-sky-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Frutta a guscio', label: 'Frutta G.', code: 'FRU', icon: 'fa-box-open', color: 'amber', bg: 'bg-amber-100/50', text: 'text-amber-900', active: 'bg-amber-200 border-amber-600 text-amber-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Sedano', label: 'Sedano', code: 'SED', icon: 'fa-carrot', color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-700', active: 'bg-emerald-100 border-emerald-400 text-emerald-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Senape', label: 'Senape', code: 'SEN', icon: 'fa-jar', color: 'yellow', bg: 'bg-yellow-100', text: 'text-yellow-800', active: 'bg-yellow-200 border-yellow-500 text-yellow-950 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Sesamo', label: 'Sesamo', code: 'SES', icon: 'fa-ellipsis-vertical', color: 'slate', bg: 'bg-slate-50', text: 'text-slate-700', active: 'bg-slate-200 border-slate-400 text-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Solfiti', label: 'Solfiti', code: 'SOL', icon: 'fa-wine-glass', color: 'indigo', bg: 'bg-indigo-50', text: 'text-indigo-700', active: 'bg-indigo-100 border-indigo-400 text-indigo-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Lupini', label: 'Lupini', code: 'LUP', icon: 'fa-circle-dot', color: 'lime', bg: 'bg-lime-50', text: 'text-lime-700', active: 'bg-lime-100 border-lime-400 text-lime-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
+    { id: 'Molluschi', label: 'Molluschi', code: 'MOL', icon: 'fa-otter', color: 'cyan', bg: 'bg-cyan-50', text: 'text-cyan-700', active: 'bg-cyan-100 border-cyan-400 text-cyan-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' }
+  ];
   // --- Auth State ---
   readonly currentUser = signal<User | null>(null);
+
+  // --- GLOBAL INGREDIENTS DATABASE (Memorized List) ---
+  readonly baseIngredients = signal<string[]>([
+    'Acqua Minerale Naturale (0.5L)', 'Acqua Minerale Naturale (1L)', 'Acqua Frizzante (0.5L)', 'Acqua Frizzante (1L)', 'Acqua Effervescente Naturale', 'Acqua Tonica Premium', 'Acqua Tonica al Pompelmo', 'Ginger Beer artigianale', 'Ginger Ale', 'Soda Water', 'Limonata amara', 'Cedrata', 'Chinotto', 'Spuma Bionda', 'Gazzosa Antica Ricetta', 'Cola Classica', 'Cola Zero Zuccheri', 'Aranciata Classica', 'Aranciata Amara', 'Tè Freddo al Limone', 'Tè Freddo alla Pesca', 'Te Freddo Verde', 'Succo di Arancia 100%', 'Succo di Mela torbido', 'Succo di Pera (Nettare)', 'Succo di Pesca (Nettare)', 'Succo di Albicocca', 'Succo di Mirtillo', 'Succo di Ananas', 'Succo di Pompelmo Rosa', 'Succo di Pomodoro (Mix)', 'Sciroppo di Zucchero', 'Sciroppo di Grenadine', 'Sciroppo di Orzata', 'Sciroppo di Menta', 'Latte di Cocco (Cocktail)', 'Crema di Cocco',
+    'Birra Chiara alla Spina', 'Birra Rossa alla Spina', 'Birra Doppio Malto', 'Birra IPA Artigianale', 'Birra APA', 'Birra Blanche', 'Birra Stout', 'Birra Analcolica', 'Cidro di Mele',
+    'Vino Bianco Fermo (DOC)', 'Vino Bianco Mosso', 'Vino Rosso di Struttura', 'Vino Rosso Novello', 'Vino Rosato Salento', 'Prosecco DOCG', 'Franciacorta Brut', 'Champagne Cuvée', 'Metodo Classico Pas Dosé', 'Lambrusco Mantovano', 'Passito di Pantelleria', 'Vin Santo', 'Moscato d\'Asti', 'Vermouth Rosso', 'Vermouth Bianco', 'Vermouth Dry', 'Bitter Campari', 'Aperol', 'Select', 'Cynar',
+    'Gin London Dry', 'Gin Distilled (Botanical)', 'Vodka Grain', 'Vodka Potato', 'Rum Bianco Antille', 'Rum Scuro Invecchiato', 'Tequila Blanco', 'Tequila Reposado', 'Mezcal Espadin', 'Whisky Scotch (Single Malt)', 'Whiskey Irish', 'Bourbon Whiskey', 'Grappa Bianca Barrique', 'Grappa Invecchiata', 'Cognac VSOP', 'Armagnac', 'Calvados', 'Limoncello artigianale', 'Mirto di Sardegna', 'Amaro Lucano', 'Amaro del Capo', 'Amaro Averna', 'Amaro Montenegro', 'Sambuca', 'Anisetta', 'Maraschino', 'Triple Sec', 'Cointreau', 'Grand Marnier', 'Kahlúa (Liquore Caffè)', 'Baileys Irish Cream',
+    'Caffè in Grani Miscela 100% Arabica', 'Caffè in Grani Miscela Bar', 'Caffè Decaffeinato', 'Caffè al Ginseng', 'Orzo solubile', 'Tè Nero in foglia', 'Tè Verde Matcha', 'Camomilla (Fiori interi)', 'Infuso ai Frutti di Bosco', 'Karkadè',
+    'Farina 00 (Pasta Frolla)', 'Farina 00 (Pan di Spagna)', 'Farina Manitoba', 'Farina di Mais', 'Farina di Riso', 'Farina di Ceci', 'Fecola di Patate', 'Amido di Mais (Maizena)', 'Amido di Frumento (Frumina)', 'Fecola di Maranta (Arrowroot)', 'Fruttosio', 'Zucchero Muscovado', 'Zucchero Demerara', 'Zucchero Candito', 'Zucchero Invertito', 'Glucosio in sciroppo', 'Maltodestrine', 'Isomalto', 'Eritritolo', 'Stevia', 'Sciroppo d\'Agave', 'Melata di Bosco', 'Miele di Castagno', 'Miele di Sulla', 'Miele di Zagara',
+    'Cioccolato Fondente 70%', 'Cioccolato Fondente 85%', 'Cioccolato al Latte Extra', 'Cioccolato Bianco (Pasticceria)', 'Cioccolato Ruby', 'Burro di Cacao', 'Cacao Amaro in Polvere', 'Cacao Alcalinizzato', 'Granella di Cacao (Nibs)', 'Pasta di Nocciola 100%', 'Pasta di Pistacchio Pura', 'Pasta di Mandorla (Panetto)', 'Pasta di Arancia (Flavor)', 'Estratto di Vaniglia Bourbon', 'Bacche di Vaniglia (Madagascar)', 'Fava Tonka', 'Essenza di Mandorla Amara', 'Essenza di Arancia', 'Essenza di Cedro', 'Acqua di Rose (Alimentare)', 'Acqua di Fiori d\'Arancio',
+    'Fogli di Gelatina (Colla di Pesce)', 'Gelatina in Polvere', 'Agar Agar', 'Pectina NH', 'Pectina Gialla', 'Gomma di Xanthano', 'Gomma Guar', 'Lecitina di Soia', 'Bicarbonato d\'Ammonio', 'Cremor Tartaro', 'Lievito Madre Fresco (Pasticceria)', 'Lievito Chimico per Dolci',
+    'Frutti di Bosco Surgelati', 'Passata di Lamponi', 'Purea di Mango', 'Purea di Passiflora (Maracuja)', 'Purea di Fragola', 'Amarene Sciroppate', 'Ciliegie Candite', 'Scorze di Arancia Candite', 'Cedro Candito', 'Macedonia Candita', 'Marron Glacé', 'Zenzero Candito', 'Zeste di Limone Essiccate', 'Limone grattugiato fresco',
+    'Granella di Meringa', 'Meringhette', 'Gocce di Cioccolato', 'Scaglie di Cioccolato Bianco', 'Zuccherini colorati (Sprinkles)', 'Perle di Zucchero argento', 'Foglia d\'Oro alimentare', 'Foglia d\'Argento alimentare', 'Cialde per Gelato', 'Biscotti Lotus (granella)', 'Polvere di Caffè solubile', 'Latte Condensato intero', 'Latte Condensato zuccherato', 'Dulce de Leche', 'Crema Spalmabile alle Nocciole', 'Crema Spalmabile al Pistacchio',
+    'Savoiardi Sardi', 'Biscotti tipo Digestive', 'Pasta Sfoglia (Rotolo)', 'Pasta Frolla (Rotolo)', 'Pasta Brisée', 'Pan di Spagna Pronto', 'Basi per Crostate', 'Bignè vuoti', 'Cannoli Siciliani (Cialde)', 'Cialdine per tartellette', 'Granella di Amaretto', 'Lingue di Gatto', 'Cialde per gelato (Coni)',
+    'Farina 00', 'Farina Intera', 'Farina Manitoba', 'Farina di Mais', 'Farina di Riso', 'Farina di Ceci', 'Fecola di Patate', 'Amido di Mais', 'Amido di Frumento', 'Farina di Grano Saraceno', 'Farina di Castagne', 'Farina di Farro', 'Farina di Segale', 'Semola di Grano Duro', 'Semola Rimacinata',
+    'Zucchero Semolato', 'Zucchero a Velo (Idrorepellente)', 'Zucchero a Velo classico', 'Zucchero di Canna', 'Miele di Acacia', 'Miele di Millefiori', 'Sciroppo d\'Acero',
+    'Latte Intero', 'Latte Parzialmente Scremato', 'Latte di Soia', 'Latte di Mandorla', 'Latte di Riso', 'Latte di Cocco', 'Panna fresca da montare', 'Panna da cucina', 'Panna Vegetale (Dolci)',
+    'Uova Fresche', 'Uova Pastorizzate (Albume)', 'Uova Pastorizzate (Tuorlo)', 'Uovo in Polvere',
+    'Burro', 'Burro Chiarificato', 'Margarina Vegetale', 'Olio Extravergine di Oliva', 'Olio di Semi di Girasole', 'Olio di Arachidi', 'Olio di Mais', 'Olio di Sesamo',
+    'Sale Fino', 'Sale Grosso', 'Pepe Nero', 'Pepe Bianco', 'Pepe Verde', 'Peperoncino', 'Origano', 'Rosmarino', 'Salvia', 'Basilico', 'Prezzemolo', 'Timo', 'Maggiorana', 'Erba Cipollina', 'Menta Fresca', 'Alloro', 'Chiodi di Garofano', 'Cannella in polvere', 'Cannella in stecche', 'Noce Moscata', 'Zafferano in fili', 'Curcuma', 'Zenzero Fresco', 'Paprika Dolce', 'Paprika Affumicata', 'Curry',
+    'Mozzarella Fior di Latte', 'Mozzarella di Bufala', 'Burrata', 'Provola Affumicata', 'Scamorza', 'Parmigiano Reggiano', 'Grana Padano', 'Pecorino Romano', 'Pecorino Sardo', 'Gorgonzola', 'Taleggio', 'Mascarpone (Alta qualità)', 'Ricotta Vaccina', 'Ricotta di Pecora', 'Formaggio Spalmabile', 'Fontina', 'Emmental', 'Caciocavallo', 'Asiago', 'Montasio', 'Gorgonzola Dolce', 'Stracchino', 'Squacquerone', 'Robiola', 'Feta', 'Edam', 'Gouda', 'Cheddar', 'Philadelphia',
+    'Spaghetti n.5', 'Spaghettini', 'Spaghettoni', 'Bucatini', 'Linguine', 'Bavette', 'Penne Rigate', 'Penne Lisce', 'Pennoni', 'Fusilli', 'Fusilli Bucati', 'Rigatoni', 'Tortiglioni', 'Mezze Maniche', 'Paccheri', 'Calamarata', 'Casarecce', 'Trofie', 'Orecchiette', 'Strascinati', 'Malloreddus', 'Culingionis', 'Pici', 'Bigoli', 'Ziti', 'Mafaldine', 'Farfalle', 'Piperigate', 'Conchiglie', 'Conchiglioni', 'Radiatori', 'Gnocchetti Sardi', 'Fregola sarda', 'Anelletti', 'Ditali', 'Ditalini', 'Stelline', 'Risoni', 'Grattoni', 'Quadrucci', 'Spaghetti alla Chitarra',
+    'Tagliatelle all\'uovo', 'Tagliolini all\'uovo', 'Pappardelle all\'uovo', 'Fettuccine all\'uovo', 'Lasagne all\'uovo', 'Cannelloni', 'Tortellini alla carne', 'Ravioli di magro', 'Ravioli alla carne', 'Agnolotti del plin', 'Cappelletti', 'Anolini', 'Tortelli di zucca', 'Culurgiones', 'Passatelli', 'Canederli', 'Spätzle',
+    'Gnocchi di Patate', 'Gnocchi di Zucca', 'Gnocchi alla Romana', 'Chicche di patate',
+    'Riso Carnaroli', 'Riso Arborio', 'Riso Vialone Nano', 'Riso Roma', 'Riso Basmati', 'Riso Venere (Nero)', 'Riso Ermes (Rosso)', 'Riso Integrale', 'Riso Parboiled', 'Riso Originario', 'Riso per Sushi',
+    'Orzo Perlato', 'Farro Dicocco', 'Grano Saraceno in chicchi', 'Quinoa Bianca', 'Quinoa Rossa', 'Quinoa Nera', 'Couscous Mezzo Grosso', 'Cuscus Integrale', 'Bulgur', 'Polenta Istantanea', 'Polenta Taragna',
+    'Brodo Vegetale (preparato)', 'Brodo di Carne (preparato)', 'Brodo di Pesce (Fumetto)', 'Dadò Vegetale', 'Dado di Carne', 'Estratto di Carne',
+    'Ossobuco di Bovino', 'Filetto di Manzo (Taglio)', 'Controfiletto (Entrecôte)', 'Fesa di Manzo', 'Noce di Manzo', 'Girello di Manzo (Magatello)', 'Scamone', 'Cappello del Prete (Aletta)', 'Biancostato', 'Lingua di Bovino', 'Fegato di Vitello', 'Animelle', 'Trippa', 'Guancia di Manzo', 'Fiorentina (T-Bone)', 'Arista di Maiale', 'Braciole di Maiale', 'Costine di Maiale (Ribs)', 'Filetto di Maiale', 'Coppa di Maiale Fresca', 'Stinco di Maiale', 'Pancetta di Maiale Fresca', 'Porchetta (tronchetto)', 'Coniglio Intero', 'Cosce di Coniglio', 'Sella di Coniglio', 'Petto d\'Anatra', 'Cosce d\'Anatra (Confit)', 'Faraona', 'Quaglie', 'Piccione', 'Cinghiale (Polpa)', 'Capriolo', 'Cervo', 'Agnello (Coscia)', 'Costolette d\'Agnello', 'Coratella d\'Agnello', 'Arrosticini', 'Hamburger di Chianina', 'Hamburger di Scottona', 'Hamburger di Black Angus', 'Salsiccia di Pollo e Tacchino', 'Wurstel di Suino', 'Wurstel di Pollo', 'Galletto Vallespluga',
+    'Orata di Mare', 'Branzino (Spigola)', 'Rombo Chiodato', 'Sogliola Fresca', 'Cernia (Filetto)', 'Dentice', 'Mormora', 'Gallinella di Mare (Mazzola)', 'Scorfano Fresco', 'Pesce San Pietro', 'Filetto di Sarago', 'Ricciola Fresca', 'Palamita', 'Tonno Rosso (Abbattuto)', 'Tataki di Tonno', 'Pesce Spada (Trance)', 'Salmone Norvegese Fresco', 'Trota Salmonata', 'Trota Iridea', 'Merluzzo Nordico (Skrei)', 'Filetto di Platessa', 'Pesce Nasello', 'Filetto di Persico', 'Triglia di Scoglio', 'Alici Fresche (Marinate)', 'Gambero Rosso di Mazara', 'Gambero Viola', 'Scampo Reale', 'Astice Blu', 'Astice Americano', 'Granseola', 'Mazzancolla Tropicale', 'Coda di Rospo (Rana Pescatrice)', 'Sepia (Nostrana)', 'Calamaro Nazionale', 'Totano Fresco', 'Moscardini', 'Polpo Verace', 'Gran fritto misto (Pesce)', 'Fiori di Zucca con Acciuga', 'Polpette di Pesce', 'Bastoncini di Pesce',
+    'Tofu al Naturale', 'Tofu Affumicato', 'Seitan alla Piastra', 'Seitan al Naturale', 'Tempeh di Soia', 'Mopur (Carne Vegetale)', 'Burger Vegetale (Soia)', 'Burger di Verdure', 'Cotoletta di Soia', 'Nuggets di Soia', 'Spezzatino di Soia', 'Muscolo di Grano', 'Lenticchie Secche', 'Ceci in Scatola', 'Ceci Secchi', 'Fagioli Borlotti Freschi', 'Fagioli Borlotti Secchi', 'Fagioli Cannellini', 'Fagioli Bianchi di Spagna', 'Fagioli Azuki', 'Lupini in Salamoia', 'Hummus di Ceci', 'Falafel',
+    'Uova Sode', 'Uova in camicia', 'Frittata alle Erbe', 'Omelette al Formaggio', 'Polpette di Pane', 'Polpettone di Carne', 'Involtini di Vitello (Messinesi)', 'Involtini di Pollo', 'Cordon Bleu', 'Cotoletta alla Milanese', 'Saltimbocca alla Romana', 'Straccetti di Manzo', 'Tagliata di Manzo', 'Vitello Tonnato (Girello)', 'Pollo allo Spiedo', 'Nuggets di Pollo', 'Alette di Pollo Piccanti', 'Spiedini Misti (Carni)', 'Spiedini di Pesce', 'Tataki di Salmone', 'Tartare di Manzo', 'Tartare di Pesce (Salmone/Tonno)', 'Carpaccio di Pesce Spada', 'Zuppa di Pesce (Cacciucco)', 'Brodetto di Pesce',
+    'Mela Golden Delicious', 'Mela Fuji', 'Mela Annurca', 'Mela Granny Smith', 'Mela Stark', 'Pera Abate Fetel', 'Pera William', 'Pera Kaiser', 'Pera Coscia', 'Pesca Gialla', 'Pesca Bianca', 'Pesca Noce (Nettarina)', 'Albicocca Vesuviana', 'Susina Claudia', 'Susina Goccia d\'Oro', 'Ciliegia Ferrovia', 'Ciliegia di Marostica', 'Amarena Fresca', 'Fico Dottato', 'Fico d\'India', 'Uva Italia', 'Uva Pizzutella', 'Uva Fragola', 'Banana Chiquita', 'Banana Platano (da cottura)', 'Mango Ready-to-eat', 'Avocado Hass', 'Avocado Fuerte', 'Ananas Del Monte', 'Papaya Formosa', 'Maracuja (Frutto della Passione)', 'Granadilla', 'Litchi', 'Dragon Fruit (Pitaya)', 'Alchechengi', 'Mango filippino', 'Frutto del Drago Rosso', 'Kumquat (Mandarino Cinese)', 'Lime Messicano', 'Limone di Sorrento IGP', 'Limone di Siracusa', 'Mandarino Tardivo di Ciaculli', 'Clementina di Calabria', 'Arancia Tarocco', 'Arancia Sanguinello', 'Arancia Navel', 'Pompelmo Giallo', 'Pompelmo Rosa', 'Bergamotto di Calabria', 'Cedro di Diamante', 'Chinotto Fresco',
+    'Fragola della Basilicata', 'Fragolina di Bosco', 'Lampone Fresco', 'Mirtillo Nero', 'Mirtillo Rosso', 'Mora di Rovo', 'Ribes Rosso', 'Ribes Nero', 'Alkekengi', 'Ribes Bianco',
+    'Pomodoro Ciliegino di Pachino', 'Pomodoro Datterino IGP', 'Pomodoro San Marzano DOP', 'Pomodoro Cuore di Bue', 'Pomodoro Costoluto', 'Pomodoro Camone', 'Pomodoro Giallo', 'Pomodoro Nero (Crimea)', 'Pomodoro Piccadilly', 'Sugo Pronto di Pomodoro',
+    'Cipolla Rossa di Tropea', 'Cipolla Bianca di Margherita', 'Cipolla Borrettana', 'Cipolla Ramata di Montoro', 'Cipollotto Nocerino', 'Porro di Cervere', 'Scalogno di Romagna', 'Aglio di Voghiera', 'Aglio Nero (Fermentato)', 'Erba Cipollina Fresca',
+    'Zucchina Romanesche (col fiore)', 'Zucchina Trombetta d\'Albenga', 'Melanzana Tonda Calvi', 'Peperone di Carmagnola', 'Peperino di Senise (Crusco)', 'Friggitello Napoletano', 'Pepe Verde Fresco', 'Cetriolo Carosello', 'Barattiere', 'Zucca Delica', 'Zucca Butternut (Violina)', 'Zucca Musquée de Provence',
+    'Patata di Avezzano', 'Patata della Sila', 'Patata Dolce (Americana)', 'Patata Viola (Vitelotte)', 'Topinambur', 'Ravanello Rosso', 'Daikon (Rapa Bianca)', 'Barbabietola Rossa Cotta', 'Barbabietola Rossa Fresca', 'Pastinaca', 'Radice di loto', 'Sedano Rapa',
+    'Carciofo Romanesco (Mammola)', 'Carciofo Spinoso di Sardegna', 'Carciofo di Paestum', 'Asparago Verde di Altedo', 'Asparago Bianco di Bassano', 'Asparago Selvatico', 'Broccolo Fiolaro', 'Cima di Rapa', 'Friariello Campano', 'Cavolo Nero Toscano', 'Cavolo Kale', 'Cavolo Pak Choi', 'Cavolo Cinese', 'Cavolo Cappuccio Viola', 'Cavolo di Bruxelles', 'Finocchio Maschio', 'Sedano Bianco di Sperlonga',
+    'Lattuga Romana', 'Lattuga Gentilina', 'Insatala Salanova', 'Valeriana (Songino)', 'Misticanza di campo', 'Spinacio Baby (Novello)', 'Rucola della Piana del Sele', 'Radicchio Tardivo di Treviso', 'Radicchio di Castelfranco', 'Belga (Indivia)', 'Scarola Riccia', 'Escarola Liscia', 'Portulaca', 'Agretto (Barba di Frate)',
+    'Fungo Cardoncello', 'Fungo Pleurotus', 'Fungo Pioppino', 'Fungo Shiitake Fresco', 'Tartufo Nero Estivo (Scorzone)', 'Tartufo Bianco d\'Alba', 'Prugnolo', 'Gallinaccio (Finferlo)',
+    'Zenzero Fresco (Radice)', 'Curcuma Fresca', 'Rafano (Armoracia)', 'Wasabi Originale', 'Citronella (Lemongrass)'
+  ]);
+
+  addBaseIngredient(name: string) {
+    const clean = name.trim();
+    if (!clean) return;
+    const current = this.baseIngredients();
+    if (!current.some(i => i.toLowerCase() === clean.toLowerCase())) {
+      const newList = [...current, clean].sort((a, b) => a.localeCompare(b));
+      this.baseIngredients.set(newList);
+      localStorage.setItem('haccp_base_ingredients', JSON.stringify(newList));
+    }
+  }
+
+  private loadBaseIngredients() {
+      const saved = localStorage.getItem('haccp_base_ingredients');
+      if (saved) {
+          try {
+              this.baseIngredients.set(JSON.parse(saved));
+          } catch(e) {}
+      }
+  }
 
   readonly isLoggedIn = computed(() => this.currentUser() !== null);
   readonly isAdmin = computed(() => this.currentUser()?.role === 'ADMIN');
@@ -320,12 +411,14 @@ export class AppStateService {
     }
   });
 
+
   // Services
   private toastService = inject(ToastService);
 
   constructor() {
     this.loadState();
     this.initSupabase();
+    this.loadBaseIngredients();
 
     // Auto-save State when critical data changes
     effect(() => {
@@ -345,32 +438,33 @@ export class AppStateService {
     localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
   }
 
+  private syncInterval: any;
   async initSupabase() {
+    if (this.syncInterval) clearInterval(this.syncInterval);
+    
     await this.refreshAllData();
 
-    // Comprehensive Real-time Subscriptions
-    supabase.channel('haccp-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'production_records' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients_book' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounting_payments' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'journal_entries' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounting_reminders' }, () => this.refreshAllData())
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentInsert(payload.new))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentUpdate(payload.new))
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'equipment' }, (payload) => this.handleEquipmentDelete(payload.old.id))
-      .subscribe();
+    // Comprehensive Real-time Subscriptions - Optimized for immediate sync
+    // Ensure we only have one channel subscription
+    supabase.removeAllChannels();
 
-    // Polling Fallback Every 10 Seconds (Ensures eventual consistency if Realtime is muted)
-    setInterval(() => {
+    supabase.channel('haccp-realtime-global')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.syncClients())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, (payload) => this.syncChecklistRecords())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.syncMessages())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.syncUsers())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, (payload) => this.syncDocuments())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'production_records' }, () => this.syncProductionRecords())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, () => this.syncEquipment())
+      .subscribe((status) => {
+          console.log('[HACCP-SYNC] Supabase Status:', status);
+      });
+
+    // Polling Fallback: Guaranteed background sync every 30s
+    this.syncInterval = setInterval(() => {
         this.refreshAllData();
-    }, 10000);
+    }, 30000);
   }
 
   private handleEquipmentInsert(newEq: any) {
@@ -405,45 +499,63 @@ export class AppStateService {
     if (this.isRefreshingData) return;
     this.isRefreshingData = true;
 
-    console.log('Refreshing HACCP PRO Data from Supabase...');
     try {
-      // Synchronize Clients
+      // Must sync clients FIRST because other syncs depend on validClientIds filtering
+      await this.syncClients();
+      
+      await Promise.all([
+        this.syncUsers(),
+        this.syncChecklistRecords(),
+        this.syncProductionRecords(),
+        this.syncDocuments(),
+        this.syncEquipment(),
+        this.syncMessages(),
+        this.syncAccounting(),
+        this.syncNonConformities(),
+        this.syncRecipes(),
+        this.syncConfig()
+      ]);
+
+      await this.syncSuspenseStatuses();
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+    } finally {
+      this.isRefreshingData = false;
+    }
+  }
+
+  async syncClients() {
     const { data: dbClients } = await supabase.from('clients').select('*');
     if (dbClients) {
-      const validClients = dbClients.filter((c: any) => 
-        !c.name.toLowerCase().includes('demo') && 
-        !c.name.toLowerCase().includes('sviluppatore')
-      );
-      this.clients.set(validClients.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          piva: c.piva,
-          address: c.address,
-          phone: c.phone,
-          cellphone: c.cellphone,
-          whatsapp: c.whatsapp,
-          email: c.email,
-          licenseNumber: c.license_number,
-          suspended: c.suspended,
-          paymentBalanceDue: !!c.payment_balance_due,
-          licenseExpiryDate: c.license_expiry_date,
-          logo: c.logo,
-          printerModel: c.printer_model,
-          labelFormat: c.label_format,
-          printerDriverUrl: c.printer_driver_url
-        })));
+      this.clients.set(dbClients.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        piva: c.piva,
+        address: c.address,
+        phone: c.phone,
+        cellphone: c.cellphone,
+        whatsapp: c.whatsapp,
+        email: c.email,
+        licenseNumber: c.license_number,
+        suspended: c.suspended,
+        paymentBalanceDue: !!c.payment_balance_due,
+        licenseExpiryDate: c.license_expiry_date,
+        logo: c.logo,
+        printerModel: c.printer_model,
+        labelFormat: c.label_format,
+        printerDriverUrl: c.printer_driver_url
+      })));
     }
+  }
 
+  async syncUsers() {
     const validClientIds = this.clients().map(c => c.id);
-
-    // Synchronize Users
     const { data: dbUsers } = await supabase.from('system_users').select('*');
     if (dbUsers) {
       this.systemUsers.set(dbUsers
         .filter((u: any) => {
           const isDemo = u.name.toLowerCase().includes('demo') || u.name.toLowerCase().includes('sviluppatore');
           const isOrphaned = u.role !== 'ADMIN' && !validClientIds.includes(u.client_id);
-          
           return !isDemo && !isOrphaned;
         })
         .map((u: any) => ({
@@ -460,8 +572,10 @@ export class AppStateService {
           password: u.password
         })));
     }
+  }
 
-    // Synchronize Records
+  async syncChecklistRecords() {
+    const validClientIds = this.clients().map(c => c.id);
     const { data: dbRecords } = await supabase.from('checklist_records').select('*');
     if (dbRecords) {
       this.checklistRecords.set(dbRecords
@@ -476,41 +590,15 @@ export class AppStateService {
           timestamp: r.timestamp
         })));
     }
+  }
 
-    // Synchronize Production Records
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
+  async syncDocuments() {
+    const validClientIds = this.clients().map(c => c.id);
+    const { data: dbDocs } = await supabase
+      .from('documents')
+      .select('*')
+      .order('upload_date', { ascending: false });
 
-    const { data: dbProdRecords } = await supabase.from('production_records').select('*');
-    if (dbProdRecords) {
-      // Automatic cleanup: Delete records older than 30 days from DB
-      const idsToDelete = dbProdRecords
-        .filter((r: any) => r.recorded_date < dateLimit)
-        .map((r: any) => r.id);
-      
-      if (idsToDelete.length > 0) {
-        console.log(`Auto-cleaning ${idsToDelete.length} expired production records...`);
-        await supabase.from('production_records').delete().in('id', idsToDelete);
-      }
-
-      this.productionRecords.set(dbProdRecords
-        .filter((r: any) => (r.client_id === 'demo' || validClientIds.includes(r.client_id)) && r.recorded_date >= dateLimit)
-        .map((r: any) => ({
-          id: r.id,
-          recordedDate: r.recorded_date,
-          mainProductName: r.main_product_name,
-          packagingDate: r.packaging_date,
-          expiryDate: r.expiry_date,
-          lotto: r.lotto,
-          ingredients: r.ingredients || [],
-          userId: r.user_id,
-          clientId: r.client_id
-        })));
-    }
-
-    // Synchronize Documents
-    const { data: dbDocs } = await supabase.from('documents').select('*');
     if (dbDocs) {
       this.documents.set(dbDocs
         .filter((d: any) => d.client_id === 'demo' || validClientIds.includes(d.client_id))
@@ -527,137 +615,166 @@ export class AppStateService {
           userId: d.user_id
         })));
     }
+  }
 
-      // 5. Equipment
-      const { data: equip } = await supabase.from('equipment').select('*');
-      if (equip) {
-        this.selectedEquipment.set(equip.map((e: any) => ({
-          id: e.id,
-          clientId: e.client_id,
-          name: e.name,
-          area: e.area,
-          type: e.type
+  async syncProductionRecords() {
+    const validClientIds = this.clients().map(c => c.id);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
+
+    const { data: dbProdRecords } = await supabase.from('production_records').select('*');
+    if (dbProdRecords) {
+      this.productionRecords.set(dbProdRecords
+        .filter((r: any) => (r.client_id === 'demo' || validClientIds.includes(r.client_id)) && r.recorded_date >= dateLimit)
+        .map((r: any) => ({
+          id: r.id,
+          recordedDate: r.recorded_date,
+          mainProductName: r.main_product_name,
+          packagingDate: r.packaging_date,
+          expiryDate: r.expiry_date,
+          lotto: r.lotto,
+          ingredients: r.ingredients || [],
+          userId: r.user_id,
+          clientId: r.client_id
         })));
-      }
+    }
+  }
 
-      // 6. Messages
-      const { data: dbMsgs } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
+  async syncEquipment() {
+     const { data: equip } = await supabase.from('equipment').select('*');
+     if (equip) {
+       this.selectedEquipment.set(equip.map((e: any) => ({
+         id: e.id,
+         clientId: e.client_id,
+         name: e.name,
+         area: e.area,
+         type: e.type
+       })));
+     }
+  }
+
+  async syncMessages() {
+    try {
+      const { data: dbMsgs, error: msgsError } = await supabase
+        .from('messages')
+        .select('*')
+        .order('timestamp', { ascending: false });
+
+      if (msgsError) throw msgsError;
+
       if (dbMsgs) {
-        this.messages.set(dbMsgs.map((m: any) => ({
+        const mappedMsgs = dbMsgs.map((m: any) => ({
           id: m.id,
-          senderId: m.sender_id,
-          senderName: m.sender_name,
-          recipientType: m.recipient_type,
-          recipientId: m.recipient_id,
-          recipientUserId: m.recipient_user_id,
+          senderId: m.senderId || m.sender_id,
+          senderName: m.senderName || m.sender_name,
+          recipientType: m.recipientType || m.recipient_type,
+          recipientId: m.recipientId || m.recipient_id,
+          recipientUserId: m.recipientUserId || m.recipient_user_id,
           subject: m.subject,
           content: m.content,
-          attachmentUrl: m.attachment_url,
-          attachmentName: m.attachment_name,
-          fileData: m.file_data,
-          timestamp: new Date(m.timestamp || m.created_at),
+          attachmentUrl: m.attachmentUrl || m.attachment_url,
+          attachmentName: m.attachmentName || m.attachment_name,
+          fileData: m.fileData || m.file_data,
+          timestamp: new Date(m.timestamp),
           read: m.read,
           replies: (m.replies || []).map((r: any) => ({
             id: r.id,
-            senderId: r.sender_id || r.senderId,
-            senderName: r.sender_name || r.senderName,
+            senderId: r.senderId || r.sender_id,
+            senderName: r.senderName || r.sender_name,
             content: r.content,
-            attachmentUrl: r.attachment_url,
-            attachmentName: r.attachment_name,
-            fileData: r.file_data,
             timestamp: new Date(r.timestamp)
           }))
-        })));
+        }));
+        this.messages.set(mappedMsgs);
       }
-
-
-      // 8. Accounting Payments
-      const { data: payData } = await supabase.from('accounting_payments').select('*');
-      if (payData) {
-        this.payments.set(payData.map((p: any) => ({
-          id: p.id,
-          clientId: p.client_id,
-          amount: parseFloat(p.amount) || 0,
-          frequency: p.frequency,
-          dueDate: p.due_date,
-          status: p.status,
-          paidDate: p.paid_date,
-          notes: p.notes
-        })));
-      }
-
-      // 9. Journal Entries
-      const { data: journalData } = await supabase.from('journal_entries').select('*');
-      if (journalData) {
-        this.journalEntries.set(journalData.map((j: any) => ({
-          id: j.id,
-          clientId: j.client_id,
-          date: j.date,
-          description: j.description,
-          debit: parseFloat(j.debit) || 0,
-          credit: parseFloat(j.credit) || 0,
-          category: j.category
-        })));
-      }
-
-      // 10. Accounting Reminders
-      const { data: reminderData } = await supabase.from('accounting_reminders').select('*');
-      if (reminderData) {
-        this.reminders.set(reminderData.map((r: any) => ({
-          id: r.id,
-          clientId: r.client_id,
-          type: r.type,
-          message: r.message,
-          dueDate: r.due_date,
-          priority: r.priority,
-          dismissed: !!r.dismissed
-        })));
-      }
-
-      // 11. System Config (Admin + Settings)
-      const { data: config } = await supabase.from('system_config').select('*').eq('id', 'master').single();
-      if (config) {
-        if (config.report_email) this.reportRecipientEmail.set(config.report_email);
-        if (config.master_data) this.adminCompany.set(config.master_data);
-      }
-
-      // 12. Non-Conformities
-      const { data: ncData } = await supabase.from('non_conformities').select('*').order('created_at', { ascending: false });
-      if (ncData) {
-        this.nonConformities.set(ncData.map((nc: any) => ({
-          id: nc.id,
-          clientId: nc.client_id,
-          moduleId: nc.module_id,
-          date: nc.date,
-          description: nc.description,
-          itemName: nc.item_name,
-          responsibleId: nc.responsible_id,
-          status: nc.status || 'OPEN',
-          createdAt: nc.created_at ? new Date(nc.created_at) : undefined
-        })));
-      }
-      // 12. Recipes (Libro Ingredienti)
-      const { data: recipeData } = await supabase.from('ingredients_book').select('*');
-      if (recipeData) {
-        this.recipes.set(recipeData.map((r: any) => ({
-          id: r.id,
-          clientId: r.client_id,
-          name: r.name,
-          category: r.category,
-          description: r.description,
-          ingredients: r.ingredients || [],
-          createdAt: new Date(r.created_at || r.updated_at),
-          updatedAt: new Date(r.updated_at)
-        })));
-      }
-
-      // 14. Run automated suspension checks
-      await this.syncSuspenseStatuses();
-      
     } catch (e) {
-      console.error('Error refreshing data from Supabase:', e);
-    } finally {
-      this.isRefreshingData = false;
+      console.error('Error syncing messages:', e);
+    }
+  }
+  async syncAccounting() {
+    // Payments
+    const { data: payData } = await supabase.from('accounting_payments').select('*');
+    if (payData) {
+      this.payments.set(payData.map((p: any) => ({
+        id: p.id,
+        clientId: p.client_id,
+        amount: parseFloat(p.amount) || 0,
+        frequency: p.frequency,
+        dueDate: p.due_date,
+        status: p.status,
+        paidDate: p.paid_date,
+        notes: p.notes
+      })));
+    }
+
+    // Journal
+    const { data: journalData } = await supabase.from('journal_entries').select('*');
+    if (journalData) {
+      this.journalEntries.set(journalData.map((j: any) => ({
+        id: j.id,
+        clientId: j.client_id,
+        date: j.date,
+        description: j.description,
+        debit: parseFloat(j.debit) || 0,
+        credit: parseFloat(j.credit) || 0,
+        category: j.category
+      })));
+    }
+
+    // Reminders
+    const { data: reminderData } = await supabase.from('accounting_reminders').select('*');
+    if (reminderData) {
+      this.reminders.set(reminderData.map((r: any) => ({
+        id: r.id,
+        clientId: r.client_id,
+        type: r.type,
+        message: r.message,
+        dueDate: r.due_date,
+        priority: r.priority,
+        dismissed: !!r.dismissed
+      })));
+    }
+  }
+
+  async syncConfig() {
+    const { data: config } = await supabase.from('system_config').select('*').eq('id', 'master').single();
+    if (config) {
+      if (config.report_email) this.reportRecipientEmail.set(config.report_email);
+      if (config.master_data) this.adminCompany.set(config.master_data);
+    }
+  }
+
+  async syncNonConformities() {
+    const { data: ncData } = await supabase.from('non_conformities').select('*').order('created_at', { ascending: false });
+    if (ncData) {
+      this.nonConformities.set(ncData.map((nc: any) => ({
+        id: nc.id,
+        clientId: nc.client_id,
+        moduleId: nc.module_id,
+        date: nc.date,
+        description: nc.description,
+        itemName: nc.item_name,
+        responsibleId: nc.responsible_id,
+        status: nc.status || 'OPEN',
+        createdAt: nc.created_at ? new Date(nc.created_at) : undefined
+      })));
+    }
+  }
+
+  async syncRecipes() {
+    const { data: recipeData } = await supabase.from('ingredients_book').select('*');
+    if (recipeData) {
+      this.recipes.set(recipeData.map((r: any) => ({
+        id: r.id,
+        clientId: r.client_id,
+        name: r.name,
+        category: r.category,
+        description: r.description,
+        ingredients: r.ingredients || [],
+        createdAt: new Date(r.created_at || r.updated_at),
+        updatedAt: new Date(r.updated_at)
+      })));
     }
   }
 
@@ -860,7 +977,8 @@ export class AppStateService {
       phone: '',
       email: '',
       licenseNumber: '',
-      suspended: false
+      suspended: false,
+      paymentBalanceDue: false
     };
   });
 
@@ -900,11 +1018,11 @@ export class AppStateService {
     // --- REGISTRI E FASI OPERATIVE ---
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
+    { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'operations' },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations', operatorOnly: true },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations', operatorOnly: true },
 
-    // --- PRODUZIONE E TRACCIABILITÀ ---
-    { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'production' },
+    // --- PRODUZIONE ---
     { id: 'ingredients-book', label: 'Libro Ingredienti', icon: 'fa-book-open', category: 'production' },
 
 
@@ -916,7 +1034,7 @@ export class AppStateService {
 
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config', operatorOnly: true },
 
-    { id: 'collaborators', label: 'Gestione Collaboratori', icon: 'fa-users-gear', category: 'config', adminOnly: true },
+    { id: 'collaborators', label: 'Gestioni Aziende', icon: 'fa-users-gear', category: 'config', adminOnly: true },
     { id: 'accounting', label: 'Contabilità', icon: 'fa-calculator', category: 'config', adminOnly: true },
     { id: 'settings', label: 'Impostazioni Sistema', icon: 'fa-gears', category: 'config', adminOnly: false }
   ];
@@ -1239,6 +1357,7 @@ export class AppStateService {
     }
 
     const newClient = { ...client, id: Math.random().toString(36).substr(2, 9) };
+    console.log('[HACCP] Attempting to create new client:', newClient);
     this.clients.update(c => [...c, newClient]);
       const { error } = await supabase.from('clients').insert({
       id: newClient.id,
@@ -1251,7 +1370,7 @@ export class AppStateService {
       email: newClient.email,
       license_number: newClient.licenseNumber,
       suspended: newClient.suspended,
-      payment_balance_due: newClient.paymentBalanceDue,
+      payment_balance_due: false,
       license_expiry_date: newClient.licenseExpiryDate,
       logo: newClient.logo,
       printer_model: newClient.printerModel,
@@ -1496,9 +1615,11 @@ export class AppStateService {
         return;
     }
 
-    // CHECK FILE SIZE (Limit to ~20MB)
-    if (doc.fileData && doc.fileData.length > 25 * 1024 * 1024) {
-        this.toastService.error('File troppo grande', 'Il file supera i 20MB. Riduci le dimensioni del PDF per il salvataggio cloud.');
+    // CHECK FILE SIZE (Limit to ~15MB real file size, approx 20MB Base64)
+    // Most cloud services and browsers struggle with Base64 payloads > 10-15MB
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB limit for Base64 (approx 15MB file)
+    if (doc.fileData && doc.fileData.length > MAX_SIZE) {
+        this.toastService.error('File troppo grande', 'Il file supera i 15MB consigliati. Riduci la risoluzione del PDF o dell\'immagine per il salvataggio cloud.');
         return;
     }
 
@@ -1549,7 +1670,11 @@ export class AppStateService {
         }
     } catch (err: any) {
         console.error('Unexpected error saving document:', err);
-        this.toastService.error('Errore Critico', err.message || 'Errore imprevisto durante il salvataggio.');
+        if (err.message && err.message.includes('Failed to fetch')) {
+            this.toastService.error('Errore di Caricamento', 'Il file è troppo pesante o la connessione è stata interrotta. Prova a caricare un file più piccolo (< 10MB).');
+        } else {
+            this.toastService.error('Errore Critico', err.message || 'Errore imprevisto durante il salvataggio.');
+        }
     }
   }
 
@@ -1685,13 +1810,19 @@ export class AppStateService {
     this.recordToEdit.set(null);
   }
 
-  // --- Messaging Methods ---
-  sendMessage(subject: string, content: string, recipientType: 'ALL' | 'SINGLE', recipientId?: string, recipientUserId?: string, attachment?: { url: string, name: string }) {
+  /**
+   * Sends a new message and persists it to Supabase.
+   * Improved with error handling and async feedback.
+   */
+  async sendMessage(subject: string, content: string, recipientType: 'ALL' | 'SINGLE', recipientId?: string, recipientUserId?: string, attachment?: { url: string, name: string }) {
     const user = this.currentUser();
     if (!user) return;
 
+    // Generate a robust unique ID
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
     const newMessage: Message = {
-      id: Date.now().toString(),
+      id: messageId,
       senderId: user.id,
       senderName: user.name,
       recipientType,
@@ -1707,53 +1838,61 @@ export class AppStateService {
       replies: []
     };
 
-    // Size check for message attachments (Limit to ~20MB)
-    if (newMessage.fileData && newMessage.fileData.length > 25 * 1024 * 1024) {
-      this.toastService.error('Allegato troppo pesante', 'Riduci le dimensioni del file sotto i 20MB per inviarlo via messaggio.');
+    // Strict size check for attachments (Supabase payload limits + DB field optimization)
+    if (newMessage.fileData && newMessage.fileData.length > 10 * 1024 * 1024) {
+      this.toastService.error('Allegato troppo grande', 'Il file supera i 10MB. Riduci le dimensioni per l\'invio Cloud.');
       return;
     }
 
+    // Optimistic Update
     this.messages.update(msgs => [newMessage, ...msgs]);
 
-    // DB Sync
-    supabase.from('messages').insert({
-      id: newMessage.id,
-      sender_id: newMessage.senderId,
-      sender_name: newMessage.senderName,
-      recipient_type: newMessage.recipientType,
-      recipient_id: newMessage.recipientId,
-      recipient_user_id: newMessage.recipientUserId,
-      subject: newMessage.subject,
-      content: newMessage.content,
-      attachment_url: newMessage.attachmentUrl,
-      attachment_name: newMessage.attachmentName,
-      file_data: newMessage.fileData,
-      timestamp: newMessage.timestamp.toISOString(),
-      read: newMessage.read,
-      replies: newMessage.replies
-    }).then(({ error }) => {
-      if (error) console.error('Error saving message:', error);
-    });
+    try {
+      const { error } = await supabase.from('messages').insert({
+        id: newMessage.id,
+        senderId: newMessage.senderId,
+        senderName: newMessage.senderName,
+        recipientType: newMessage.recipientType,
+        recipientId: newMessage.recipientId,
+        recipientUserId: newMessage.recipientUserId,
+        subject: newMessage.subject,
+        content: newMessage.content,
+        attachmentUrl: newMessage.attachmentUrl,
+        attachmentName: newMessage.attachmentName,
+        fileData: newMessage.fileData,
+        timestamp: newMessage.timestamp.toISOString(),
+        read: newMessage.read,
+        replies: []
+      });
 
-    // Show toast notification to recipients
-    if (recipientType === 'ALL') {
-      this.toastService.success('Messaggio inviato', 'Inviato a tutte le aziende');
-    } else if (recipientId === 'ADMIN_OFFICE') {
-      this.toastService.success('Messaggio inviato', 'Inviato all\'Amministrazione');
-    } else {
-      const client = this.clients().find(c => c.id === recipientId);
-      const recipientUser = this.systemUsers().find(u => u.id === recipientUserId);
-      const targetStr = recipientUser ? `${client?.name} (Attr: ${recipientUser.name})` : client?.name;
-      this.toastService.success('Messaggio inviato', `Inviato a ${targetStr}`);
+      if (error) throw error;
+
+      // Show specific toast notification
+      if (recipientType === 'ALL') {
+        this.toastService.success('Messaggio inviato', 'Inviato a tutte le aziende');
+      } else if (recipientId === 'ADMIN_OFFICE') {
+        this.toastService.success('Messaggio inviato', 'Inviato all\'Amministrazione');
+      } else {
+        const client = this.clients().find(c => c.id === recipientId);
+        this.toastService.success('Messaggio inviato', `Inviato a ${client?.name || 'Azienda'}`);
+      }
+    } catch (err: any) {
+      console.error('Error saving message to Supabase:', err);
+      const detail = err.message || err.details || 'Errore sconosciuto (Check RLS o Connessione)';
+      this.toastService.error('Errore Cloud', `Dettaglio: ${detail}`);
     }
   }
 
-  replyToMessage(messageId: string, content: string, attachment?: { url: string, name: string }) {
+  /**
+   * Adds a reply to an existing message.
+   * Improved to handle JSON serialization and persistence errors.
+   */
+  async replyToMessage(messageId: string, content: string, attachment?: { url: string, name: string }) {
     const user = this.currentUser();
     if (!user) return;
 
     const reply: MessageReply = {
-      id: Date.now().toString(),
+      id: `rep_${Date.now()}`,
       senderId: user.id,
       senderName: user.name,
       content,
@@ -1762,37 +1901,44 @@ export class AppStateService {
       timestamp: new Date()
     };
 
-    let updatedMessage: Message | undefined;
+    let targetMessage = this.messages().find(m => m.id === messageId);
+    if (!targetMessage) return;
 
+    const updatedReplies = [...targetMessage.replies, reply];
+
+    // Optimistic update
     this.messages.update(msgs =>
-      msgs.map(msg => {
-        if (msg.id === messageId) {
-          updatedMessage = { ...msg, replies: [...msg.replies, reply] };
-          return updatedMessage;
-        }
-        return msg;
-      })
+      msgs.map(msg => msg.id === messageId ? { ...msg, replies: updatedReplies, read: false } : msg)
     );
 
-    if (updatedMessage) {
-      // DB Sync - map replies back to snake_case if needed, but usually we store as JSON
-      // Let's ensure the format for storage is consistent
-      const dbReplies = updatedMessage.replies.map(r => ({
+    try {
+      // Map replies for Supabase JSON storage
+      const dbReplies = updatedReplies.map(r => ({
         id: r.id,
-        sender_id: r.senderId,
-        sender_name: r.senderName,
+        senderId: r.senderId,
+        senderName: r.senderName,
         content: r.content,
+        attachmentUrl: r.attachmentUrl,
+        attachmentName: r.attachmentName,
         timestamp: r.timestamp.toISOString()
       }));
 
-      supabase.from('messages').update({ 
-        replies: dbReplies,
-        read: false // Mark as unread for the original sender if we want? 
-                    // Actually, usually messages are unread for recipients.
-      }).eq('id', messageId).then();
-    }
+      const { error } = await supabase
+        .from('messages')
+        .update({ 
+          replies: dbReplies,
+          read: false // Notify receiver
+        })
+        .eq('id', messageId);
 
-    this.toastService.success('Risposta inviata', 'La tua risposta è stata inviata');
+      if (error) throw error;
+      
+      this.toastService.success('Risposta inviata', 'La tua risposta è stata registrata.');
+    } catch (err: any) {
+      console.error('Error replying to message:', err);
+      const detail = err.message || 'Errore di sincronizzazione';
+      this.toastService.error('Errore Sync Risposta', `Dettaglio: ${detail}`);
+    }
   }
 
   markMessageAsRead(messageId: string) {
@@ -1832,8 +1978,39 @@ export class AppStateService {
     );
   }
 
-  addMessage(msg: any) {
-    this.messages.update(msgs => [msg, ...msgs]);
+  /**
+   * Internal helper to add a message (usually automated notifications)
+   * and sync it to the cloud.
+   */
+  async addMessage(msg: any) {
+    // Ensure ID and timestamp
+    const fullMsg = {
+        ...msg,
+        id: msg.id || `auto_${Date.now()}`,
+        timestamp: msg.timestamp || new Date(),
+        read: msg.read || false,
+        replies: msg.replies || []
+    };
+
+    this.messages.update(msgs => [fullMsg, ...msgs]);
+    
+    try {
+        await supabase.from('messages').insert({
+            id: fullMsg.id,
+            senderId: fullMsg.senderId,
+            senderName: fullMsg.senderName,
+            recipientType: fullMsg.recipientType,
+            recipientId: fullMsg.recipientId,
+            recipientUserId: fullMsg.recipientUserId,
+            subject: fullMsg.subject,
+            content: fullMsg.content,
+            timestamp: fullMsg.timestamp instanceof Date ? fullMsg.timestamp.toISOString() : fullMsg.timestamp,
+            read: fullMsg.read,
+            replies: fullMsg.replies
+        });
+    } catch (err) {
+        console.error('Failed to sync automated message:', err);
+    }
   }
 
   // --- Production Records Methods ---
@@ -2037,12 +2214,12 @@ export class AppStateService {
         // Also send a message to Admin
         await supabase.from('messages').insert({
             id: Math.random().toString(36).substring(2, 9),
-            sender_id: this.currentUser()?.id,
-            recipient_id: client_id,
-            recipient_type: 'ADMIN',
+            senderId: this.currentUser()?.id,
+            recipientId: client_id,
+            recipientType: 'ADMIN',
             content: `NUOVA NON CONFORMITÀ: ${nc.itemName || ''} - ${nc.description}`,
             category: 'ALERT',
-            created_at: new Date()
+            timestamp: new Date().toISOString()
         });
 
         this.refreshAllData();

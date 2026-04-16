@@ -276,11 +276,7 @@ export class SuppliersViewComponent {
     if (savedData && Array.isArray(savedData)) {
       this.suppliers.set(savedData);
     } else {
-      // Default mock if none
-      this.suppliers.set([
-        { id: '1', ragioneSociale: 'Global Foods Srl', responsabile: 'Marco Rossi', piva: '01234567890', telefono: '02 123456', email: 'info@globalfoods.it', indirizzo: 'Via Milano 1, Milano', status: 'ok', note: '' },
-        { id: '2', ragioneSociale: 'Ortofrutta Express', responsabile: 'Anna Bianchi', piva: '09876543210', telefono: '06 987654', email: 'ordini@ortoexpress.it', indirizzo: 'Via Roma 10, Roma', status: 'pending', note: '' }
-      ]);
+      this.suppliers.set([]);
     }
   }
 

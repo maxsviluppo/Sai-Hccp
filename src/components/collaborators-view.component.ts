@@ -35,7 +35,7 @@ import { ToastService } from '../services/toast.service';
 
       <!-- Accordion List - Companies -->
       <div class="space-y-3">
-        @for (client of state.filteredClients(); track client.id) {
+        @for (client of state.clients(); track client.id) {
           @let isOpen = isClientExpanded(client.id);
           @let users = getUsersByClient(client.id);
 
@@ -435,20 +435,6 @@ import { ToastService } from '../services/toast.service';
                           class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
-                            <div class="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-200">
-                  <div class="flex-1">
-                    <label class="block text-xs font-bold text-slate-700">Pagamento Saldo</label>
-                    <p class="text-[10px] text-slate-500">Mostra il banner di avviso pagamento saldo a tutti i dipendenti.</p>
-                  </div>
-                  <button type="button" (click)="clientForm.patchValue({paymentBalanceDue: !clientForm.get('paymentBalanceDue')?.value})" 
-                      class="w-10 h-5 rounded-full relative transition-colors duration-200"
-                      [class.bg-amber-400]="clientForm.get('paymentBalanceDue')?.value"
-                      [class.bg-slate-300]="!clientForm.get('paymentBalanceDue')?.value">
-                      <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm"
-                           [class.left-5.5]="clientForm.get('paymentBalanceDue')?.value"
-                           [class.left-0.5]="!clientForm.get('paymentBalanceDue')?.value"></div>
-                  </button>
-               </div>
 
               <div class="pt-4 flex justify-end gap-2 border-t border-slate-100 mt-6">
                  <button type="button" (click)="closeModal()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Annulla</button>
@@ -519,8 +505,7 @@ export class CollaboratorsViewComponent {
       address: ['', Validators.required],
       phone: [''],
       email: [''],
-      licenseNumber: [''],
-      paymentBalanceDue: [false]
+      licenseNumber: ['']
     });
 
     // All closed by default as requested
@@ -655,8 +640,7 @@ export class CollaboratorsViewComponent {
         address: client.address,
         phone: client.phone,
         email: client.email,
-        licenseNumber: client.licenseNumber,
-        paymentBalanceDue: client.paymentBalanceDue || false
+        licenseNumber: client.licenseNumber
       });
     } else {
       this.isEditing.set(false);

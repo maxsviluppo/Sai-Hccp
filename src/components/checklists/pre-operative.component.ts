@@ -944,24 +944,25 @@ export class PreOperationalChecklistComponent {
         this.autoSave();
     }
 
-    // Auto-save draft to Supabase on every step change (no user action required)
+    private autoSaveTimeout: any;
     private autoSave() {
-        let recordId = this.currentRecordId();
-        if (!recordId) {
-            recordId = Math.random().toString(36).substring(2, 11);
-            this.currentRecordId.set(recordId);
-        }
-
-        this.state.saveChecklist({
-            id: recordId,
-            moduleId: 'pre-op-checklist',
-            date: this.state.filterDate(),
-            data: {
-                areas: this.areas(),
-                globalItems: this.globalItems(),
-                status: 'draft'
+        if (this.autoSaveTimeout) clearTimeout(this.autoSaveTimeout);
+        this.autoSaveTimeout = setTimeout(() => {
+            let recordId = this.currentRecordId();
+            if (!recordId) {
+                const existingRecord = this.state.checklistRecords().find(r => 
+                    r.moduleId === 'pre-op-checklist' && 
+                    r.date === this.state.filterDate() &&
+                    r.userId === (this.state.isAdmin() && this.state.filterCollaboratorId() ? this.state.filterCollaboratorId() : this.state.currentUser()?.id)
+                );
+                if (existingRecord) recordId = existingRecord.id;
             }
-        });
+
+            this.state.saveRecord('pre-op-checklist', {
+                areas: this.areas(),
+                globalItems: this.globalItems()
+            });
+        }, 2000);
     }
 
     isAreaComplete(id: string) {
