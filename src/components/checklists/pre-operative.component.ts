@@ -188,7 +188,8 @@ interface AreaChecklist {
                                             </div>
                                                                               <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                                             <button (click)="item.id === 'g_cleaning_sanit' ? showCleaningInfo.set(true) : showPestInfo.set(true)" 
-                                                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center justify-center gap-2 transition-all font-bold text-xs uppercase tracking-tight group-hover:shadow-md">
+                                                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center justify-center gap-2 transition-all font-bold text-xs uppercase tracking-tight group-hover:shadow-md disabled:opacity-30">
                                                 <i class="fa-solid fa-circle-info text-base"></i>
                                                 <span>{{ item.status === 'ok' ? 'Info Standard' : 'Visualizza Info e Conferma' }}</span>
                                             </button>
@@ -234,7 +235,8 @@ interface AreaChecklist {
                                         
                                         <div class="flex items-center gap-2 shrink-0">
                                             <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
-                                                    class="h-7 w-7 rounded border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-600 transition-all flex items-center justify-center tooltip" title="Tutti Conformi">
+                                                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                    class="h-7 w-7 rounded border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-600 transition-all flex items-center justify-center tooltip disabled:opacity-30" title="Tutti Conformi">
                                                 <i class="fa-solid fa-check-double text-xs"></i>
                                             </button>
                                             <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-300 ml-1" [class.rotate-180]="area.expanded"></i>
@@ -258,8 +260,8 @@ interface AreaChecklist {
                                                     </div>
                                                     <div class="flex gap-1.5 shrink-0">
                                                         @if (step.status === 'pending') {
-                                                            <button (click)="setStepStatus(areaId(area), step.id, 'ok')" class="w-6 h-6 rounded border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-check text-[11px]"></i></button>
-                                                            <button (click)="setStepStatus(areaId(area), step.id, 'issue')" class="w-6 h-6 rounded border border-red-200 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white"><i class="fa-solid fa-triangle-exclamation text-[11px]"></i></button>
+                                                            <button (click)="setStepStatus(areaId(area), step.id, 'ok')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-6 h-6 rounded border border-emerald-200 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white disabled:opacity-30"><i class="fa-solid fa-check text-[11px]"></i></button>
+                                                            <button (click)="setStepStatus(areaId(area), step.id, 'issue')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-6 h-6 rounded border border-red-200 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center bg-white disabled:opacity-30"><i class="fa-solid fa-triangle-exclamation text-[11px]"></i></button>
                                                         } @else {
                                                             <div class="flex items-center gap-2">
                                                                 <span class="text-[10px] font-black uppercase tracking-widest px-1.5"
@@ -267,7 +269,7 @@ interface AreaChecklist {
                                                                       [class.text-red-600]="step.status === 'issue'">
                                                                     {{ step.status === 'ok' ? 'Conforme' : 'Anomalia' }}
                                                                 </span>
-                                                                <button (click)="setStepStatus(areaId(area), step.id, 'pending')" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all flex items-center justify-center shadow-sm"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>
+                                                                <button (click)="setStepStatus(areaId(area), step.id, 'pending')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all flex items-center justify-center shadow-sm disabled:opacity-30"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>
                                                             </div>
                                                         }
                                                     </div>
@@ -316,7 +318,8 @@ interface AreaChecklist {
                                     <div class="grid grid-cols-1 gap-3">
                                         <select #equipSelector 
                                                 (change)="addEquipment(equipSelector.value); equipSelector.value = ''"
-                                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-lg font-semibold text-slate-700 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer">
+                                                [disabled]="!state.isContextEditable()"
+                                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-lg font-semibold text-slate-700 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer disabled:opacity-50">
                                             <option value="" disabled selected>Fai una scelta dal selettore...</option>
                                             @for (group of masterEquipmentList; track group.area) {
                                                 <optgroup [label]="group.area">
@@ -344,7 +347,8 @@ interface AreaChecklist {
                                                 </div>
                                             </div>
                                             <button (click)="state.removeEquipment(eq.id)"
-                                                    class="w-8 h-8 rounded border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm">
+                                                    [disabled]="!state.isContextEditable()"
+                                                    class="w-8 h-8 rounded border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm disabled:opacity-30">
                                                 <i class="fa-solid fa-trash-can text-xs"></i>
                                             </button>
                                         </div>
@@ -580,7 +584,7 @@ interface AreaChecklist {
         <!-- Footer Actions -->
         <div class="fixed bottom-6 right-6 z-30">
             @if (!isSubmitted()) {
-                <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
+                <button (click)="submitChecklist()" [disabled]="!isAllCompleted() || !state.isContextEditable()"
                         class="bg-blue-600 text-white rounded-xl px-8 py-3.5 shadow-lg font-black text-xs uppercase tracking-widest flex items-center gap-3 disabled:opacity-50 disabled:grayscale transition-all hover:bg-blue-700 active:scale-95 border border-blue-500 tooltip relative overflow-hidden group">
                     <span class="relative z-10 w-full flex items-center gap-3 justify-center">Registra Operazioni <i class="fa-solid fa-check-double text-blue-300 group-hover:text-white transition-colors"></i></span>
                 </button>
@@ -589,6 +593,9 @@ interface AreaChecklist {
                     <div class="bg-emerald-50 border border-emerald-100 text-emerald-600 px-4 py-2 rounded-lg font-black text-[11px] uppercase tracking-widest text-center shadow-sm"><i class="fa-solid fa-check"></i> Registrato</div>
                     <button (click)="printReport()" class="h-9 px-4 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors shadow-sm">
                         <i class="fa-solid fa-print"></i> Stampa
+                    </button>
+                    <button *ngIf="state.isContextEditable()" (click)="isSubmitted.set(false)" class="h-9 px-4 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-amber-600 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors shadow-sm" title="Modifica">
+                        <i class="fa-solid fa-pen-to-square"></i> Modifica
                     </button>
                     <button (click)="startNewChecklist()" class="h-9 px-4 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors shadow-sm">
                         <i class="fa-solid fa-rotate-right"></i> Nuova
@@ -798,14 +805,20 @@ export class PreOperationalChecklistComponent {
                 { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps('pareti'), expanded: false },
                 { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps('soffitto'), expanded: false },
                 { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps('infissi'), expanded: false }
-            ];
+            ].filter(a => this.state.isActivityEnabled('pre-op-checklist', a.id));
 
             const savedIds = new Set(relabeledAreas.map((a: any) => a.id));
             const missingStaticAreas = currentStaticAreas.filter(a => !savedIds.has(a.id));
             const newEquipAreas = equipmentAreas.filter(ea => !savedIds.has(ea.id));
             
+            // Filter relabeled areas as well (in case they were saved but now disabled)
+            const filteredRelabeled = relabeledAreas.filter((a: any) => {
+                if (a.id.startsWith('eq-')) return true;
+                return this.state.isActivityEnabled('pre-op-checklist', a.id);
+            });
+
             // Compose final areas list, with missing static areas at the top
-            this.areas.set([...relabeledAreas, ...missingStaticAreas, ...newEquipAreas].sort((a, b) => {
+            this.areas.set([...filteredRelabeled, ...missingStaticAreas, ...newEquipAreas].sort((a, b) => {
                 const aIndex = currentStaticAreas.findIndex(cs => cs.id === a.id);
                 const bIndex = currentStaticAreas.findIndex(cs => cs.id === b.id);
                 if (aIndex === -1 && bIndex === -1) return 0;
@@ -815,7 +828,10 @@ export class PreOperationalChecklistComponent {
             }));
             
             if (historyRecord.globalItems) {
-                this.globalItems.set(JSON.parse(JSON.stringify(historyRecord.globalItems)));
+                const filteredGlobal = historyRecord.globalItems.filter((i: any) => 
+                    this.state.isActivityEnabled('pre-op-checklist', i.id)
+                );
+                this.globalItems.set(filteredGlobal);
             }
 
             // Find and set the actual record ID
@@ -829,17 +845,20 @@ export class PreOperationalChecklistComponent {
               this.currentRecordId.set(rawRecord.id);
             }
 
-            this.isSubmitted.set(true);
+            this.isSubmitted.set(!!rawRecord.data?.status);
         } else {
             this.isSubmitted.set(false);
             this.currentRecordId.set(null);
-            // Start fresh: static areas + equipment areas
             this.areas.update(areas => {
                 const staticAreas = areas.filter(a => !a.id.startsWith('eq-'));
-                const areasWithSteps = staticAreas.map(a => ({ ...a, steps: this.getInitialSteps(a.id) }));
+                const filteredStatic = staticAreas.filter(a => this.state.isActivityEnabled('pre-op-checklist', a.id));
+                const areasWithSteps = filteredStatic.map(a => ({ ...a, steps: this.getInitialSteps(a.id) }));
                 return [...areasWithSteps, ...equipmentAreas];
             });
-            this.globalItems.update(items => items.map(i => ({ ...i, status: 'pending' as const })));
+            this.globalItems.update(items => items
+                .filter(i => this.state.isActivityEnabled('pre-op-checklist', i.id))
+                .map(i => ({ ...i, status: 'pending' as const }))
+            );
         }
     }
 

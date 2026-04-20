@@ -229,10 +229,10 @@ export class EquipmentCensusViewComponent {
     hotCount  = computed(() => this.state.groupedEquipment().filter((e: any) => e.type === 'Caldo').length);
 
     masterEquipmentList = [
-        { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Banchi lavori', 'Forno a legna', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante', 'Abbattitore'] },
+        { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Banchi lavori', 'Forno a legna', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante', 'Abbattitore', 'Macchina del Freddo (-20°C)'] },
         { area: 'Area Lavaggio', items: ['Lavello', 'Lavastoviglie', 'Mobile pensile', 'Tavolo da lavoro'] },
         { area: 'Deposito', items: ['Cella frigorifero', 'Pozzetto congelatore'] },
-        { area: 'Sala', items: ['Vetrina espositiva', 'Banco frigo espositivo'] },
+        { area: 'Sala', items: ['Vetrina espositiva caldo (≥65°C)', 'Vetrina espositiva freddo (+4°C/+8°C)', 'Banco frigo espositivo'] },
         { area: 'Spogliatoi', items: ['Microonde'] }
     ];
 
@@ -269,8 +269,10 @@ export class EquipmentCensusViewComponent {
         const nameLower = baseName.toLowerCase();
         let inferredType = 'Altro';
         
-        if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('congelatore') || 
-            nameLower.includes('abbattitore') || nameLower.includes('pozzetto') || nameLower.includes('vetrina')) {
+        if (nameLower.includes('caldo')) {
+            inferredType = 'Caldo';
+        } else if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('congelatore') || 
+            nameLower.includes('abbattitore') || nameLower.includes('pozzetto') || nameLower.includes('freddo')) {
             inferredType = 'Freddo';
         } else if (nameLower.includes('forno') || nameLower.includes('cottura') || nameLower.includes('griglie') || 
                    nameLower.includes('friggitrice') || nameLower.includes('fuochi')) {

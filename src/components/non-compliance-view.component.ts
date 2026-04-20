@@ -464,7 +464,7 @@ export class NonComplianceViewComponent {
                     <div class="sign-line">Firma dell'Operatore Segnalante</div>
                 </div>
                 <div class="sign-box">
-                    <div class="sign-line">Firma del Responsabile Qualità</div>
+                    <div class="sign-line">FIRMA OPERATORE SETTORE ALIMENTARE (OSA)</div>
                 </div>
             </div>
 

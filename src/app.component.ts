@@ -31,6 +31,7 @@ import { StaffHygieneViewComponent } from './components/staff-hygiene-view.compo
 import { AllergensConfigViewComponent } from './components/allergens-config-view.component';
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
 import { IngredientsBookViewComponent } from './components/ingredients-book-view.component';
+import { OperationalPhasesConfigViewComponent } from './components/operational-phases-config-view.component';
 
 @Component({
   selector: 'app-root',
@@ -65,7 +66,8 @@ import { IngredientsBookViewComponent } from './components/ingredients-book-view
     StaffHygieneViewComponent,
     AllergensConfigViewComponent,
     CleaningProductsViewComponent,
-    IngredientsBookViewComponent
+    IngredientsBookViewComponent,
+    OperationalPhasesConfigViewComponent
   ],
   templateUrl: './app.component.html'
 })
@@ -127,6 +129,13 @@ export class AppComponent {
   shouldShowMenuItem(item: MenuItem): boolean {
     if (item.adminOnly && !this.state.isAdmin()) return false;
     if (item.operatorOnly && this.state.isAdmin()) return false;
+
+    // Phase specific check
+    const config = this.state.operationalPhasesConfig();
+    if (config && (item.id in config)) {
+      if (config[item.id]?.enabled === false) return false;
+    }
+
     return this.hasAccessToCategory(item.category);
   }
 

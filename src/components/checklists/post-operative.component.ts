@@ -142,7 +142,8 @@ interface AreaChecklist {
             </div>
             
             <button (click)="setAllOk()" 
-                    class="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-100 transition-colors border border-emerald-100 flex items-center gap-2"
+                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                    class="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-100 transition-colors border border-emerald-100 flex items-center gap-2 disabled:opacity-30"
                     title="Imposta tutto come Conforme">
                <i class="fa-solid fa-check-double text-base"></i><span class="hidden sm:inline">IMPOSTA TUTTI OK</span>
             </button>
@@ -181,7 +182,8 @@ interface AreaChecklist {
                                     
                                     <div class="flex items-center gap-3 shrink-0">
                                         <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
-                                                class="h-7 w-7 rounded bg-emerald-50 text-emerald-500 hover:bg-emerald-100 transition-colors flex items-center justify-center border border-emerald-100" title="Imposta tutti conformi">
+                                                [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                class="h-7 w-7 rounded bg-emerald-50 text-emerald-500 hover:bg-emerald-100 transition-colors flex items-center justify-center border border-emerald-100 disabled:opacity-30" title="Imposta tutti conformi">
                                             <i class="fa-solid fa-check-double text-xs"></i>
                                         </button>
                                         <i class="fa-solid fa-chevron-down text-slate-400 text-base transition-transform duration-300" [class.rotate-180]="area.expanded"></i>
@@ -204,8 +206,8 @@ interface AreaChecklist {
                                     </div>
                                     <div class="flex gap-2 shrink-0">
                                         @if (step.status === 'pending') {
-                                            <button (click)="setStepStatus(area.id, step.id, 'ok')" class="w-7 h-7 rounded border border-emerald-200 text-emerald-500 hover:bg-emerald-50 transition-colors flex items-center justify-center bg-white"><i class="fa-solid fa-check text-xs"></i></button>
-                                            <button (click)="setStepStatus(area.id, step.id, 'issue')" class="w-7 h-7 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center bg-white"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
+                                            <button (click)="setStepStatus(area.id, step.id, 'ok')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-7 h-7 rounded border border-emerald-200 text-emerald-500 hover:bg-emerald-50 transition-colors flex items-center justify-center bg-white disabled:opacity-30"><i class="fa-solid fa-check text-xs"></i></button>
+                                            <button (click)="setStepStatus(area.id, step.id, 'issue')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-7 h-7 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center bg-white disabled:opacity-30"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
                                         } @else {
                                             <div class="flex items-center gap-2">
                                                 <span class="text-[10px] font-black uppercase tracking-widest px-1"
@@ -213,7 +215,7 @@ interface AreaChecklist {
                                                       [class.text-red-500]="step.status === 'issue'">
                                                     {{ step.status === 'ok' ? 'Conforme' : 'Anomalia' }}
                                                 </span>
-                                                <button (click)="setStepStatus(area.id, step.id, 'pending')" class="w-7 h-7 rounded bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200 transition-colors flex items-center justify-center"><i class="fa-solid fa-rotate-left text-[11px]"></i></button>
+                                                <button (click)="setStepStatus(area.id, step.id, 'pending')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-rotate-left text-[11px]"></i></button>
                                             </div>
                                         }
                                     </div>
@@ -231,7 +233,7 @@ interface AreaChecklist {
         <!-- Footer Actions -->
         <div class="fixed bottom-6 right-6 z-50">
             @if (!isSubmitted()) {
-                <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
+                <button (click)="submitChecklist()" [disabled]="!isAllCompleted() || !state.isContextEditable()"
                         class="h-12 px-6 bg-slate-900 border border-slate-800 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 hover:bg-slate-800 hover:shadow-xl group">
                     <span>REGISTRA POST-OPERATIVA</span>
                     <div class="w-px h-4 bg-white/20"></div>
@@ -247,6 +249,7 @@ interface AreaChecklist {
                     </div>
                     <div class="flex items-center gap-1.5 px-2">
                         <button (click)="printReport()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-pink-600 flex items-center justify-center transition-colors" title="Stampa"><i class="fa-solid fa-print text-base"></i></button>
+                        <button *ngIf="state.isContextEditable()" (click)="isSubmitted.set(false)" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-amber-600 flex items-center justify-center transition-colors" title="Modifica"><i class="fa-solid fa-pen-to-square text-base"></i></button>
                         <button (click)="sendEmail()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-pink-600 flex items-center justify-center transition-colors" title="Invia Email"><i class="fa-solid fa-envelope text-base"></i></button>
                         <button (click)="sendInternalMessage()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-pink-600 flex items-center justify-center transition-colors" title="Chat Interna"><i class="fa-solid fa-comments text-base"></i></button>
                     </div>
@@ -417,10 +420,15 @@ export class PostOperationalChecklistComponent {
         });
 
         // Initialize static + equipment areas with correct steps
-        const currentAreas = [...this.staticAreas, ...equipmentAreas].map(a => ({
-            ...a,
-            steps: this.getInitialSteps(a.id)
-        }));
+        const currentAreas = [...this.staticAreas, ...equipmentAreas]
+            .filter(a => {
+                if (a.id.startsWith('eq-')) return true;
+                return this.state.isActivityEnabled('post-op-checklist', a.id);
+            })
+            .map(a => ({
+                ...a,
+                steps: this.getInitialSteps(a.id)
+            }));
 
         const savedData = this.state.getRecord('post-op-checklist');
 
@@ -446,7 +454,7 @@ export class PostOperationalChecklistComponent {
 
             this.areas.set(merged);
             this.currentRecordId.set(historyRecord.id);
-            this.isSubmitted.set(true);
+            this.isSubmitted.set(!!historyRecord.data?.status);
             return;
         }
 

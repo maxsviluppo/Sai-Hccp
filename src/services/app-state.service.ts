@@ -400,24 +400,14 @@ export class AppStateService {
     // If not admin (Operator via login), they can always edit their current view (which is their own)
     if (!this.isAdmin()) return true;
 
-    // For Admin:
-    // If we are in 'monitoring' category modules, they can edit IF they selected a collaborator
-    // This allows them to "feedback" or correct values.
     const activeMod = this.currentModuleId();
     const menuItem = this.menuItems.find(m => m.id === activeMod);
 
-    if (menuItem?.category === 'documentation') {
+    if (menuItem?.category === 'monitoring' || menuItem?.category === 'operations' || menuItem?.category === 'config' || menuItem?.category === 'documentation') {
       return true;
     }
 
-    if (menuItem?.category === 'monitoring' || menuItem?.category === 'operations') {
-      return !!this.filterCollaboratorId();
-    }
-
-    // Special case for config: collaborators can edit their own training/suppliers, admins can edit if filter is set
-    if (menuItem?.category === 'config') {
-      return !!this.filterCollaboratorId();
-    }
+    return false;
   });
 
 
@@ -1014,6 +1004,44 @@ export class AppStateService {
     }).length;
   });
 
+  // --- New: Operational Phases Configuration ---
+  readonly operationalPhasesConfig = computed(() => {
+    const targetClientId = this.activeTargetClientId();
+    const records = this.checklistRecords().filter(r => 
+        r.moduleId === 'operative-phases-config' && 
+        r.clientId === targetClientId
+    );
+    
+    // Default: all enabled
+    if (records.length === 0) {
+      return { 
+        'pre-op-checklist': { enabled: true, activities: {} }, 
+        'operative-checklist': { enabled: true, activities: {} }, 
+        'post-op-checklist': { enabled: true, activities: {} }
+      };
+    }
+
+    return records[0].data;
+  });
+
+  isActivityEnabled(moduleId: string, activityId: string): boolean {
+    const config = this.operationalPhasesConfig();
+    const modConfig = config[moduleId];
+    if (!modConfig) return true;
+    if (modConfig.enabled === false) return false;
+    if (modConfig.activities && modConfig.activities[activityId] === false) return false;
+    return true;
+  }
+
+  async updateOperationalPhases(config: any) {
+    const targetClientId = this.activeTargetClientId();
+    await this.saveChecklist({
+      moduleId: 'operative-phases-config',
+      clientId: targetClientId,
+      data: config
+    });
+  }
+
   // --- Menu Definitions ---
   readonly menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie', category: 'dashboard', adminOnly: true },
@@ -1040,6 +1068,7 @@ export class AppStateService {
 
     // Config
     { id: 'equipment-census', label: 'Censimento Attrezzature', icon: 'fa-microchip', category: 'config', adminOnly: true },
+    { id: 'operative-phases-config', label: 'Gestione Fasi Operative', icon: 'fa-toggle-on', category: 'config', adminOnly: true },
 
     { id: 'suppliers', label: 'Anagrafica Fornitori', icon: 'fa-truck-field', category: 'config', operatorOnly: true },
 

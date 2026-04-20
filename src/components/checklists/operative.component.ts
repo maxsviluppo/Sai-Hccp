@@ -212,6 +212,7 @@ interface ChecklistItem {
 
                 <!-- Main Content: Checklists -->
                 <div class="xl:col-span-3 space-y-8">
+                    @if (state.isActivityEnabled('operative-checklist', 'ricezione-merci')) {
                     <div class="space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-4 px-2">
                             <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
@@ -242,7 +243,9 @@ interface ChecklistItem {
                             </div>
                         </div>
                     </div>
+                    }
 
+                    @if (state.isActivityEnabled('operative-checklist', 'temperature')) {
                     <div class="space-y-4">
                         <div class="flex items-center gap-2 px-2">
                             <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
@@ -259,6 +262,7 @@ interface ChecklistItem {
                             </div>
                         </div>
                     </div>
+                    }
                 </div>
             </div>
 
@@ -304,7 +308,7 @@ interface ChecklistItem {
                                                [ngModel]="statusMap()[item.id]?.temperature"
                                                (ngModelChange)="updateTemperature(item.id, $event, item.label)"
                                                placeholder="°C"
-                                               [disabled]="isSubmitted()"
+                                               [disabled]="isSubmitted() || !state.isContextEditable()"
                                                class="w-full font-bold text-slate-700 bg-transparent h-full focus:outline-none text-sm disabled:opacity-50">
                                     </div>
                                     @if (statusMap()[item.id]?.isAutomaticIssue) {
@@ -318,16 +322,19 @@ interface ChecklistItem {
                             <div class="flex items-center gap-1.5">
                                 @if (item.status === 'pending') {
                                     <button (click)="setStatus(item.id, 'ok')" 
-                                            class="h-7 px-2.5 rounded bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-400 hover:text-emerald-500 transition-colors shadow-sm flex items-center justify-center">
+                                            [disabled]="isSubmitted() || !state.isContextEditable()"
+                                            class="h-7 px-2.5 rounded bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-400 hover:text-emerald-500 transition-colors shadow-sm flex items-center justify-center disabled:opacity-30">
                                         <i class="fa-solid fa-check text-xs"></i>
                                     </button>
                                     <button (click)="openIssueModal(item)" 
-                                            class="h-7 px-2.5 rounded bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-400 hover:text-red-500 transition-colors shadow-sm flex items-center justify-center">
+                                            [disabled]="isSubmitted() || !state.isContextEditable()"
+                                            class="h-7 px-2.5 rounded bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-400 hover:text-red-500 transition-colors shadow-sm flex items-center justify-center disabled:opacity-30">
                                         <i class="fa-solid fa-triangle-exclamation text-xs"></i>
                                     </button>
                                 } @else {
                                     <button (click)="setStatus(item.id, 'pending')" 
-                                            class="h-7 px-2.5 rounded bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-[11px] uppercase tracking-widest transition-colors border border-slate-200">
+                                            [disabled]="isSubmitted() || !state.isContextEditable()"
+                                            class="h-7 px-2.5 rounded bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-[11px] uppercase tracking-widest transition-colors border border-slate-200 disabled:opacity-30">
                                         <i class="fa-solid fa-rotate-left"></i>
                                     </button>
                                 }
@@ -336,7 +343,7 @@ interface ChecklistItem {
                     </div>
 
                     <!-- Full Width Abbattitore Form -->
-                    @if (item.isAbbattitore) {
+                    @if (item.isAbbattitore && state.isActivityEnabled('operative-checklist', 'abbattimento')) {
                         <div class="w-full mt-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-6 animate-fade-in mb-2">
                             <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-2">
                                 <div class="flex items-center gap-3">
@@ -356,14 +363,16 @@ interface ChecklistItem {
                                     <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.prodotto" 
                                            (ngModelChange)="updateAbbattitoreData(item.id, 'prodotto', $event)"
                                            placeholder="Nome alimento..."
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all">
+                                           [disabled]="isSubmitted() || !state.isContextEditable()"
+                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50">
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Temp. Abbattimento</label>
                                     <div class="relative">
                                         <input type="number" [ngModel]="statusMap()[item.id]?.abbattitore?.tempAbbattimento" 
                                                (ngModelChange)="updateAbbattitoreData(item.id, 'tempAbbattimento', $event)"
-                                               class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all" placeholder="0">
+                                               [disabled]="isSubmitted() || !state.isContextEditable()"
+                                               class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="0">
                                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">°C</span>
                                     </div>
                                 </div>
@@ -372,7 +381,8 @@ interface ChecklistItem {
                                     <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.lotto" 
                                            (ngModelChange)="updateAbbattitoreData(item.id, 'lotto', $event)"
                                            placeholder="Codice lotto..."
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all">
+                                           [disabled]="isSubmitted() || !state.isContextEditable()"
+                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50">
                                 </div>
                             </div>
 
@@ -381,26 +391,30 @@ interface ChecklistItem {
                                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Inizio</label>
                                     <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.oraInizio" 
                                            (ngModelChange)="updateAbbattitoreData(item.id, 'oraInizio', $event)"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all" placeholder="12:00">
+                                           [disabled]="isSubmitted() || !state.isContextEditable()"
+                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="12:00">
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fine</label>
                                     <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.oraFine" 
                                            (ngModelChange)="updateAbbattitoreData(item.id, 'oraFine', $event)"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all" placeholder="13:30">
+                                           [disabled]="isSubmitted() || !state.isContextEditable()"
+                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="13:30">
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Scadenza</label>
                                     <input type="date" [ngModel]="statusMap()[item.id]?.abbattitore?.scadenza" 
                                            (ngModelChange)="updateAbbattitoreData(item.id, 'scadenza', $event)"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all">
+                                           [disabled]="isSubmitted() || !state.isContextEditable()"
+                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50">
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Temp. Cons.</label>
                                     <div class="relative">
                                         <input type="number" [ngModel]="statusMap()[item.id]?.abbattitore?.tempConservazione" 
                                                (ngModelChange)="updateAbbattitoreData(item.id, 'tempConservazione', $event)"
-                                               class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all" placeholder="0">
+                                               [disabled]="isSubmitted() || !state.isContextEditable()"
+                                               class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="0">
                                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">°C</span>
                                     </div>
                                 </div>
@@ -419,7 +433,7 @@ interface ChecklistItem {
             <!-- Fixed Footer Actions -->
             <div class="fixed bottom-6 right-6 z-50">
                 @if (!isSubmitted()) {
-                    <button (click)="submitChecklist()" [disabled]="!isAllCompleted()"
+                    <button (click)="submitChecklist()" [disabled]="!isAllCompleted() || !state.isContextEditable()"
                             class="h-12 px-6 bg-slate-900 border border-slate-800 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 hover:bg-slate-800 hover:shadow-xl group">
                         <span>REGISTRA OPERAZIONI</span>
                         <div class="w-px h-4 bg-white/20"></div>
@@ -433,6 +447,7 @@ interface ChecklistItem {
                         </div>
                         <div class="flex items-center gap-1.5 px-2">
                             <button (click)="printReport()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-indigo-600 flex items-center justify-center transition-colors" title="Stampa"><i class="fa-solid fa-print text-base"></i></button>
+                            <button *ngIf="state.isContextEditable()" (click)="isSubmitted.set(false)" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-amber-600 flex items-center justify-center transition-colors" title="Modifica"><i class="fa-solid fa-pen-to-square text-base"></i></button>
                         </div>
                         <div class="w-px h-6 bg-slate-200"></div>
                         <button (click)="startNewChecklist()" class="h-8 px-4 rounded bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors">
@@ -542,9 +557,13 @@ export class OperativeChecklistComponent {
          const nameLower = eq.name.toLowerCase();
          const isCold = type === 'Freddo' || 
                         nameLower.includes('frigo') || 
+                        nameLower.includes('fredd') || 
                         nameLower.includes('congelatore') || 
-                        nameLower.includes('cella');
+                        nameLower.includes('cella') ||
+                        nameLower.includes('ghiaccio') ||
+                        nameLower.includes('vetrina');
          const isHot = type === 'Caldo' || 
+                       nameLower.includes('cald') || 
                        nameLower.includes('forno') || 
                        nameLower.includes('cottura');
 
@@ -603,20 +622,25 @@ export class OperativeChecklistComponent {
       let isIssue = false;
       let alertMsg = '';
 
-      if (nameLower.includes('congelatore')) {
+      if (nameLower.includes('ghiaccio') || nameLower.includes('macchina del freddo')) {
+          if (tempValue !== -20) {
+              isIssue = true;
+              alertMsg = 'Macchina del Freddo/Ghiaccio fuori parametro (deve essere esattamente -20°C)';
+          }
+      } else if (nameLower.includes('congelatore')) {
           if (tempValue > -18) {
               isIssue = true;
               alertMsg = 'Prodotto Congelato fuori parametro (deve essere ≤ -18°C)';
           }
-      } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella')) {
-          if (tempValue < 4 || tempValue > 8) {
-              isIssue = true;
-              alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
-          }
-      } else if (nameLower.includes('caldo') || nameLower.includes('cottura') || nameLower.includes('forno')) {
+      } else if (nameLower.includes('cald') || nameLower.includes('cottura') || nameLower.includes('forno')) {
           if (tempValue < 65) {
               isIssue = true;
               alertMsg = 'Catena del Caldo fuori parametro (deve essere ≥ 65°C)';
+          }
+      } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella') || nameLower.includes('fredd') || nameLower.includes('vetrina')) {
+          if (tempValue < 4 || tempValue > 8) {
+              isIssue = true;
+              alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
           }
       }
 
@@ -795,7 +819,7 @@ export class OperativeChecklistComponent {
          };
       });
       this.statusMap.set(map);
-      this.isSubmitted.set(true);
+      this.isSubmitted.set(!!record.data?.status);
       window.scrollTo({ top: 0, behavior: 'smooth' });
    }
 
