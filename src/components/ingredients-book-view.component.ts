@@ -230,6 +230,14 @@ import { ToastService } from '../services/toast.service';
                               }
                             }
                           </optgroup>
+
+                          <optgroup label="🥖 PANETTERIA & SNACK">
+                            @for (key of filteredPresetKeys(); track key) {
+                              @if (PRESET_RECIPES[key].category === 'Panetteria') {
+                                <option [value]="key">{{ key }}</option>
+                              }
+                            }
+                          </optgroup>
                         </select>
                         <i class="fa-solid fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-indigo-300 pointer-events-none"></i>
                       </div>
@@ -271,6 +279,7 @@ import { ToastService } from '../services/toast.service';
                     <option value="Contorni">Contorni</option>
                     <option value="Dessert">Dessert</option>
                     <option value="Pizzeria">Pizzeria</option>
+                    <option value="Panetteria">Panetteria</option>
                   </select>
                 </div>
               </div>
@@ -294,7 +303,13 @@ import { ToastService } from '../services/toast.service';
                           {{ i + 1 }}
                         </div>
                         <input type="text" [(ngModel)]="ing.name" placeholder="Ingrediente (con percentuale)..." 
+                               list="common-ingredients-book"
                                class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all">
+                        <datalist id="common-ingredients-book">
+                          @for (base of state.baseIngredients(); track base) {
+                            <option [value]="base"></option>
+                          }
+                        </datalist>
                         <div class="relative w-28">
                           <input type="number" [(ngModel)]="ing.percentage" (ngModelChange)="sortIngredients()"
                                  placeholder="Q.tà" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all pr-8">
@@ -751,7 +766,19 @@ export class IngredientsBookViewComponent {
     'Salame di fichi': { category: 'Dessert', ingredients: [{ name: 'Fichi secchi', percentage: 70, allergens: [] }, { name: 'Frutta guscio', percentage: 25, allergens: ['Frutta a guscio'] }, { name: 'Scorza arancia', percentage: 5, allergens: [] }], desc: 'Fichi e noci salame.' },
     'Tartelletta Arachidi': { category: 'Dessert', ingredients: [{ name: 'Pasta frolla', percentage: 40, allergens: ['Glutine', 'Latte', 'Uova'] }, { name: 'Caramello, Arachidi', percentage: 40, allergens: ['Latte', 'Arachidi'] }, { name: 'Cioccolato Ganache', percentage: 20, allergens: ['Latte', 'Soia'] }], desc: 'Dolce e salato.' },
     'Ananas Caramellato': { category: 'Dessert', ingredients: [{ name: 'Ananas fresco', percentage: 80, allergens: [] }, { name: 'Zucchero, Maraschino', percentage: 15, allergens: ['Solfiti'] }, { name: 'Cannella', percentage: 5, allergens: [] }], desc: 'Ananas e alcol.' },
-    'Coppa Nonna': { category: 'Dessert', ingredients: [{ name: 'Crema pasticcera', percentage: 60, allergens: ['Latte', 'Uova'] }, { name: 'Panna montata', percentage: 25, allergens: ['Latte'] }, { name: 'Pinoli e Biscotto', percentage: 15, allergens: ['Frutta a guscio', 'Glutine'] }], desc: 'Coppa ricca crema.' }
+    'Coppa Nonna': { category: 'Dessert', ingredients: [{ name: 'Crema pasticcera', percentage: 60, allergens: ['Latte', 'Uova'] }, { name: 'Panna montata', percentage: 25, allergens: ['Latte'] }, { name: 'Pinoli e Biscotto', percentage: 15, allergens: ['Frutta a guscio', 'Glutine'] }], desc: 'Coppa ricca crema.' },
+
+    // --- PANETTERIA & SNACK (10) ---
+    'Pane Bianco (Pagnotta)': { category: 'Panetteria', ingredients: [{ name: 'Farina 0', percentage: 65, allergens: ['Glutine'] }, { name: 'Acqua', percentage: 30, allergens: [] }, { name: 'Lievito, Sale', percentage: 5, allergens: [] }], desc: 'Pane classico.' },
+    'Pane ai Cereali': { category: 'Panetteria', ingredients: [{ name: 'Farina Cereali Mix', percentage: 60, allergens: ['Glutine', 'Sesamo'] }, { name: 'Semi (Girasole, Lino)', percentage: 10, allergens: [] }, { name: 'Acqua, Lievito', percentage: 30, allergens: [] }], desc: 'Pane ricco.' },
+    'Focaccia al Rosmarino': { category: 'Panetteria', ingredients: [{ name: 'Farina 00', percentage: 60, allergens: ['Glutine'] }, { name: 'Acqua, Olio EVO', percentage: 35, allergens: [] }, { name: 'Rosmarino, Sale', percentage: 5, allergens: [] }], desc: 'Focaccia classica.' },
+    'Schiacciata Toscana': { category: 'Panetteria', ingredients: [{ name: 'Farina 00', percentage: 55, allergens: ['Glutine'] }, { name: 'Olio EVO abbondante', percentage: 15, allergens: [] }, { name: 'Acqua, Sale', percentage: 30, allergens: [] }], desc: 'Tipica toscana.' },
+    'Piadina Romagnola': { category: 'Panetteria', ingredients: [{ name: 'Farina 00', percentage: 60, allergens: ['Glutine'] }, { name: 'Strutto (o Olio)', percentage: 15, allergens: [] }, { name: 'Acqua, Sale', percentage: 25, allergens: [] }], desc: 'Base piadina.' },
+    'Panino Salame e Formaggio': { category: 'Panetteria', ingredients: [{ name: 'Pane tipo Rosetta', percentage: 50, allergens: ['Glutine'] }, { name: 'Salame Milano', percentage: 30, allergens: [] }, { name: 'Formaggio Edam', percentage: 20, allergens: ['Latte'] }], desc: 'Snack rapido.' },
+    'Club Sandwich': { category: 'Panetteria', ingredients: [{ name: 'Pane in cassetta', percentage: 30, allergens: ['Glutine'] }, { name: 'Pollo, Bacon', percentage: 30, allergens: [] }, { name: 'Maionese, Uovo', percentage: 20, allergens: ['Uova'] }, { name: 'Lattuga, Pomodoro', percentage: 20, allergens: [] }], desc: 'Sandwich ricco.' },
+    'Tramezzino Tonno e Pomodoro': { category: 'Panetteria', ingredients: [{ name: 'Pane bianco senza crosta', percentage: 40, allergens: ['Glutine'] }, { name: 'Tonno, Maionese', percentage: 40, allergens: ['Pesce', 'Uova'] }, { name: 'Pomodoro fresco', percentage: 20, allergens: [] }], desc: 'Tramezzino classico.' },
+    'Pizzetta Sfoglia': { category: 'Panetteria', ingredients: [{ name: 'Pasta Sfoglia', percentage: 60, allergens: ['Glutine', 'Latte'] }, { name: 'Pomodoro, Mozzarella', percentage: 40, allergens: ['Latte'] }], desc: 'Snack sfoglia.' },
+    'Taralli e Snack Misti': { category: 'Panetteria', ingredients: [{ name: 'Taralli, Grissini', percentage: 90, allergens: ['Glutine', 'Sesamo'] }, { name: 'Olive', percentage: 10, allergens: ['Solfiti'] }], desc: 'Accompagnamento.' }
   };
 
   readonly presetKeys = computed(() => Object.keys(this.PRESET_RECIPES));
@@ -880,6 +907,7 @@ export class IngredientsBookViewComponent {
       const autoIngs: RecipeIngredient[] = [];
       if (dish.includes('pasta') || dish.includes('spaghetti')) autoIngs.push({ name: 'Base Pasta / Semola', percentage: 55, allergens: ['Glutine'] });
       else if (dish.includes('riso') || dish.includes('risotto')) autoIngs.push({ name: 'Riso Carnaroli / Arborio', percentage: 55, allergens: [] });
+      else if (dish.includes('pane') || dish.includes('panino') || dish.includes('focaccia')) autoIngs.push({ name: 'Base Panificato / Farina', percentage: 60, allergens: ['Glutine'] });
 
       const ingredientKeywords: Record<string, {name: string, allergens: string[]}> = {
         'funghi': { name: 'Funghi misti / Porcini', allergens: [] },

@@ -218,6 +218,7 @@ export class AppStateService {
 
   // --- GLOBAL INGREDIENTS DATABASE (Memorized List) ---
   readonly baseIngredients = signal<string[]>([
+    'Pane', 'Pane Bianco', 'Pane Integrale', 'Pane ai Cereali', 'Focaccia', 'Pizza', 'Panino', 'Piadina', 'Grissini', 'Pangrattato',
     'Acqua Minerale Naturale (0.5L)', 'Acqua Minerale Naturale (1L)', 'Acqua Frizzante (0.5L)', 'Acqua Frizzante (1L)', 'Acqua Effervescente Naturale', 'Acqua Tonica Premium', 'Acqua Tonica al Pompelmo', 'Ginger Beer artigianale', 'Ginger Ale', 'Soda Water', 'Limonata amara', 'Cedrata', 'Chinotto', 'Spuma Bionda', 'Gazzosa Antica Ricetta', 'Cola Classica', 'Cola Zero Zuccheri', 'Aranciata Classica', 'Aranciata Amara', 'Tè Freddo al Limone', 'Tè Freddo alla Pesca', 'Te Freddo Verde', 'Succo di Arancia 100%', 'Succo di Mela torbido', 'Succo di Pera (Nettare)', 'Succo di Pesca (Nettare)', 'Succo di Albicocca', 'Succo di Mirtillo', 'Succo di Ananas', 'Succo di Pompelmo Rosa', 'Succo di Pomodoro (Mix)', 'Sciroppo di Zucchero', 'Sciroppo di Grenadine', 'Sciroppo di Orzata', 'Sciroppo di Menta', 'Latte di Cocco (Cocktail)', 'Crema di Cocco',
     'Birra Chiara alla Spina', 'Birra Rossa alla Spina', 'Birra Doppio Malto', 'Birra IPA Artigianale', 'Birra APA', 'Birra Blanche', 'Birra Stout', 'Birra Analcolica', 'Cidro di Mele',
     'Vino Bianco Fermo (DOC)', 'Vino Bianco Mosso', 'Vino Rosso di Struttura', 'Vino Rosso Novello', 'Vino Rosato Salento', 'Prosecco DOCG', 'Franciacorta Brut', 'Champagne Cuvée', 'Metodo Classico Pas Dosé', 'Lambrusco Mantovano', 'Passito di Pantelleria', 'Vin Santo', 'Moscato d\'Asti', 'Vermouth Rosso', 'Vermouth Bianco', 'Vermouth Dry', 'Bitter Campari', 'Aperol', 'Select', 'Cynar',
@@ -240,6 +241,7 @@ export class AppStateService {
     'Tagliatelle all\'uovo', 'Tagliolini all\'uovo', 'Pappardelle all\'uovo', 'Fettuccine all\'uovo', 'Lasagne all\'uovo', 'Cannelloni', 'Tortellini alla carne', 'Ravioli di magro', 'Ravioli alla carne', 'Agnolotti del plin', 'Cappelletti', 'Anolini', 'Tortelli di zucca', 'Culurgiones', 'Passatelli', 'Canederli', 'Spätzle',
     'Gnocchi di Patate', 'Gnocchi di Zucca', 'Gnocchi alla Romana', 'Chicche di patate',
     'Riso Carnaroli', 'Riso Arborio', 'Riso Vialone Nano', 'Riso Roma', 'Riso Basmati', 'Riso Venere (Nero)', 'Riso Ermes (Rosso)', 'Riso Integrale', 'Riso Parboiled', 'Riso Originario', 'Riso per Sushi',
+    'Pane Bianco (Pagnotta)', 'Pane Integrale', 'Pane ai Cereali', 'Pane di Segale', 'Pane Arabo', 'Pane per Hamburger (Bun)', 'Pane a Cassetta', 'Pan Bauletto', 'Pan Carré', 'Panini all\'Olio', 'Panini al Latte', 'Ciabatta', 'Baguette', 'Focaccia Liscia', 'Focaccia Genovese', 'Focaccia Barese', 'Pizza (Base bianca)', 'Pizza (Base rossa)', 'Piadina Romagnola', 'Tigelle Emiliane', 'Crescentine', 'Gnocco Fritto', 'Grissini Torinesi', 'Crostini di Pane', 'Pangrattato', 'Basi per Bruschetta', 'Taralli Pugliesi', 'Friselle', 'Schiacciata Toscana', 'Pane di Altamura DOP', 'Pane Carasau', 'Pane Guttiau',
     'Orzo Perlato', 'Farro Dicocco', 'Grano Saraceno in chicchi', 'Quinoa Bianca', 'Quinoa Rossa', 'Quinoa Nera', 'Couscous Mezzo Grosso', 'Cuscus Integrale', 'Bulgur', 'Polenta Istantanea', 'Polenta Taragna',
     'Brodo Vegetale (preparato)', 'Brodo di Carne (preparato)', 'Brodo di Pesce (Fumetto)', 'Dadò Vegetale', 'Dado di Carne', 'Estratto di Carne',
     'Ossobuco di Bovino', 'Filetto di Manzo (Taglio)', 'Controfiletto (Entrecôte)', 'Fesa di Manzo', 'Noce di Manzo', 'Girello di Manzo (Magatello)', 'Scamone', 'Cappello del Prete (Aletta)', 'Biancostato', 'Lingua di Bovino', 'Fegato di Vitello', 'Animelle', 'Trippa', 'Guancia di Manzo', 'Fiorentina (T-Bone)', 'Arista di Maiale', 'Braciole di Maiale', 'Costine di Maiale (Ribs)', 'Filetto di Maiale', 'Coppa di Maiale Fresca', 'Stinco di Maiale', 'Pancetta di Maiale Fresca', 'Porchetta (tronchetto)', 'Coniglio Intero', 'Cosce di Coniglio', 'Sella di Coniglio', 'Petto d\'Anatra', 'Cosce d\'Anatra (Confit)', 'Faraona', 'Quaglie', 'Piccione', 'Cinghiale (Polpa)', 'Capriolo', 'Cervo', 'Agnello (Coscia)', 'Costolette d\'Agnello', 'Coratella d\'Agnello', 'Arrosticini', 'Hamburger di Chianina', 'Hamburger di Scottona', 'Hamburger di Black Angus', 'Salsiccia di Pollo e Tacchino', 'Wurstel di Suino', 'Wurstel di Pollo', 'Galletto Vallespluga',
@@ -270,11 +272,18 @@ export class AppStateService {
   }
 
   private loadBaseIngredients() {
+      const hardcodedDefaults = this.baseIngredients();
       const saved = localStorage.getItem('haccp_base_ingredients');
       if (saved) {
           try {
-              this.baseIngredients.set(JSON.parse(saved));
-          } catch(e) {}
+              const savedList = JSON.parse(saved);
+              // Merge defaults with saved items, ensuring no duplicates
+              const merged = [...new Set([...hardcodedDefaults, ...savedList])].sort((a, b) => a.localeCompare(b));
+              this.baseIngredients.set(merged);
+              console.log('[HACCP-STATE] Base Ingredients loaded and merged. Total:', merged.length);
+          } catch(e) {
+              console.error('Error parsing saved ingredients', e);
+          }
       }
   }
 

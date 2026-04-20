@@ -283,9 +283,11 @@ import { ToastService } from '../services/toast.service';
                         <div class="flex items-center gap-1">
                           @if (ageStatus !== 'paid') {
                             <button (click)="markAsPaid(payment.id)" 
-                                    class="px-2.5 py-1.5 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 border border-slate-200 hover:border-emerald-200"
+                                    [disabled]="isProcessing()"
+                                    class="px-2.5 py-1.5 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 rounded text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 border border-slate-200 hover:border-emerald-200 disabled:opacity-50 disabled:grayscale"
                                     [class.bg-red-50]="ageStatus === 'insolvent'" [class.border-red-200]="ageStatus === 'insolvent'" [class.text-red-600]="ageStatus === 'insolvent'">
-                              <i class="fa-solid fa-euro-sign"></i> <span class="hidden lg:inline">DA SALDARE</span>
+                              <i class="fa-solid" [class.fa-euro-sign]="!isProcessing()" [class.fa-spinner]="isProcessing()" [class.animate-spin]="isProcessing()"></i> 
+                              <span class="hidden lg:inline">{{ isProcessing() ? 'ELABORAZIONE...' : 'DA SALDARE' }}</span>
                             </button>
                           }
                           
@@ -602,8 +604,9 @@ import { ToastService } from '../services/toast.service';
                 <button type="button" (click)="closeModals()" class="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-bold transition-colors">
                   Annulla
                 </button>
-                <button type="submit" [disabled]="!paymentForm.valid" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <i class="fa-solid fa-save"></i> {{ editingPaymentId() ? 'Aggiorna Pagamento' : 'Salva Pagamento' }}
+                <button type="submit" [disabled]="!paymentForm.valid || isProcessing()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <i class="fa-solid" [class.fa-save]="!isProcessing()" [class.fa-spinner]="isProcessing()" [class.animate-spin]="isProcessing()"></i> 
+                  {{ isProcessing() ? 'Salvataggio...' : (editingPaymentId() ? 'Aggiorna Pagamento' : 'Salva Pagamento') }}
                 </button>
               </div>
             </form>
@@ -702,8 +705,9 @@ import { ToastService } from '../services/toast.service';
                 <button type="button" (click)="closeModals()" class="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-bold transition-colors">
                   Annulla
                 </button>
-                <button type="submit" [disabled]="!journalForm.valid" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <i class="fa-solid fa-save"></i> Salva Voci Prima Nota
+                <button type="submit" [disabled]="!journalForm.valid || isProcessing()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <i class="fa-solid" [class.fa-save]="!isProcessing()" [class.fa-spinner]="isProcessing()" [class.animate-spin]="isProcessing()"></i>
+                  {{ isProcessing() ? 'Registrazione...' : 'Salva Voci Prima Nota' }}
                 </button>
               </div>
             </form>
@@ -794,8 +798,9 @@ import { ToastService } from '../services/toast.service';
                 <button type="button" (click)="closeModals()" class="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-bold transition-colors">
                   Annulla
                 </button>
-                <button type="submit" [disabled]="!reminderForm.valid" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <i class="fa-solid fa-save"></i> Genera Alert
+                <button type="submit" [disabled]="!reminderForm.valid || isProcessing()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <i class="fa-solid" [class.fa-bell]="!isProcessing()" [class.fa-spinner]="isProcessing()" [class.animate-spin]="isProcessing()"></i>
+                  {{ isProcessing() ? 'Creazione...' : 'Genera Alert' }}
                 </button>
               </div>
             </form>
@@ -815,8 +820,8 @@ import { ToastService } from '../services/toast.service';
                  Questa azione è irreversibile. Il record verrà rimosso permanentemente dal database cloud.
               </p>
               <div class="flex flex-col gap-3">
-                 <button (click)="executeDelete()" class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95">
-                    SI, ELIMINA DEFINITIVAMENTE
+                 <button (click)="executeDelete()" [disabled]="isProcessing()" class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95 disabled:opacity-50">
+                    {{ isProcessing() ? 'ELIMINAZIONE...' : 'SI, ELIMINA DEFINITIVAMENTE' }}
                  </button>
                  <button (click)="showDeleteConfirm.set(null)" class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95">
                     ANNULLA
@@ -850,6 +855,7 @@ export class AccountingViewComponent {
   // Edit/Delete state
   editingPaymentId = signal<string | null>(null);
   showDeleteConfirm = signal<{id: string, type: 'payment' | 'journal' | 'reminder'} | null>(null);
+  isProcessing = signal(false);
 
   // Filter properties
   // Filter signals
@@ -1155,23 +1161,28 @@ export class AccountingViewComponent {
     this.editingPaymentId.set(null);
   }
 
-  savePayment() {
-    if (this.paymentForm.valid) {
-      const formValue = this.paymentForm.value;
-      const editingId = this.editingPaymentId();
-      
-      const paymentData: Payment = {
-        id: editingId || Math.random().toString(36).substr(2, 9),
-        ...formValue,
-        status: editingId ? (this.state.payments().find(p => p.id === editingId)?.status || 'pending') : 'pending'
-      };
-      
-      this.state.syncPayment(paymentData);
-      this.toastService.success(
-        editingId ? 'Pagamento Aggiornato' : 'Pagamento Aggiunto', 
-        'Le modifiche sono state salvate con successo.'
-      );
-      this.closeModals();
+  async savePayment() {
+    if (this.paymentForm.valid && !this.isProcessing()) {
+      this.isProcessing.set(true);
+      try {
+        const formValue = this.paymentForm.value;
+        const editingId = this.editingPaymentId();
+        
+        const paymentData: Payment = {
+          id: editingId || Math.random().toString(36).substr(2, 9),
+          ...formValue,
+          status: editingId ? (this.state.payments().find(p => p.id === editingId)?.status || 'pending') : 'pending'
+        };
+        
+        await this.state.syncPayment(paymentData);
+        this.toastService.success(
+          editingId ? 'Pagamento Aggiornato' : 'Pagamento Aggiunto', 
+          'Le modifiche sono state salvate con successo.'
+        );
+        this.closeModals();
+      } finally {
+        this.isProcessing.set(false);
+      }
     }
   }
 
@@ -1179,45 +1190,59 @@ export class AccountingViewComponent {
     this.showDeleteConfirm.set({ id, type });
   }
 
-  executeDelete() {
+  async executeDelete() {
     const target = this.showDeleteConfirm();
-    if (!target) return;
+    if (!target || this.isProcessing()) return;
 
-    if (target.type === 'payment') this.state.deletePayment(target.id);
-    else if (target.type === 'journal') this.state.deleteJournalEntry(target.id);
-    else if (target.type === 'reminder') this.state.deleteReminder(target.id);
+    this.isProcessing.set(true);
+    try {
+      if (target.type === 'payment') await this.state.deletePayment(target.id);
+      else if (target.type === 'journal') await this.state.deleteJournalEntry(target.id);
+      else if (target.type === 'reminder') await this.state.deleteReminder(target.id);
 
-    this.showDeleteConfirm.set(null);
-    this.toastService.success('Cancellazione effettuata', 'Il record è stato rimosso.');
+      this.showDeleteConfirm.set(null);
+      this.toastService.success('Cancellazione effettuata', 'Il record è stato rimosso.');
+    } finally {
+      this.isProcessing.set(false);
+    }
   }
 
-  markAsPaid(paymentId: string) {
+  async markAsPaid(paymentId: string) {
+    if (this.isProcessing()) return;
+    
     const payment = this.state.payments().find(p => p.id === paymentId);
-    if (payment) {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // 1. Update Payment Status
-      this.state.syncPayment({ 
-        ...payment, 
-        status: 'paid', 
-        paidDate: today 
-      });
+    if (payment && payment.status !== 'paid') {
+      this.isProcessing.set(true);
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 1. Update Payment Status
+        await this.state.syncPayment({ 
+          ...payment, 
+          status: 'paid', 
+          paidDate: today 
+        });
 
-      // 2. Automated Prima Nota Entry
-      const client = this.getClient(payment.clientId);
-      const journalEntry: JournalEntry = {
-        id: 'auto-' + Math.random().toString(36).substr(2, 7),
-        clientId: payment.clientId,
-        date: today,
-        description: `INCASSO QUOTA: ${client?.name || 'Azienda'} (Rif. ${payment.notes || 'Saldato'})`,
-        debit: 0,
-        credit: payment.amount,
-        category: 'payment'
-      };
-      
-      this.state.syncJournalEntry(journalEntry);
-      
-      this.toastService.success('Pagamento Confermato', 'Il pagamento è stato saldato e registrato in Prima Nota.');
+        // 2. Automated Prima Nota Entry
+        const client = this.getClient(payment.clientId);
+        const journalEntry: JournalEntry = {
+          id: 'auto-' + Math.random().toString(36).substr(2, 7),
+          clientId: payment.clientId,
+          date: today,
+          description: `INCASSO QUOTA: ${client?.name || 'Azienda'} (Rif. ${payment.notes || 'Saldato'})`,
+          debit: 0,
+          credit: payment.amount,
+          category: 'payment'
+        };
+        
+        await this.state.syncJournalEntry(journalEntry);
+        
+        this.toastService.success('Pagamento Confermato', 'Il pagamento è stato saldato e registrato in Prima Nota.');
+      } catch (error) {
+        this.toastService.error('Errore', 'Si è verificato un errore durante la registrazione del pagamento.');
+      } finally {
+        this.isProcessing.set(false);
+      }
     }
   }
 
@@ -1226,38 +1251,55 @@ export class AccountingViewComponent {
     this.toastService.info('Sollecito Inviato', `Sollecito di pagamento inviato a ${client?.name}`);
   }
 
-  saveJournal() {
-    if (this.journalForm.valid) {
-      const formValue = this.journalForm.value;
-      const newEntry: JournalEntry = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formValue
-      };
-      this.state.syncJournalEntry(newEntry);
-      this.toastService.success('Registrazione Aggiunta', 'La registrazione è stata salvata in prima nota.');
-      this.closeModals();
+  async saveJournal() {
+    if (this.journalForm.valid && !this.isProcessing()) {
+      this.isProcessing.set(true);
+      try {
+        const formValue = this.journalForm.value;
+        const newEntry: JournalEntry = {
+          id: Math.random().toString(36).substr(2, 9),
+          ...formValue
+        };
+        await this.state.syncJournalEntry(newEntry);
+        this.toastService.success('Registrazione Aggiunta', 'La registrazione è stata salvata in prima nota.');
+        this.closeModals();
+      } finally {
+        this.isProcessing.set(false);
+      }
     }
   }
 
-  saveReminder() {
-    if (this.reminderForm.valid) {
-      const formValue = this.reminderForm.value;
-      const newReminder: Reminder = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formValue,
-        dismissed: false
-      };
-      this.state.syncReminder(newReminder);
-      this.toastService.success('Promemoria Creato', 'Il promemoria è stato aggiunto con successo.');
-      this.closeModals();
+  async saveReminder() {
+    if (this.reminderForm.valid && !this.isProcessing()) {
+      this.isProcessing.set(true);
+      try {
+        const formValue = this.reminderForm.value;
+        const newReminder: Reminder = {
+          id: Math.random().toString(36).substr(2, 9),
+          ...formValue,
+          dismissed: false
+        };
+        await this.state.syncReminder(newReminder);
+        this.toastService.success('Promemoria Creato', 'Il promemoria è stato aggiunto con successo.');
+        this.closeModals();
+      } finally {
+        this.isProcessing.set(false);
+      }
     }
   }
 
-  dismissReminder(reminderId: string) {
+  async dismissReminder(reminderId: string) {
+    if (this.isProcessing()) return;
+
     const reminder = this.state.reminders().find(r => r.id === reminderId);
     if (reminder) {
-      this.state.syncReminder({ ...reminder, dismissed: true });
-      this.toastService.success('Promemoria Archiviato', 'Il promemoria è stato archiviato.');
+      this.isProcessing.set(true);
+      try {
+        await this.state.syncReminder({ ...reminder, dismissed: true });
+        this.toastService.success('Promemoria Archiviato', 'Il promemoria è stato archiviato.');
+      } finally {
+        this.isProcessing.set(false);
+      }
     }
   }
 

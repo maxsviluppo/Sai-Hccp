@@ -366,42 +366,42 @@ export class NonComplianceViewComponent {
         <head>
             <title>Segnalazione Anomalia - ${client.name}</title>
             <style>
-                @page { size: A4; margin: 1cm; }
-                body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 1cm; color: #1e293b; line-height: 1.5; }
+                @page { size: A4; margin: 0.8cm; }
+                body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 0.4cm 1cm; color: #1e293b; line-height: 1.4; }
                 
-                .letterhead { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 40px; }
-                .sai-logo { width: 150px; }
+                .letterhead { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
+                .sai-logo { width: 130px; }
                 .sai-logo img { width: 100%; height: auto; object-fit: contain; }
-                .company-info { text-align: right; font-size: 11px; color: #475569; }
-                .company-name { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 4px; text-transform: uppercase; }
+                .company-info { text-align: right; font-size: 10px; color: #475569; }
+                .company-name { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 2px; text-transform: uppercase; }
 
-                .report-header { text-align: center; margin-bottom: 40px; }
-                .report-title { font-size: 22px; font-weight: 900; color: #be123c; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
-                .report-subtitle { font-size: 12px; color: #64748b; font-weight: 700; margin-top: 5px; }
+                .report-header { text-align: center; margin-bottom: 20px; }
+                .report-title { font-size: 20px; font-weight: 900; color: #be123c; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+                .report-subtitle { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 3px; }
 
-                .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-                .detail-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 15px; border-radius: 12px; }
-                .detail-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-                .detail-value { font-size: 14px; font-weight: 700; color: #0f172a; }
+                .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+                .detail-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 12px; border-radius: 10px; }
+                .detail-label { font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+                .detail-value { font-size: 13px; font-weight: 700; color: #0f172a; }
 
-                .anomaly-card { border: 2px solid #ef4444; border-radius: 16px; padding: 30px; position: relative; overflow: hidden; }
-                .anomaly-card::before { content: ""; position: absolute; left: 0; top: 0; width: 6px; height: 100%; background: #ef4444; }
-                .section-label { font-size: 10px; font-weight: 900; color: #ef4444; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 15px; display: block; }
+                .anomaly-card { border: 2px solid #ef4444; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+                .anomaly-card::before { content: ""; position: absolute; left: 0; top: 0; width: 5px; height: 100%; background: #ef4444; }
+                .section-label { font-size: 9px; font-weight: 900; color: #ef4444; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; display: block; }
                 
-                .content-block { margin-bottom: 25px; }
-                .content-label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px; }
-                .content-text { font-size: 14px; color: #1e293b; background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; min-height: 60px; }
+                .content-block { margin-bottom: 15px; }
+                .content-label { font-size: 10px; font-weight: 800; color: #64748b; margin-bottom: 6px; }
+                .content-text { font-size: 13px; color: #1e293b; background: #fff; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; min-height: 40px; }
 
-                .status-banner { position: absolute; top: 15px; right: 15px; padding: 5px 15px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+                .status-banner { position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
                 .status-OPEN { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
                 .status-IN_PROGRESS { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
                 .status-CLOSED { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 
-                .signatures { margin-top: 30px; display: flex; justify-content: space-between; gap: 100px; }
+                .signatures { margin-top: 20px; display: flex; justify-content: space-between; gap: 60px; }
                 .sign-box { flex: 1; text-align: center; }
-                .sign-line { border-top: 1px solid #0f172a; margin-top: 40px; padding-top: 5px; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+                .sign-line { border-top: 1px solid #0f172a; margin-top: 30px; padding-top: 5px; font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; }
 
-                .footer { position: fixed; bottom: 1cm; left: 1cm; right: 1cm; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+                .footer { position: fixed; bottom: 0.8cm; left: 1cm; right: 1cm; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px; }
             </style>
         </head>
         <body>

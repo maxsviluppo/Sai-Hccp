@@ -722,7 +722,7 @@ export class ProductionLogViewComponent {
                 'frumento', 'grano', 'orzo', 'segale', 'avena', 'farro', 'kamut', 'khorasan', 'spelta', 'triticale', 'monococco', 
                 'farina', 'amido di frumento', 'pangrattato', 'crusca', 'germe di grano', 'malto', 'estratto di malto', 
                 'lievito naturale', 'lievito madre', 'seitan', 'couscous', 'bulgur', 'fregola', 'semola', 'pasta', 'gnocchi', 
-                'ostie', 'panatura', 'birra', 'roux'
+                'ostie', 'panatura', 'birra', 'roux', 'pane', 'focaccia', 'pizzetta', 'panino', 'baguette', 'piadina'
             ],
             'Crostacei': [
                 'gamberi', 'gamberetti', 'mazzancolle', 'scampi', 'aragosta', 'astice', 'granchio', 'granseola', 
