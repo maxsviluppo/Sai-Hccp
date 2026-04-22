@@ -3,6 +3,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppStateService, ClientEntity } from '../services/app-state.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: 'app-settings-view',
@@ -314,6 +315,7 @@ import { AppStateService, ClientEntity } from '../services/app-state.service';
 export class SettingsViewComponent {
   state = inject(AppStateService);
   fb = inject(FormBuilder);
+  toast = inject(ToastService);
 
   isEditingAdmin = signal(false);
   isEditingOperator = signal(false);
@@ -376,7 +378,7 @@ export class SettingsViewComponent {
     if (file) {
       const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.state.toastService.error('Logo troppo grande', 'L\'immagine del logo supera i 10MB.');
+        this.toast.error('Logo troppo grande', 'L\'immagine del logo supera i 10MB.');
         return;
       }
       const reader = new FileReader();

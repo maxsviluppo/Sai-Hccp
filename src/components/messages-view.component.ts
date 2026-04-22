@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AppStateService, Message } from '../services/app-state.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
     selector: 'app-messages-view',
@@ -292,6 +293,7 @@ import { AppStateService, Message } from '../services/app-state.service';
 export class MessagesViewComponent {
     state = inject(AppStateService);
     sanitizer = inject(DomSanitizer);
+    toast = inject(ToastService);
 
     previewDoc = signal<{url: string, name: string} | null>(null);
     messageToDelete = signal<string | null>(null);
@@ -353,7 +355,7 @@ export class MessagesViewComponent {
         if (file) {
             const maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                this.state.toastService.error('Allegato troppo grande', 'Il file supera il limite di 10MB.');
+                this.toast.error('Allegato troppo grande', 'Il file supera il limite di 10MB.');
                 return;
             }
 
