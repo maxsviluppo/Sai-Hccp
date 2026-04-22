@@ -593,6 +593,13 @@ export class TraceabilityViewComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+          this.toastService.error('Foto troppo grande', 'L\'immagine supera il limite di 10MB. Riduci la risoluzione prima di caricarla.');
+          return;
+      }
+
       this.selectedFile.set(file);
 
       const reader = new FileReader();

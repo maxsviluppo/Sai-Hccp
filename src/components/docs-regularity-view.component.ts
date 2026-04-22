@@ -209,7 +209,13 @@ export class DocsRegularityViewComponent {
         const files: FileList = event.target.files;
         if (!files || files.length === 0) return;
 
+        const maxSize = 10 * 1024 * 1024;
+
         Array.from(files).forEach(file => {
+            if (file.size > maxSize) {
+                this.toast.error('File troppo grande', `Il file "${file.name}" supera il limite di 10MB.`);
+                return;
+            }
             this.state.saveDocument({
                 clientId: '', // Handled by context
                 category: 'regolarita-documentazione',

@@ -374,6 +374,11 @@ export class SettingsViewComponent {
   onLogoChange(event: any, role: 'ADMIN' | 'OPERATOR') {
     const file = event.target.files[0];
     if (file) {
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        this.state.toastService.error('Logo troppo grande', 'L\'immagine del logo supera i 10MB.');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e: any) => {
         const logoData = e.target.result;

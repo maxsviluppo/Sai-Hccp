@@ -461,12 +461,11 @@ export class DocumentationViewComponent implements OnInit {
 
         const uploadType = type === 'all' ? 'generale' : type;
 
-        // Custom size limit: 10MB for manuali, 2MB default for others
-        const maxSize = uploadType === 'manuali' ? 10 * 1024 * 1024 : 2 * 1024 * 1024;
+        const maxSize = 10 * 1024 * 1024; // Uniform 10MB limit as requested
 
         Array.from(files).forEach((file: any) => {
             if (file.size > maxSize) {
-                this.toast.error('File troppo grande', `Il file "${file.name}" supera il limite di ${maxSize / (1024 * 1024)}MB.`);
+                this.toast.error('File troppo grande', `Il file "${file.name}" supera il limite di 10MB.`);
                 return;
             }
 

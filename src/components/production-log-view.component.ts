@@ -502,6 +502,13 @@ export class ProductionLogViewComponent {
     async handleFile(event: any) {
         const file = event.target.files[0];
         if (!file) return;
+
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            this.toast.error('Foto troppo grande', 'L\'immagine supera il limite di 10MB. Riduci la risoluzione prima di caricarla.');
+            return;
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = (e) => this.tempPhoto = e.target?.result as string;

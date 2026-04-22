@@ -1653,11 +1653,10 @@ export class AppStateService {
         return;
     }
 
-    // CHECK FILE SIZE (Limit to ~15MB real file size, approx 20MB Base64)
-    // Most cloud services and browsers struggle with Base64 payloads > 10-15MB
-    const MAX_SIZE = 20 * 1024 * 1024; // 20MB limit for Base64 (approx 15MB file)
+    // CHECK FILE SIZE (Limit to 10MB raw file size, approx 14MB Base64)
+    const MAX_SIZE = 14 * 1024 * 1024; // ~10.5MB file limit in Base64
     if (doc.fileData && doc.fileData.length > MAX_SIZE) {
-        this.toastService.error('File troppo grande', 'Il file supera i 15MB consigliati. Riduci la risoluzione del PDF o dell\'immagine per il salvataggio cloud.');
+        this.toastService.error('File troppo grande', 'Il file supera i 10MB consentiti. Riduci la risoluzione del PDF o dell\'immagine.');
         return;
     }
 
@@ -1876,9 +1875,9 @@ export class AppStateService {
       replies: []
     };
 
-    // Strict size check for attachments (Supabase payload limits + DB field optimization)
-    if (newMessage.fileData && newMessage.fileData.length > 10 * 1024 * 1024) {
-      this.toastService.error('Allegato troppo grande', 'Il file supera i 10MB. Riduci le dimensioni per l\'invio Cloud.');
+    // Strict size check for attachments (Limit to 10MB raw file, approx 13.5MB Base64)
+    if (newMessage.fileData && newMessage.fileData.length > 13.5 * 1024 * 1024) {
+      this.toastService.error('Allegato troppo grande', 'Il file supera il limite di 10MB.');
       return;
     }
 
