@@ -434,7 +434,18 @@ export class MicrobioMonitorViewComponent implements OnInit {
         }
     }
 
-    printSingleDoc(doc: AppDocument) {
+    async printSingleDoc(doc: AppDocument) {
+        if (!doc.fileData) {
+            this.toast.info('Caricamento...', 'Recupero del file per la stampa.');
+            const data = await this.state.fetchDocumentData(doc.id);
+            if (data) {
+                doc.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Impossibile recuperare il file per la stampa.');
+                return;
+            }
+        }
+
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
@@ -477,7 +488,17 @@ export class MicrobioMonitorViewComponent implements OnInit {
         }, 500);
     }
 
-    previewFile(doc: AppDocument) {
+    async previewFile(doc: AppDocument) {
+        if (!doc.fileData) {
+            this.toast.info('Caricamento...', 'Download del contenuto dal cloud.');
+            const data = await this.state.fetchDocumentData(doc.id);
+            if (data) {
+                doc.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Download fallito.');
+                return;
+            }
+        }
         this.previewDoc.set(doc);
     }
 
@@ -493,8 +514,17 @@ export class MicrobioMonitorViewComponent implements OnInit {
         }
     }
 
-    downloadDoc(doc: AppDocument) {
-        if (!doc.fileData) return;
+    async downloadDoc(doc: AppDocument) {
+        if (!doc.fileData) {
+            this.toast.info('Download in corso...', 'Recupero del file dal server.');
+            const data = await this.state.fetchDocumentData(doc.id);
+            if (data) {
+                doc.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Download fallito.');
+                return;
+            }
+        }
         
         // Handle DataURL via Blob for stability
         if (doc.fileData.startsWith('data:')) {

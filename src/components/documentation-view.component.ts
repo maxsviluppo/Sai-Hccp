@@ -509,7 +509,17 @@ export class DocumentationViewComponent implements OnInit {
         this.state.updateDocumentExpiry(type, targetClientId, expiryDate);
     }
 
-    previewFile(doc: AppDocument) {
+    async previewFile(doc: AppDocument) {
+        if (!doc.fileData) {
+            this.toast.info('Caricamento...', 'Download del contenuto del file dal cloud.');
+            const data = await this.state.fetchDocumentData(doc.id);
+            if (data) {
+                doc.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Impossibile scaricare il contenuto del file.');
+                return;
+            }
+        }
         this.previewDoc.set(doc);
     }
 
@@ -529,8 +539,20 @@ export class DocumentationViewComponent implements OnInit {
         return this.sanitizer.bypassSecurityTrustResourceUrl(base64);
     }
 
-    downloadDoc(doc: any | null) {
+    async downloadDoc(doc: any | null) {
         if (!doc) return;
+        
+        if (!doc.fileData) {
+            this.toast.info('Download in corso...', 'Recupero del file dal server.');
+            const data = await this.state.fetchDocumentData(doc.id);
+            if (data) {
+                doc.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Download fallito.');
+                return;
+            }
+        }
+
         const link = document.createElement('a');
         link.href = doc.fileData;
         link.download = doc.fileName;

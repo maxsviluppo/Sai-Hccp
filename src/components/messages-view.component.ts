@@ -201,7 +201,7 @@ import { ToastService } from '../services/toast.service';
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <button (click)="previewAttachment(message)" class="px-5 py-3 bg-slate-900 text-white font-black text-[11px] uppercase rounded-xl hover:bg-black transition-all shadow-md"><i class="fa-solid fa-eye mr-2"></i> Anteprima</button>
-                                        <button (click)="downloadDoc({url: getDownloadUrl(message), name: message.attachmentName!})" class="px-5 py-3 bg-blue-600 text-white font-black text-[11px] uppercase rounded-xl hover:bg-blue-700 transition-all shadow-md"><i class="fa-solid fa-download mr-2"></i> Scarica</button>
+                                        <button (click)="downloadMessageAttachment(message)" class="px-5 py-3 bg-blue-600 text-white font-black text-[11px] uppercase rounded-xl hover:bg-blue-700 transition-all shadow-md"><i class="fa-solid fa-download mr-2"></i> Scarica</button>
                                     </div>
                                 </div>
                             }
@@ -377,7 +377,18 @@ export class MessagesViewComponent {
         return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
 
-    previewAttachment(message: Message) {
+    async previewAttachment(message: Message) {
+        if (!message.fileData && message.attachmentName) {
+            this.toast.info('Caricamento...', 'Download allegato in corso.');
+            const data = await this.state.fetchMessageAttachment(message.id);
+            if (data) {
+                message.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Impossibile scaricare l\'allegato.');
+                return;
+            }
+        }
+        
         const url = message.fileData || message.attachmentUrl;
         if (url) {
             this.previewDoc.set({ url, name: message.attachmentName || 'allegato' });
@@ -392,6 +403,22 @@ export class MessagesViewComponent {
     isPDF(url?: string): boolean {
         if (!url) return false;
         return url.startsWith('data:application/pdf') || (url || '').toLowerCase().includes('.pdf');
+    }
+
+    async downloadMessageAttachment(message: Message) {
+        if (!message.fileData && message.attachmentName) {
+            this.toast.info('Download...', 'Recupero allegato dal cloud.');
+            const data = await this.state.fetchMessageAttachment(message.id);
+            if (data) {
+                message.fileData = data;
+            } else {
+                this.toast.error('Errore', 'Download fallito.');
+                return;
+            }
+        }
+
+        const doc = { url: message.fileData || '', name: message.attachmentName || 'allegato' };
+        this.downloadDoc(doc);
     }
 
     downloadDoc(doc: {url: string, name: string}) {

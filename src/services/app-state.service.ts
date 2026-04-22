@@ -593,9 +593,11 @@ export class AppStateService {
 
   async syncDocuments() {
     const validClientIds = this.clients().map(c => c.id);
+    // OPTIMIZATION: We do NOT fetch file_data (Base64) here to avoid timeouts and high memory usage.
+    // file_data is fetched on-demand when previewing or downloading.
     const { data: dbDocs } = await supabase
       .from('documents')
-      .select('*')
+      .select('id, client_id, category, type, file_name, file_type, upload_date, expiry_date, user_id')
       .order('upload_date', { ascending: false });
 
     if (dbDocs) {
@@ -608,12 +610,33 @@ export class AppStateService {
           type: d.type,
           fileName: d.file_name,
           fileType: d.file_type,
-          fileData: d.file_data,
+          fileData: '', // Empty initially
           uploadDate: new Date(d.upload_date),
           expiryDate: d.expiry_date,
           userId: d.user_id
         })));
     }
+  }
+
+  /**
+   * Fetches the actual Base64 file data for a document on-demand.
+   */
+  async fetchDocumentData(id: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('file_data')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) {
+        console.error('Error fetching document data:', error);
+        return null;
+    }
+
+    // Update local state so we don't have to fetch it again this session
+    this.documents.update(docs => docs.map(d => d.id === id ? { ...d, fileData: data.file_data } : d));
+    
+    return data.file_data;
   }
 
   async syncProductionRecords() {
@@ -657,7 +680,8 @@ export class AppStateService {
     try {
       const { data: dbMsgs, error: msgsError } = await supabase
         .from('messages')
-        .select('*')
+        // OPTIMIZATION: Exclude file_data (Base64) to avoid timeouts. Fetch on-demand.
+        .select('id, sender_id, sender_name, recipient_type, recipient_id, recipient_user_id, subject, content, attachment_url, attachment_name, timestamp, read, replies')
         .order('timestamp', { ascending: false });
 
       if (msgsError) throw msgsError;
@@ -674,7 +698,7 @@ export class AppStateService {
           content: m.content,
           attachmentUrl: m.attachmentUrl || m.attachment_url,
           attachmentName: m.attachmentName || m.attachment_name,
-          fileData: m.fileData || m.file_data,
+          fileData: '', // Empty initially
           timestamp: new Date(m.timestamp),
           read: m.read,
           replies: (m.replies || []).map((r: any) => ({
@@ -682,7 +706,8 @@ export class AppStateService {
             senderId: r.senderId || r.sender_id,
             senderName: r.senderName || r.sender_name,
             content: r.content,
-            timestamp: new Date(r.timestamp)
+            timestamp: new Date(r.timestamp),
+            fileData: '' // Empty for replies
           }))
         }));
         this.messages.set(mappedMsgs);
@@ -690,6 +715,27 @@ export class AppStateService {
     } catch (e) {
       console.error('Error syncing messages:', e);
     }
+  }
+
+  /**
+   * Fetches the actual Base64 attachment data for a message on-demand.
+   */
+  async fetchMessageAttachment(id: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('file_data')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) {
+        console.error('Error fetching message attachment:', error);
+        return null;
+    }
+
+    // Update local state
+    this.messages.update(msgs => msgs.map(m => m.id === id ? { ...m, fileData: data.file_data } : m));
+    
+    return data.file_data;
   }
   async syncAccounting() {
     // Payments
@@ -903,13 +949,24 @@ export class AppStateService {
   readonly filteredDocuments = computed(() => {
     const user = this.currentUser();
     const targetClientId = this.activeTargetClientId();
+    const allDocs = this.documents();
+
+    // Administrator View: If no filter is active, show ALL documents for ALL units they have access to.
+    if (this.isAdmin() && !this.filterClientId()) {
+        return allDocs.filter(d => d.category !== 'microbio');
+    }
+
     if (!targetClientId) return [];
 
     const allClients = this.clients();
     const target = allClients.find(c => c.id === targetClientId);
-    if (!target) return this.documents().filter(d => d.clientId === targetClientId && d.category !== 'microbio');
+    
+    // If unit not found, fallback to exact match (e.g. 'demo')
+    if (!target) {
+        return allDocs.filter(d => d.clientId === targetClientId && d.category !== 'microbio');
+    }
 
-    // Group by Brand (PIVA or name prefix)
+    // Group by Brand (PIVA or name prefix) to show cross-unit documents
     const brandKey = target.piva || target.name.split(' ')[0].toLowerCase();
     const brandUnitIds = allClients
       .filter(c => {
@@ -918,16 +975,34 @@ export class AppStateService {
       })
       .map(c => c.id);
 
-    return this.documents()
+    return allDocs
       .filter(d => brandUnitIds.includes(d.clientId))
-      .filter(d => d.category !== 'microbio'); // Keep separated from general archive
+      .filter(d => d.category !== 'microbio');
   });
 
   readonly microbioDocuments = computed(() => {
     const targetClientId = this.activeTargetClientId();
+    const allDocs = this.documents();
+
+    if (this.isAdmin() && !this.filterClientId()) {
+        return allDocs.filter(d => d.category === 'microbio');
+    }
+
     if (!targetClientId) return [];
     
-    return this.documents().filter(d => d.clientId === targetClientId && d.category === 'microbio');
+    const allClients = this.clients();
+    const target = allClients.find(c => c.id === targetClientId);
+    if (!target) return allDocs.filter(d => d.clientId === targetClientId && d.category === 'microbio');
+
+    const brandKey = target.piva || target.name.split(' ')[0].toLowerCase();
+    const brandUnitIds = allClients
+      .filter(c => {
+        const cKey = c.piva || c.name.split(' ')[0].toLowerCase();
+        return cKey === brandKey;
+      })
+      .map(c => c.id);
+
+    return allDocs.filter(d => brandUnitIds.includes(d.clientId) && d.category === 'microbio');
   });
 
   // Global Filtered Checklists for Admin View
