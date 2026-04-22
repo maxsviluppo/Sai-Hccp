@@ -622,10 +622,10 @@ export class OperativeChecklistComponent {
       let isIssue = false;
       let alertMsg = '';
 
-      if (nameLower.includes('ghiaccio') || nameLower.includes('macchina del freddo')) {
+      if (nameLower.includes('ghiaccio')) {
           if (tempValue !== -20) {
               isIssue = true;
-              alertMsg = 'Macchina del Freddo/Ghiaccio fuori parametro (deve essere esattamente -20°C)';
+              alertMsg = 'Macchina del Ghiaccio fuori parametro (deve essere esattamente -20°C)';
           }
       } else if (nameLower.includes('congelatore')) {
           if (tempValue > -18) {

@@ -21,7 +21,7 @@
       </div>
 
       <div class="relative z-10 flex flex-col items-center">
-        <img src="assets/logo.png?v=2" class="w-32 h-32 mb-6 drop-shadow-2xl animate-fade-in">
+        <img src="Logo_canva_SAI.png" class="w-32 h-32 mb-6 drop-shadow-2xl animate-fade-in">
         <h1 class="text-3xl font-bold tracking-tight mb-2">HACCP Pro</h1>
         <p class="text-slate-400 text-sm font-medium tracking-widest uppercase">Enterprise Solution</p>
       </div>
@@ -222,6 +222,41 @@
         <i class="fa-solid fa-bars-staggered text-xl"></i>
       </button>
     </header>
+
+    <!-- Mobile Admin Context Switcher -->
+    @if (state.isAdmin()) {
+    <div class="print:hidden md:hidden bg-slate-50 border-b border-slate-200 px-4 py-3 flex gap-3 overflow-x-auto custom-scrollbar scrollbar-hide z-30">
+        <!-- Company Selector -->
+        <div class="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-1.5 shrink-0 shadow-sm min-w-[160px]">
+            <i class="fa-solid fa-hotel text-slate-400 text-[10px] mr-2"></i>
+            <select [value]="state.filterClientId() || ''"
+                (change)="state.setClientIdFilter($any($event.target).value)"
+                class="bg-transparent text-xs text-slate-700 font-bold focus:outline-none border-none p-0 pr-4 w-full">
+                <option value="">Azienda...</option>
+                @for (client of state.groupedViewClients(); track client.id) {
+                <option [value]="client.id">
+                    {{ client.piva ? client.name.split(' ')[0] : client.name }}
+                </option>
+                }
+            </select>
+        </div>
+
+        <!-- Collaborator Selector -->
+        @if (state.filterClientId()) {
+        <div class="flex items-center bg-white rounded-xl border border-slate-200 px-3 py-1.5 shrink-0 shadow-sm min-w-[160px]">
+            <i class="fa-solid fa-users-gear text-slate-400 text-[10px] mr-2"></i>
+            <select [value]="state.filterCollaboratorId()"
+                (change)="state.setCollaboratorFilter($any($event.target).value)"
+                class="bg-transparent text-xs text-slate-700 font-bold focus:outline-none border-none p-0 pr-4 w-full">
+                <option value="">Tutte le Unità</option>
+                @for (user of state.filteredSystemUsers(); track user.id) {
+                <option [value]="user.id">{{ user.name }}</option>
+                }
+            </select>
+        </div>
+        }
+    </div>
+    }
 
     <!-- Top Header (Desktop) -->
     <header

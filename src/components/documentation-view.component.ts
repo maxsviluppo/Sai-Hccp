@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AppStateService, AppDocument } from '../services/app-state.service';
@@ -214,16 +214,20 @@ import { ToastService } from '../services/toast.service';
                                     <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-slate-200 hover:border-blue-300 transition-colors shadow-sm relative group">
                                         <div class="flex items-center gap-4 overflow-hidden pr-2">
                                             <div [class]="'w-12 h-12 rounded-md flex items-center justify-center shrink-0 border overflow-hidden shadow-sm bg-' + getDocColor(doc.type) + '-50 border-' + getDocColor(doc.type) + '-100 text-' + getDocColor(doc.type) + '-600'">
-                                                @if (isImage(doc.fileType)) {
+                                                @if (isImage(doc.fileType) && doc.fileData) {
                                                     <img [src]="doc.fileData" class="w-full h-full object-cover">
                                                 } @else {
                                                     <i [class]="'fa-solid ' + getDocIcon(doc.type) + ' text-xl'"></i>
                                                 }
                                             </div>
                                             <div class="min-w-0">
-                                                <span class="text-sm font-bold text-slate-700 block truncate mb-0.5" [title]="doc.fileName">{{ doc.fileName }}</span>
+                                                <span class="text-sm font-bold text-slate-700 block truncate mb-0.5" [title]="getDisplayFileName(doc.fileName)">{{ getDisplayFileName(doc.fileName) }}</span>
                                                 <div class="flex items-center gap-2 text-[10px] text-slate-500">
                                                     <span>{{ doc.uploadDate | date:'dd/MM/yy' }}</span>
+                                                    @if (getFileSize(doc.fileName)) {
+                                                        <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                        <span class="font-medium text-slate-400">{{ getFileSize(doc.fileName) }}</span>
+                                                    }
                                                     <span class="w-1 h-1 rounded-full bg-slate-300"></span>
                                                     <span class="leading-tight">{{ getDocTypeLabel(doc.type) }}</span>
                                                 </div>
@@ -295,7 +299,7 @@ import { ToastService } from '../services/toast.service';
                             <i [class]="'fa-solid ' + getDocIcon(previewDoc()?.type || '') + ' text-lg'"></i>
                         </div>
                         <div class="min-w-0 pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm truncate" [title]="previewDoc()?.fileName">{{ previewDoc()?.fileName }}</h4>
+                            <h4 class="font-bold text-slate-800 text-sm truncate" [title]="getDisplayFileName(previewDoc()?.fileName || '')">{{ getDisplayFileName(previewDoc()?.fileName || '') }}</h4>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ getDocTypeLabel(previewDoc()?.type || '') }} • {{ previewDoc()?.uploadDate | date:'dd/MM/yy HH:mm' }}</p>
                         </div>
                     </div>
@@ -377,15 +381,11 @@ export class DocumentationViewComponent implements OnInit {
     docDefinitions = [
         { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot', color: 'indigo' },
         { id: 'camerale', label: 'Camerale', icon: 'fa-building-columns', color: 'amber' },
-        { id: 'haccp_plan', label: 'Piano autocontrollo sistema HACCP', icon: 'fa-file-shield', color: 'emerald' },
+        { id: 'haccp_plan', label: 'Manuale applicazione sistema HACCP', icon: 'fa-file-shield', color: 'emerald' },
         { id: 'osa', label: 'Attestato OSA', icon: 'fa-user-graduate', color: 'blue' },
-        { id: 'pec', label: 'PEC (Posta Elettronica Certificata)', icon: 'fa-envelope-circle-check', hasExpiry: true, color: 'violet' },
-        { id: 'firma_digitale', label: 'Firma digitale', icon: 'fa-signature', color: 'rose' },
-        { id: 'registro_personale', label: 'Registro del personale', icon: 'fa-users-rectangle', color: 'cyan' },
-        { id: 'inps_inail', label: 'Iscrizione INPS / INAIL', icon: 'fa-stamp', color: 'orange' },
+        { id: 'registro_personale', label: 'Elenco del personale con mansioni', icon: 'fa-users-rectangle', color: 'cyan' },
         { id: 'messa_terra', label: 'DM 37/08 messa a terra DPR 462/01', icon: 'fa-bolt', color: 'yellow' },
         { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation', color: 'red' },
-        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney', color: 'teal' },
         
         { id: 'training_divider', type: 'divider', label: 'Formazione Lavoro' },
         
@@ -429,6 +429,41 @@ export class DocumentationViewComponent implements OnInit {
         return def ? def.label : type.toUpperCase();
     }
 
+    constructor() {
+        effect(() => {
+            const docs = this.state.filteredDocuments();
+            this.autoLoadImagePreviews(docs);
+        }, { allowSignalWrites: true });
+    }
+
+    private autoLoadImagePreviews(docs: AppDocument[]) {
+        // Automatic sequential loading of image previews for files < 1MB
+        const imagesToLoad = docs.filter(d => 
+            this.isImage(d.fileType) && 
+            !d.fileData && 
+            this.getFileSizeRaw(d.fileName) < 1024 * 1024
+        );
+        
+        if (imagesToLoad.length > 0) {
+            this.processImageQueue(imagesToLoad);
+        }
+    }
+
+    private async processImageQueue(docs: AppDocument[]) {
+        for (const doc of docs) {
+            // Re-verify it hasn't been loaded in the meantime
+            if (!doc.fileData) {
+                await this.state.fetchDocumentData(doc.id);
+            }
+        }
+    }
+
+    private getFileSizeRaw(name: string): number {
+        if (!name || !name.includes('|')) return 0;
+        const sizeStr = name.split('|')[1];
+        return parseInt(sizeStr, 10) || 0;
+    }
+
     getTargetUnitName(): string {
         const targetClientId = this.state.activeTargetClientId();
         const allClients = this.state.clients();
@@ -442,8 +477,7 @@ export class DocumentationViewComponent implements OnInit {
     }
 
     isTargetUnitSelected(): boolean {
-        if (!this.state.isAdmin()) return true;
-        return !!this.state.filterClientId();
+        return !!this.state.activeTargetClientId();
     }
 
     getDocsByType(type: string) {
@@ -452,7 +486,7 @@ export class DocumentationViewComponent implements OnInit {
     }
 
     handleFileSelect(event: any, type: string) {
-        if (!this.isTargetUnitSelected()) {
+        if (this.state.isAdmin() && !this.state.filterClientId()) {
             this.toast.error('Errore', 'Seleziona un\'azienda prima di caricare documenti.');
             return;
         }
@@ -475,7 +509,7 @@ export class DocumentationViewComponent implements OnInit {
                     clientId: '', // Managed by state.saveDocument
                     category: 'regolarita-documentazione',
                     type: uploadType,
-                    fileName: file.name,
+                    fileName: `${file.name}|${file.size}`,
                     fileType: file.type,
                     fileData: e.target.result,
                     uploadDate: new Date()
@@ -514,13 +548,32 @@ export class DocumentationViewComponent implements OnInit {
             this.toast.info('Caricamento...', 'Download del contenuto del file dal cloud.');
             const data = await this.state.fetchDocumentData(doc.id);
             if (data) {
-                doc.fileData = data;
+                // Ensure data has the correct prefix if it's missing in DB
+                const finalData = (data && !data.startsWith('data:')) 
+                    ? `data:${doc.fileType};base64,${data}` 
+                    : data;
+                this.previewDoc.set({ ...doc, fileData: finalData || '' });
             } else {
                 this.toast.error('Errore', 'Impossibile scaricare il contenuto del file.');
                 return;
             }
+        } else {
+            this.previewDoc.set({ ...doc });
         }
-        this.previewDoc.set(doc);
+    }
+
+    getDisplayFileName(name: string): string {
+        return name ? name.split('|')[0] : '';
+    }
+
+    getFileSize(name: string): string {
+        if (!name || !name.includes('|')) return '';
+        const sizeStr = name.split('|')[1];
+        const bytes = parseInt(sizeStr, 10);
+        if (isNaN(bytes)) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
     isImage(type: string): boolean {
@@ -528,7 +581,7 @@ export class DocumentationViewComponent implements OnInit {
     }
 
     isPdf(type: string): boolean {
-        return type === 'application/pdf';
+        return type.startsWith('application/pdf');
     }
 
     isText(type: string): boolean {
@@ -555,7 +608,7 @@ export class DocumentationViewComponent implements OnInit {
 
         const link = document.createElement('a');
         link.href = doc.fileData;
-        link.download = doc.fileName;
+        link.download = this.getDisplayFileName(doc.fileName);
         link.click();
     }
 

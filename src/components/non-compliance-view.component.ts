@@ -1,5 +1,6 @@
 import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
 
 interface CheckItem {
@@ -11,7 +12,7 @@ interface CheckItem {
 @Component({
     selector: 'app-non-compliance-view',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     template: `
     <div class="space-y-8 pb-10">
         <!-- Premium Header Banner -->
@@ -157,7 +158,7 @@ interface CheckItem {
                                      'bg-emerald-50 border-emerald-100 text-emerald-600')">
                                     <i [class]="'fa-solid ' + (nc.status === 'OPEN' ? 'fa-exclamation' : nc.status === 'IN_PROGRESS' ? 'fa-spinner' : 'fa-check')"></i>
                                 </div>
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2 mb-1">
                                         <h4 class="text-sm font-black text-slate-800 truncate">{{ nc.itemName || 'Anomalia Generica' }}</h4>
                                         <span [class]="'text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider ' + 
@@ -167,7 +168,13 @@ interface CheckItem {
                                             {{ nc.status === 'OPEN' ? 'Aperta' : nc.status === 'IN_PROGRESS' ? 'In lavorazione' : 'Chiusa' }}
                                         </span>
                                     </div>
-                                    <p class="text-[11px] text-slate-500 line-clamp-1 mb-2">{{ nc.description }}</p>
+                                    <p class="text-[11px] text-slate-500 line-clamp-1 mb-1">{{ nc.description }}</p>
+                                    @if (nc.resolution) {
+                                        <div class="bg-emerald-50/50 p-2 rounded-lg border border-emerald-100 mb-2 flex items-start gap-2">
+                                            <i class="fa-solid fa-check-double text-emerald-500 mt-0.5 text-[10px]"></i>
+                                            <p class="text-[10px] text-emerald-800 italic leading-snug"><span class="font-black uppercase tracking-tighter mr-1">Soluzione:</span> {{ nc.resolution }}</p>
+                                        </div>
+                                    }
                                     <div class="flex items-center gap-3 text-[9px] font-bold text-slate-400">
                                         <span><i class="fa-solid fa-calendar mr-1"></i>{{ nc.date | date:'dd/MM/yyyy' }}</span>
                                         @if (nc.createdAt) {
@@ -177,10 +184,18 @@ interface CheckItem {
                                 </div>
                             </div>
                             
-                            <button (click)="printAnomaly(nc)" 
-                                    class="shrink-0 h-10 px-5 bg-slate-900 hover:bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                                <i class="fa-solid fa-print"></i> Stampa Verbale
-                            </button>
+                            <div class="flex items-center gap-2 shrink-0">
+                                @if (nc.status !== 'CLOSED') {
+                                    <button (click)="openResolutionModal(nc)"
+                                            class="h-10 px-5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-rose-200 shadow-sm active:scale-95">
+                                        <i class="fa-solid fa-check-to-slot"></i> Gestisci
+                                    </button>
+                                }
+                                <button (click)="printAnomaly(nc)" 
+                                        class="h-10 px-5 bg-slate-900 hover:bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                    <i class="fa-solid fa-print"></i> Stampa
+                                </button>
+                            </div>
                         </div>
                     }
                 }
@@ -246,6 +261,56 @@ interface CheckItem {
                 </div>
             </div>
         }
+
+        <!-- Resolution/Closure Modal -->
+        @if (resolutionModalOpen()) {
+            <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" (click)="closeResolutionModal()"></div>
+                <div class="relative bg-white w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                    <div class="p-8 bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex-shrink-0">
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-lg border border-white/30">
+                                <i class="fa-solid fa-check-to-slot"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black">Risoluzione Anomalia</h3>
+                                <p class="text-emerald-100 text-[9px] font-black uppercase tracking-widest">Registrazione Azione Correttiva</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-8 space-y-6">
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Dettaglio Segnalazione</label>
+                            <p class="text-sm font-bold text-slate-800 mb-1">{{ selectedNcForResolution()?.itemName }}</p>
+                            <p class="text-xs text-slate-500 leading-relaxed">{{ selectedNcForResolution()?.description }}</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-pen-to-square"></i> Descrizione della Soluzione
+                            </label>
+                        <textarea [ngModel]="resolutionText"
+                                  (ngModelChange)="resolutionText = $event"
+                                  placeholder="Descrivi come è stata gestita l'anomalia e quali azioni sono state intraprese per risolverla..."
+                                  class="w-full h-32 p-5 bg-white border-2 border-slate-100 rounded-[24px] text-sm text-slate-700 focus:outline-none focus:border-emerald-500 transition-all shadow-inner resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="p-8 pt-0 flex gap-4">
+                        <button (click)="closeResolutionModal()"
+                                class="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200">
+                            Annulla
+                        </button>
+                        <button (click)="confirmResolution()"
+                                [disabled]="!resolutionText"
+                                class="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95 disabled:opacity-50 disabled:grayscale">
+                            Conferma e Chiudi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
     `,
     styles: [`
@@ -262,6 +327,11 @@ export class NonComplianceViewComponent {
     state = inject(AppStateService);
     moduleId = 'non-compliance';
     showStandardInfo = signal(false);
+
+    // Resolution state
+    resolutionModalOpen = signal(false);
+    selectedNcForResolution = signal<any>(null);
+    resolutionText = '';
 
     checks = signal<CheckItem[]>([
         { id: 'nc_model', label: 'COMPILAZIONE MODELLO NON CONFORMITÀ / RICHIAMO', checked: false }
@@ -334,6 +404,26 @@ export class NonComplianceViewComponent {
         try {
             return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         } catch { return ''; }
+    }
+
+    openResolutionModal(nc: any) {
+        this.selectedNcForResolution.set(nc);
+        this.resolutionText = nc.resolution || '';
+        this.resolutionModalOpen.set(true);
+    }
+
+    closeResolutionModal() {
+        this.resolutionModalOpen.set(false);
+        this.selectedNcForResolution.set(null);
+        this.resolutionText = '';
+    }
+
+    async confirmResolution() {
+        const nc = this.selectedNcForResolution();
+        if (!nc || !this.resolutionText) return;
+
+        await this.state.updateNonConformityStatus(nc.id, 'CLOSED', this.resolutionText);
+        this.closeResolutionModal();
     }
 
     printAnomaly(nc: any) {
@@ -442,7 +532,7 @@ export class NonComplianceViewComponent {
                 <span class="section-label">Dettagli Anomalia</span>
 
                 <div class="content-block">
-                    <div class="content-label">Oggetto / Attrezzatura Interrata</div>
+                    <div class="content-label">Oggetto / Attrezzatura Interessata</div>
                     <div class="content-text" style="font-weight: 700;">${nc.itemName || 'Non specificato'}</div>
                 </div>
 
@@ -452,9 +542,9 @@ export class NonComplianceViewComponent {
                 </div>
 
                 <div class="content-block" style="margin-bottom: 0;">
-                    <div class="content-label">Azioni Correttive Intraprese / Note</div>
-                    <div class="content-text" style="color: #94a3b8; font-style: italic;">
-                        ${nc.status === 'CLOSED' ? 'L\'anomalia è stata gestita e risolta secondo protocollo.' : 'Da compilare a cura del responsabile...'}
+                    <div class="content-label">Azioni Correttive Intraprese / Soluzione</div>
+                    <div class="content-text" style="${nc.resolution ? 'color: #065f46; font-weight: 600;' : 'color: #94a3b8; font-style: italic;'}">
+                        ${nc.resolution || 'Da compilare a cura del responsabile...'}
                     </div>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AppStateService, AppDocument } from '../services/app-state.service';
@@ -81,15 +81,21 @@ import { FormsModule } from '@angular/forms';
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div [class]="'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-sm border ' + (isImage(doc.fileType) ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-rose-50 border-rose-100 text-rose-600')">
-                                        @if (isImage(doc.fileType)) {
+                                        @if (isImage(doc.fileType) && doc.fileData) {
                                             <img [src]="doc.fileData" class="w-full h-full object-cover rounded-md">
                                         } @else {
                                             <i class="fa-solid" [class.fa-file-pdf]="isPdf(doc.fileType)" [class.fa-file-lines]="!isPdf(doc.fileType)"></i>
                                         }
                                     </div>
                                     <div class="min-w-0 pr-4">
-                                        <p class="font-bold text-slate-800 truncate leading-tight mb-0.5">{{ doc.fileName }}</p>
-                                        <p class="text-[10px] text-slate-500">Rapporto di prova microbiologica</p>
+                                        <p class="font-bold text-slate-800 truncate leading-tight mb-0.5" [title]="getDisplayFileName(doc.fileName)">{{ getDisplayFileName(doc.fileName) }}</p>
+                                        <div class="flex items-center gap-2 text-[10px] text-slate-500">
+                                            <span>Rapporto di prova</span>
+                                            @if (getFileSize(doc.fileName)) {
+                                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                <span class="font-medium text-slate-400">{{ getFileSize(doc.fileName) }}</span>
+                                            }
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -150,7 +156,7 @@ import { FormsModule } from '@angular/forms';
                             <i class="fa-solid fa-flask-vial text-lg"></i>
                         </div>
                         <div class="min-w-0 pr-4">
-                            <h4 class="font-bold text-slate-800 text-sm truncate" [title]="previewDoc()?.fileName">{{ previewDoc()?.fileName }}</h4>
+                            <h4 class="font-bold text-slate-800 text-sm truncate" [title]="getDisplayFileName(previewDoc()?.fileName || '')">{{ getDisplayFileName(previewDoc()?.fileName || '') }}</h4>
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Analisi Microbiologica • {{ previewDoc()?.uploadDate | date:'dd/MM/yy HH:mm' }}</p>
                         </div>
                     </div>
@@ -416,7 +422,7 @@ export class MicrobioMonitorViewComponent implements OnInit {
                     clientId: '', // Handled by service
                     category: 'microbio',
                     type: 'microbio-analisi',
-                    fileName: this.customFileName || this.selectedFile!.name,
+                    fileName: `${this.customFileName || this.selectedFile!.name}|${this.selectedFile!.size}`,
                     fileType: this.selectedFile!.type,
                     fileData: e.target.result,
                     uploadDate: new Date(this.uploadDate),
@@ -434,12 +440,47 @@ export class MicrobioMonitorViewComponent implements OnInit {
         }
     }
 
+    constructor() {
+        effect(() => {
+            const docs = this.state.microbioDocuments();
+            this.autoLoadImagePreviews(docs);
+        }, { allowSignalWrites: true });
+    }
+
+    private autoLoadImagePreviews(docs: AppDocument[]) {
+        const imagesToLoad = docs.filter(d => 
+            this.isImage(d.fileType) && 
+            !d.fileData && 
+            this.getFileSizeRaw(d.fileName) < 1024 * 1024
+        );
+        
+        if (imagesToLoad.length > 0) {
+            this.processImageQueue(imagesToLoad);
+        }
+    }
+
+    private async processImageQueue(docs: AppDocument[]) {
+        for (const doc of docs) {
+            if (!doc.fileData) {
+                await this.state.fetchDocumentData(doc.id);
+            }
+        }
+    }
+
+    private getFileSizeRaw(name: string): number {
+        if (!name || !name.includes('|')) return 0;
+        const sizeStr = name.split('|')[1];
+        return parseInt(sizeStr, 10) || 0;
+    }
+
     async printSingleDoc(doc: AppDocument) {
         if (!doc.fileData) {
             this.toast.info('Caricamento...', 'Recupero del file per la stampa.');
             const data = await this.state.fetchDocumentData(doc.id);
             if (data) {
-                doc.fileData = data;
+                doc.fileData = (data && !data.startsWith('data:')) 
+                    ? `data:${doc.fileType};base64,${data}` 
+                    : data;
             } else {
                 this.toast.error('Errore', 'Impossibile recuperare il file per la stampa.');
                 return;
@@ -470,7 +511,7 @@ export class MicrobioMonitorViewComponent implements OnInit {
                     </div>
                     <div class="info">
                         <p><b>Data Caricamento:</b> ${new Date(doc.uploadDate).toLocaleString('it-IT')}</p>
-                        <p><b>Nome File:</b> ${doc.fileName}</p>
+                        <p><b>Nome File:</b> ${this.getDisplayFileName(doc.fileName)}</p>
                         <p><b>Azienda:</b> ${this.state.companyConfig().name}</p>
                     </div>
                     <div class="content">
@@ -493,18 +534,23 @@ export class MicrobioMonitorViewComponent implements OnInit {
             this.toast.info('Caricamento...', 'Download del contenuto dal cloud.');
             const data = await this.state.fetchDocumentData(doc.id);
             if (data) {
-                doc.fileData = data;
+                // Pre-pend correct MIME type if missing
+                const finalData = (data && !data.startsWith('data:')) 
+                    ? `data:${doc.fileType};base64,${data}` 
+                    : data;
+                this.previewDoc.set({ ...doc, fileData: finalData || '' });
             } else {
                 this.toast.error('Errore', 'Download fallito.');
                 return;
             }
+        } else {
+            this.previewDoc.set({ ...doc });
         }
-        this.previewDoc.set(doc);
     }
 
     renameFile(doc: AppDocument) {
         this.renamingDoc.set(doc);
-        this.newFileName = doc.fileName;
+        this.newFileName = this.getDisplayFileName(doc.fileName);
     }
 
     confirmRename() {
@@ -537,13 +583,13 @@ export class MicrobioMonitorViewComponent implements OnInit {
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = doc.fileName;
+            link.download = this.getDisplayFileName(doc.fileName);
             link.click();
             URL.revokeObjectURL(blobUrl);
         } else {
             const link = document.createElement('a');
             link.href = doc.fileData;
-            link.download = doc.fileName;
+            link.download = this.getDisplayFileName(doc.fileName);
             link.click();
         }
     }
@@ -571,5 +617,19 @@ export class MicrobioMonitorViewComponent implements OnInit {
 
     getSafeUrl(base64: string) {
         return this.sanitizer.bypassSecurityTrustResourceUrl(base64);
+    }
+
+    getDisplayFileName(name: string): string {
+        return name ? name.split('|')[0] : '';
+    }
+
+    getFileSize(name: string): string {
+        if (!name || !name.includes('|')) return '';
+        const sizeStr = name.split('|')[1];
+        const bytes = parseInt(sizeStr, 10);
+        if (isNaN(bytes)) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 }

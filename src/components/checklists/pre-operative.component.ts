@@ -649,15 +649,11 @@ export class PreOperationalChecklistComponent {
     docDefinitions = [
         { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot' },
         { id: 'camerale', label: 'Camerale', icon: 'fa-building-columns' },
-        { id: 'haccp_plan', label: 'Piano autocontrollo sistema HACCP', icon: 'fa-file-shield' },
+        { id: 'haccp_plan', label: 'Manuale applicazione sistema HACCP', icon: 'fa-file-shield' },
         { id: 'osa', label: 'Attestato OSA', icon: 'fa-user-graduate' },
-        { id: 'pec', label: 'PEC (Posta Elettronica Certificata)', icon: 'fa-envelope-circle-check', hasExpiry: true },
-        { id: 'firma_digitale', label: 'Firma digitale', icon: 'fa-signature' },
-        { id: 'registro_personale', label: 'Registro del personale', icon: 'fa-users-rectangle' },
-        { id: 'inps_inail', label: 'Iscrizione INPS / INAIL', icon: 'fa-stamp' },
+        { id: 'registro_personale', label: 'Elenco del personale con mansioni', icon: 'fa-users-rectangle' },
         { id: 'messa_terra', label: 'DM 37/08 messa a terra DPR 462/01', icon: 'fa-bolt' },
-        { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation' },
-        { id: 'locazione', label: 'Contratto locazione o titolo proprietà', icon: 'fa-house-chimney' }
+        { id: 'dvr', label: 'DVR (Documento Valutazione Rischi)', icon: 'fa-triangle-exclamation' }
     ];
 
     globalItems = signal<{ id: string; label: string; icon: string; status: 'pending' | 'ok' | 'issue'; note?: string }[]>([

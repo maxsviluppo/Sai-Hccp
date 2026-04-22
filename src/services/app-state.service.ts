@@ -375,9 +375,9 @@ export class AppStateService {
 
   readonly currentLogo = computed(() => {
     if (this.isAdmin()) {
-      return this.adminCompany().logo || '/logo.png';
+      return this.adminCompany().logo || '/Logo_canva_SAI.png';
     }
-    return this.companyConfig().logo || '/logo.png';
+    return this.companyConfig().logo || '/Logo_canva_SAI.png';
   });
 
   // --- Admin Company / Master Data ---
@@ -392,7 +392,7 @@ export class AppStateService {
     pec: 'haccppro@legalmail.it',
     sdi: 'M5UXCR1',
     licenseNumber: 'HQ-RE-2024-001',
-    logo: '/logo.png'
+    logo: '/Logo_canva_SAI.png'
   });
 
   // Editing Permission Logic
@@ -454,7 +454,7 @@ export class AppStateService {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.syncUsers())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, (payload) => this.syncDocuments())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'production_records' }, () => this.syncProductionRecords())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.refreshAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.syncNonConformities())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, () => this.syncEquipment())
       .subscribe((status) => {
           console.log('[HACCP-SYNC] Supabase Status:', status);
@@ -802,6 +802,7 @@ export class AppStateService {
         itemName: nc.item_name,
         responsibleId: nc.responsible_id,
         status: nc.status || 'OPEN',
+        resolution: nc.resolution,
         createdAt: nc.created_at ? new Date(nc.created_at) : undefined
       })));
     }
@@ -935,6 +936,7 @@ export class AppStateService {
     itemName?: string;
     responsibleId?: string;
     status: 'OPEN' | 'CLOSED' | 'IN_PROGRESS';
+    resolution?: string;
     createdAt?: Date;
   }[]>([]);
 
@@ -947,36 +949,14 @@ export class AppStateService {
 
   // Global Filtered Documents for Admin View
   readonly filteredDocuments = computed(() => {
-    const user = this.currentUser();
     const targetClientId = this.activeTargetClientId();
     const allDocs = this.documents();
 
-    // Administrator View: If no filter is active, show ALL documents for ALL units they have access to.
-    if (this.isAdmin() && !this.filterClientId()) {
-        return allDocs.filter(d => d.category !== 'microbio');
-    }
-
     if (!targetClientId) return [];
 
-    const allClients = this.clients();
-    const target = allClients.find(c => c.id === targetClientId);
-    
-    // If unit not found, fallback to exact match (e.g. 'demo')
-    if (!target) {
-        return allDocs.filter(d => d.clientId === targetClientId && d.category !== 'microbio');
-    }
-
-    // Group by Brand (PIVA or name prefix) to show cross-unit documents
-    const brandKey = target.piva || target.name.split(' ')[0].toLowerCase();
-    const brandUnitIds = allClients
-      .filter(c => {
-        const cKey = c.piva || c.name.split(' ')[0].toLowerCase();
-        return cKey === brandKey;
-      })
-      .map(c => c.id);
-
+    // Strict filtering: Only documents for the currently active unit/company
     return allDocs
-      .filter(d => brandUnitIds.includes(d.clientId))
+      .filter(d => d.clientId === targetClientId)
       .filter(d => d.category !== 'microbio');
   });
 
@@ -984,25 +964,10 @@ export class AppStateService {
     const targetClientId = this.activeTargetClientId();
     const allDocs = this.documents();
 
-    if (this.isAdmin() && !this.filterClientId()) {
-        return allDocs.filter(d => d.category === 'microbio');
-    }
-
     if (!targetClientId) return [];
-    
-    const allClients = this.clients();
-    const target = allClients.find(c => c.id === targetClientId);
-    if (!target) return allDocs.filter(d => d.clientId === targetClientId && d.category === 'microbio');
 
-    const brandKey = target.piva || target.name.split(' ')[0].toLowerCase();
-    const brandUnitIds = allClients
-      .filter(c => {
-        const cKey = c.piva || c.name.split(' ')[0].toLowerCase();
-        return cKey === brandKey;
-      })
-      .map(c => c.id);
-
-    return allDocs.filter(d => brandUnitIds.includes(d.clientId) && d.category === 'microbio');
+    // Strict filtering: Only documents for the currently active unit/company
+    return allDocs.filter(d => d.clientId === targetClientId && d.category === 'microbio');
   });
 
   // Global Filtered Checklists for Admin View
@@ -1420,9 +1385,50 @@ export class AppStateService {
     });
   }
 
-  deleteChecklist(id: string) {
+  async deleteChecklist(id: string) {
+    const record = this.checklistRecords().find(r => r.id === id);
+    if (!record) return;
+
+    // Optimistic local update
     this.checklistRecords.update(records => records.filter(r => r.id !== id));
-    this.toastService.success('Record Eliminato', 'La registrazione è stata rimossa.');
+
+    try {
+      const { error } = await supabase
+        .from('checklist_records')
+        .delete()
+        .eq('id', id)
+        .eq('client_id', record.clientId);
+
+      if (error) throw error;
+      this.toastService.success('Record Eliminato', 'La registrazione è stata rimossa dal database.');
+    } catch (e) {
+      console.error('Error deleting checklist record:', e);
+      this.toastService.error('Errore', 'Impossibile eliminare la registrazione dal database.');
+      await this.syncChecklistRecords();
+    }
+  }
+
+  async deleteNonConformity(id: string) {
+    const nc = this.nonConformities().find(n => n.id === id);
+    if (!nc) return;
+
+    // Optimistic local update
+    this.nonConformities.update(list => list.filter(n => n.id !== id));
+
+    try {
+      const { error } = await supabase
+        .from('non_conformities')
+        .delete()
+        .eq('id', id)
+        .eq('client_id', nc.clientId);
+
+      if (error) throw error;
+      this.toastService.success('Anomalia Eliminata', 'La non conformità è stata rimossa permanentemente.');
+    } catch (e) {
+      console.error('Error deleting non-conformity:', e);
+      this.toastService.error('Errore', 'Impossibile eliminare la non conformità dal database.');
+      await this.syncNonConformities();
+    }
   }
 
   getChecklistHistory(moduleId: string) {
@@ -1805,17 +1811,26 @@ export class AppStateService {
   }
 
   async updateDocumentName(id: string, newName: string) {
+    let finalName = newName;
+    const existingDoc = this.documents().find(d => d.id === id);
+    if (existingDoc && existingDoc.fileName.includes('|')) {
+        const sizePart = existingDoc.fileName.split('|')[1];
+        if (!newName.includes('|')) {
+            finalName = `${newName}|${sizePart}`;
+        }
+    }
+
     // Local Update
     this.documents.update(allDocs => allDocs.map(d => {
         if (d.id === id) {
-            return { ...d, fileName: newName };
+            return { ...d, fileName: finalName };
         }
         return d;
     }));
 
     // DB Update
     const { error } = await supabase.from('documents')
-        .update({ file_name: newName })
+        .update({ file_name: finalName })
         .eq('id', id);
 
     if (error) {
@@ -2334,23 +2349,53 @@ export class AppStateService {
             timestamp: new Date().toISOString()
         });
 
-        this.refreshAllData();
+        this.syncNonConformities();
     } catch (e) {
         console.error('Error saving non-conformity:', e);
     }
   }
 
-  async updateNonConformityStatus(id: string, status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED') {
+  async updateNonConformityStatus(id: string, status: 'OPEN' | 'IN_PROGRESS' | 'CLOSED', resolution?: string) {
+    const nc = this.nonConformities().find(n => n.id === id);
+    if (!nc) {
+        console.warn('[HACCP-NC] NC not found locally:', id);
+        return;
+    }
+
     // Optimistic local update
     this.nonConformities.update(list =>
-      list.map(nc => nc.id === id ? { ...nc, status } : nc)
+      list.map(n => n.id === id ? { ...n, status, resolution: resolution || n.resolution } : n)
     );
+
     // Persist to Supabase
     try {
-      const { error } = await supabase.from('non_conformities').update({ status }).eq('id', id);
+      const updateData: any = { 
+        status: status,
+        updated_at: new Date()
+      };
+      
+      // If resolution is provided, we update it. 
+      // Note: we use 'resolution' as established in previous session.
+      if (resolution !== undefined) {
+        updateData.resolution = resolution;
+      }
+      
+      const { error } = await supabase
+        .from('non_conformities')
+        .update(updateData)
+        .eq('id', id)
+        .eq('client_id', nc.clientId);
+
       if (error) throw error;
-    } catch (e) {
-      console.error('Error updating non-conformity status:', e);
+      
+      this.toastService.success('Operazione Completata', 'La non conformità è stata aggiornata con successo.');
+    } catch (e: any) {
+      console.error('Error updating non-conformity:', e);
+      const dbError = e.message || 'Errore di connessione al database.';
+      this.toastService.error('Errore', `Impossibile aggiornare: ${dbError}`);
+      
+      // Rollback
+      await this.syncNonConformities();
     }
   }
 

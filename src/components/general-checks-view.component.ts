@@ -375,6 +375,15 @@ interface CheckCategory {
 
                   <p class="text-xs text-slate-600 leading-relaxed mb-2">{{ nc.description }}</p>
 
+                  @if (nc.resolution) {
+                    <div class="bg-emerald-50/50 p-2 rounded-lg border border-emerald-100 mb-2 flex items-start gap-2 max-w-lg">
+                        <i class="fa-solid fa-check-double text-emerald-500 mt-0.5 text-[10px]"></i>
+                        <p class="text-[10px] text-emerald-800 italic leading-snug">
+                          <span class="font-black uppercase tracking-tighter mr-1 text-emerald-600">Soluzione Registrata:</span> {{ nc.resolution }}
+                        </p>
+                    </div>
+                  }
+
                   <div class="flex items-center gap-4 text-[10px] text-slate-400 font-bold">
                     <span><i class="fa-solid fa-calendar-day mr-1"></i>{{ nc.date }}</span>
                     @if (nc.createdAt) {
@@ -390,13 +399,13 @@ interface CheckCategory {
                               class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
                         In Corso
                       </button>
-                      <button (click)="updateNcStatus(nc.id, 'CLOSED')"
-                              class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                      <button (click)="openNcResolutionModal(nc)"
+                               class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
                         Chiudi
                       </button>
                   } @else if (nc.status === 'IN_PROGRESS') {
-                    <button (click)="updateNcStatus(nc.id, 'CLOSED')"
-                            class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
+                    <button (click)="openNcResolutionModal(nc)"
+                             class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-[10px] uppercase tracking-widest transition-colors">
                       <i class="fa-solid fa-check mr-1"></i>Chiudi
                     </button>
                   }
@@ -413,6 +422,56 @@ interface CheckCategory {
       </div>
 
     </div>
+
+    <!-- Admin NC Resolution Modal -->
+    @if (ncResolutionModalOpen()) {
+        <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in" (click)="closeNcResolutionModal()"></div>
+            <div class="relative bg-white w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-100 flex flex-col">
+                <div class="p-8 bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-lg border border-white/30">
+                            <i class="fa-solid fa-check-to-slot"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black">Risoluzione Anomalia</h3>
+                            <p class="text-emerald-100 text-[9px] font-black uppercase tracking-widest">Registrazione Azione Correttiva Amministratore</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-8 space-y-6">
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Dettaglio Segnalazione</label>
+                        <p class="text-sm font-bold text-slate-800 mb-1">{{ selectedNcForResolution()?.itemName }}</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">{{ selectedNcForResolution()?.description }}</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square"></i> Descrizione della Soluzione
+                        </label>
+                        <textarea [ngModel]="ncResolutionText"
+                                  (ngModelChange)="ncResolutionText = $event"
+                                  placeholder="Descrivi come è stata gestita l'anomalia e quali azioni sono state intraprese per risolverla..."
+                                  class="w-full h-32 p-5 bg-white border-2 border-slate-100 rounded-[24px] text-sm text-slate-700 focus:outline-none focus:border-emerald-500 transition-all shadow-inner resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="p-8 pt-0 flex gap-4">
+                    <button (click)="closeNcResolutionModal()"
+                            class="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200">
+                        Annulla
+                    </button>
+                    <button (click)="confirmNcResolution()"
+                            [disabled]="!ncResolutionText"
+                            class="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95 disabled:opacity-50 disabled:grayscale">
+                        Conferma e Chiudi
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
   `,
     styles: [`
     @keyframes slideDown {
@@ -450,6 +509,11 @@ export class GeneralChecksViewComponent {
     // Local filter state
     selectedCompanyId = signal<string>('');
     ncActiveTab = signal<'ACTIVE' | 'CLOSED'>('ACTIVE');
+
+    // NC Resolution state
+    ncResolutionModalOpen = signal(false);
+    selectedNcForResolution = signal<any>(null);
+    ncResolutionText = '';
 
     // Use global filter instead of local selector
     selectedClient = computed(() => {
@@ -680,6 +744,26 @@ export class GeneralChecksViewComponent {
         await this.state.updateNonConformityStatus(id, status);
         const label = status === 'CLOSED' ? 'chiusa' : status === 'IN_PROGRESS' ? 'in lavorazione' : 'aperta';
         this.toast.success('Non Conformità Aggiornata', `La segnalazione è stata marcata come ${label}.`);
+    }
+
+    openNcResolutionModal(nc: any) {
+        this.selectedNcForResolution.set(nc);
+        this.ncResolutionText = nc.resolution || '';
+        this.ncResolutionModalOpen.set(true);
+    }
+
+    closeNcResolutionModal() {
+        this.ncResolutionModalOpen.set(false);
+        this.selectedNcForResolution.set(null);
+        this.ncResolutionText = '';
+    }
+
+    async confirmNcResolution() {
+        const nc = this.selectedNcForResolution();
+        if (!nc || !this.ncResolutionText) return;
+
+        await this.state.updateNonConformityStatus(nc.id, 'CLOSED', this.ncResolutionText);
+        this.closeNcResolutionModal();
     }
 
     formatTime(date: Date | undefined): string {
