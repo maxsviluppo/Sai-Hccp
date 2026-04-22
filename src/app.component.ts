@@ -32,6 +32,7 @@ import { AllergensConfigViewComponent } from './components/allergens-config-view
 import { CleaningProductsViewComponent } from './components/cleaning-products-view.component';
 import { IngredientsBookViewComponent } from './components/ingredients-book-view.component';
 import { OperationalPhasesConfigViewComponent } from './components/operational-phases-config-view.component';
+import { PublicProductInfoComponent } from './components/public-product-info.component';
 
 @Component({
   selector: 'app-root',
@@ -67,12 +68,21 @@ import { OperationalPhasesConfigViewComponent } from './components/operational-p
     AllergensConfigViewComponent,
     CleaningProductsViewComponent,
     IngredientsBookViewComponent,
-    OperationalPhasesConfigViewComponent
+    OperationalPhasesConfigViewComponent,
+    PublicProductInfoComponent
   ],
   templateUrl: './app.component.html'
 })
 export class AppComponent {
   state = inject(AppStateService);
+
+  constructor() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const infoId = urlParams.get('info');
+    if (infoId) {
+      this.state.publicInfoId.set(infoId);
+    }
+  }
 
   getItemsByCategory(category: string): MenuItem[] {
     return this.state.menuItems.filter(item => item.category === category);

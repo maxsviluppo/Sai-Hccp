@@ -122,34 +122,49 @@ interface CheckItem {
         
         <!-- Recent Anomalies List for Operator -->
         <div class="bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-rose-500">
-                        <i class="fa-solid fa-list-check"></i>
+            <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-rose-500">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 tracking-tight">Registro Non Conformità</h3>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gestione e storico anomalie</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-800 tracking-tight">Ultime Segnalazioni</h3>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Storico anomalie inviate</p>
+
+                    <!-- Tab Switcher -->
+                    <div class="flex p-1 bg-slate-200/50 rounded-xl border border-slate-200">
+                        <button (click)="activeTab.set('active')"
+                                [class]="'px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ' + 
+                                (activeTab() === 'active' ? 'bg-white text-rose-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700')">
+                            Segnalazioni Attive
+                        </button>
+                        <button (click)="activeTab.set('archive')"
+                                [class]="'px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ' + 
+                                (activeTab() === 'archive' ? 'bg-white text-slate-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700')">
+                            Archivio Chiuse
+                        </button>
                     </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-wider">
-                        {{ userAnomalies().length }} Totali
-                    </span>
                 </div>
             </div>
 
             <div class="divide-y divide-slate-100">
-                @if (userAnomalies().length === 0) {
+                @if (filteredAnomalies().length === 0) {
                     <div class="p-12 text-center">
                         <div class="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-200">
-                            <i class="fa-solid fa-clipboard-check text-3xl"></i>
+                            <i [class]="'fa-solid text-3xl ' + (activeTab() === 'active' ? 'fa-clipboard-check' : 'fa-box-archive')"></i>
                         </div>
-                        <p class="text-sm font-bold text-slate-500">Nessuna segnalazione registrata</p>
-                        <p class="text-xs text-slate-400 mt-1">Le tue non conformità appariranno qui per la stampa.</p>
+                        <p class="text-sm font-bold text-slate-500">
+                            {{ activeTab() === 'active' ? 'Nessuna segnalazione attiva' : 'L\'archivio è vuoto' }}
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1">
+                            {{ activeTab() === 'active' ? 'Tutte le anomalie sono state risolte o non ne sono state inviate.' : 'Le anomalie chiuse verranno spostate qui.' }}
+                        </p>
                     </div>
                 } @else {
-                    @for (nc of userAnomalies(); track nc.id) {
+                    @for (nc of filteredAnomalies(); track nc.id) {
                         <div class="p-5 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div class="flex items-start gap-4 flex-1 min-w-0">
                                 <div [class]="'h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border ' + 
@@ -327,6 +342,7 @@ export class NonComplianceViewComponent {
     state = inject(AppStateService);
     moduleId = 'non-compliance';
     showStandardInfo = signal(false);
+    activeTab = signal<'active' | 'archive'>('active');
 
     // Resolution state
     resolutionModalOpen = signal(false);
@@ -345,6 +361,17 @@ export class NonComplianceViewComponent {
         return this.state.nonConformities()
             .filter(nc => nc.clientId === user.clientId)
             .sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+    });
+
+    filteredAnomalies = computed(() => {
+        const anomalies = this.userAnomalies();
+        const tab = this.activeTab();
+        
+        if (tab === 'active') {
+            return anomalies.filter(nc => nc.status !== 'CLOSED');
+        } else {
+            return anomalies.filter(nc => nc.status === 'CLOSED');
+        }
     });
 
     checkedCount = computed<number>(() => {

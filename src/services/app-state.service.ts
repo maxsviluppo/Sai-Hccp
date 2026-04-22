@@ -28,6 +28,7 @@ export interface ClientEntity {
   cellphone?: string;
   whatsapp?: string;
   email: string;
+  pec?: string;
   licenseNumber: string;
   suspended: boolean; // Service suspension for non-payment
   paymentBalanceDue?: boolean; // New: Banner info for balance payment due
@@ -36,6 +37,7 @@ export interface ClientEntity {
   printerModel?: string;
   labelFormat?: '62mm' | '29mm' | '12mm';
   printerDriverUrl?: string;
+  qrBaseUrl?: string; // New: Custom base URL for QR codes (e.g., http://192.168.1.13:3000)
 }
 
 export interface SystemUser {
@@ -415,6 +417,7 @@ export class AppStateService {
   private toastService = inject(ToastService);
 
   constructor() {
+    this.checkPublicInfo();
     this.loadState();
     this.initSupabase();
     this.loadBaseIngredients();
@@ -423,6 +426,14 @@ export class AppStateService {
     effect(() => {
       this.saveState();
     });
+  }
+
+  private checkPublicInfo() {
+    const params = new URLSearchParams(window.location.search);
+    const infoId = params.get('info');
+    if (infoId) {
+      this.publicInfoId.set(infoId);
+    }
   }
 
   private saveState() {
@@ -1027,6 +1038,9 @@ export class AppStateService {
   // --- Messages Database ---
   readonly messages = signal<Message[]>([]);
 
+  // Public Info State (for QR Code landing pages)
+  readonly publicInfoId = signal<string | null>(null);
+
   readonly unreadMessagesCount = computed(() => {
     const user = this.currentUser();
     if (!user) return 0;
@@ -1607,6 +1621,7 @@ export class AppStateService {
     if (updates.cellphone !== undefined) dbUpdates.cellphone = updates.cellphone;
     if (updates.whatsapp !== undefined) dbUpdates.whatsapp = updates.whatsapp;
     if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.pec !== undefined) dbUpdates.pec = updates.pec;
     if (updates.licenseNumber !== undefined) dbUpdates.license_number = updates.licenseNumber;
     if (updates.suspended !== undefined) dbUpdates.suspended = updates.suspended;
     if (updates.paymentBalanceDue !== undefined) dbUpdates.payment_balance_due = updates.paymentBalanceDue;
@@ -1615,6 +1630,7 @@ export class AppStateService {
     if (updates.printerModel !== undefined) dbUpdates.printer_model = updates.printerModel;
     if (updates.labelFormat !== undefined) dbUpdates.label_format = updates.labelFormat;
     if (updates.printerDriverUrl !== undefined) dbUpdates.printer_driver_url = updates.printerDriverUrl;
+    if (updates.qrBaseUrl !== undefined) dbUpdates.qr_base_url = updates.qrBaseUrl;
 
     const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
     if (error) {

@@ -265,6 +265,15 @@ import { ToastService } from '../services/toast.service';
                </div>
 
                <div class="space-y-1.5">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Indirizzo PEC</label>
+                 @if (isEditingOperator()) {
+                   <input type="email" formControlName="pec" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase" placeholder="pec@esempio.it">
+                 } @else {
+                   <p class="text-sm font-bold text-indigo-600 bg-indigo-50 border border-transparent px-3 py-2 rounded truncate">{{ state.companyConfig().pec || 'Non specificato' }}</p>
+                 }
+               </div>
+
+               <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Telefono Fisso</label>
                  @if (isEditingOperator()) {
                    <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Prefisso e numero">
@@ -291,6 +300,20 @@ import { ToastService } from '../services/toast.service';
                      <i class="fa-brands fa-whatsapp text-lg"></i> {{ state.companyConfig().whatsapp || '-' }}
                    </p>
                  }
+               </div>
+
+               <div class="space-y-1.5 md:col-span-2">
+                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1 flex items-center gap-2">
+                   Indirizzo Server per QR Code
+                   <i class="fa-solid fa-circle-info text-blue-400 cursor-help" title="Inserisci l'indirizzo IP del PC (es: http://192.168.1.13:3000) per far funzionare i QR Code sui cellulari nella stessa rete."></i>
+                 </label>
+                 <div class="relative group">
+                   <i class="fa-solid fa-link absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"></i>
+                   <input type="text" formControlName="qrBaseUrl" [readonly]="!isEditingOperator()"
+                          class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-700 bg-slate-50/50"
+                          placeholder="http://192.168.1.13:3000">
+                 </div>
+                 <p class="text-[9px] text-slate-400 font-bold px-1 italic">Indirizzo utilizzato per generare i link nei QR Code delle etichette.</p>
                </div>
              </form>
                           <div class="mt-8 p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-start gap-3">
@@ -351,7 +374,9 @@ export class SettingsViewComponent {
       cellphone: [''],
       whatsapp: [''],
       email: ['', [Validators.email]],
+      pec: ['', [Validators.email]],
       logo: [''],
+      qrBaseUrl: [''],
       labelFormat: ['62mm']
     });
   }
@@ -420,7 +445,9 @@ export class SettingsViewComponent {
       cellphone: config.cellphone || '',
       whatsapp: config.whatsapp || '',
       email: config.email,
+      pec: config.pec || '',
       logo: config.logo || '',
+      qrBaseUrl: config.qrBaseUrl || '',
       labelFormat: config.labelFormat || '62mm'
     });
     this.isEditingOperator.set(true);

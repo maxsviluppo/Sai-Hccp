@@ -292,10 +292,18 @@ import { FormsModule } from '@angular/forms';
                                     <h4 class="text-[9px] font-black uppercase leading-tight">{{ state.companyConfig().name }}</h4>
                                     <p class="text-[7.5px] font-bold leading-tight">{{ state.companyConfig().address }}</p>
                                 </div>
-                                <div class="mb-2">
-                                    <p class="text-[7.5px] font-black uppercase text-slate-400 mb-0.5">PRODOTTO</p>
-                                    <h2 class="text-lg font-black uppercase italic leading-tight text-teal-900">{{ selectedRecordForLabel()?.mainProductName }}</h2>
-                                </div>
+                                    <div class="flex justify-between items-start gap-2">
+                                        <div class="flex-grow">
+                                            <p class="text-[7.5px] font-black uppercase text-slate-400 mb-0.5">PRODOTTO</p>
+                                            <h2 class="text-lg font-black uppercase italic leading-tight text-teal-900">{{ selectedRecordForLabel()?.mainProductName }}</h2>
+                                        </div>
+                                        <div class="flex flex-col items-center shrink-0">
+                                            <div class="w-10 h-10 bg-white border border-slate-200 p-0.5 mb-0.5">
+                                                <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + getQRCodeUrl(selectedRecordForLabel()!)" class="w-full h-full">
+                                            </div>
+                                            <span class="text-[5px] font-black text-slate-300 uppercase leading-none">Scan Trace</span>
+                                        </div>
+                                    </div>
                                 <div class="grid grid-cols-2 gap-2 mb-2">
                                     <div class="p-1.5 border border-black rounded"><p class="text-[6.5px] font-black uppercase">PROD.</p><p class="text-[10px] font-black">{{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}</p></div>
                                     <div class="p-1.5 bg-black text-white rounded"><p class="text-[6.5px] font-black uppercase text-slate-300">SCAD.</p><p class="text-[10px] font-black">{{ selectedRecordForLabel()?.expiryDate | date:'dd/MM/yy' }}</p></div>
@@ -330,36 +338,54 @@ import { FormsModule } from '@angular/forms';
                         } @else {
                             <!-- FORMAT 29x90mm (HORIZONTAL Layout - 90mm width x 29mm height) -->
                             <div id="print-label-sticker" class="bg-white border border-black font-sans text-black w-[340px] h-[110px] flex flex-row overflow-hidden p-2 shadow-sm">
-                                <!-- LEFT COLUMN: Brand, Product & Ingredients -->
-                                <div class="flex-[1.5] flex flex-col min-w-0 pr-2 border-r border-black">
+                                <!-- LEFT COLUMN: Brand, Product, Ingredients & Allergeni -->
+                                <div class="flex-[1.8] flex flex-col min-w-0 pr-2 border-r border-black">
                                     <div class="mb-1">
                                         <h4 class="text-[8px] font-black uppercase leading-tight truncate">{{ state.companyConfig().name }}</h4>
                                     </div>
                                     
-                                    <div class="mb-1.5">
-                                        <h2 class="text-[11px] font-black uppercase leading-tight italic truncate text-teal-900">{{ selectedRecordForLabel()?.mainProductName }}</h2>
+                                    <div class="mb-1 flex justify-between items-start gap-1">
+                                        <h2 class="text-[11px] font-black uppercase leading-tight italic truncate text-teal-900 flex-grow">{{ selectedRecordForLabel()?.mainProductName }}</h2>
+                                        <div class="flex flex-col items-center shrink-0 -mt-1">
+                                            <div class="w-7 h-7 bg-white border border-black p-0.5">
+                                                <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + getQRCodeUrl(selectedRecordForLabel()!)" class="w-full h-full">
+                                            </div>
+                                            <span class="text-[4px] font-black uppercase text-slate-300 mt-0.5">QR Link</span>
+                                        </div>
                                     </div>
 
-                                    <div class="flex-grow overflow-hidden">
+                                    <div class="flex-grow overflow-hidden mb-1">
                                         <p class="text-[6px] font-black uppercase text-slate-400 mb-0.5">Ingredienti:</p>
                                         <div class="flex flex-wrap gap-x-1 gap-y-0.5">
                                             @for (ing of selectedRecordForLabel()?.ingredients; track ing.id; let last = $last) {
-                                                <span class="text-[7.5px] font-bold leading-none capitalize">{{ ing.name }}{{ !last ? ',' : '' }}</span>
+                                                <span class="text-[7px] font-bold leading-none capitalize">{{ ing.name }}{{ !last ? ',' : '' }}</span>
                                             }
                                             @if (!selectedRecordForLabel()?.ingredients?.length) {
                                                 <span class="text-[7px] italic opacity-40">Nessun ingrediente inserito</span>
                                             }
                                         </div>
                                     </div>
+
+                                    <!-- Allergeni moved here -->
+                                    <div class="mb-1">
+                                        @let labelAllergens = getAllergens();
+                                        @if (labelAllergens.length > 0) {
+                                            <div class="bg-red-600 text-white rounded-[2px] px-1 py-0.5">
+                                                <p class="text-[6.5px] font-black uppercase leading-none truncate">Allergeni: {{ labelAllergens.join(', ') }}</p>
+                                            </div>
+                                        } @else {
+                                            <p class="text-[6px] font-bold text-slate-300 uppercase italic leading-none">Allergeni: Assenti</p>
+                                        }
+                                    </div>
                                     
-                                    <div class="mt-1 opacity-50">
+                                    <div class="opacity-50">
                                         <p class="text-[5.5px] font-medium truncate">{{ state.companyConfig().address }}</p>
                                     </div>
                                 </div>
 
-                                <!-- RIGHT COLUMN: Dates, Lotto & Allergeni -->
-                                <div class="flex-1 flex flex-col justify-between pl-2 text-center">
-                                    <div class="space-y-1">
+                                <!-- RIGHT COLUMN: Dates & Lotto -->
+                                <div class="flex-1 flex flex-col justify-center pl-2 text-center">
+                                    <div class="space-y-1 mb-2">
                                         <div class="py-1 px-1.5 border border-black rounded bg-slate-50 flex justify-between items-center">
                                             <span class="text-[6px] font-black uppercase">PROD:</span>
                                             <span class="text-[9.5px] font-black">{{ selectedRecordForLabel()?.packagingDate | date:'dd/MM/yy' }}</span>
@@ -370,28 +396,20 @@ import { FormsModule } from '@angular/forms';
                                         </div>
                                     </div>
 
-                                    <div class="py-1 border-y border-black my-1">
+                                    <div class="py-1.5 border-t border-black">
                                         <p class="text-[6px] font-black uppercase text-slate-400 leading-none mb-0.5">LOTTO</p>
                                         <p class="text-[11px] font-black font-mono leading-none tracking-tight">{{ selectedRecordForLabel()?.lotto }}</p>
-                                    </div>
-
-                                    <div class="min-h-[14px] flex flex-col justify-center">
-                                        @let labelAllergens = getAllergens();
-                                        @if (labelAllergens.length > 0) {
-                                            <div class="bg-red-600 text-white rounded-[2px] px-1 py-0.5">
-                                                <p class="text-[6.5px] font-black uppercase leading-none truncate">{{ labelAllergens.join(', ') }}</p>
-                                            </div>
-                                        } @else {
-                                            <p class="text-[6px] font-bold text-slate-300 uppercase italic">Allergeni: Assenti</p>
-                                        }
                                     </div>
                                 </div>
                             </div>
                         }
                     </div>
                     
-                    <div class="p-6 bg-white border-t border-slate-100 flex gap-4">
+                    <div class="p-6 bg-white border-t border-slate-100 flex flex-wrap gap-4">
                         <button (click)="isLabelPreviewOpen.set(false)" class="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl font-black text-xs uppercase hover:bg-slate-100">Chiudi</button>
+                        <button (click)="openPublicPage(selectedRecordForLabel()!)" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-black text-[10px] uppercase hover:bg-indigo-100 transition-all border border-indigo-100">
+                            <i class="fa-solid fa-earth-europe mr-2"></i> Pagina Pubblica
+                        </button>
                         <button (click)="printLabel(selectedRecordForLabel()!)" class="flex-[2] py-3 bg-teal-600 text-white rounded-xl font-black text-xs uppercase hover:bg-teal-700 shadow-lg"><i class="fa-solid fa-print mr-2"></i> Stampa</button>
                     </div>
                 </div>
@@ -608,6 +626,12 @@ export class ProductionLogViewComponent {
 
         const doc = iframe.contentWindow?.document;
         if (!doc) return;
+        
+        // Ensure QR code is loaded before printing
+        const qrcodeImg = element.querySelector('img[src*="qrserver"]');
+        if (qrcodeImg) {
+            // We'll wait a bit in the iframe anyway, but this helps
+        }
 
         // Strict Printer CSS
         let pageCss = '';
@@ -796,5 +820,29 @@ export class ProductionLogViewComponent {
             });
         });
         return Array.from(found);
+    }
+
+    openPublicPage(rec: ProductionRecord) {
+        const url = window.location.origin + '/?info=' + rec.id;
+        window.open(url, '_blank');
+    }
+
+    getQRCodeUrl(rec: ProductionRecord): string {
+        const config = this.state.companyConfig();
+        // Use custom URL if set, otherwise use current location without any existing parameters
+        let baseUrl = config.qrBaseUrl;
+        
+        if (!baseUrl || baseUrl.trim() === '') {
+            baseUrl = window.location.origin + window.location.pathname;
+        }
+
+        // Clean trailing slash
+        if (baseUrl.endsWith('/')) {
+            baseUrl = baseUrl.slice(0, -1);
+        }
+        
+        const fullUrl = `${baseUrl}?info=${rec.id}`;
+        console.log('Generating QR Code for:', fullUrl);
+        return encodeURIComponent(fullUrl);
     }
 }
