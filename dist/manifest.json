@@ -1,0 +1,21 @@
+{
+  "name": "SAI HACCP Pro",
+  "short_name": "SAI HACCP",
+  "description": "Enterprise HACCP Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "Logo_canva_SAI.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "Logo_canva_SAI.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -206,8 +206,6 @@ import { supabase } from '../supabase';
               <i class="fa-solid fa-microchip text-2xl text-slate-400"></i>
           </div>
       </div>
-    </div>
-  `,
 
       <!-- System Credits -->
       <div class="mt-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest opacity-50 print:hidden">
@@ -297,7 +295,6 @@ export class PublicProductInfoComponent implements OnInit {
     const manual = new Set<string>();
     rec.ingredients.forEach(i => i.allergens?.forEach(a => manual.add(a)));
     
-    // We can also run the auto-detection here if needed
     return Array.from(manual);
   }
 
