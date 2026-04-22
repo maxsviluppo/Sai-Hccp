@@ -33,6 +33,7 @@ import { CleaningProductsViewComponent } from './components/cleaning-products-vi
 import { IngredientsBookViewComponent } from './components/ingredients-book-view.component';
 import { OperationalPhasesConfigViewComponent } from './components/operational-phases-config-view.component';
 import { PublicProductInfoComponent } from './components/public-product-info.component';
+import { HomeViewComponent } from './components/home-view.component';
 
 @Component({
   selector: 'app-root',
@@ -69,7 +70,8 @@ import { PublicProductInfoComponent } from './components/public-product-info.com
     CleaningProductsViewComponent,
     IngredientsBookViewComponent,
     OperationalPhasesConfigViewComponent,
-    PublicProductInfoComponent
+    PublicProductInfoComponent,
+    HomeViewComponent
   ],
   templateUrl: './app.component.html'
 })

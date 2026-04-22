@@ -215,6 +215,8 @@ export class AppStateService {
     { id: 'Lupini', label: 'Lupini', code: 'LUP', icon: 'fa-circle-dot', color: 'lime', bg: 'bg-lime-50', text: 'text-lime-700', active: 'bg-lime-100 border-lime-400 text-lime-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' },
     { id: 'Molluschi', label: 'Molluschi', code: 'MOL', icon: 'fa-otter', color: 'cyan', bg: 'bg-cyan-50', text: 'text-cyan-700', active: 'bg-cyan-100 border-cyan-400 text-cyan-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]' }
   ];
+  
+  public showHome = signal(false);
   // --- Auth State ---
   readonly currentUser = signal<User | null>(null);
 
@@ -384,7 +386,7 @@ export class AppStateService {
 
   // --- Admin Company / Master Data ---
   readonly adminCompany = signal<AdminCompany>({
-    name: 'HACCP PRO - Sede Centrale',
+    name: 'SAI FAST HACCP - Sede Centrale',
     piva: '01234567890',
     address: 'Via dell\'Innovazione 10, Milano (MI)',
     phone: '02 99887766',
@@ -428,11 +430,19 @@ export class AppStateService {
     });
   }
 
+  toggleHome(show: boolean) {
+    this.showHome.set(show);
+  }
+
   private checkPublicInfo() {
     const params = new URLSearchParams(window.location.search);
     const infoId = params.get('info');
     if (infoId) {
       this.publicInfoId.set(infoId);
+    }
+    const mode = params.get('mode');
+    if (mode === 'home') {
+      this.showHome.set(true);
     }
   }
 

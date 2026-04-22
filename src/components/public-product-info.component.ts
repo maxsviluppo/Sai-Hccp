@@ -36,7 +36,7 @@ import { supabase } from '../supabase';
       <div class="relative z-10 py-0 md:py-16 px-0 md:px-6 lg:px-10">
         
         <!-- Container: Fluid on Mobile, A4 centered on Desktop -->
-        <div class="max-w-full md:max-w-[210mm] mx-auto bg-white shadow-none md:shadow-[0_50px_100px_rgba(0,0,0,0.5)] md:rounded-[3rem] overflow-hidden print:shadow-none print:rounded-none print:w-full border-x-0 md:border border-white/10 relative">
+        <div class="a4-sheet max-w-full md:max-w-[210mm] mx-auto bg-white shadow-none md:shadow-[0_50px_100px_rgba(0,0,0,0.5)] md:rounded-[3rem] overflow-hidden print:shadow-none print:rounded-none print:w-full border-x-0 md:border border-white/10 relative">
           
           <!-- Premium Header / Enterprise Letterhead -->
           <div class="p-8 md:p-14 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#334155] text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-10 border-b-[8px] border-teal-500 relative overflow-hidden">
@@ -247,7 +247,7 @@ import { supabase } from '../supabase';
         .py-16, .md:py-16, .px-6, .lg:px-10 { padding: 0 !important; margin: 0 !important; }
         
         /* Sheet containment */
-        .max-w-full, .md:max-w-[210mm] { 
+        .a4-sheet { 
             max-width: 100% !important; 
             margin: 0 !important; 
             border: none !important; 
