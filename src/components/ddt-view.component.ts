@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
@@ -348,8 +348,17 @@ export class DdtViewComponent {
   });
 
   constructor() {
-    this.loadPantry();
-    this.resetForm();
+    effect(() => {
+      // Trigger on these changes
+      this.state.activeTargetClientId();
+      this.state.filterDate();
+      
+      // Load data without tracking everything else
+      untracked(() => {
+        this.loadPantry();
+        this.resetForm();
+      });
+    }, { allowSignalWrites: true });
   }
 
   resetForm() {
@@ -598,30 +607,22 @@ export class DdtViewComponent {
     this.state.saveGlobalRecord('suppliers', [...suppliers, newSupplier]);
     this.showNewSupplierModal.set(false);
     this.toast.success('Fornitore Registrato', `${this.form.supplierName} è stato aggiunto all'anagrafica.`);
+    
+    // Automatically continue with the saving process
+    this.saveMultipleEntries();
   }
 
   async saveMultipleEntries() {
     const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo';
     
-    // 1. Auto-save supplier if new
+    // Check for new supplier to warn user if they didn't use AI or ignored the modal
     if (this.form.supplierName) {
       const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
       const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
       if (!exists) {
-        const newSupplier = {
-          id: `sup_${Date.now()}`,
-          ragioneSociale: this.form.supplierName,
-          responsabile: '',
-          piva: '',
-          telefono: '',
-          email: '',
-          indirizzo: '',
-          status: 'pending',
-          note: '',
-          createdAt: new Date().toISOString()
-        };
-        this.state.saveGlobalRecord('suppliers', [...suppliers, newSupplier]);
-        console.log(`[DDT] Auto-registered new supplier: ${this.form.supplierName}`);
+        this.showNewSupplierModal.set(true);
+        this.toast.info('Nuovo Fornitore', 'Per favore conferma la registrazione del nuovo fornitore prima di procedere.');
+        return; // Pause saving until supplier is confirmed
       }
     }
 

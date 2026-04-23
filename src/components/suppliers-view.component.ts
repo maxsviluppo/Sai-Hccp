@@ -425,6 +425,7 @@ export class SuppliersViewComponent {
     effect(() => {
       this.state.filterDate();
       this.state.filterCollaboratorId();
+      this.state.activeTargetClientId(); // Ensure reactivity to company selection
       this.state.currentUser();
       this.loadData();
     }, { allowSignalWrites: true });

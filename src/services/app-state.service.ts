@@ -1351,9 +1351,14 @@ export class AppStateService {
     };
 
     // Logic to prevent duplicates and ensure updates
-    const existingIndex = this.checklistRecords().findIndex(r => 
-      r.moduleId === moduleId && r.userId === targetUserId && (r as any).date === record.date
-    );
+    const existingIndex = this.checklistRecords().findIndex(r => {
+      const sameModule = r.moduleId === moduleId;
+      const sameDate = (r as any).date === record.date;
+      if (record.date === 'GLOBAL') {
+        return sameModule && sameDate && r.clientId === record.clientId;
+      }
+      return sameModule && sameDate && r.userId === targetUserId;
+    });
 
     if (existingIndex > -1) {
       record.id = this.checklistRecords()[existingIndex].id;
@@ -1417,8 +1422,35 @@ export class AppStateService {
       date: 'GLOBAL'
     });
   }
+  getGlobalRecord(moduleId: string) {
+    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
+    const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && r.clientId === targetClientId);
+    
+    if (allRecords.length === 0) return null;
 
-    return record.data;
+    // Priority 1: Record with date 'GLOBAL' (must have data)
+    const globalRecord = allRecords
+      .filter(r => (r as any).date === 'GLOBAL')
+      .sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+      })[0];
+
+    if (globalRecord && globalRecord.data && (!Array.isArray(globalRecord.data) || globalRecord.data.length > 0)) {
+      return globalRecord.data;
+    }
+
+    // Priority 2: Most recent record regardless of date (must have data)
+    const latestWithData = allRecords
+      .filter(r => r.data && (!Array.isArray(r.data) || r.data.length > 0))
+      .sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+      })[0];
+
+    return latestWithData ? latestWithData.data : (globalRecord ? globalRecord.data : null);
   }
 
   // --- AI Configuration & Stats ---

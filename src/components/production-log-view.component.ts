@@ -145,41 +145,45 @@ import { FormsModule } from '@angular/forms';
                                                 (ngModelChange)="onIngredientNameChange($event)"
                                                 class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
                                             @if (pantryMatches().length > 0 || baseMatches().length > 0) {
-                                              <div class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                                              <div class="absolute z-[100] left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden max-h-[450px] overflow-y-auto animate-slide-up ring-4 ring-black/5">
                                                 @if (pantryMatches().length > 0) {
-                                                  <div class="px-3 py-1.5 bg-violet-50 border-b border-violet-100">
-                                                    <span class="text-[9px] font-black uppercase text-violet-600 tracking-wider"><i class="fa-solid fa-boxes-stacked mr-1"></i>Dispensa Digitale</span>
+                                                  <div class="px-4 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
+                                                    <span class="text-[10px] font-black uppercase text-indigo-600 tracking-widest"><i class="fa-solid fa-boxes-stacked mr-2"></i>Dispensa Attiva</span>
+                                                    <span class="text-[9px] font-bold text-indigo-400">{{ pantryMatches().length }} trovati</span>
                                                   </div>
-                                                  @for (match of pantryMatches(); track match.id) {
-                                                    <button type="button" (click)="selectFromPantry(match)"
-                                                            class="w-full px-3 py-2.5 text-left hover:bg-violet-50 transition-colors border-b border-slate-100 last:border-0">
-                                                      <div class="flex justify-between items-center">
-                                                        <span class="text-sm font-black text-slate-800">{{ match.ingredientName }}</span>
-                                                        <span class="text-[9px] font-bold text-slate-400 font-mono">L: {{ match.lotto || '—' }}</span>
-                                                      </div>
-                                                      <div class="flex gap-3 mt-0.5">
-                                                        <span class="text-[10px] text-slate-500 font-bold"><i class="fa-solid fa-truck text-slate-400 mr-1"></i>{{ match.supplierName }}</span>
-                                                        <span class="text-[10px] font-bold text-emerald-600">
-                                                          <i class="fa-solid fa-calendar-xmark mr-1"></i>Scad. {{ match.expiryDate | date:'dd/MM/yy' }}
-                                                        </span>
-                                                      </div>
-                                                    </button>
-                                                  }
+                                                  <div class="divide-y divide-slate-50">
+                                                    @for (match of pantryMatches(); track match.id) {
+                                                      <button type="button" (click)="selectFromPantry(match)"
+                                                              class="w-full px-4 py-3 text-left hover:bg-indigo-50/50 transition-colors group">
+                                                        <div class="flex justify-between items-center mb-1">
+                                                          <span class="text-sm font-black text-slate-800 group-hover:text-indigo-600">{{ match.ingredientName }}</span>
+                                                          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">L: {{ match.lotto || '—' }}</span>
+                                                        </div>
+                                                        <div class="flex gap-4">
+                                                          <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1"><i class="fa-solid fa-truck text-slate-300"></i>{{ match.supplierName }}</span>
+                                                          <span class="text-[10px] font-black text-rose-500 flex items-center gap-1">
+                                                            <i class="fa-solid fa-calendar-xmark text-rose-300"></i>{{ match.expiryDate | date:'dd/MM/yy' }}
+                                                          </span>
+                                                        </div>
+                                                      </button>
+                                                    }
+                                                  </div>
                                                 }
                                                 @if (baseMatches().length > 0) {
-                                                  <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
-                                                    <span class="text-[9px] font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-database mr-1"></i>Database Generale</span>
+                                                  <div class="px-4 py-2 bg-slate-50 border-y border-slate-200 flex items-center justify-between sticky top-0 z-10">
+                                                    <span class="text-[10px] font-black uppercase text-slate-500 tracking-widest"><i class="fa-solid fa-database mr-2"></i>Database Generale</span>
                                                   </div>
-                                                  @for (base of baseMatches(); track base) {
-                                                    <button type="button" (click)="selectFromBase(base)" class="w-full px-3 py-2 text-left hover:bg-slate-50 text-sm font-bold text-slate-700 border-b border-slate-100 last:border-0">
-                                                      {{ base }}
-                                                    </button>
-                                                  }
+                                                  <div class="divide-y divide-slate-50">
+                                                    @for (base of baseMatches(); track base) {
+                                                      <button type="button" (click)="selectFromBase(base)" class="w-full px-4 py-3 text-left hover:bg-slate-50 text-sm font-bold text-slate-700 transition-colors">
+                                                        <i class="fa-solid fa-tag text-slate-300 mr-2 text-[10px]"></i> {{ base }}
+                                                      </button>
+                                                    }
+                                                  </div>
                                                 }
                                               </div>
                                             }
                                         </div>
-                                    </div>
                                     <div>
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto/Scadenza</label>
                                         <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
