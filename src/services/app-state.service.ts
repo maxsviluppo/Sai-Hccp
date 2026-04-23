@@ -424,6 +424,11 @@ export class AppStateService {
     this.initSupabase();
     this.loadBaseIngredients();
 
+    // AUTO-LOGIN FOR LOCAL DEV (without verification)
+    if (!this.currentUser() && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      this.loginWithCredentials('dev', 'dev');
+    }
+
     // Auto-save State when critical data changes
     effect(() => {
       this.saveState();
@@ -964,7 +969,7 @@ export class AppStateService {
   readonly filteredNonConformities = computed(() => {
     const targetClientId = this.activeTargetClientId();
     return this.nonConformities()
-      .filter(nc => nc.clientId === targetClientId || !targetClientId)
+      .filter(nc => !targetClientId || targetClientId === 'demo' || nc.clientId === targetClientId)
       .sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
   });
 
@@ -974,6 +979,11 @@ export class AppStateService {
     const allDocs = this.documents();
 
     if (!targetClientId) return [];
+
+    // Global Admin view: show all documents
+    if (targetClientId === 'demo') {
+        return allDocs.filter(d => d.category !== 'microbio');
+    }
 
     // Strict filtering: Only documents for the currently active unit/company
     return allDocs
@@ -987,6 +997,10 @@ export class AppStateService {
 
     if (!targetClientId) return [];
 
+    if (targetClientId === 'demo') {
+        return allDocs.filter(d => d.category === 'microbio');
+    }
+
     // Strict filtering: Only documents for the currently active unit/company
     return allDocs.filter(d => d.clientId === targetClientId && d.category === 'microbio');
   });
@@ -995,6 +1009,8 @@ export class AppStateService {
   readonly filteredChecklistRecords = computed(() => {
     const targetClientId = this.activeTargetClientId();
     if (!targetClientId) return [];
+
+    if (targetClientId === 'demo') return this.checklistRecords();
 
     return this.checklistRecords().filter(r => r.clientId === targetClientId);
   });
