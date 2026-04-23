@@ -84,10 +84,10 @@ export interface IncomingIngredient {
                       <i class="fa-solid fa-wand-magic-sparkles"></i> Analizza con AI
                     }
                   </button>
-                  @if (!geminiKey()) {
+                  @if (!state.aiConfig()?.apiKey) {
                     <p class="text-[10px] text-amber-600 font-bold mt-2 flex items-center gap-1">
                       <i class="fa-solid fa-triangle-exclamation"></i>
-                      Chiave API Gemini non configurata. Vai in Impostazioni → AI.
+                      Chiave API Gemini non configurata nel Cloud. Vai in Impostazioni → AI.
                     </p>
                   }
                 </div>
@@ -324,8 +324,6 @@ export class DdtViewComponent {
     items: []
   };
 
-  geminiKey = () => localStorage.getItem('haccp_gemini_api_key') || '';
-
   activeCount = computed(() => this.pantry().filter(i => !this.isExpired(i.expiryDate)).length);
   expiredCount = computed(() => this.pantry().filter(i => this.isExpired(i.expiryDate)).length);
 
@@ -435,9 +433,10 @@ export class DdtViewComponent {
   }
 
   async analyzeWithAI() {
-    const key = this.geminiKey();
+    const config = this.state.aiConfig();
+    const key = config?.apiKey;
     const img = this.ddtPreview();
-    const initialModel = localStorage.getItem('haccp_gemini_model') || 'gemini-3-flash-preview';
+    const initialModel = config?.model || 'gemini-1.5-flash';
 
     if (!key) {
       this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
@@ -548,12 +547,15 @@ export class DdtViewComponent {
           this.aiRawResponse.set(null);
           this.toast.success('AI completato', `Trovati ${this.form.items.length} prodotti! Verifica i dati.`);
           
+          // Update usage stats
+          this.state.updateAiUsage(currentModel);
+          
           // Check if supplier is new
           if (this.form.supplierName) {
-            const savedData = this.state.getRecord('suppliers');
-            const suppliers = (savedData && Array.isArray(savedData)) ? savedData : [];
+            const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
             const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
             if (!exists) {
+              // We'll still show the modal to let them know/fill info, but saveMultipleEntries will auto-save too
               this.showNewSupplierModal.set(true);
             }
           }
@@ -580,7 +582,7 @@ export class DdtViewComponent {
   confirmNewSupplier() {
     if (!this.form.supplierName) return;
     
-    const suppliers = (this.state.getRecord('suppliers') || []) as any[];
+    const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
     const newSupplier = {
       id: Date.now().toString(),
       ragioneSociale: this.form.supplierName,
@@ -593,13 +595,36 @@ export class DdtViewComponent {
       note: ''
     };
     
-    this.state.saveRecord('suppliers', [...suppliers, newSupplier]);
+    this.state.saveGlobalRecord('suppliers', [...suppliers, newSupplier]);
     this.showNewSupplierModal.set(false);
     this.toast.success('Fornitore Registrato', `${this.form.supplierName} è stato aggiunto all'anagrafica.`);
   }
 
   async saveMultipleEntries() {
     const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo';
+    
+    // 1. Auto-save supplier if new
+    if (this.form.supplierName) {
+      const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
+      const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
+      if (!exists) {
+        const newSupplier = {
+          id: `sup_${Date.now()}`,
+          ragioneSociale: this.form.supplierName,
+          responsabile: '',
+          piva: '',
+          telefono: '',
+          email: '',
+          indirizzo: '',
+          status: 'pending',
+          note: '',
+          createdAt: new Date().toISOString()
+        };
+        this.state.saveGlobalRecord('suppliers', [...suppliers, newSupplier]);
+        console.log(`[DDT] Auto-registered new supplier: ${this.form.supplierName}`);
+      }
+    }
+
     const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
     
     const newEntries: IncomingIngredient[] = [];

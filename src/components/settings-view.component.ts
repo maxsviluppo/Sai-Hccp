@@ -220,35 +220,41 @@ import { ToastService } from '../services/toast.service';
               <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Modello Attivo</p>
                 <div class="flex flex-col gap-2">
-                  <button (click)="setGeminiModel('gemini-3-flash-preview')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3-flash-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 3 Flash
+                  <button (click)="setGeminiModel('gemini-1.5-flash')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-flash' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 1.5 Flash (Veloce)
                   </button>
-                  <button (click)="setGeminiModel('gemini-3.1-flash-lite-preview')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3.1-flash-lite-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 3.1 Flash-Lite
+                  <button (click)="setGeminiModel('gemini-2.0-flash-exp')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash-exp' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 2.0 Flash (Next-Gen)
                   </button>
-                  <button (click)="setGeminiModel('gemini-3.1-pro-preview')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3.1-pro-preview' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
-                    Gemini 3.1 Pro (Heavy)
+                  <button (click)="setGeminiModel('gemini-1.5-pro')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-pro' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
+                    Gemini 1.5 Pro (Potente)
                   </button>
                 </div>
                 <div class="mt-3 space-y-1">
-                  <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-emerald-600">Tariffa Free (Flash):</span> Fino a 15 richieste/min e 1.500 al giorno. Costo zero.</p>
-                  <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-amber-600">Avviso:</span> In momenti di traffico globale alto ("High Demand") Google potrebbe rallentare l'elaborazione delle foto.</p>
+                  <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-emerald-600">Tariffa Free:</span> Gratuito fino a 15 RPM / 1500 RPD.</p>
+                  <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-amber-600">Sync:</span> Configurazione salvata in Cloud per tutti i tuoi dispositivi.</p>
                 </div>
               </div>
               <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-between">
                 <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Chiamate API (sessione)</p>
-                  <p class="text-2xl font-black text-slate-800">{{ geminiCallCount() }}</p>
-                  <p class="text-[10px] text-slate-400 font-bold mt-1">Reset ad ogni riavvio</p>
+                  <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Statistiche Utilizzo ({{ state.aiConfig()?.model || 'N/A' }})</p>
+                  <div class="space-y-3 mt-2">
+                    <div class="flex justify-between items-end">
+                      <span class="text-[10px] font-bold text-slate-500">Chiamate Totali</span>
+                      <span class="text-xl font-black text-slate-800">{{ state.aiConfig()?.stats?.[state.aiConfig()?.model]?.count || 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                      <span class="text-[10px] font-bold text-slate-500">Costo Stimato</span>
+                      <span class="text-xl font-black text-emerald-600">{{ (state.aiConfig()?.stats?.[state.aiConfig()?.model]?.estimatedCost || 0) | currency:'USD' }}</span>
+                    </div>
+                  </div>
                 </div>
-                @if (geminiCallCount() > 0) {
-                  <button (click)="resetGeminiCounters()" class="mt-2 text-[9px] font-black uppercase text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
-                    <i class="fa-solid fa-rotate-left"></i> Azzera Contatore
-                  </button>
-                }
+                <button (click)="resetGeminiStats()" class="mt-4 text-[9px] font-black uppercase text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
+                  <i class="fa-solid fa-rotate-left"></i> Reset Statistiche
+                </button>
               </div>
               <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Costo Stimato</p>
@@ -494,42 +500,40 @@ export class SettingsViewComponent {
   isEditingAdmin = signal(false);
   isEditingOperator = signal(false);
 
-  // --- Gemini AI Config ---
-  geminiApiKey = signal<string>(localStorage.getItem('haccp_gemini_api_key') || '');
-  geminiModel = signal<string>(localStorage.getItem('haccp_gemini_model') || 'gemini-3-flash-preview');
-  geminiCallCount = signal<number>(parseInt(sessionStorage.getItem('haccp_gemini_calls') || '0', 10));
   showApiKey = signal(false);
-  geminiApiKeyInput = this.geminiApiKey();
+  geminiApiKeyInput = '';
 
-  saveGeminiApiKey() {
+  saveGeminiConfig() {
     const key = this.geminiApiKeyInput.trim();
     if (key.length < 10) {
       this.toast.error('Chiave non valida', 'La chiave API Gemini inserita sembra troppo corta.');
       return;
     }
-    localStorage.setItem('haccp_gemini_api_key', key);
-    localStorage.setItem('haccp_gemini_model', this.geminiModel());
-    this.geminiApiKey.set(key);
-    this.toast.success('Configurazione salvata', 'Le impostazioni AI sono state aggiornate.');
+    const current = this.state.aiConfig() || { model: 'gemini-1.5-flash', stats: {} };
+    this.state.saveAiConfig({
+      ...current,
+      apiKey: key
+    });
+    this.toast.success('Configurazione salvata', 'La chiave è stata cifrata e salvata nel database globale.');
   }
 
   setGeminiModel(model: string) {
-    this.geminiModel.set(model);
-    localStorage.setItem('haccp_gemini_model', model);
-    this.toast.success('Modello Aggiornato', `Ora stai usando ${model}`);
+    const current = this.state.aiConfig() || { apiKey: '', stats: {} };
+    this.state.saveAiConfig({ ...current, model });
+    this.toast.success('Modello Aggiornato', `Configurazione cloud aggiornata per ${model}`);
   }
 
-  clearGeminiApiKey() {
-    localStorage.removeItem('haccp_gemini_api_key');
-    this.geminiApiKey.set('');
-    this.geminiApiKeyInput = '';
-    this.toast.info('Chiave rimossa', 'La chiave API Gemini è stata eliminata.');
+  resetGeminiStats() {
+    const current = this.state.aiConfig() || { apiKey: '', model: 'gemini-1.5-flash' };
+    this.state.saveAiConfig({ ...current, stats: {} });
+    this.toast.info('Statistiche Resettate', 'Le statistiche di utilizzo sono state azzerate nel database.');
   }
   isTestingAi = signal(false);
 
   async testAiConnection() {
-    const key = this.geminiApiKey();
-    const model = this.geminiModel();
+    const config = this.state.aiConfig();
+    const key = config?.apiKey;
+    const model = config?.model || 'gemini-1.5-flash';
     if (!key) return;
 
     this.isTestingAi.set(true);
@@ -602,6 +606,14 @@ export class SettingsViewComponent {
       pec: ['', [Validators.email]],
       logo: [''],
       labelFormat: ['62mm']
+    });
+
+    // Reactive sync for the AI Key input
+    effect(() => {
+      const config = this.state.aiConfig();
+      if (config?.apiKey && !this.geminiApiKeyInput) {
+        this.geminiApiKeyInput = config.apiKey;
+      }
     });
   }
 

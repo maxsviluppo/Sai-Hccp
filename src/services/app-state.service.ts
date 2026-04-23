@@ -305,6 +305,7 @@ export class AppStateService {
   // --- Global Filter State ---
   readonly filterCollaboratorId = signal<string>(''); // '' means All
   readonly filterDate = signal<string>(new Date().toISOString().split('T')[0]); // Default Today
+  readonly aiConfig = signal<any>(null); // Global AI configuration and stats
   readonly reportRecipientEmail = signal<string>('amministrazione@haccppro.it');
 
   // Filter state for firms/companies
@@ -433,6 +434,13 @@ export class AppStateService {
     effect(() => {
       this.saveState();
     });
+
+    // Reactive reload of AI config when data is synced
+    effect(() => {
+      if (this.checklistRecords().length > 0) {
+        this.loadAiConfig();
+      }
+    }, { allowSignalWrites: true });
   }
 
   toggleHome(show: boolean) {
@@ -1410,21 +1418,63 @@ export class AppStateService {
     });
   }
 
-  getGlobalRecord(moduleId: string) {
-    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
-    const record = this.checklistRecords().find(r => 
-      r.moduleId === moduleId && r.clientId === targetClientId && r.date === 'GLOBAL'
-    );
-    
-    // Fallback: if no GLOBAL record exists yet, try to find the most recent one (migration)
-    if (!record) {
-      const records = this.checklistRecords()
-        .filter(r => r.moduleId === moduleId && r.clientId === targetClientId)
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      return records.length > 0 ? records[0].data : null;
-    }
-
     return record.data;
+  }
+
+  // --- AI Configuration & Stats ---
+  
+  private obfuscate(str: string): string {
+    if (!str) return '';
+    return btoa(str.split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ 42)).join(''));
+  }
+
+  private deobfuscate(str: string): string {
+    if (!str) return '';
+    try {
+      return atob(str).split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ 42)).join('');
+    } catch { return str; }
+  }
+
+  loadAiConfig() {
+    const data = this.getGlobalRecord('ai_config');
+    if (data) {
+      this.aiConfig.set({
+        ...data,
+        apiKey: this.deobfuscate(data.apiKey)
+      });
+    } else {
+      this.aiConfig.set({
+        apiKey: '',
+        model: 'gemini-1.5-flash',
+        stats: {}
+      });
+    }
+  }
+
+  saveAiConfig(config: any) {
+    const toSave = {
+      ...config,
+      apiKey: this.obfuscate(config.apiKey),
+      updatedAt: new Date().toISOString()
+    };
+    this.saveGlobalRecord('ai_config', toSave);
+    this.aiConfig.set(config);
+  }
+
+  updateAiUsage(model: string, tokens: number = 1000) {
+    const config = this.aiConfig() || { apiKey: '', model: 'gemini-1.5-flash', stats: {} };
+    const stats = config.stats || {};
+    const modelStats = stats[model] || { count: 0, estimatedCost: 0 };
+    
+    // Simplified costs: Flash is cheaper
+    const costPerRequest = model.includes('pro') ? 0.015 : 0.0005; 
+    
+    stats[model] = {
+      count: (modelStats.count || 0) + 1,
+      estimatedCost: (modelStats.estimatedCost || 0) + costPerRequest
+    };
+    
+    this.saveAiConfig({ ...config, stats });
   }
 
   // --- New Historical Methods ---

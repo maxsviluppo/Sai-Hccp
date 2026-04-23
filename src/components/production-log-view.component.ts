@@ -141,35 +141,40 @@ import { FormsModule } from '@angular/forms';
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Nome Ingrediente *</label>
-                                        <div class="relative">
                                             <input type="text" [(ngModel)]="newIngredient.name"
                                                 (ngModelChange)="onIngredientNameChange($event)"
-                                                list="common-ingredients"
                                                 class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
-                                            <datalist id="common-ingredients">
-                                                @for (base of state.baseIngredients(); track base) {
-                                                    <option [value]="base"></option>
+                                            @if (pantryMatches().length > 0 || baseMatches().length > 0) {
+                                              <div class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                                                @if (pantryMatches().length > 0) {
+                                                  <div class="px-3 py-1.5 bg-violet-50 border-b border-violet-100">
+                                                    <span class="text-[9px] font-black uppercase text-violet-600 tracking-wider"><i class="fa-solid fa-boxes-stacked mr-1"></i>Dispensa Digitale</span>
+                                                  </div>
+                                                  @for (match of pantryMatches(); track match.id) {
+                                                    <button type="button" (click)="selectFromPantry(match)"
+                                                            class="w-full px-3 py-2.5 text-left hover:bg-violet-50 transition-colors border-b border-slate-100 last:border-0">
+                                                      <div class="flex justify-between items-center">
+                                                        <span class="text-sm font-black text-slate-800">{{ match.ingredientName }}</span>
+                                                        <span class="text-[9px] font-bold text-slate-400 font-mono">L: {{ match.lotto || '—' }}</span>
+                                                      </div>
+                                                      <div class="flex gap-3 mt-0.5">
+                                                        <span class="text-[10px] text-slate-500 font-bold"><i class="fa-solid fa-truck text-slate-400 mr-1"></i>{{ match.supplierName }}</span>
+                                                        <span class="text-[10px] font-bold text-emerald-600">
+                                                          <i class="fa-solid fa-calendar-xmark mr-1"></i>Scad. {{ match.expiryDate | date:'dd/MM/yy' }}
+                                                        </span>
+                                                      </div>
+                                                    </button>
+                                                  }
                                                 }
-                                            </datalist>
-                                            @if (pantryMatches().length > 0) {
-                                              <div class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-                                                <div class="px-3 py-1.5 bg-violet-50 border-b border-violet-100">
-                                                  <span class="text-[9px] font-black uppercase text-violet-600 tracking-wider"><i class="fa-solid fa-boxes-stacked mr-1"></i>Dispensa Digitale</span>
-                                                </div>
-                                                @for (match of pantryMatches(); track match.id) {
-                                                  <button type="button" (click)="selectFromPantry(match)"
-                                                          class="w-full px-3 py-2.5 text-left hover:bg-violet-50 transition-colors border-b border-slate-100 last:border-0">
-                                                    <div class="flex justify-between items-center">
-                                                      <span class="text-sm font-black text-slate-800">{{ match.ingredientName }}</span>
-                                                      <span class="text-[9px] font-bold text-slate-400 font-mono">L: {{ match.lotto || '—' }}</span>
-                                                    </div>
-                                                    <div class="flex gap-3 mt-0.5">
-                                                      <span class="text-[10px] text-slate-500 font-bold"><i class="fa-solid fa-truck text-slate-400 mr-1"></i>{{ match.supplierName }}</span>
-                                                      <span class="text-[10px] font-bold text-emerald-600">
-                                                        <i class="fa-solid fa-calendar-xmark mr-1"></i>Scad. {{ match.expiryDate | date:'dd/MM/yy' }}
-                                                      </span>
-                                                    </div>
-                                                  </button>
+                                                @if (baseMatches().length > 0) {
+                                                  <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
+                                                    <span class="text-[9px] font-black uppercase text-slate-500 tracking-wider"><i class="fa-solid fa-database mr-1"></i>Database Generale</span>
+                                                  </div>
+                                                  @for (base of baseMatches(); track base) {
+                                                    <button type="button" (click)="selectFromBase(base)" class="w-full px-3 py-2 text-left hover:bg-slate-50 text-sm font-bold text-slate-700 border-b border-slate-100 last:border-0">
+                                                      {{ base }}
+                                                    </button>
+                                                  }
                                                 }
                                               </div>
                                             }
@@ -222,6 +227,7 @@ import { FormsModule } from '@angular/forms';
                                     <tr>
                                         <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase">Foto</th>
                                         <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase">Prodotto</th>
+                                        <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase">Fornitore</th>
                                         <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase">Lotto</th>
                                         <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase text-right">Azioni</th>
                                     </tr>
@@ -240,8 +246,16 @@ import { FormsModule } from '@angular/forms';
                                                     }
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3 font-bold text-slate-800">{{ ing.name }}</td>
-                                            <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ ing.lotto || 'N/A' }}</td>
+                                            <td class="px-4 py-3 font-bold text-slate-800">
+                                                {{ ing.name }}
+                                                @if (ing.expiryDate) {
+                                                  <p class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Scad. {{ ing.expiryDate | date:'dd/MM/yy' }}</p>
+                                                }
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="text-[10px] font-black text-slate-500 uppercase">{{ ing.supplierName || '—' }}</span>
+                                            </td>
+                                            <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">{{ ing.lotto || '—' }}</td>
                                             <td class="px-4 py-3 text-right">
                                                 <button (click)="removeIngredient(ing.id)" class="text-rose-500 hover:text-rose-700 p-2">
                                                     <i class="fa-solid fa-trash-can"></i>
@@ -471,6 +485,7 @@ export class ProductionLogViewComponent {
     zoomedPhoto = signal<string | null>(null);
     labelFormat = signal<'62mm' | '29x90'>('62mm');
     pantryMatches = signal<any[]>([]);
+    baseMatches = signal<string[]>([]);
 
     currentRecord: Partial<ProductionRecord> = {};
     newIngredient: Partial<ProductionIngredient> = {};
@@ -532,6 +547,7 @@ export class ProductionLogViewComponent {
     resetIngredientForm() {
         this.tempPhoto = null;
         this.pantryMatches.set([]);
+        this.baseMatches.set([]);
         this.newIngredient = {
             name: '',
             packingDate: new Date().toISOString().split('T')[0],
@@ -543,7 +559,11 @@ export class ProductionLogViewComponent {
 
     onIngredientNameChange(val: string) {
         this.newIngredient.name = this.formatName(val);
-        if (!val || val.length < 2) { this.pantryMatches.set([]); return; }
+        if (!val || val.length < 2) { 
+            this.pantryMatches.set([]); 
+            this.baseMatches.set([]);
+            return; 
+        }
         const q = val.toLowerCase();
         const today = new Date().toISOString().split('T')[0];
         
@@ -555,14 +575,28 @@ export class ProductionLogViewComponent {
             .filter((i: any) => !clientId || i.clientId === clientId)
             .filter((i: any) => !i.expiryDate || i.expiryDate >= today)
             .slice(0, 5);
+            
         this.pantryMatches.set(matches);
+        
+        const base = this.state.baseIngredients()
+            .filter(b => b.toLowerCase().includes(q) && !matches.some((m:any) => m.ingredientName.toLowerCase() === b.toLowerCase()))
+            .slice(0, 4);
+        this.baseMatches.set(base);
+    }
+
+    selectFromBase(item: string) {
+        this.newIngredient.name = this.formatName(item);
+        this.pantryMatches.set([]);
+        this.baseMatches.set([]);
     }
 
     selectFromPantry(item: any) {
         this.newIngredient.name = item.ingredientName;
         this.newIngredient.lotto = item.lotto || '';
         this.newIngredient.expiryDate = item.expiryDate || '';
+        this.newIngredient.supplierName = item.supplierName || '';
         this.pantryMatches.set([]);
+        this.baseMatches.set([]);
         this.toast.success('Dispensa', `${item.ingredientName} — Lotto e scadenza caricati automaticamente.`);
     }
 
