@@ -48,17 +48,17 @@ import { ToastService } from '../services/toast.service';
         </div>
 
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-2 mb-6 bg-slate-100 p-1 rounded-xl w-fit border border-slate-200">
+        <div class="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-full sm:w-fit border border-slate-200">
             <button (click)="activeFilter.set('RECEIVED')" 
-                    [class]="'px-6 py-2 rounded-lg font-bold text-sm transition-all ' + (activeFilter() === 'RECEIVED' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
-                <i class="fa-solid fa-inbox mr-2"></i> Ricevuti
+                    [class]="'flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ' + (activeFilter() === 'RECEIVED' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
+                <i class="fa-solid fa-inbox mr-1 sm:mr-2"></i> Ricevuti
                 @if (activeFilter() === 'RECEIVED' && state.unreadMessagesCount() > 0) {
-                    <span class="ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] rounded-full">{{ state.unreadMessagesCount() }}</span>
+                    <span class="ml-1 sm:ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[9px] rounded-full">{{ state.unreadMessagesCount() }}</span>
                 }
             </button>
             <button (click)="activeFilter.set('SENT')" 
-                    [class]="'px-6 py-2 rounded-lg font-bold text-sm transition-all ' + (activeFilter() === 'SENT' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
-                <i class="fa-solid fa-paper-plane-share mr-2"></i> Inviati
+                    [class]="'flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ' + (activeFilter() === 'SENT' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
+                <i class="fa-solid fa-paper-plane mr-1 sm:mr-2"></i> Inviati
             </button>
         </div>
 
@@ -170,14 +170,28 @@ import { ToastService } from '../services/toast.service';
                         <div class="flex items-start gap-4 flex-1">
                             <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-user text-sm"></i></div>
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <h3 class="text-lg font-bold text-slate-800 truncate">{{ message.subject }}</h3>
-                                    @if (!message.read) { <span class="px-2 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase">NUOVO</span> }
+                                <div class="flex flex-wrap items-center gap-2 mb-1">
+                                    <h3 class="text-base md:text-lg font-bold text-slate-800 truncate">{{ message.subject }}</h3>
+                                    @if (!message.read) { <span class="px-2 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase shrink-0">NUOVO</span> }
                                 </div>
-                                <div class="flex flex-wrap items-center gap-x-3 text-[11px] font-bold text-slate-500 uppercase">
-                                    <span class="text-slate-700">{{ message.senderName }}</span>
-                                    <span>{{ message.timestamp | date:'dd/MM HH:mm' }}</span>
-                                    <span class="ml-auto inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{{ getClientName(message.recipientId) }}</span>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-x-3 text-[11px] font-bold text-slate-500 uppercase">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid" 
+                                           [class.fa-arrow-down-left]="activeFilter() === 'RECEIVED'" 
+                                           [class.fa-arrow-up-right]="activeFilter() === 'SENT'" 
+                                           [class.text-emerald-500]="activeFilter() === 'RECEIVED'" 
+                                           [class.text-blue-500]="activeFilter() === 'SENT'"></i>
+                                        <span class="text-slate-700 truncate max-w-[150px]">
+                                            {{ activeFilter() === 'RECEIVED' ? message.senderName : (getClientName(message.recipientId) || 'Tutti') }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-regular fa-clock text-[10px]"></i>
+                                        <span>{{ message.timestamp | date:'dd/MM HH:mm' }}</span>
+                                    </div>
+                                    @if (activeFilter() === 'RECEIVED') {
+                                        <span class="sm:ml-auto inline-flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 w-fit text-[9px]">{{ getClientName(message.recipientId) }}</span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -199,9 +213,9 @@ import { ToastService } from '../services/toast.service';
                                             <p class="text-sm font-bold text-slate-700 truncate max-w-[200px]">{{ message.attachmentName }}</p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <button (click)="previewAttachment(message)" class="px-5 py-3 bg-slate-900 text-white font-black text-[11px] uppercase rounded-xl hover:bg-black transition-all shadow-md"><i class="fa-solid fa-eye mr-2"></i> Anteprima</button>
-                                        <button (click)="downloadMessageAttachment(message)" class="px-5 py-3 bg-blue-600 text-white font-black text-[11px] uppercase rounded-xl hover:bg-blue-700 transition-all shadow-md"><i class="fa-solid fa-download mr-2"></i> Scarica</button>
+                                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                        <button (click)="previewAttachment(message)" class="px-4 py-2.5 bg-slate-900 text-white font-black text-[10px] uppercase rounded-xl hover:bg-black transition-all shadow-md flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Anteprima</button>
+                                        <button (click)="downloadMessageAttachment(message)" class="px-4 py-2.5 bg-blue-600 text-white font-black text-[10px] uppercase rounded-xl hover:bg-blue-700 transition-all shadow-md flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> Scarica</button>
                                     </div>
                                 </div>
                             }

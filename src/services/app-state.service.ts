@@ -706,8 +706,8 @@ export class AppStateService {
     try {
       const { data: dbMsgs, error: msgsError } = await supabase
         .from('messages')
-        // OPTIMIZATION: Exclude file_data (Base64) to avoid timeouts. Fetch on-demand.
-        .select('id, sender_id, sender_name, recipient_type, recipient_id, recipient_user_id, subject, content, attachment_url, attachment_name, timestamp, read, replies')
+        // Use camelCase to match database schema found in production
+        .select('id, senderId, senderName, recipientType, recipientId, recipientUserId, subject, content, attachmentUrl, attachmentName, timestamp, read, replies')
         .order('timestamp', { ascending: false });
 
       if (msgsError) throw msgsError;
@@ -2028,7 +2028,7 @@ export class AppStateService {
         content: newMessage.content,
         attachmentUrl: newMessage.attachmentUrl,
         attachmentName: newMessage.attachmentName,
-        fileData: newMessage.fileData,
+        // fileData is omitted as the column is missing in production schema
         timestamp: newMessage.timestamp.toISOString(),
         read: newMessage.read,
         replies: []
