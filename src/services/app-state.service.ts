@@ -1402,6 +1402,31 @@ export class AppStateService {
     return this.saveChecklist(moduleId, data);
   }
 
+  saveGlobalRecord(moduleId: string, data: any) {
+    return this.saveChecklist({
+      moduleId,
+      data,
+      date: 'GLOBAL'
+    });
+  }
+
+  getGlobalRecord(moduleId: string) {
+    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
+    const record = this.checklistRecords().find(r => 
+      r.moduleId === moduleId && r.clientId === targetClientId && r.date === 'GLOBAL'
+    );
+    
+    // Fallback: if no GLOBAL record exists yet, try to find the most recent one (migration)
+    if (!record) {
+      const records = this.checklistRecords()
+        .filter(r => r.moduleId === moduleId && r.clientId === targetClientId)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return records.length > 0 ? records[0].data : null;
+    }
+
+    return record.data;
+  }
+
   // --- New Historical Methods ---
 
   saveChecklistOld(record: { id?: string, moduleId: string, data: any, date?: string }) {

@@ -545,13 +545,15 @@ export class ProductionLogViewComponent {
         this.newIngredient.name = this.formatName(val);
         if (!val || val.length < 2) { this.pantryMatches.set([]); return; }
         const q = val.toLowerCase();
-        const today = new Date().toDateString();
-        const local: any[] = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
+        const today = new Date().toISOString().split('T')[0];
+        
+        const local = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
         const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId;
+        
         const matches = local
             .filter((i: any) => i.ingredientName?.toLowerCase().includes(q))
             .filter((i: any) => !clientId || i.clientId === clientId)
-            .filter((i: any) => !i.expiryDate || new Date(i.expiryDate) >= new Date(today))
+            .filter((i: any) => !i.expiryDate || i.expiryDate >= today)
             .slice(0, 5);
         this.pantryMatches.set(matches);
     }

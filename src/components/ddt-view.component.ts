@@ -94,45 +94,63 @@ export interface IncomingIngredient {
               </div>
             </div>
 
-            <!-- Manual / AI-filled Form -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornitore *</label>
-                <input type="text" [(ngModel)]="form.supplierName" placeholder="Nome fornitore"
-                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
+            <!-- Manual / AI-filled Form for Multiple Items -->
+            <div class="space-y-6">
+              <!-- DDT Header Data -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornitore *</label>
+                  <input type="text" [(ngModel)]="form.supplierName" placeholder="Nome fornitore"
+                         class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Documento *</label>
+                  <input type="date" [(ngModel)]="form.entryDate"
+                         class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
+                </div>
               </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome Ingrediente *</label>
-                <input type="text" [(ngModel)]="form.ingredientName" placeholder="es. Patate"
-                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Numero Lotto</label>
-                <input type="text" [(ngModel)]="form.lotto" placeholder="Lotto del prodotto"
-                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-700 focus:outline-none focus:border-amber-500 transition-all">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Quantità</label>
-                <input type="text" [(ngModel)]="form.quantity" placeholder="es. 10 kg"
-                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Entrata *</label>
-                <input type="date" [(ngModel)]="form.entryDate"
-                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Scadenza *</label>
-                <input type="date" [(ngModel)]="form.expiryDate"
-                       class="w-full px-4 py-3 bg-slate-50 border border-rose-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all">
+
+              <!-- Products List -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Prodotti nel Carico</h4>
+                  <button (click)="addEmptyItem()" class="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-all">
+                    + Aggiungi Riga
+                  </button>
+                </div>
+                
+                @for (item of form.items; track $index) {
+                  <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white border border-slate-200 p-3 rounded-xl relative group">
+                    <div class="md:col-span-4 space-y-1">
+                      <label class="text-[9px] font-bold uppercase text-slate-400">Prodotto</label>
+                      <input type="text" [(ngModel)]="item.ingredientName" placeholder="es. Patate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:border-amber-400 outline-none">
+                    </div>
+                    <div class="md:col-span-3 space-y-1">
+                      <label class="text-[9px] font-bold uppercase text-slate-400">Lotto</label>
+                      <input type="text" [(ngModel)]="item.lotto" placeholder="Lotto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold focus:border-amber-400 outline-none">
+                    </div>
+                    <div class="md:col-span-2 space-y-1">
+                      <label class="text-[9px] font-bold uppercase text-slate-400">Quantità</label>
+                      <input type="text" [(ngModel)]="item.quantity" placeholder="es. 10 kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:border-amber-400 outline-none">
+                    </div>
+                    <div class="md:col-span-3 space-y-1">
+                      <label class="text-[9px] font-bold uppercase text-slate-400">Scadenza</label>
+                      <input type="date" [(ngModel)]="item.expiryDate" class="w-full px-3 py-2 bg-slate-50 border border-rose-200 rounded-lg text-xs font-bold focus:border-rose-400 outline-none text-rose-700">
+                    </div>
+                    
+                    <button (click)="removeItem($index)" class="absolute -right-2 -top-2 w-6 h-6 bg-white border border-slate-200 rounded-full text-rose-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-rose-50 hover:border-rose-200">
+                      <i class="fa-solid fa-times text-[10px]"></i>
+                    </button>
+                  </div>
+                }
               </div>
             </div>
 
-            <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
               <button (click)="cancelForm()" class="px-5 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-100 transition-all">Annulla</button>
-              <button (click)="saveEntry()" [disabled]="!form.supplierName || !form.ingredientName || !form.entryDate"
+              <button (click)="saveMultipleEntries()" [disabled]="!form.supplierName || !form.entryDate || form.items.length === 0 || !form.items[0].ingredientName"
                       class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Salva in Dispensa
+                <i class="fa-solid fa-boxes-stacked"></i> Registra {{ form.items.length }} Prodotti
               </button>
             </div>
           </div>
@@ -194,21 +212,25 @@ export interface IncomingIngredient {
         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div class="flex items-center gap-3">
             <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-amber-600">
-              <i class="fa-solid fa-boxes-stacked"></i>
+              <i class="fa-solid" [class]="viewMode() === 'activePantry' ? 'fa-boxes-stacked' : 'fa-truck-ramp-box'"></i>
             </div>
             <div>
-              <h3 class="font-bold text-slate-800">Dispensa Digitale</h3>
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ activeCount() }} attivi • {{ expiredCount() }} scaduti (nascosti)</p>
+              <h3 class="font-bold text-slate-800">{{ viewMode() === 'daily' ? 'Carichi del Giorno' : 'Dispensa Attiva' }}</h3>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {{ viewMode() === 'daily' ? (filteredPantry().length + ' prodotti registrati il ' + (state.filterDate() | date:'dd/MM')) : (filteredPantry().length + ' prodotti in corso di validità') }}
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
-              <input type="checkbox" [(ngModel)]="showExpired" class="rounded">
-              Mostra scaduti
-            </label>
+            <button (click)="viewMode.set(viewMode() === 'daily' ? 'activePantry' : 'daily')" 
+                    class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all border"
+                    [class]="viewMode() === 'daily' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'">
+              <i class="fa-solid" [class]="viewMode() === 'daily' ? 'fa-boxes-stacked' : 'fa-calendar-day'"></i>
+              {{ viewMode() === 'daily' ? 'Vedi Dispensa Attiva' : 'Vedi Carichi Giorno' }}
+            </button>
             <div class="relative">
               <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-              <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca ingrediente..."
+              <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca prodotto..."
                      class="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-amber-400 transition-all">
             </div>
           </div>
@@ -237,7 +259,7 @@ export interface IncomingIngredient {
               <tbody class="divide-y divide-slate-100">
                 @for (item of filteredPantry(); track item.id) {
                   @let expired = isExpired(item.expiryDate);
-                  <tr class="hover:bg-slate-50 transition-colors" [class.opacity-50]="expired">
+                  <tr class="hover:bg-slate-50 transition-colors">
                     <td class="px-4 py-3">
                       <div class="flex items-center gap-2">
                         <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
@@ -257,7 +279,7 @@ export interface IncomingIngredient {
                     <td class="px-4 py-3 text-xs font-bold text-slate-500">{{ item.entryDate | date:'dd/MM/yy' }}</td>
                     <td class="px-4 py-3">
                       <span class="text-xs font-black px-2 py-1 rounded-lg"
-                            [class]="expired ? 'bg-red-50 text-red-600 border border-red-100' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
+                            [class]="expired ? 'bg-red-100 text-red-700 border border-red-200 shadow-sm' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
                         {{ item.expiryDate | date:'dd/MM/yy' }}
                       </span>
                     </td>
@@ -287,12 +309,20 @@ export class DdtViewComponent {
   isAnalyzing = signal(false);
   ddtPreview = signal<string | null>(null);
   pantry = signal<IncomingIngredient[]>([]);
-  showExpired = false;
-  searchQuery = '';
+  viewMode = signal<'daily' | 'activePantry'>('daily');
+  searchQuery = signal('');
   showNewSupplierModal = signal(false);
   aiRawResponse = signal<string | null>(null);
 
-  form: Partial<IncomingIngredient> = {};
+  form: {
+    supplierName: string;
+    entryDate: string;
+    items: { ingredientName: string; lotto: string; quantity: string; expiryDate: string }[];
+  } = {
+    supplierName: '',
+    entryDate: '',
+    items: []
+  };
 
   geminiKey = () => localStorage.getItem('haccp_gemini_api_key') || '';
 
@@ -301,12 +331,21 @@ export class DdtViewComponent {
 
   filteredPantry = computed(() => {
     const clientId = this.state.activeTargetClientId();
+    const selectedDate = this.state.filterDate();
+    
     let items = this.pantry().filter(i => !clientId || i.clientId === clientId);
-    if (!this.showExpired) items = items.filter(i => !this.isExpired(i.expiryDate));
-    if (this.searchQuery) {
-      const q = this.searchQuery.toLowerCase();
+    
+    if (this.viewMode() === 'daily') {
+      items = items.filter(i => i.entryDate === selectedDate);
+    } else {
+      items = items.filter(i => !this.isExpired(i.expiryDate));
+    }
+    
+    if (this.searchQuery()) {
+      const q = this.searchQuery().toLowerCase();
       items = items.filter(i => i.ingredientName.toLowerCase().includes(q) || i.supplierName.toLowerCase().includes(q));
     }
+    
     return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   });
 
@@ -318,13 +357,18 @@ export class DdtViewComponent {
   resetForm() {
     this.form = {
       supplierName: '',
-      ingredientName: '',
-      lotto: '',
-      quantity: '',
-      entryDate: new Date().toISOString().split('T')[0],
-      expiryDate: ''
+      entryDate: this.state.filterDate() || new Date().toISOString().split('T')[0],
+      items: [{ ingredientName: '', lotto: '', quantity: '', expiryDate: '' }]
     };
     this.ddtPreview.set(null);
+  }
+
+  addEmptyItem() {
+    this.form.items.push({ ingredientName: '', lotto: '', quantity: '', expiryDate: '' });
+  }
+
+  removeItem(index: number) {
+    this.form.items.splice(index, 1);
   }
 
   cancelForm() {
@@ -393,94 +437,144 @@ export class DdtViewComponent {
   async analyzeWithAI() {
     const key = this.geminiKey();
     const img = this.ddtPreview();
-    if (!key) { this.toast.error('Chiave mancante', 'Configura la chiave API Gemini in Impostazioni.'); return; }
-    if (!img) { this.toast.error('Nessuna foto', 'Carica prima una foto del DDT.'); return; }
+    const initialModel = localStorage.getItem('haccp_gemini_model') || 'gemini-3-flash-preview';
+
+    if (!key) {
+      this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
+      return;
+    }
+    if (!img) {
+      this.toast.error('Manca Foto', 'Scatta o seleziona una foto del DDT prima di analizzare.');
+      return;
+    }
 
     this.isAnalyzing.set(true);
+    this.aiRawResponse.set(null);
 
     // Increment usage counter
     const current = parseInt(sessionStorage.getItem('haccp_gemini_calls') || '0', 10);
     sessionStorage.setItem('haccp_gemini_calls', String(current + 1));
 
-    const model = localStorage.getItem('haccp_gemini_model') || 'gemini-3-flash-preview';
+    let attempts = 0;
+    const maxAttempts = 3;
+    let currentModel = initialModel;
+    const fallbackModel = 'gemini-3.1-flash-lite-preview';
 
-    try {
-      const base64 = img.split(',')[1];
-      const mimeType = img.split(';')[0].split(':')[1];
-
-      const body = {
-        contents: [{
-          parts: [
-            { text: `Analizza questo DDT (documento di trasporto) e restituisci SOLO un JSON con questi campi esatti (senza markdown, solo JSON puro): {"supplierName":"","ingredientName":"","lotto":"","quantity":"","entryDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD"}. Se ci sono più prodotti nel documento, estrai i dati solo del PRIMO prodotto della lista. Se un campo non è leggibile, lascialo vuoto. Per le date usa il formato YYYY-MM-DD.` },
-            { inlineData: { mimeType, data: base64 } }
-          ]
-        }],
-        generationConfig: { maxOutputTokens: 500, temperature: 0.1 }
-      };
-
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Gemini API Error Response:', errorData);
-        
-        if (res.status === 400 && errorData.error?.message?.includes('model')) {
-          this.toast.error('Modello non trovato', 'Prova a usare gemini-1.5-flash nelle impostazioni.');
-        } else if (res.status === 403) {
-          this.toast.error('API Key Non Valida', 'Verifica la chiave nelle Impostazioni.');
-        } else if (res.status === 429) {
-          this.toast.error('Limite superato', 'Troppe richieste. Attendi un minuto.');
-        } else {
-          throw new Error(errorData.error?.message || 'Errore API Google');
-        }
-        return;
-      }
-
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      if (!text) {
-        throw new Error('L\'AI non ha restituito testo. Prova con una foto più chiara.');
-      }
-
+    while (attempts < maxAttempts) {
       try {
-        // Robust JSON extraction: look for the first { and last }
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          this.aiRawResponse.set(text);
-          throw new Error('L\'AI non ha restituito un formato dati valido.');
-        }
-        
-        const cleanedText = jsonMatch[0];
-        const parsed = JSON.parse(cleanedText);
-        this.form = { ...this.form, ...parsed };
-        this.aiRawResponse.set(null);
-        this.toast.success('AI completato', 'Campi compilati automaticamente. Verifica i dati.');
-        
-        // Check if supplier is new
-        if (this.form.supplierName) {
-          const savedData = this.state.getRecord('suppliers');
-          const suppliers = (savedData && Array.isArray(savedData)) ? savedData : [];
-          const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
-          if (!exists) {
-            this.showNewSupplierModal.set(true);
+        const base64 = img.split(',')[1];
+        const mimeType = img.split(';')[0].split(':')[1];
+
+        const body = {
+          contents: [{
+            parts: [
+              { text: `Analyze this DDT (shipping document) and extract ALL products. Return ONLY a JSON object exactly like this: {"supplierName":"","entryDate":"YYYY-MM-DD","items":[{"ingredientName":"","lotto":"","quantity":"","expiryDate":"YYYY-MM-DD"}]}. Do not include markdown formatting. Extract every product row found.` },
+              { inlineData: { mimeType, data: base64 } }
+            ]
+          }],
+          generationConfig: { maxOutputTokens: 500, temperature: 0.1 }
+        };
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          const errorMsg = errorData.error?.message || '';
+
+          // 503 or High Demand or Timeout -> Retry with backoff
+          if (res.status === 503 || res.status === 504 || errorMsg.toLowerCase().includes('high demand') || errorMsg.toLowerCase().includes('timeout')) {
+            attempts++;
+            if (attempts < maxAttempts) {
+              const waitTime = attempts * 2500; // 2.5s, 5s...
+              this.toast.info('Server Occupato', `Google sta elaborando troppe immagini. Riprovo tra ${waitTime/1000}s...`);
+              
+              await new Promise(r => setTimeout(r, waitTime));
+              continue; // Retry loop
+            }
           }
+
+          // Other errors
+          if (res.status === 400 && errorMsg.includes('model')) {
+            this.toast.error('Modello non trovato', 'Il modello selezionato non è disponibile per la tua chiave.');
+          } else if (res.status === 429) {
+            this.toast.error('Limite superato', 'Troppe richieste. Attendi un minuto.');
+          } else {
+            this.toast.error('Errore API', errorMsg || `Errore server (${res.status})`);
+          }
+          return;
         }
-      } catch (parseError) {
-        console.error('JSON Parse Error:', text);
-        this.aiRawResponse.set(text);
-        throw new Error('L\'AI ha risposto con un formato non valido. Prova a scattare una foto più dritta e luminosa.');
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) {
+          throw new Error('L\'AI non ha restituito testo. Prova con una foto più chiara.');
+        }
+
+        try {
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            this.aiRawResponse.set(text);
+            throw new Error('L\'AI non ha restituito un formato dati valido.');
+          }
+          
+          const cleanedText = jsonMatch[0];
+          const parsed = JSON.parse(cleanedText);
+          
+          // Ensure valid structure
+          this.form.supplierName = parsed.supplierName || '';
+          this.form.entryDate = parsed.entryDate || new Date().toISOString().split('T')[0];
+          
+          if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            this.form.items = parsed.items.map((i: any) => ({
+              ingredientName: i.ingredientName || '',
+              lotto: i.lotto || '',
+              quantity: i.quantity || '',
+              expiryDate: i.expiryDate || ''
+            }));
+          } else if (parsed.ingredientName) { // Fallback if AI still returns single item flat
+            this.form.items = [{
+              ingredientName: parsed.ingredientName || '',
+              lotto: parsed.lotto || '',
+              quantity: parsed.quantity || '',
+              expiryDate: parsed.expiryDate || ''
+            }];
+          }
+
+          this.aiRawResponse.set(null);
+          this.toast.success('AI completato', `Trovati ${this.form.items.length} prodotti! Verifica i dati.`);
+          
+          // Check if supplier is new
+          if (this.form.supplierName) {
+            const savedData = this.state.getRecord('suppliers');
+            const suppliers = (savedData && Array.isArray(savedData)) ? savedData : [];
+            const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
+            if (!exists) {
+              this.showNewSupplierModal.set(true);
+            }
+          }
+          break; // Success! Exit loop
+        } catch (parseError) {
+          console.error('JSON Parse Error:', text);
+          this.aiRawResponse.set(text);
+          throw new Error('L\'AI ha risposto con un formato non valido.');
+        }
+      } catch (e: any) {
+        if (attempts >= maxAttempts - 1) {
+          console.error('AI OCR error after retries:', e);
+          this.toast.error('Errore AI', e.message || 'Impossibile analizzare il DDT. Compila manualmente.');
+          break;
+        }
+        attempts++;
+        await new Promise(r => setTimeout(r, 1000));
       }
-    } catch (e: any) {
-      console.error('AI OCR error:', e);
-      this.toast.error('Errore AI', e.message || 'Impossibile analizzare il DDT. Compila manualmente.');
-    } finally {
-      this.isAnalyzing.set(false);
     }
+    
+    this.isAnalyzing.set(false);
   }
 
   confirmNewSupplier() {
@@ -490,13 +584,13 @@ export class DdtViewComponent {
     const newSupplier = {
       id: Date.now().toString(),
       ragioneSociale: this.form.supplierName,
-      responsabile: 'Auto-registrato da DDT',
+      responsabile: '',
       piva: '',
       telefono: '',
       email: '',
       indirizzo: '',
       status: 'pending',
-      note: 'Aggiunto automaticamente tramite analisi DDT'
+      note: ''
     };
     
     this.state.saveRecord('suppliers', [...suppliers, newSupplier]);
@@ -504,78 +598,60 @@ export class DdtViewComponent {
     this.toast.success('Fornitore Registrato', `${this.form.supplierName} è stato aggiunto all'anagrafica.`);
   }
 
-  async saveEntry() {
+  async saveMultipleEntries() {
     const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo';
-    const entry: IncomingIngredient = {
-      id: `ddt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      clientId,
-      supplierName: this.form.supplierName || '',
-      ingredientName: this.form.ingredientName || '',
-      lotto: this.form.lotto || '',
-      quantity: this.form.quantity || '',
-      entryDate: this.form.entryDate || new Date().toISOString().split('T')[0],
-      expiryDate: this.form.expiryDate || '',
-      ddtImageUrl: this.ddtPreview() || undefined,
-      createdAt: new Date().toISOString()
-    };
-
-    // Optimistic update
-    this.pantry.update(list => [entry, ...list]);
-
-    // Persist to Supabase
-    const { error } = await supabase.from('incoming_ingredients').insert({
-      id: entry.id,
-      client_id: entry.clientId,
-      supplier_name: entry.supplierName,
-      ingredient_name: entry.ingredientName,
-      lotto: entry.lotto,
-      quantity: entry.quantity,
-      entry_date: entry.entryDate,
-      expiry_date: entry.expiryDate,
-      created_at: entry.createdAt
-    });
-
-    if (error) {
-      console.warn('Supabase sync failed (table may not exist yet):', error.message);
-      // Store locally as fallback
-      const local = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
-      local.unshift(entry);
-      localStorage.setItem('haccp_ddt_pantry', JSON.stringify(local));
+    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
+    
+    const newEntries: IncomingIngredient[] = [];
+    
+    for (const item of this.form.items) {
+      if (!item.ingredientName) continue; // Skip empty rows
+      
+      const entry: IncomingIngredient = {
+        id: `ddt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        clientId: clientId,
+        supplierName: this.form.supplierName || '',
+        ingredientName: item.ingredientName || '',
+        lotto: item.lotto || '',
+        quantity: item.quantity || '',
+        entryDate: this.form.entryDate || new Date().toISOString().split('T')[0],
+        expiryDate: item.expiryDate || '',
+        ddtImageUrl: this.ddtPreview() || undefined,
+        createdAt: new Date().toISOString()
+      };
+      
+      newEntries.push(entry);
+      this.state.addBaseIngredient(entry.ingredientName);
     }
 
-    // Add to base ingredients for autocomplete
-    this.state.addBaseIngredient(entry.ingredientName);
+    if (newEntries.length === 0) {
+      this.toast.error('Nessun prodotto', 'Aggiungi almeno un ingrediente valido.');
+      return;
+    }
 
-    this.toast.success('Carico salvato', `${entry.ingredientName} aggiunto alla Dispensa.`);
+    const updatedPantry = [...newEntries, ...currentPantry];
+    this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
+    
+    // Update local signal for immediate UI reflection
+    this.pantry.set(updatedPantry);
+
+    this.toast.success('Carico registrato', `${newEntries.length} prodotti aggiunti alla Dispensa.`);
     this.cancelForm();
   }
 
   async deleteEntry(id: string) {
-    this.pantry.update(list => list.filter(i => i.id !== id));
-    await supabase.from('incoming_ingredients').delete().eq('id', id);
-    const local = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
-    localStorage.setItem('haccp_ddt_pantry', JSON.stringify(local.filter((i: any) => i.id !== id)));
+    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
+    const updated = currentPantry.filter(i => i.id !== id);
+    this.state.saveGlobalRecord('ddt_pantry', updated);
+    this.pantry.set(updated);
   }
 
   async loadPantry() {
-    // Try Supabase first
-    const { data } = await supabase.from('incoming_ingredients').select('*').order('created_at', { ascending: false });
-    if (data && data.length > 0) {
-      this.pantry.set(data.map((r: any) => ({
-        id: r.id,
-        clientId: r.client_id,
-        supplierName: r.supplier_name,
-        ingredientName: r.ingredient_name,
-        lotto: r.lotto || '',
-        quantity: r.quantity || '',
-        entryDate: r.entry_date,
-        expiryDate: r.expiry_date || '',
-        createdAt: r.created_at
-      })));
+    const savedData = this.state.getGlobalRecord('ddt_pantry');
+    if (savedData && Array.isArray(savedData)) {
+      this.pantry.set(savedData);
     } else {
-      // Fallback to localStorage
-      const local = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
-      this.pantry.set(local);
+      this.pantry.set([]);
     }
   }
 

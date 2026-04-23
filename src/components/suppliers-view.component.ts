@@ -92,29 +92,12 @@ interface Supplier {
                 </div>
              </div>
 
-             <div class="mt-auto flex items-center justify-between gap-3 pt-3 border-t border-slate-50">
-                <div class="flex gap-1.5">
-                   <button (click)="setStatus(s.id, 'ok')" 
-                           class="h-8 px-3 rounded-lg flex items-center justify-center gap-2 transition-all border text-[10px] font-bold uppercase tracking-wider shadow-sm"
-                           [class.bg-emerald-600]="s.status === 'ok'" [class.text-white]="s.status === 'ok'" [class.border-emerald-600]="s.status === 'ok'"
-                           [class.bg-white]="s.status !== 'ok'" [class.text-slate-400]="s.status !== 'ok'" [class.border-slate-200]="s.status !== 'ok'" [class.hover:border-emerald-500]="s.status !== 'ok'" [class.hover:text-emerald-500]="s.status !== 'ok'">
-                      <i class="fa-solid fa-check"></i> OK
-                   </button>
-                   <button (click)="setStatus(s.id, 'issue')" 
-                           class="h-8 px-3 rounded-lg flex items-center justify-center gap-2 transition-all border text-[10px] font-bold uppercase tracking-wider shadow-sm"
-                           [class.bg-rose-600]="s.status === 'issue'" [class.text-white]="s.status === 'issue'" [class.border-rose-600]="s.status === 'issue'"
-                           [class.bg-white]="s.status !== 'issue'" [class.text-slate-400]="s.status !== 'issue'" [class.border-slate-200]="s.status !== 'issue'" [class.hover:border-rose-500]="s.status !== 'issue'" [class.hover:text-rose-500]="s.status !== 'issue'">
-                      <i class="fa-solid fa-triangle-exclamation"></i> KO
-                   </button>
-                </div>
-                
-                <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
-                      [class.bg-slate-100]="s.status === 'pending'" [class.text-slate-500]="s.status === 'pending'"
-                      [class.bg-emerald-100]="s.status === 'ok'" [class.text-emerald-600]="s.status === 'ok'"
-                      [class.bg-rose-100]="s.status === 'issue'" [class.text-rose-600]="s.status === 'issue'">
-                   {{ s.status === 'ok' ? 'Approvato' : (s.status === 'issue' ? 'Segnalato' : 'In Attesa') }}
-                </span>
-             </div>
+                 <div class="mt-auto pt-3 border-t border-slate-50">
+                    <button (click)="openSupplier(s)" 
+                            class="w-full h-10 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl flex items-center justify-center gap-2 transition-all font-bold text-xs uppercase tracking-widest shadow-sm">
+                       <i class="fa-solid fa-folder-open"></i> Apri Scheda
+                    </button>
+                 </div>
           </div>
         } @empty {
           <div class="col-span-full bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-12 text-center group cursor-pointer hover:bg-slate-100/50 transition-colors" (click)="isAddModalOpen.set(true)">
@@ -202,7 +185,7 @@ interface Supplier {
         </div>
       }
 
-      <!-- Delete Confirmation Modal (Modern & Safe) -->
+      <!-- Delete Confirmation Modal -->
       @if (supplierToDelete()) {
         <div class="fixed inset-0 z-[150] flex items-center justify-center p-4">
           <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="supplierToDelete.set(null)"></div>
@@ -231,6 +214,178 @@ interface Supplier {
           </div>
         </div>
       }
+
+      <!-- Supplier Details & Edit Modal -->
+      @if (editingSupplier()) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="editingSupplier.set(null)"></div>
+          <div class="relative bg-slate-50 w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col">
+            
+            <div class="p-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-4">
+                <div class="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-md">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold text-slate-800 tracking-tight">{{ editingSupplier()!.ragioneSociale }}</h2>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Scheda Fornitore</p>
+                </div>
+              </div>
+              <button (click)="editingSupplier.set(null)" class="h-10 w-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors bg-white border border-slate-200">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 flex flex-col lg:flex-row gap-6">
+              <!-- Left Column: Editable Data -->
+              <div class="flex-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Dati Anagrafici (Modificabili)</h3>
+                
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ragione Sociale</label>
+                  <input [(ngModel)]="editingSupplier()!.ragioneSociale" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Partita IVA</label>
+                    <input [(ngModel)]="editingSupplier()!.piva" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Responsabile</label>
+                    <input [(ngModel)]="editingSupplier()!.responsabile" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                    <input [(ngModel)]="editingSupplier()!.email" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Telefono</label>
+                    <input [(ngModel)]="editingSupplier()!.telefono" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                  </div>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Indirizzo Sede Legale</label>
+                  <input [(ngModel)]="editingSupplier()!.indirizzo" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Note Libere</label>
+                  <textarea [(ngModel)]="editingSupplier()!.note" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 resize-none"></textarea>
+                </div>
+              </div>
+
+              <!-- Right Column: DDT History -->
+              <div class="flex-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                <h3 class="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Archivio Carichi (DDT)</h3>
+                
+                <div class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                  @if (getSupplierDDTs(editingSupplier()!.ragioneSociale).length === 0) {
+                    <div class="text-center py-10">
+                      <i class="fa-solid fa-box-open text-3xl text-slate-200 mb-3"></i>
+                      <p class="text-xs text-slate-400 font-bold uppercase">Nessun carico registrato</p>
+                    </div>
+                  } @else {
+                    @for (load of getSupplierDDTs(editingSupplier()!.ragioneSociale); track load.id) {
+                      <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all">
+                        <!-- Banner Header -->
+                        <div class="flex items-center gap-4 p-3 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                             (click)="expandedDdt() === load.id ? expandedDdt.set(null) : expandedDdt.set(load.id)">
+                          @if (load.ddtImageUrl) {
+                            <div class="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden shrink-0" (click)="$event.stopPropagation(); viewImage(load.ddtImageUrl)">
+                              <img [src]="load.ddtImageUrl" class="w-full h-full object-cover hover:scale-110 transition-transform">
+                            </div>
+                          } @else {
+                            <div class="w-12 h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-300 shrink-0">
+                              <i class="fa-solid fa-file-invoice text-lg"></i>
+                            </div>
+                          }
+                          <div class="min-w-0 flex-1">
+                            <p class="text-xs font-black text-slate-800">Carico del {{ load.entryDate | date:'dd/MM/yyyy' }}</p>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase mt-0.5">{{ load.items.length }} prodotti registrati</p>
+                          </div>
+                          <div class="flex items-center gap-2 shrink-0 pr-2">
+                            <button (click)="$event.stopPropagation(); ddtToDelete.set(load)" class="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-white border border-transparent hover:border-rose-100 shadow-sm transition-all">
+                              <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                            <div class="h-8 w-8 flex items-center justify-center text-slate-400 transition-transform" [class.rotate-180]="expandedDdt() === load.id">
+                              <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Accordion Content (Products List) -->
+                        @if (expandedDdt() === load.id) {
+                          <div class="p-3 border-t border-slate-100 bg-white space-y-2 animate-slide-down">
+                            <div class="grid grid-cols-12 gap-2 px-2 pb-1 border-b border-slate-50">
+                              <span class="col-span-5 text-[9px] font-black uppercase text-slate-400">Prodotto</span>
+                              <span class="col-span-4 text-[9px] font-black uppercase text-slate-400">Lotto</span>
+                              <span class="col-span-3 text-[9px] font-black uppercase text-slate-400 text-right">Quantità</span>
+                            </div>
+                            @for (item of load.items; track item.id) {
+                              <div class="grid grid-cols-12 gap-2 px-2 py-1.5 items-center hover:bg-slate-50 rounded-lg">
+                                <span class="col-span-5 text-[11px] font-bold text-slate-700 truncate">{{ item.ingredientName }}</span>
+                                <span class="col-span-4 text-[10px] font-mono font-bold text-slate-500 truncate">{{ item.lotto || '—' }}</span>
+                                <span class="col-span-3 text-[10px] font-bold text-indigo-600 text-right truncate">{{ item.quantity || '—' }}</span>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+            
+            <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-between shrink-0">
+               <button (click)="removeSupplier(editingSupplier()!.id); editingSupplier.set(null)" class="px-6 py-3 bg-white border border-rose-200 text-rose-500 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-50 transition-all shadow-sm">
+                 <i class="fa-solid fa-trash-can mr-2"></i> Elimina
+               </button>
+               <button (click)="saveEditedSupplier()" class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md">
+                 Salva Modifiche
+               </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Fullscreen Image Viewer -->
+      @if (fullScreenImage()) {
+        <div class="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" (click)="fullScreenImage.set(null)">
+          <button class="absolute top-6 right-6 text-white text-3xl hover:scale-110 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+          <img [src]="fullScreenImage()" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-slide-up">
+        </div>
+      }
+
+      <!-- Delete DDT Confirmation Modal -->
+      @if (ddtToDelete()) {
+        <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="ddtToDelete.set(null)"></div>
+          <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+            <div class="p-8 text-center">
+              <div class="h-16 w-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-rose-100 shadow-sm animate-pulse">
+                <i class="fa-solid fa-box-open"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-800 mb-2">Elimina Intero Carico</h3>
+              <p class="text-sm text-slate-500 leading-relaxed mb-6">
+                Vuoi eliminare il carico del <span class="font-bold text-slate-700">{{ ddtToDelete()?.entryDate | date:'dd/MM/yy' }}</span> ({{ ddtToDelete()?.items?.length || 1 }} prodotti)?<br>
+                Verranno rimossi anche dalla Dispensa.
+              </p>
+              
+              <div class="flex gap-3">
+                <button (click)="ddtToDelete.set(null)" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Annulla</button>
+                <button (click)="confirmDeleteDdt()" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-md">Elimina</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -252,6 +407,10 @@ export class SuppliersViewComponent {
   suppliers = signal<Supplier[]>([]);
   isAddModalOpen = signal(false);
   supplierToDelete = signal<Supplier | null>(null);
+  editingSupplier = signal<Supplier | null>(null);
+  fullScreenImage = signal<string | null>(null);
+  ddtToDelete = signal<any | null>(null);
+  expandedDdt = signal<string | null>(null);
 
   newSupplier = {
     ragioneSociale: '',
@@ -272,7 +431,7 @@ export class SuppliersViewComponent {
   }
 
   loadData() {
-    const savedData = this.state.getRecord(this.moduleId);
+    const savedData = this.state.getGlobalRecord(this.moduleId);
     if (savedData && Array.isArray(savedData)) {
       this.suppliers.set(savedData);
     } else {
@@ -321,14 +480,62 @@ export class SuppliersViewComponent {
     this.supplierToDelete.set(null);
   }
 
-  setStatus(id: string, status: 'ok' | 'issue') {
-    this.suppliers.update(current => current.map(s => {
-      if (s.id === id) {
-        return { ...s, status: s.status === status ? 'pending' : status };
-      }
-      return s;
-    }));
+  openSupplier(s: Supplier) {
+    // Create a copy so we can cancel edits
+    this.editingSupplier.set({ ...s });
+  }
+
+  saveEditedSupplier() {
+    const edited = this.editingSupplier();
+    if (!edited) return;
+    this.suppliers.update(current => current.map(s => s.id === edited.id ? edited : s));
     this.saveData();
+    this.editingSupplier.set(null);
+  }
+
+  getSupplierDDTs(supplierName: string): any[] {
+    const ddtPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
+    if (!supplierName) return [];
+    
+    // Group items by DDT (by image/date) to save space as user requested
+    const loads = ddtPantry.filter(d => d.supplierName?.toLowerCase() === supplierName.toLowerCase());
+    
+    // Create a grouped array
+    const grouped = new Map<string, any>();
+    
+    for (const item of loads) {
+      const key = `${item.entryDate}_${item.ddtImageUrl || 'no-img'}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          id: item.id, // reference ID for deletion
+          entryDate: item.entryDate,
+          ddtImageUrl: item.ddtImageUrl,
+          ingredientName: item.ingredientName,
+          items: [item]
+        });
+      } else {
+        const group = grouped.get(key);
+        group.items.push(item);
+      }
+    }
+    
+    return Array.from(grouped.values()).sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+  }
+
+  viewImage(url: string) {
+    this.fullScreenImage.set(url);
+  }
+
+  confirmDeleteDdt() {
+    const load = this.ddtToDelete();
+    if (!load) return;
+
+    const ddtPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
+    // Delete all items in the grouped load (if they have the same entryDate and image)
+    const updatedPantry = ddtPantry.filter(d => !(d.entryDate === load.entryDate && d.ddtImageUrl === load.ddtImageUrl));
+    this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
+    
+    this.ddtToDelete.set(null);
   }
 
   onNoteUpdate() {
@@ -336,6 +543,6 @@ export class SuppliersViewComponent {
   }
 
   private saveData() {
-    this.state.saveRecord(this.moduleId, this.suppliers());
+    this.state.saveGlobalRecord(this.moduleId, this.suppliers());
   }
 }

@@ -224,16 +224,19 @@ import { ToastService } from '../services/toast.service';
                           [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3-flash-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
                     Gemini 3 Flash
                   </button>
-                  <button (click)="setGeminiModel('gemini-3.1-pro-preview')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3.1-pro-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 3.1 Pro
+                  <button (click)="setGeminiModel('gemini-3.1-flash-lite-preview')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3.1-flash-lite-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 3.1 Flash-Lite
                   </button>
-                  <button (click)="setGeminiModel('gemini-2.0-flash-exp')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-2.0-flash-exp' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 2.0 Exp
+                  <button (click)="setGeminiModel('gemini-3.1-pro-preview')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3.1-pro-preview' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
+                    Gemini 3.1 Pro (Heavy)
                   </button>
                 </div>
-                <p class="text-[9px] text-slate-400 font-bold mt-2">Nuovi modelli 2026.</p>
+                <div class="mt-3 space-y-1">
+                  <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-emerald-600">Tariffa Free (Flash):</span> Fino a 15 richieste/min e 1.500 al giorno. Costo zero.</p>
+                  <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-amber-600">Avviso:</span> In momenti di traffico globale alto ("High Demand") Google potrebbe rallentare l'elaborazione delle foto.</p>
+                </div>
               </div>
               <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-between">
                 <div>
@@ -500,8 +503,8 @@ export class SettingsViewComponent {
 
   saveGeminiApiKey() {
     const key = this.geminiApiKeyInput.trim();
-    if (!key.startsWith('AIza') || key.length < 20) {
-      this.toast.error('Chiave non valida', 'La chiave API Gemini deve iniziare con "AIza" e avere almeno 20 caratteri.');
+    if (key.length < 10) {
+      this.toast.error('Chiave non valida', 'La chiave API Gemini inserita sembra troppo corta.');
       return;
     }
     localStorage.setItem('haccp_gemini_api_key', key);
@@ -513,6 +516,7 @@ export class SettingsViewComponent {
   setGeminiModel(model: string) {
     this.geminiModel.set(model);
     localStorage.setItem('haccp_gemini_model', model);
+    this.toast.success('Modello Aggiornato', `Ora stai usando ${model}`);
   }
 
   clearGeminiApiKey() {
