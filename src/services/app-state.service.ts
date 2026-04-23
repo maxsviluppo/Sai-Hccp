@@ -622,7 +622,6 @@ export class AppStateService {
           data: r.data,
           timestamp: r.timestamp
         })));
-      this.loadAiConfig();
     }
   }
 
@@ -822,6 +821,15 @@ export class AppStateService {
     if (config) {
       if (config.report_email) this.reportRecipientEmail.set(config.report_email);
       if (config.master_data) this.adminCompany.set(config.master_data);
+    }
+
+    // Load AI Config from system_config (Shared between Admin & Operators)
+    const { data: aiSettings } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
+    if (aiSettings && aiSettings.master_data) {
+        this.aiConfig.set({
+            ...aiSettings.master_data,
+            apiKey: this.deobfuscate(aiSettings.master_data.apiKey)
+        });
     }
   }
 
@@ -1322,12 +1330,14 @@ export class AppStateService {
     let actualData: any;
     let forcedId: string | undefined;
     let forcedDate: string | undefined;
+    let forcedClientId: string | undefined;
 
     if (typeof moduleIdOrObj === 'object' && moduleIdOrObj !== null && !data) {
       moduleId = moduleIdOrObj.moduleId;
       actualData = moduleIdOrObj.data;
       forcedId = moduleIdOrObj.id;
       forcedDate = moduleIdOrObj.date;
+      forcedClientId = moduleIdOrObj.clientId;
     } else {
       moduleId = moduleIdOrObj;
       actualData = data;
@@ -1344,7 +1354,7 @@ export class AppStateService {
     const record = {
       id: forcedId || Math.random().toString(36).substring(2, 9),
       userId: targetUserId,
-      clientId: targetClientId || user.clientId || 'demo',
+      clientId: forcedClientId || targetClientId || user.clientId || 'demo',
       moduleId,
       date: forcedDate || this.filterDate(),
       timestamp: new Date().toISOString(),
@@ -1417,15 +1427,17 @@ export class AppStateService {
   }
 
   saveGlobalRecord(moduleId: string, data: any) {
+    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
     return this.saveChecklist({
       moduleId,
       data,
-      date: 'GLOBAL'
+      date: 'GLOBAL',
+      clientId: targetClientId
     });
   }
   getGlobalRecord(moduleId: string) {
     const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
-    const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && r.clientId === targetClientId);
+    const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
     
     if (allRecords.length === 0) return null;
 
@@ -1469,28 +1481,22 @@ export class AppStateService {
   }
 
   loadAiConfig() {
-    const data = this.getGlobalRecord('ai_config');
-    if (data) {
-      this.aiConfig.set({
-        ...data,
-        apiKey: this.deobfuscate(data.apiKey)
-      });
-    } else {
-      this.aiConfig.set({
-        apiKey: '',
-        model: 'gemini-1.5-flash',
-        stats: {}
-      });
-    }
+    this.syncConfig();
   }
 
-  saveAiConfig(config: any) {
+  async saveAiConfig(config: any) {
     const toSave = {
       ...config,
       apiKey: this.obfuscate(config.apiKey),
       updatedAt: new Date().toISOString()
     };
-    this.saveGlobalRecord('ai_config', toSave);
+    
+    const { error } = await supabase.from('system_config').upsert({
+        id: 'ai_settings',
+        master_data: toSave
+    });
+    
+    if (error) console.error('Error saving AI config to system_config:', error);
     this.aiConfig.set(config);
   }
 

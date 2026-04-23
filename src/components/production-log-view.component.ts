@@ -58,10 +58,26 @@ import { FormsModule } from '@angular/forms';
                         <div class="space-y-5">
                             <div class="space-y-1.5">
                                 <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Nome Alimento Principale</label>
-                                <input type="text" [(ngModel)]="currentRecord.mainProductName" 
-                                       (ngModelChange)="currentRecord.mainProductName = formatName(currentRecord.mainProductName)"
-                                       placeholder="es. Sugo alla Genovese"
-                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
+                                <div class="relative">
+                                    <input type="text" [(ngModel)]="currentRecord.mainProductName" 
+                                           (ngModelChange)="onMainProductNameChange($event)"
+                                           placeholder="es. Sugo alla Genovese"
+                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
+                                    
+                                    @if (mainProductMatches().length > 0) {
+                                        <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-48 overflow-y-auto animate-slide-up">
+                                            <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
+                                                <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Prodotti Precedenti</span>
+                                            </div>
+                                            @for (match of mainProductMatches(); track match) {
+                                                <button type="button" (click)="selectMainProduct(match)"
+                                                        class="w-full px-4 py-2.5 text-left hover:bg-slate-50 text-sm font-bold text-slate-800 border-b border-slate-50 last:border-0">
+                                                    <i class="fa-solid fa-history text-slate-300 mr-2 text-[10px]"></i> {{ match }}
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
@@ -140,57 +156,69 @@ import { FormsModule } from '@angular/forms';
                             <div class="sm:col-span-3 space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="md:col-span-2">
+                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Fornitore / Origine</label>
+                                        <input type="text" [(ngModel)]="newIngredient.supplierName" placeholder="es. Global Food Srl o Allevamento Italia"
+                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
+                                    </div>
+
+                                    <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Nome Ingrediente *</label>
+                                        <div class="relative">
                                             <input type="text" [(ngModel)]="newIngredient.name"
                                                 (ngModelChange)="onIngredientNameChange($event)"
+                                                placeholder="Cerca in dispensa o database..."
                                                 class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
+                                            
                                             @if (pantryMatches().length > 0 || baseMatches().length > 0) {
-                                              <div class="absolute z-[100] left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden max-h-[450px] overflow-y-auto animate-slide-up ring-4 ring-black/5">
-                                                @if (pantryMatches().length > 0) {
-                                                  <div class="px-4 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
-                                                    <span class="text-[10px] font-black uppercase text-indigo-600 tracking-widest"><i class="fa-solid fa-boxes-stacked mr-2"></i>Dispensa Attiva</span>
-                                                    <span class="text-[9px] font-bold text-indigo-400">{{ pantryMatches().length }} trovati</span>
-                                                  </div>
-                                                  <div class="divide-y divide-slate-50">
-                                                    @for (match of pantryMatches(); track match.id) {
-                                                      <button type="button" (click)="selectFromPantry(match)"
-                                                              class="w-full px-4 py-3 text-left hover:bg-indigo-50/50 transition-colors group">
-                                                        <div class="flex justify-between items-center mb-1">
-                                                          <span class="text-sm font-black text-slate-800 group-hover:text-indigo-600">{{ match.ingredientName }}</span>
-                                                          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">L: {{ match.lotto || '—' }}</span>
+                                                <div class="mt-2 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up">
+                                                    @if (pantryMatches().length > 0) {
+                                                        <div class="px-3 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
+                                                            <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Risultati in Dispensa</span>
                                                         </div>
-                                                        <div class="flex gap-4">
-                                                          <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1"><i class="fa-solid fa-truck text-slate-300"></i>{{ match.supplierName }}</span>
-                                                          <span class="text-[10px] font-black text-rose-500 flex items-center gap-1">
-                                                            <i class="fa-solid fa-calendar-xmark text-rose-300"></i>{{ match.expiryDate | date:'dd/MM/yy' }}
-                                                          </span>
+                                                        @for (match of pantryMatches(); track match.id) {
+                                                            <button type="button" (click)="selectFromPantry(match)"
+                                                                    class="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0 group">
+                                                                <div class="flex justify-between items-center mb-0.5">
+                                                                    <span class="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{{ match.ingredientName }}</span>
+                                                                    <span class="text-[9px] font-black text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">Lotto: {{ match.lotto }}</span>
+                                                                </div>
+                                                                <div class="text-[9px] text-slate-400 font-bold flex items-center gap-2">
+                                                                    <i class="fa-solid fa-truck text-slate-300"></i> {{ match.supplierName }}
+                                                                </div>
+                                                            </button>
+                                                        }
+                                                    }
+                                                    @if (baseMatches().length > 0) {
+                                                        <div class="px-3 py-2 bg-slate-50 border-y border-slate-100 sticky top-0 z-10">
+                                                            <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Database Generale</span>
                                                         </div>
-                                                      </button>
+                                                        @for (base of baseMatches(); track base) {
+                                                            <button type="button" (click)="selectFromBase(base)" class="w-full px-4 py-3 text-left hover:bg-slate-50 text-sm font-bold text-slate-700 border-b border-slate-50 last:border-0">
+                                                                <i class="fa-solid fa-tag text-slate-300 mr-2 text-[10px]"></i> {{ base }}
+                                                            </button>
+                                                        }
                                                     }
-                                                  </div>
-                                                }
-                                                @if (baseMatches().length > 0) {
-                                                  <div class="px-4 py-2 bg-slate-50 border-y border-slate-200 flex items-center justify-between sticky top-0 z-10">
-                                                    <span class="text-[10px] font-black uppercase text-slate-500 tracking-widest"><i class="fa-solid fa-database mr-2"></i>Database Generale</span>
-                                                  </div>
-                                                  <div class="divide-y divide-slate-50">
-                                                    @for (base of baseMatches(); track base) {
-                                                      <button type="button" (click)="selectFromBase(base)" class="w-full px-4 py-3 text-left hover:bg-slate-50 text-sm font-bold text-slate-700 transition-colors">
-                                                        <i class="fa-solid fa-tag text-slate-300 mr-2 text-[10px]"></i> {{ base }}
-                                                      </button>
-                                                    }
-                                                  </div>
-                                                }
-                                              </div>
+                                                </div>
                                             }
                                         </div>
-                                    <div>
-                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto/Scadenza</label>
-                                        <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
-                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium font-mono text-slate-600 focus:border-teal-400 transition-all shadow-sm mb-2">
-                                        <input type="date" [(ngModel)]="newIngredient.expiryDate"
-                                               class="w-full bg-white border border-rose-200 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-slate-800 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all shadow-sm">
                                     </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto e Scadenza</label>
+                                        <div class="flex flex-col sm:flex-row gap-3">
+                                            <div class="flex-1 relative">
+                                                <i class="fa-solid fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
+                                                <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Numero Lotto"
+                                                       class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-sm font-mono font-bold text-slate-600 focus:border-teal-400 transition-all shadow-sm">
+                                            </div>
+                                            <div class="flex-1 relative">
+                                                <i class="fa-solid fa-calendar-day absolute left-3 top-1/2 -translate-y-1/2 text-rose-300 text-[10px]"></i>
+                                                <input type="date" [(ngModel)]="newIngredient.expiryDate"
+                                                       class="w-full bg-white border border-rose-200 rounded-xl pl-9 pr-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-rose-400 transition-all shadow-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="md:col-span-2">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Associa Allergeni (Opzionale)</label>
                                         <div class="flex flex-wrap gap-2">
@@ -205,7 +233,7 @@ import { FormsModule } from '@angular/forms';
                                         </div>
                                     </div>
 
-                                    <div class="flex items-end md:col-span-2">
+                                    <div class="md:col-span-2 pt-2">
                                         <button (click)="addIngredient()" [disabled]="!newIngredient.name"
                                                 class="w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700 disabled:opacity-50 shadow-lg">
                                             <i class="fa-solid fa-plus text-teal-400 mr-2"></i> Aggiungi Ingrediente alla Lista
@@ -500,6 +528,7 @@ export class ProductionLogViewComponent {
     labelFormat = signal<'62mm' | '29x90'>('62mm');
     pantryMatches = signal<any[]>([]);
     baseMatches = signal<string[]>([]);
+    mainProductMatches = signal<string[]>([]);
 
     currentRecord: Partial<ProductionRecord> = {};
     newIngredient: Partial<ProductionIngredient> = {};
@@ -556,6 +585,26 @@ export class ProductionLogViewComponent {
     formatName(val: string): string {
         if (!val) return '';
         return val.charAt(0).toUpperCase() + val.slice(1);
+    }
+
+    onMainProductNameChange(val: string) {
+        this.currentRecord.mainProductName = this.formatName(val);
+        if (!val || val.length < 2) {
+            this.mainProductMatches.set([]);
+            return;
+        }
+        const q = val.toLowerCase();
+        const matches = this.state.productionRecords()
+            .map(r => r.mainProductName)
+            .filter((name, index, self) => self.indexOf(name) === index)
+            .filter(name => name.toLowerCase().includes(q))
+            .slice(0, 5);
+        this.mainProductMatches.set(matches);
+    }
+
+    selectMainProduct(name: string) {
+        this.currentRecord.mainProductName = name;
+        this.mainProductMatches.set([]);
     }
 
     resetIngredientForm() {

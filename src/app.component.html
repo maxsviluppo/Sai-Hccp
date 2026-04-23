@@ -1,7 +1,7 @@
 @if (state.showHome()) {
   <app-home-view />
 } @else if (state.publicInfoId()) {
-  <app-public-product-info [productId]="state.publicInfoId()!" />
+  <app-public-product-info [lotto]="state.publicInfoId()!" />
 } @else if (!state.isLoggedIn()) {
 <!-- Login / Demo Selection Screen -->
 <div class="min-h-screen bg-slate-50 relative flex flex-col justify-center items-center p-4 md:p-12">
