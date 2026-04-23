@@ -1011,20 +1011,16 @@ export class ProductionLogViewComponent {
 
     getQRCodeUrl(rec: ProductionRecord): string {
         const config = this.state.companyConfig();
-        // Use custom URL if set, otherwise use current location without any existing parameters
         let baseUrl = config.qrBaseUrl;
         
         if (!baseUrl || baseUrl.trim() === '') {
             baseUrl = window.location.origin + window.location.pathname;
         }
 
-        // Clean trailing slash
         if (baseUrl.endsWith('/')) {
             baseUrl = baseUrl.slice(0, -1);
         }
         
-        const fullUrl = `${baseUrl}?info=${rec.id}`;
-        console.log('Generating QR Code for:', fullUrl);
-        return encodeURIComponent(fullUrl);
+        return `${baseUrl}?info=${rec.id}`;
     }
 }

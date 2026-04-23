@@ -187,11 +187,15 @@ export class PublicProductInfoComponent implements OnInit, OnChanges {
   }
 
   async loadData() {
+    if (!this.lotto) return;
     try {
+      // Search by ID first (unique and robust), fallback to Lotto (for backward compatibility)
       const { data, error } = await supabase
         .from('production_records')
         .select('*')
-        .eq('lotto', this.lotto)
+        .or(`id.eq."${this.lotto}",lotto.eq."${this.lotto}"`)
+        .order('recorded_date', { ascending: false })
+        .limit(1)
         .single();
 
       if (data) {
