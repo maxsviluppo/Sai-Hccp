@@ -1401,24 +1401,9 @@ export class AppStateService {
       const menuItem = this.menuItems.find(m => m.id === moduleId);
 
       this.toastService.success(
-        'Feedback Inviato',
-        `Le modifiche al modulo "${menuItem?.label}" sono state salvate e notificate a ${targetUser?.name}.`
+        'Revisione Salvata',
+        `Le modifiche al modulo "${menuItem?.label}" per ${targetUser?.name} sono state salvate.`
       );
-
-      // Optionally we could add a system message to their chat
-      this.addMessage({
-        id: Date.now().toString(),
-        senderId: user.id,
-        senderName: 'Amministrazione (Revisione)',
-        recipientType: 'SINGLE',
-        recipientId: targetUser?.clientId,
-        recipientUserId: targetUserId,
-        subject: `Aggiornamento: ${menuItem?.label}`,
-        content: `L'amministratore ha revisionato e aggiornato i dati inseriti in data ${record.date} per il modulo ${menuItem?.label}.`,
-        timestamp: new Date(),
-        read: false,
-        replies: []
-      });
     }
   }
 

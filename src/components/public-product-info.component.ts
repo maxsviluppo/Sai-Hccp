@@ -1,5 +1,5 @@
 
-import { Component, Input, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService, ProductionRecord, ClientEntity } from '../services/app-state.service';
 import { supabase } from '../supabase';
@@ -9,151 +9,141 @@ import { supabase } from '../supabase';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-slate-100 font-sans print:bg-white">
+    <div class="min-h-screen bg-white font-sans print:bg-white text-slate-900">
       
-      <!-- Top Minimalist Bar (Header) -->
-      <div class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-3 flex items-center justify-between print:static print:border-b-2 print:border-slate-100">
-        <div class="flex items-center gap-4">
-          <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-100 shrink-0">
+      <!-- Top Header (A4 Minimalist) -->
+      <div class="max-w-[210mm] mx-auto px-10 py-6 border-b-2 border-slate-900 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div class="w-16 h-16 rounded overflow-hidden flex items-center justify-center bg-slate-50 border border-slate-200 shrink-0">
             @if (client()?.logo) {
               <img [src]="client()?.logo" class="w-full h-full object-contain">
             } @else {
-              <i class="fa-solid fa-building text-slate-300"></i>
+              <i class="fa-solid fa-building text-slate-300 text-3xl"></i>
             }
           </div>
           <div>
-            <h1 class="text-sm md:text-base font-black text-slate-900 uppercase tracking-tighter leading-tight">{{ client()?.name }}</h1>
-            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tracciabilità Certificata</p>
+            <h1 class="text-xl font-black uppercase tracking-tight leading-tight">{{ client()?.name }}</h1>
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ client()?.address }}</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">P.IVA: {{ client()?.piva }} | Aut. Sanitaria: {{ client()?.licenseNumber }}</p>
           </div>
         </div>
         
-        <button (click)="print()" class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-teal-600 transition-all shadow-lg active:scale-95 print:hidden">
-          <i class="fa-solid fa-print text-sm"></i>
-        </button>
+        <div class="text-right print:hidden">
+          <button (click)="print()" class="h-10 px-6 bg-slate-900 text-white rounded font-bold text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all">
+            <i class="fa-solid fa-print mr-2"></i> STAMPA A4
+          </button>
+        </div>
       </div>
 
-      <!-- Main A4 Paper Content -->
-      <div class="max-w-[210mm] mx-auto my-8 bg-white shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden border border-slate-200 print:shadow-none print:border-none print:my-0 print:w-full">
+      <!-- Main A4 Content -->
+      <div class="max-w-[210mm] mx-auto p-10 space-y-8">
         
-        <!-- Product Identity Hero -->
-        <div class="p-8 md:p-16 border-b border-slate-50 bg-white">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
-            <div class="space-y-6 max-w-2xl">
-              <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Sicurezza Alimentare Garantita
-              </div>
-              <h2 class="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase leading-[0.85] italic break-words">
-                {{ record()?.mainProductName }}
-              </h2>
-              <div class="flex flex-wrap gap-x-8 gap-y-3 pt-2">
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Lotto di Produzione</span>
-                  <span class="block text-2xl font-mono font-black text-slate-800">{{ record()?.lotto }}</span>
-                </div>
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Confezionamento</span>
-                  <span class="block text-2xl font-black text-slate-800">{{ record()?.packagingDate | date:'dd.MM.yyyy' }}</span>
-                </div>
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-rose-400 uppercase tracking-widest">Da Consumarsi entro</span>
-                  <span class="block text-2xl font-black text-rose-600">{{ record()?.expiryDate | date:'dd.MM.yyyy' }}</span>
-                </div>
-              </div>
+        <!-- Document Title & Identity -->
+        <div class="flex justify-between items-start gap-10">
+          <div class="space-y-4 flex-grow">
+            <div class="inline-block px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest">
+              Scheda Tecnica di Rintracciabilità
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none border-l-4 border-slate-900 pl-4">
+              {{ record()?.mainProductName }}
+            </h2>
+          </div>
+          
+          <!-- Key Info Grid -->
+          <div class="grid grid-cols-2 gap-x-6 gap-y-3 border border-slate-200 p-3 rounded-lg bg-slate-50/50 shrink-0">
+            <div>
+              <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Lotto Interno</p>
+              <p class="text-base font-mono font-black text-slate-900">{{ record()?.lotto }}</p>
+            </div>
+            <div>
+              <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Confezionamento</p>
+              <p class="text-base font-black text-slate-900">{{ record()?.packagingDate | date:'dd/MM/yyyy' }}</p>
+            </div>
+            <div class="col-span-2 border-t border-slate-200 pt-2">
+              <p class="text-[8px] font-black text-rose-400 uppercase tracking-widest">Da Consumarsi entro</p>
+              <p class="text-base font-black text-rose-600">{{ record()?.expiryDate | date:'dd/MM/yyyy' }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Ingredients Section -->
-        <div class="p-8 md:p-16 space-y-12 bg-white">
-          <div class="flex items-center gap-4 border-b-2 border-slate-900 pb-4">
-            <i class="fa-solid fa-list-ul text-2xl text-slate-900"></i>
-            <h3 class="text-2xl font-black text-slate-900 uppercase tracking-tight">Elenco Ingredienti e Origine</h3>
-          </div>
-
-          <div class="grid grid-cols-1 gap-6">
-            @for (ing of record()?.ingredients; track ing.id) {
-              <div class="flex items-start gap-6 group">
-                <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 text-xl group-hover:bg-teal-50 group-hover:text-teal-500 group-hover:border-teal-100 transition-all shrink-0">
-                  <i class="fa-solid fa-box-archive"></i>
-                </div>
-                <div class="flex-grow pt-1 border-b border-slate-100 pb-6 group-last:border-0">
-                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
-                    <h4 class="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight group-hover:text-teal-600 transition-colors">{{ ing.name }}</h4>
-                    <span class="px-3 py-1 bg-slate-900 text-white rounded font-mono text-xs font-bold whitespace-nowrap">Lotto: {{ ing.lotto || 'N/A' }}</span>
-                  </div>
-                  
-                  <div class="flex flex-wrap gap-4 items-center">
-                    <div class="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 shadow-sm">
-                      <i class="fa-solid fa-truck text-[10px]"></i>
-                      <span class="text-[11px] font-black uppercase tracking-tight">Fornitore: {{ ing.supplierName || 'N/D' }}</span>
-                    </div>
-                    
-                    @if (ing.allergens && ing.allergens.length > 0) {
-                      <div class="flex items-center gap-2">
-                        @for (algId of ing.allergens; track algId) {
-                          <span class="text-[10px] font-bold text-rose-500 uppercase flex items-center gap-1">
-                            <i class="fa-solid fa-triangle-exclamation text-[9px]"></i> {{ algId }}
-                          </span>
-                        }
+        <!-- Ingredients Table (Compact framed grid) -->
+        <div class="space-y-3">
+          <h3 class="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-list-check"></i> Composizione Prodotto e Tracciabilità Materie Prime
+          </h3>
+          
+          <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest">
+                  <th class="px-3 py-1.5 border-r border-slate-700 w-1/3">Ingrediente / Semilavorato</th>
+                  <th class="px-3 py-1.5 border-r border-slate-700 w-1/4">Lotto / Provenienza</th>
+                  <th class="px-3 py-1.5 w-1/3">Fornitore Certificato</th>
+                </tr>
+              </thead>
+              <tbody class="text-[10px] font-medium text-slate-700">
+                @for (ing of record()?.ingredients; track ing.id) {
+                  <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td class="px-3 py-2 border-r border-slate-100 font-bold uppercase tracking-tight">
+                      {{ ing.name }}
+                      @if (ing.allergens && ing.allergens.length > 0) {
+                        <div class="mt-0.5 flex gap-1">
+                          @for (algId of ing.allergens; track algId) {
+                            <span class="text-[7px] bg-rose-50 text-rose-600 px-1 border border-rose-100 rounded uppercase font-black">
+                              {{ algId }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    </td>
+                    <td class="px-3 py-2 border-r border-slate-100 font-mono text-[9px]">
+                      {{ ing.lotto || '---' }}
+                    </td>
+                    <td class="px-3 py-2 bg-slate-50/30">
+                      <div class="flex flex-col">
+                        <span class="font-black uppercase tracking-tighter">{{ ing.supplierName || 'Dato non disponibile' }}</span>
+                        <span class="text-[8px] text-slate-400 font-bold">Origine verificata tramite HACCP Pro</span>
                       </div>
-                    }
-                  </div>
-                </div>
-              </div>
-            }
+                    </td>
+                  </tr>
+                }
+                @if (!record()?.ingredients?.length) {
+                  <tr>
+                    <td colspan="3" class="px-4 py-8 text-center italic text-slate-400">
+                      Nessun ingrediente specifico registrato per questo lotto.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Safety Footer Section -->
-        <div class="p-8 md:p-16 bg-slate-50 border-t border-slate-100">
-          <div class="max-w-3xl space-y-8">
-            <div class="flex items-start gap-6">
-              <div class="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center text-emerald-500 text-2xl shrink-0 border border-emerald-50">
-                <i class="fa-solid fa-check-double"></i>
-              </div>
-              <div class="space-y-2">
-                <h4 class="text-sm font-black text-slate-900 uppercase tracking-widest">Protocollo di Qualità HACCP</h4>
-                <p class="text-xs text-slate-500 leading-relaxed font-medium">
-                  Questo certificato attesta che il prodotto è stato manipolato e confezionato nel pieno rispetto degli standard di sicurezza alimentare. 
-                  Ogni ingrediente è stato sottoposto a verifica di rintracciabilità e controllo qualità all'origine.
-                </p>
-              </div>
+        <!-- Footer Certifications (Compact) -->
+        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100">
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center text-lg shrink-0 border border-emerald-100">
+              <i class="fa-solid fa-shield-check"></i>
             </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-               <div class="p-4 bg-white rounded-xl border border-slate-200 text-center">
-                 <i class="fa-solid fa-dna text-teal-400 mb-2 block"></i>
-                 <span class="text-[9px] font-black text-slate-400 uppercase">Filiera</span>
-                 <span class="block text-[10px] font-bold text-slate-800">Tracciata</span>
-               </div>
-               <div class="p-4 bg-white rounded-xl border border-slate-200 text-center">
-                 <i class="fa-solid fa-microscope text-teal-400 mb-2 block"></i>
-                 <span class="text-[9px] font-black text-slate-400 uppercase">Analisi</span>
-                 <span class="block text-[10px] font-bold text-slate-800">Conforme</span>
-               </div>
-               <div class="p-4 bg-white rounded-xl border border-slate-200 text-center">
-                 <i class="fa-solid fa-leaf text-teal-400 mb-2 block"></i>
-                 <span class="text-[9px] font-black text-slate-400 uppercase">Qualità</span>
-                 <span class="block text-[10px] font-bold text-slate-800">Certificata</span>
-               </div>
-               <div class="p-4 bg-white rounded-xl border border-slate-200 text-center">
-                 <i class="fa-solid fa-shield-halved text-teal-400 mb-2 block"></i>
-                 <span class="text-[9px] font-black text-slate-400 uppercase">Standard</span>
-                 <span class="block text-[10px] font-bold text-slate-800">ISO/HACCP</span>
-               </div>
+            <div class="space-y-1">
+              <h4 class="text-[10px] font-black text-slate-900 uppercase tracking-widest">Protocollo di Sicurezza</h4>
+              <p class="text-[10px] text-slate-500 leading-tight">
+                Certifichiamo che il prodotto è manipolato secondo i piani HACCP vigenti. 
+                Rintracciabilità garantita digitalmente al 100%.
+              </p>
             </div>
           </div>
-
-          <div class="mt-16 pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 opacity-40">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Generated by HACCP PRO &copy; 2026</p>
-            <div class="flex gap-6 text-slate-400">
-               <i class="fa-solid fa-qrcode text-xl"></i>
-               <i class="fa-solid fa-lock text-xl"></i>
+          
+          <div class="flex justify-end items-center gap-6 opacity-40">
+            <div class="text-right">
+              <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Tecnologia di Tracciabilità</p>
+              <p class="text-[9px] font-black text-slate-900">HACCP PRO PLATFORM</p>
             </div>
+            <i class="fa-solid fa-qrcode text-3xl text-slate-400"></i>
           </div>
         </div>
       </div>
+    </div>
 
       <!-- Action Buttons Footer Mobile -->
       <div class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 print:hidden">
@@ -178,7 +168,7 @@ import { supabase } from '../supabase';
     }
   `]
 })
-export class PublicProductInfoComponent implements OnInit {
+export class PublicProductInfoComponent implements OnInit, OnChanges {
   @Input() lotto: string | null = null;
   
   record = signal<ProductionRecord | null>(null);
@@ -187,6 +177,12 @@ export class PublicProductInfoComponent implements OnInit {
 
   async ngOnInit() {
     if (this.lotto) {
+      await this.loadData();
+    }
+  }
+
+  async ngOnChanges(changes: SimpleChanges) {
+    if (changes['lotto'] && !changes['lotto'].firstChange) {
       await this.loadData();
     }
   }

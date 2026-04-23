@@ -509,6 +509,28 @@ import { FormsModule } from '@angular/forms';
             </div>
         </div>
     }
+
+    <!-- NO CLIENT SELECTED MODAL (FOR ADMINS) -->
+    @if (showNoClientModal()) {
+        <div class="fixed inset-0 z-[3000] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="showNoClientModal.set(false)"></div>
+            <div class="relative bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-100">
+                <div class="p-8 text-center">
+                    <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner border border-rose-100">
+                        <i class="fa-solid fa-building-circle-exclamation"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Azienda non Selezionata</h3>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed mb-8">
+                        Sei in modalità <span class="font-black text-slate-900">AMMINISTRATORE</span>. 
+                        Per registrare un nuovo prodotto, devi prima selezionare l'azienda cliente dal menu in alto a destra nella Dashboard.
+                    </p>
+                    <button (click)="showNoClientModal.set(false)" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+                        Ho capito, vado a selezionare
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
     `,
     styles: [`
         .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
@@ -520,6 +542,7 @@ export class ProductionLogViewComponent {
     toast = inject(ToastService);
 
     isEditing = signal(false);
+    showNoClientModal = signal(false);
     isLabelPreviewOpen = signal(false);
     selectedRecordForLabel = signal<ProductionRecord | null>(null);
     ingredientsList = signal<ProductionIngredient[]>([]);
@@ -552,6 +575,12 @@ export class ProductionLogViewComponent {
     });
 
     startNew() {
+        // Prevent creation if Admin but no company selected
+        if (this.state.currentUser()?.role === 'ADMIN' && !this.state.activeTargetClientId()) {
+            this.showNoClientModal.set(true);
+            return;
+        }
+
         const selDate = this.state.filterDate() || new Date().toISOString().split('T')[0];
         const sameDayCount = this.state.productionRecords().filter(r => r.recordedDate.startsWith(selDate)).length;
         const [y, m, d] = selDate.split('-');
@@ -706,6 +735,7 @@ export class ProductionLogViewComponent {
             packingDate: this.newIngredient.packingDate || '',
             expiryDate: this.newIngredient.expiryDate || '',
             lotto: this.newIngredient.lotto || '',
+            supplierName: this.newIngredient.supplierName || '',
             photo: this.tempPhoto || undefined,
             allergens: this.newIngredient.allergens || []
         };
