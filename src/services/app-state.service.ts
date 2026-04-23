@@ -120,6 +120,7 @@ export interface ProductionIngredient {
   packingDate: string;
   expiryDate: string;
   lotto: string; // or invoice ref
+  supplierName?: string;
   photo?: string; // base64 jpg
   allergens?: string[];
 }
@@ -435,11 +436,10 @@ export class AppStateService {
       this.saveState();
     });
 
-    // Reactive reload of AI config when data is synced
+    // Reactive reload of AI config when data is synced or company changes
     effect(() => {
-      if (this.checklistRecords().length > 0) {
-        this.loadAiConfig();
-      }
+      this.activeTargetClientId(); // Dependency to trigger on company change
+      this.loadAiConfig();
     }, { allowSignalWrites: true });
   }
 
@@ -612,7 +612,7 @@ export class AppStateService {
     const { data: dbRecords } = await supabase.from('checklist_records').select('*');
     if (dbRecords) {
       this.checklistRecords.set(dbRecords
-        .filter((r: any) => r.client_id === 'demo' || validClientIds.includes(r.client_id))
+        .filter((r: any) => r.client_id === 'demo' || r.client_id === 'GLOBAL' || validClientIds.includes(r.client_id))
         .map((r: any) => ({
           id: r.id,
           moduleId: r.module_id,
@@ -622,6 +622,7 @@ export class AppStateService {
           data: r.data,
           timestamp: r.timestamp
         })));
+      this.loadAiConfig();
     }
   }
 

@@ -252,9 +252,14 @@ import { FormsModule } from '@angular/forms';
                                             </td>
                                             <td class="px-4 py-3 font-bold text-slate-800">
                                                 {{ ing.name }}
-                                                @if (ing.expiryDate) {
-                                                  <p class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Scad. {{ ing.expiryDate | date:'dd/MM/yy' }}</p>
-                                                }
+                                                <div class="flex flex-col gap-0.5 mt-0.5">
+                                                    @if (ing.supplierName) {
+                                                        <p class="text-[9px] text-blue-500 font-black uppercase tracking-tight">{{ ing.supplierName }}</p>
+                                                    }
+                                                    @if (ing.expiryDate) {
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase">Scad. {{ ing.expiryDate | date:'dd/MM/yy' }}</p>
+                                                    }
+                                                </div>
                                             </td>
                                             <td class="px-4 py-3">
                                                 <span class="text-[10px] font-black text-slate-500 uppercase">{{ ing.supplierName || '—' }}</span>
@@ -358,7 +363,12 @@ import { FormsModule } from '@angular/forms';
                                     <div class="space-y-0.5">
                                         @for (ing of selectedRecordForLabel()?.ingredients; track ing.id) {
                                             <div class="text-[9px] font-bold border-b border-dotted border-slate-100 pb-0.5 flex justify-between gap-2">
-                                                <span class="truncate">• {{ ing.name }}</span>
+                                                <div class="flex flex-col min-w-0">
+                                                    <span class="truncate">• {{ ing.name }}</span>
+                                                    @if (ing.supplierName) {
+                                                        <span class="text-[7px] text-blue-500 font-black uppercase leading-none mt-0.5 pl-3">{{ ing.supplierName }}</span>
+                                                    }
+                                                </div>
                                                 <span class="font-mono text-[8.5px] opacity-60 shrink-0">L: {{ ing.lotto || 'N/A' }}</span>
                                             </div>
                                         }
@@ -557,6 +567,7 @@ export class ProductionLogViewComponent {
             packingDate: new Date().toISOString().split('T')[0],
             expiryDate: '',
             lotto: '',
+            supplierName: '',
             allergens: []
         };
     }

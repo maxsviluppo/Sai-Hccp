@@ -133,7 +133,8 @@ import { supabase } from '../supabase';
                                       <div>
                                           <div class="font-black text-slate-800 text-base md:text-lg capitalize tracking-tight group-hover:text-teal-600 transition-colors">{{ ing.name }}</div>
                                           <div class="flex text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1 items-center gap-1.5">
-                                              <i class="fa-solid fa-circle-check text-emerald-500"></i> Origine Controllata
+                                              <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                                              {{ ing.supplierName ? ing.supplierName : 'Origine Controllata' }}
                                           </div>
                                       </div>
                                   </div>

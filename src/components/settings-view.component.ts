@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppStateService, ClientEntity } from '../services/app-state.service';
@@ -220,17 +220,17 @@ import { ToastService } from '../services/toast.service';
               <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Modello Attivo</p>
                 <div class="flex flex-col gap-2">
-                  <button (click)="setGeminiModel('gemini-1.5-flash')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-flash' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 1.5 Flash (Veloce)
+                  <button (click)="setGeminiModel('gemini-2.0-flash')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 3 Flash (Veloce)
                   </button>
-                  <button (click)="setGeminiModel('gemini-2.0-flash-exp')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash-exp' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 2.0 Flash (Next-Gen)
+                  <button (click)="setGeminiModel('gemini-3.1-flash-lite-preview')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-3.1-flash-lite-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 3.1 Flash-Lite (Lite - Stabile)
                   </button>
                   <button (click)="setGeminiModel('gemini-1.5-pro')" 
                           [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-pro' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
-                    Gemini 1.5 Pro (Potente)
+                    Gemini 3.1 Pro (Heavy)
                   </button>
                 </div>
                 <div class="mt-3 space-y-1">
@@ -502,6 +502,20 @@ export class SettingsViewComponent {
 
   showApiKey = signal(false);
   geminiApiKeyInput = '';
+  geminiCallCount = signal(0);
+
+  geminiApiKey = computed(() => this.state.aiConfig()?.apiKey || '');
+
+  saveGeminiApiKey() {
+    this.saveGeminiConfig();
+  }
+
+  clearGeminiApiKey() {
+    const current = this.state.aiConfig() || { model: 'gemini-1.5-flash', stats: {} };
+    this.state.saveAiConfig({ ...current, apiKey: '' });
+    this.geminiApiKeyInput = '';
+    this.toast.info('Configurazione Rimossa', 'La chiave API è stata rimossa dal database.');
+  }
 
   saveGeminiConfig() {
     const key = this.geminiApiKeyInput.trim();
@@ -613,6 +627,30 @@ export class SettingsViewComponent {
       const config = this.state.aiConfig();
       if (config?.apiKey && !this.geminiApiKeyInput) {
         this.geminiApiKeyInput = config.apiKey;
+      }
+    });
+
+    // Reactive sync for forms when data arrives from DB
+    effect(() => {
+      const adminData = this.state.adminCompany();
+      if (!this.isEditingAdmin() && adminData) {
+        this.adminForm.patchValue(adminData, { emitEvent: false });
+      }
+    });
+
+    effect(() => {
+      const operatorData = this.state.companyConfig();
+      if (!this.isEditingOperator() && operatorData) {
+        this.operatorForm.patchValue({
+          address: operatorData.address,
+          phone: operatorData.phone,
+          cellphone: operatorData.cellphone || '',
+          whatsapp: operatorData.whatsapp || '',
+          email: operatorData.email,
+          pec: operatorData.pec || '',
+          logo: operatorData.logo || '',
+          labelFormat: operatorData.labelFormat || '62mm'
+        }, { emitEvent: false });
       }
     });
   }
