@@ -142,14 +142,13 @@ import { supabase } from '../supabase';
             <i class="fa-solid fa-qrcode text-3xl text-slate-400"></i>
           </div>
         </div>
-      </div>
-    </div>
 
-      <!-- Action Buttons Footer Mobile -->
-      <div class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 print:hidden">
-        <button (click)="print()" class="px-8 py-4 bg-slate-900 text-white rounded-full shadow-2xl flex items-center gap-3 font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
-          <i class="fa-solid fa-print"></i> Stampa Rapporto
-        </button>
+        <!-- Action Buttons Footer Mobile -->
+        <div class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 print:hidden">
+          <button (click)="print()" class="px-8 py-4 bg-slate-900 text-white rounded-full shadow-2xl flex items-center gap-3 font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
+            <i class="fa-solid fa-print"></i> Stampa Rapporto
+          </button>
+        </div>
       </div>
     </div>
   `,
