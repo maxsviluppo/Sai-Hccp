@@ -187,17 +187,17 @@ import { AppStateService } from '../services/app-state.service';
                     <div [class]="'h-10 w-10 rounded-full flex items-center justify-center transition-all bg-white shadow-sm border border-slate-100 group-hover:scale-110 shrink-0 ' + phase.iconColor">
                       <i class="fa-solid {{ phase.icon }} text-lg"></i>
                     </div>
-                    <div class="text-right">
-                       <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">{{ phase.sub }}</span>
-                       <span class="text-xs font-bold" [class]="isPhaseComplete(phase.id) ? 'text-emerald-600' : 'text-slate-500'">{{ isPhaseComplete(phase.id) ? 'Lavoro Concluso' : 'Da Rilasciare' }}</span>
-                    </div>
+                     <div class="text-right">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">{{ phase.sub }}</span>
+                        <span class="text-xs font-bold" [class]="getPhaseStatusClass(phase.id)">{{ getPhaseStatusLabel(phase.id) }}</span>
+                     </div>
                  </div>
 
                  <h4 class="text-base font-bold text-slate-800 leading-tight mb-4 flex-1">{{ phase.label }}</h4>
 
                  <div class="relative h-1.5 rounded-full bg-slate-200 overflow-hidden w-full">
                     <div class="h-full transition-all duration-1000" 
-                         [class]="phase.bgFill"
+                         [class]="getPhaseProgressClass(phase.id)"
                          [style.width.%]="isPhaseComplete(phase.id) ? 100 : 0"></div>
                  </div>
               </button>
@@ -512,6 +512,64 @@ export class OperatorDashboardViewComponent {
     const records = this.state.checklistRecords();
     return records.some(r => r.moduleId === moduleId && r.date === today && r.userId === userId);
   };
+
+  getPhaseConformity = (moduleId: string): 'PENDING' | 'CONFORM' | 'ISSUE' | 'RESOLVED' => {
+    const today = this.state.filterDate();
+    const userId = this.state.currentUser()?.id;
+    if (!userId) return 'PENDING';
+
+    if (moduleId === 'production-log') {
+        return this.isPhaseComplete(moduleId) ? 'CONFORM' : 'PENDING';
+    }
+
+    const record = this.state.checklistRecords().find(r => r.moduleId === moduleId && r.date === today && r.userId === userId);
+    if (!record) return 'PENDING';
+
+    const hasIssue = record.data?.status === 'Non Conforme';
+    if (!hasIssue) return 'CONFORM';
+
+    const isResolved = this.state.nonConformities().some(nc => 
+      nc.moduleId === moduleId && 
+      nc.date === today && 
+      nc.clientId === this.state.currentUser()?.clientId &&
+      nc.status === 'CLOSED'
+    );
+
+    return isResolved ? 'RESOLVED' : 'ISSUE';
+  };
+
+  getPhaseStatusLabel(moduleId: string): string {
+    const status = this.getPhaseConformity(moduleId);
+    switch (status) {
+      case 'PENDING': return 'Da Rilasciare';
+      case 'CONFORM': return 'Lavoro Concluso';
+      case 'ISSUE': return 'Anomalia Rilevata';
+      case 'RESOLVED': return 'Risolto (Conforme)';
+      default: return '---';
+    }
+  }
+
+  getPhaseStatusClass(moduleId: string): string {
+    const status = this.getPhaseConformity(moduleId);
+    switch (status) {
+      case 'PENDING': return 'text-slate-500';
+      case 'CONFORM': return 'text-emerald-600';
+      case 'ISSUE': return 'text-red-600 animate-pulse';
+      case 'RESOLVED': return 'text-blue-600';
+      default: return 'text-slate-500';
+    }
+  }
+
+  getPhaseProgressClass(moduleId: string): string {
+    const status = this.getPhaseConformity(moduleId);
+    switch (status) {
+      case 'PENDING': return 'bg-slate-200';
+      case 'CONFORM': return 'bg-emerald-500';
+      case 'ISSUE': return 'bg-red-500';
+      case 'RESOLVED': return 'bg-blue-500';
+      default: return 'bg-slate-200';
+    }
+  }
 
   completedPhasesCount = computed(() => {
     const phases = ['pre-op-checklist', 'operative-checklist', 'post-op-checklist', 'production-log'];

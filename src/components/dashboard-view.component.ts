@@ -244,7 +244,7 @@ interface SystemAlert {
                           <div class="flex items-center justify-between mt-2 pt-2 border-t" [class.border-red-200]="alert.type === 'error'" [class.border-orange-200]="alert.type === 'warning'" [class.border-blue-200]="alert.type === 'info'">
                             <span class="text-[9px] text-slate-500 font-semibold">{{ alert.userName || 'Sistema' }} • {{ alert.timestamp }}</span>
                             @if (alert.actionable) {
-                              <button (click)="openUserProfile(alert.userId || '')" class="text-[10px] font-bold text-blue-600 hover:underline">Verifica</button>
+                              <button (click)="handleAlertAction(alert)" class="text-[10px] font-bold text-blue-600 hover:underline">Verifica</button>
                             }
                           </div>
                         </div>
@@ -456,7 +456,17 @@ export class DashboardViewComponent {
     // 1. Anomalies from daily checklists
     relevantRecords.forEach(record => {
       if (record.data.status === 'Non Conforme') {
+        // CHECK if there is a CLOSED non-conformity for this module/date/client
         const user = users.find(u => u.id === record.userId);
+        const isResolved = this.state.nonConformities().some(nc => 
+          nc.moduleId === record.moduleId && 
+          nc.date === record.date && 
+          nc.clientId === user?.clientId &&
+          nc.status === 'CLOSED'
+        );
+
+        if (isResolved) return; // Skip if resolved
+
         alerts.push({
           id: `nc-rec-${record.id}`,
           type: 'error',
@@ -586,7 +596,15 @@ export class DashboardViewComponent {
         if (clientRec) {
           totalDone += countCompletedItemsInRecord(clientRec);
           const hasIssue = (clientRec.data?.status === 'Non Conforme' || clientRec.data?.areas?.some((a: any) => a.steps?.some((s: any) => s.status === 'issue')) || clientRec.data?.items?.some((i: any) => i.status === 'issue'));
-          if (hasIssue) issueCount++;
+          
+          const isResolved = this.state.nonConformities().some(nc => 
+            nc.moduleId === moduleId && 
+            nc.date === currentDate && 
+            nc.clientId === client.id &&
+            nc.status === 'CLOSED'
+          );
+
+          if (hasIssue && !isResolved) issueCount++;
         }
       });
 
@@ -621,8 +639,12 @@ export class DashboardViewComponent {
     }
   }
 
-  openUserProfile(userId: string) {
-    this.state.setModule('collaborators');
+  handleAlertAction(alert: SystemAlert) {
+    if (alert.type === 'error' || alert.title.toLowerCase().includes('anomalia')) {
+      this.state.setModule('non-compliance');
+    } else {
+      this.state.setModule('collaborators');
+    }
   }
 
   scrollToAlerts() {

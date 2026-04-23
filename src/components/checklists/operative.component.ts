@@ -716,14 +716,25 @@ export class OperativeChecklistComponent {
          }));
          this.autoSave();
 
-         // Segnalazione amministratore
+         const operatorName = this.state.currentUser()?.name || 'Operatore';
+         const currentDate = new Date().toLocaleDateString();
+
+         // Segnalazione amministratore (Record persistente)
          this.state.saveNonConformity({
             id: Math.random().toString(36).substring(2, 9),
             moduleId: 'operative-checklist',
             date: this.selectedDate(),
-            description: note || 'Anomalia riscontrata durante il controllo operativo',
+            description: `[OPERATIVA] ${this.currentItem()?.label}: ${note || 'Anomalia rilevata'}`,
             itemName: this.currentItem()?.label
          });
+
+         // Notifica chat all'amministrazione con dettagli strutturati
+         this.state.sendMessage(
+             `🚨 ANOMALIA OPERATIVA: ${this.currentItem()?.label}`,
+             `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Operativa (In Corso)\nELEMENTO: ${this.currentItem()?.label}\nOPERATORE: ${operatorName}\nDATA: ${currentDate}\n\nNOTE OPERATORE:\n${note || 'Nessuna specifica'}`,
+             'SINGLE',
+             'ADMIN_OFFICE'
+         );
          
          this.toast.info('Anomalia Salvata', 'La non conformità è stata registrata e segnalata.');
       }

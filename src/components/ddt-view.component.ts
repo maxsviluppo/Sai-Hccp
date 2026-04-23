@@ -1,0 +1,570 @@
+import { Component, inject, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AppStateService } from '../services/app-state.service';
+import { ToastService } from '../services/toast.service';
+import { supabase } from '../supabase';
+
+export interface IncomingIngredient {
+  id: string;
+  clientId: string;
+  supplierName: string;
+  ingredientName: string;
+  lotto: string;
+  quantity: string;
+  entryDate: string;
+  expiryDate: string;
+  ddtImageUrl?: string;
+  createdAt: string;
+}
+
+@Component({
+  selector: 'app-ddt-view',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="space-y-6 pb-16 animate-fade-in">
+
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-amber-600 to-orange-600 p-6 rounded-2xl shadow-lg text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:20px 20px;"></div>
+        <div class="relative z-10">
+          <h2 class="text-2xl font-black tracking-tight flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><i class="fa-solid fa-truck-ramp-box"></i></span>
+            Carico Merci / DDT
+          </h2>
+          <p class="text-amber-100 text-sm mt-1">Registra arrivi merce e crea la Dispensa Digitale con OCR AI</p>
+        </div>
+        <button (click)="showForm.set(true)"
+                class="relative z-10 px-6 py-3 bg-white text-amber-700 font-black text-sm uppercase tracking-wider rounded-xl hover:bg-amber-50 transition-all shadow-lg flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-plus"></i> Nuovo Carico
+        </button>
+      </div>
+
+      <!-- AI OCR Upload Card -->
+      @if (showForm()) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="font-black text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-robot text-violet-600"></i> Inserimento Carico
+            </h3>
+            <button (click)="cancelForm()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-6">
+
+            <!-- DDT Photo Upload + OCR -->
+            <div class="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-100 p-5">
+              <h4 class="text-sm font-black text-violet-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-camera-retro text-violet-600"></i> Carica Foto DDT — Analisi AI Automatica
+              </h4>
+              <div class="flex flex-col md:flex-row gap-4 items-start">
+                <div class="w-full md:w-48 h-36 rounded-xl border-2 border-dashed border-violet-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-violet-50 transition-all relative overflow-hidden"
+                     (click)="ddtFileInput.click()">
+                  @if (ddtPreview()) {
+                    <img [src]="ddtPreview()" class="w-full h-full object-cover rounded-xl">
+                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all rounded-xl">
+                      <span class="text-white text-xs font-bold">Cambia foto</span>
+                    </div>
+                  } @else {
+                    <i class="fa-solid fa-file-image text-3xl text-violet-300 mb-2"></i>
+                    <span class="text-[11px] font-bold text-violet-400 uppercase tracking-wider text-center px-2">Foto DDT</span>
+                  }
+                </div>
+                <input #ddtFileInput type="file" accept="image/*" class="hidden" (change)="handleDdtPhoto($event)">
+                <div class="flex-1">
+                  <p class="text-[11px] text-violet-700 font-bold mb-3">Scatta o carica la foto del DDT: l'AI estrarrà automaticamente i dati del carico.</p>
+                  <button (click)="analyzeWithAI()" [disabled]="!ddtPreview() || isAnalyzing()"
+                          class="px-5 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2">
+                    @if (isAnalyzing()) {
+                      <i class="fa-solid fa-spinner fa-spin"></i> Analisi in corso...
+                    } @else {
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> Analizza con AI
+                    }
+                  </button>
+                  @if (!geminiKey()) {
+                    <p class="text-[10px] text-amber-600 font-bold mt-2 flex items-center gap-1">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                      Chiave API Gemini non configurata. Vai in Impostazioni → AI.
+                    </p>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual / AI-filled Form -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornitore *</label>
+                <input type="text" [(ngModel)]="form.supplierName" placeholder="Nome fornitore"
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome Ingrediente *</label>
+                <input type="text" [(ngModel)]="form.ingredientName" placeholder="es. Patate"
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Numero Lotto</label>
+                <input type="text" [(ngModel)]="form.lotto" placeholder="Lotto del prodotto"
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-700 focus:outline-none focus:border-amber-500 transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Quantità</label>
+                <input type="text" [(ngModel)]="form.quantity" placeholder="es. 10 kg"
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Entrata *</label>
+                <input type="date" [(ngModel)]="form.entryDate"
+                       class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Scadenza *</label>
+                <input type="date" [(ngModel)]="form.expiryDate"
+                       class="w-full px-4 py-3 bg-slate-50 border border-rose-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+              <button (click)="cancelForm()" class="px-5 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-100 transition-all">Annulla</button>
+              <button (click)="saveEntry()" [disabled]="!form.supplierName || !form.ingredientName || !form.entryDate"
+                      class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Salva in Dispensa
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+      
+      <!-- New Supplier Confirmation Modal -->
+      @if (showNewSupplierModal()) {
+        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="showNewSupplierModal.set(false)"></div>
+          <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+            <div class="p-6 text-center">
+              <div class="h-16 w-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-amber-100 shadow-sm">
+                <i class="fa-solid fa-truck-field"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-800 mb-2">Nuovo Fornitore?</h3>
+              <p class="text-sm text-slate-500 leading-relaxed mb-6">
+                L'AI ha rilevato <span class="font-bold text-indigo-600">{{ form.supplierName }}</span>.<br>
+                Vuoi aggiungerlo all'anagrafica fornitori?
+              </p>
+              
+              <div class="flex gap-3">
+                <button (click)="showNewSupplierModal.set(false)" 
+                        class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                  No, Solo DDT
+                </button>
+                <button (click)="confirmNewSupplier()" 
+                        class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md">
+                  Sì, Registra
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Pantry List -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-amber-600">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-800">Dispensa Digitale</h3>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ activeCount() }} attivi • {{ expiredCount() }} scaduti (nascosti)</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="showExpired" class="rounded">
+              Mostra scaduti
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca ingrediente..."
+                     class="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-amber-400 transition-all">
+            </div>
+          </div>
+        </div>
+
+        @if (filteredPantry().length === 0) {
+          <div class="p-16 text-center">
+            <i class="fa-solid fa-boxes-stacked text-4xl text-slate-200 mb-4 block"></i>
+            <p class="text-sm font-bold text-slate-500">Dispensa vuota</p>
+            <p class="text-xs text-slate-400 mt-1">Aggiungi il primo carico con il pulsante "Nuovo Carico"</p>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Ingrediente</th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Fornitore</th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Lotto</th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Entrata</th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Scadenza</th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Qta</th>
+                  <th class="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-400 text-right">Azioni</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                @for (item of filteredPantry(); track item.id) {
+                  @let expired = isExpired(item.expiryDate);
+                  <tr class="hover:bg-slate-50 transition-colors" [class.opacity-50]="expired">
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
+                             [class]="expired ? 'bg-red-50 text-red-400' : 'bg-emerald-50 text-emerald-600'">
+                          <i class="fa-solid fa-carrot text-xs"></i>
+                        </div>
+                        <div>
+                          <p class="text-sm font-black text-slate-800">{{ item.ingredientName }}</p>
+                          @if (expired) {
+                            <span class="text-[9px] font-black text-red-500 uppercase bg-red-50 px-1.5 py-0.5 rounded">SCADUTO</span>
+                          }
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.supplierName }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">{{ item.lotto || '—' }}</td>
+                    <td class="px-4 py-3 text-xs font-bold text-slate-500">{{ item.entryDate | date:'dd/MM/yy' }}</td>
+                    <td class="px-4 py-3">
+                      <span class="text-xs font-black px-2 py-1 rounded-lg"
+                            [class]="expired ? 'bg-red-50 text-red-600 border border-red-100' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
+                        {{ item.expiryDate | date:'dd/MM/yy' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.quantity || '—' }}</td>
+                    <td class="px-4 py-3 text-right">
+                      <button (click)="deleteEntry(item.id)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ml-auto">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+    </div>
+  `,
+  styles: [`.animate-fade-in { animation: fadeIn 0.4s ease-out; } @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`]
+})
+export class DdtViewComponent {
+  state = inject(AppStateService);
+  toast = inject(ToastService);
+
+  showForm = signal(false);
+  isAnalyzing = signal(false);
+  ddtPreview = signal<string | null>(null);
+  pantry = signal<IncomingIngredient[]>([]);
+  showExpired = false;
+  searchQuery = '';
+  showNewSupplierModal = signal(false);
+  aiRawResponse = signal<string | null>(null);
+
+  form: Partial<IncomingIngredient> = {};
+
+  geminiKey = () => localStorage.getItem('haccp_gemini_api_key') || '';
+
+  activeCount = computed(() => this.pantry().filter(i => !this.isExpired(i.expiryDate)).length);
+  expiredCount = computed(() => this.pantry().filter(i => this.isExpired(i.expiryDate)).length);
+
+  filteredPantry = computed(() => {
+    const clientId = this.state.activeTargetClientId();
+    let items = this.pantry().filter(i => !clientId || i.clientId === clientId);
+    if (!this.showExpired) items = items.filter(i => !this.isExpired(i.expiryDate));
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase();
+      items = items.filter(i => i.ingredientName.toLowerCase().includes(q) || i.supplierName.toLowerCase().includes(q));
+    }
+    return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  });
+
+  constructor() {
+    this.loadPantry();
+    this.resetForm();
+  }
+
+  resetForm() {
+    this.form = {
+      supplierName: '',
+      ingredientName: '',
+      lotto: '',
+      quantity: '',
+      entryDate: new Date().toISOString().split('T')[0],
+      expiryDate: ''
+    };
+    this.ddtPreview.set(null);
+  }
+
+  cancelForm() {
+    this.showForm.set(false);
+    this.resetForm();
+  }
+
+  handleDdtPhoto(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // We can accept larger files now because we compress them
+    if (file.size > 20 * 1024 * 1024) { 
+      this.toast.error('Foto troppo grande', 'Max 20MB prima della compressione'); 
+      return; 
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imgUrl = e.target?.result as string;
+      
+      // Compress image to reduce API payload and avoid 429/413 errors
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1600;
+        const MAX_HEIGHT = 1600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // Compress to JPEG with 0.6 quality (reduces size dramatically, keeps text readable)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          this.ddtPreview.set(compressedDataUrl);
+          
+          // Log size reduction for debugging
+          const origSize = Math.round(imgUrl.length / 1024);
+          const newSize = Math.round(compressedDataUrl.length / 1024);
+          console.log(`[OCR] Image compressed: ${origSize}KB -> ${newSize}KB`);
+        } else {
+          // Fallback if canvas fails
+          this.ddtPreview.set(imgUrl);
+        }
+      };
+      img.src = imgUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async analyzeWithAI() {
+    const key = this.geminiKey();
+    const img = this.ddtPreview();
+    if (!key) { this.toast.error('Chiave mancante', 'Configura la chiave API Gemini in Impostazioni.'); return; }
+    if (!img) { this.toast.error('Nessuna foto', 'Carica prima una foto del DDT.'); return; }
+
+    this.isAnalyzing.set(true);
+
+    // Increment usage counter
+    const current = parseInt(sessionStorage.getItem('haccp_gemini_calls') || '0', 10);
+    sessionStorage.setItem('haccp_gemini_calls', String(current + 1));
+
+    const model = localStorage.getItem('haccp_gemini_model') || 'gemini-3-flash-preview';
+
+    try {
+      const base64 = img.split(',')[1];
+      const mimeType = img.split(';')[0].split(':')[1];
+
+      const body = {
+        contents: [{
+          parts: [
+            { text: `Analizza questo DDT (documento di trasporto) e restituisci SOLO un JSON con questi campi esatti (senza markdown, solo JSON puro): {"supplierName":"","ingredientName":"","lotto":"","quantity":"","entryDate":"YYYY-MM-DD","expiryDate":"YYYY-MM-DD"}. Se ci sono più prodotti nel documento, estrai i dati solo del PRIMO prodotto della lista. Se un campo non è leggibile, lascialo vuoto. Per le date usa il formato YYYY-MM-DD.` },
+            { inlineData: { mimeType, data: base64 } }
+          ]
+        }],
+        generationConfig: { maxOutputTokens: 500, temperature: 0.1 }
+      };
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Gemini API Error Response:', errorData);
+        
+        if (res.status === 400 && errorData.error?.message?.includes('model')) {
+          this.toast.error('Modello non trovato', 'Prova a usare gemini-1.5-flash nelle impostazioni.');
+        } else if (res.status === 403) {
+          this.toast.error('API Key Non Valida', 'Verifica la chiave nelle Impostazioni.');
+        } else if (res.status === 429) {
+          this.toast.error('Limite superato', 'Troppe richieste. Attendi un minuto.');
+        } else {
+          throw new Error(errorData.error?.message || 'Errore API Google');
+        }
+        return;
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      if (!text) {
+        throw new Error('L\'AI non ha restituito testo. Prova con una foto più chiara.');
+      }
+
+      try {
+        // Robust JSON extraction: look for the first { and last }
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('L\'AI non ha restituito un formato dati valido.');
+        }
+        
+        const cleanedText = jsonMatch[0];
+        const parsed = JSON.parse(cleanedText);
+        this.form = { ...this.form, ...parsed };
+        this.aiRawResponse.set(null);
+        this.toast.success('AI completato', 'Campi compilati automaticamente. Verifica i dati.');
+        
+        // Check if supplier is new
+        if (this.form.supplierName) {
+          const savedData = this.state.getRecord('suppliers');
+          const suppliers = (savedData && Array.isArray(savedData)) ? savedData : [];
+          const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
+          if (!exists) {
+            this.showNewSupplierModal.set(true);
+          }
+        }
+      } catch (parseError) {
+        console.error('JSON Parse Error:', text);
+        throw new Error('L\'AI ha risposto con un formato non valido. Prova a scattare una foto più dritta e luminosa.');
+      }
+    } catch (e: any) {
+      console.error('AI OCR error:', e);
+      this.toast.error('Errore AI', e.message || 'Impossibile analizzare il DDT. Compila manualmente.');
+    } finally {
+      this.isAnalyzing.set(false);
+    }
+  }
+
+  confirmNewSupplier() {
+    if (!this.form.supplierName) return;
+    
+    const suppliers = (this.state.getRecord('suppliers') || []) as any[];
+    const newSupplier = {
+      id: Date.now().toString(),
+      ragioneSociale: this.form.supplierName,
+      responsabile: 'Auto-registrato da DDT',
+      piva: '',
+      telefono: '',
+      email: '',
+      indirizzo: '',
+      status: 'pending',
+      note: 'Aggiunto automaticamente tramite analisi DDT'
+    };
+    
+    this.state.saveRecord('suppliers', [...suppliers, newSupplier]);
+    this.showNewSupplierModal.set(false);
+    this.toast.success('Fornitore Registrato', `${this.form.supplierName} è stato aggiunto all'anagrafica.`);
+  }
+
+  async saveEntry() {
+    const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo';
+    const entry: IncomingIngredient = {
+      id: `ddt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      clientId,
+      supplierName: this.form.supplierName || '',
+      ingredientName: this.form.ingredientName || '',
+      lotto: this.form.lotto || '',
+      quantity: this.form.quantity || '',
+      entryDate: this.form.entryDate || new Date().toISOString().split('T')[0],
+      expiryDate: this.form.expiryDate || '',
+      ddtImageUrl: this.ddtPreview() || undefined,
+      createdAt: new Date().toISOString()
+    };
+
+    // Optimistic update
+    this.pantry.update(list => [entry, ...list]);
+
+    // Persist to Supabase
+    const { error } = await supabase.from('incoming_ingredients').insert({
+      id: entry.id,
+      client_id: entry.clientId,
+      supplier_name: entry.supplierName,
+      ingredient_name: entry.ingredientName,
+      lotto: entry.lotto,
+      quantity: entry.quantity,
+      entry_date: entry.entryDate,
+      expiry_date: entry.expiryDate,
+      created_at: entry.createdAt
+    });
+
+    if (error) {
+      console.warn('Supabase sync failed (table may not exist yet):', error.message);
+      // Store locally as fallback
+      const local = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
+      local.unshift(entry);
+      localStorage.setItem('haccp_ddt_pantry', JSON.stringify(local));
+    }
+
+    // Add to base ingredients for autocomplete
+    this.state.addBaseIngredient(entry.ingredientName);
+
+    this.toast.success('Carico salvato', `${entry.ingredientName} aggiunto alla Dispensa.`);
+    this.cancelForm();
+  }
+
+  async deleteEntry(id: string) {
+    this.pantry.update(list => list.filter(i => i.id !== id));
+    await supabase.from('incoming_ingredients').delete().eq('id', id);
+    const local = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
+    localStorage.setItem('haccp_ddt_pantry', JSON.stringify(local.filter((i: any) => i.id !== id)));
+  }
+
+  async loadPantry() {
+    // Try Supabase first
+    const { data } = await supabase.from('incoming_ingredients').select('*').order('created_at', { ascending: false });
+    if (data && data.length > 0) {
+      this.pantry.set(data.map((r: any) => ({
+        id: r.id,
+        clientId: r.client_id,
+        supplierName: r.supplier_name,
+        ingredientName: r.ingredient_name,
+        lotto: r.lotto || '',
+        quantity: r.quantity || '',
+        entryDate: r.entry_date,
+        expiryDate: r.expiry_date || '',
+        createdAt: r.created_at
+      })));
+    } else {
+      // Fallback to localStorage
+      const local = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
+      this.pantry.set(local);
+    }
+  }
+
+  isExpired(expiryDate: string): boolean {
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date(new Date().toDateString());
+  }
+
+  daysToExpiry(expiryDate: string): number {
+    if (!expiryDate) return 999;
+    const diff = new Date(expiryDate).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+}

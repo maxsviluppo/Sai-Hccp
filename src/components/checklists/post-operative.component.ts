@@ -741,6 +741,29 @@ export class PostOperationalChecklistComponent {
             completedSteps: this.completedStepsCount()
         });
 
+        // Persistent record
+        const parentArea = this.areas().find(a => a.steps.some(s => s.id === anomaly.id));
+        const areaName = parentArea ? parentArea.label : 'Generale';
+        const operatorName = this.state.currentUser()?.name || 'Operatore';
+        const currentDate = new Date().toLocaleDateString();
+
+        // Persistent non-conformity record
+        this.state.saveNonConformity({
+            id: Math.random().toString(36).substring(2, 9),
+            moduleId: 'post-op-checklist',
+            date: this.state.filterDate(),
+            description: `[POST-OP] ${areaName} -> ${anomaly.label}: ${note || 'Anomalia rilevata'}`,
+            itemName: anomaly.label
+        });
+
+        // Notifica chat all'amministrazione con dettagli strutturati
+        this.state.sendMessage(
+            `🚨 ANOMALIA POST-OPERATIVA: ${anomaly.label}`,
+            `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Post-operativa (Fine Servizio)\nAREA: ${areaName}\nELEMENTO: ${anomaly.label}\nOPERATORE: ${operatorName}\nDATA: ${currentDate}\n\nNOTE OPERATORE:\n${note || 'Nessuna specifica'}`,
+            'SINGLE',
+            'ADMIN_OFFICE'
+        );
+
         this.closeAnomalyModal();
     }
 

@@ -1071,16 +1071,17 @@ export class AppStateService {
     const user = this.currentUser();
     if (!user) return 0;
 
-    return this.messages().filter(msg => {
-      // Admin sees all messages
-      if (user.role === 'ADMIN') {
-        return !msg.read && msg.senderId !== user.id;
+    // Use the same filtered list that the UI shows
+    return this.getMessagesForCurrentUser().filter(msg => {
+      if (msg.read) return false;
+      
+      // If it's unread, check if the last activity was from someone else
+      if (msg.replies && msg.replies.length > 0) {
+        const lastReply = msg.replies[msg.replies.length - 1];
+        return lastReply.senderId !== user.id;
       }
-      // Collaborator sees messages for their company or broadcast
-      return !msg.read &&
-        msg.senderId !== user.id &&
-        (msg.recipientType === 'ALL' ||
-          (msg.recipientId === user.clientId && (!msg.recipientUserId || msg.recipientUserId === user.id)));
+      
+      return msg.senderId !== user.id;
     }).length;
   });
 
@@ -1136,6 +1137,7 @@ export class AppStateService {
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
     { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'operations' },
+    { id: 'ddt-carico', label: 'Carico Merci / DDT', icon: 'fa-truck-ramp-box', category: 'operations', operatorOnly: true },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations', operatorOnly: true },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations', operatorOnly: true },
 
@@ -2131,20 +2133,67 @@ export class AppStateService {
     const user = this.currentUser();
     if (!user) return [];
 
-    if (user.role === 'ADMIN') {
-      return this.messages();
+    const targetClientId = this.activeTargetClientId();
+    const isGlobalAdmin = user.role === 'ADMIN' && (!targetClientId || targetClientId === 'demo');
+
+    let filtered: Message[] = [];
+
+    if (isGlobalAdmin) {
+      // Global Admin (no company filter) sees ALL messages
+      filtered = this.messages();
+    } else if (user.role === 'ADMIN') {
+      // Admin filtered to a specific company
+      filtered = this.messages().filter(msg => {
+        const sender = this.systemUsers().find(u => u.id === msg.senderId);
+
+        // Messages I (admin) sent TO this company
+        if (msg.senderId === user.id) {
+          return msg.recipientId === targetClientId || msg.recipientId === 'ADMIN_OFFICE';
+        }
+
+        // Skip global broadcasts in company-filtered view
+        if (msg.recipientType === 'ALL') return false;
+
+        // Messages FROM users of this company (anomaly reports go to ADMIN_OFFICE)
+        if (sender?.clientId === targetClientId) return true;
+
+        // Messages sent explicitly TO this company by admin
+        if (msg.recipientId === targetClientId) return true;
+
+        return false;
+      });
+
+      // Apply operator sub-filter if selected
+      const targetUserId = this.filterCollaboratorId();
+      if (targetUserId) {
+        filtered = filtered.filter(msg =>
+          msg.senderId === targetUserId ||
+          msg.recipientUserId === targetUserId
+        );
+      }
+    } else {
+      // OPERATOR: sees messages addressed to their company/user OR their own sent messages
+      filtered = this.messages().filter(msg => {
+        // 1. My own sent messages
+        if (msg.senderId === user.id) return true;
+
+        // 2. Broadcasts (ALL) - Usually from Admin
+        if (msg.recipientType === 'ALL') return true;
+
+        // 3. SINGLE messages addressed to my company or specifically to me
+        const matchesCompany = msg.recipientId === user.clientId;
+        const matchesMe = !msg.recipientUserId || msg.recipientUserId === user.id;
+        
+        return matchesCompany && matchesMe;
+      });
     }
 
-    // Collaborators see:
-    // 1. Messages they sent
-    // 2. Messages sent to everyone (broadcast)
-    // 3. Messages sent to their specific company (if not targeted to someone else)
-    // 4. Messages sent specifically to them
-    return this.messages().filter(msg =>
-      msg.senderId === user.id ||
-      msg.recipientType === 'ALL' ||
-      (msg.recipientId === user.clientId && (!msg.recipientUserId || msg.recipientUserId === user.id))
-    );
+    // Sort newest first
+    return [...filtered].sort((a, b) => {
+      const ta = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+      const tb = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+      return tb - ta;
+    });
   }
 
   /**

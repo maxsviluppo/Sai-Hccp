@@ -1,14 +1,14 @@
 
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AppStateService, ClientEntity } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: 'app-settings-view',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="space-y-6 animate-fade-in">
       
@@ -190,6 +190,167 @@ import { ToastService } from '../services/toast.service';
             </form>
           </div>
         </div>
+
+        <!-- ==================== GEMINI AI PANEL ==================== -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <!-- Panel Header -->
+          <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-indigo-50/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-xl bg-white border border-violet-100 flex items-center justify-center shadow-sm shrink-0">
+                <i class="fa-solid fa-robot text-violet-600 text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-slate-800">Intelligenza Artificiale – Gemini</h3>
+                <p class="text-[11px] font-bold text-slate-500 mt-0.5">Configurazione chiave API per OCR documenti e automazione</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border"
+                    [class]="geminiApiKey() ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
+                <i class="fa-solid mr-1" [class]="geminiApiKey() ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
+                {{ geminiApiKey() ? 'API Configurata' : 'Non Configurata' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-6">
+
+            <!-- Model Info Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Modello Attivo</p>
+                <div class="flex flex-col gap-2">
+                  <button (click)="setGeminiModel('gemini-3-flash-preview')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3-flash-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 3 Flash
+                  </button>
+                  <button (click)="setGeminiModel('gemini-3.1-pro-preview')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-3.1-pro-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 3.1 Pro
+                  </button>
+                  <button (click)="setGeminiModel('gemini-2.0-flash-exp')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (geminiModel() === 'gemini-2.0-flash-exp' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 2.0 Exp
+                  </button>
+                </div>
+                <p class="text-[9px] text-slate-400 font-bold mt-2">Nuovi modelli 2026.</p>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-between">
+                <div>
+                  <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Chiamate API (sessione)</p>
+                  <p class="text-2xl font-black text-slate-800">{{ geminiCallCount() }}</p>
+                  <p class="text-[10px] text-slate-400 font-bold mt-1">Reset ad ogni riavvio</p>
+                </div>
+                @if (geminiCallCount() > 0) {
+                  <button (click)="resetGeminiCounters()" class="mt-2 text-[9px] font-black uppercase text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
+                    <i class="fa-solid fa-rotate-left"></i> Azzera Contatore
+                  </button>
+                }
+              </div>
+              <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Costo Stimato</p>
+                <p class="text-2xl font-black text-emerald-600">~€{{ (geminiCallCount() * 0.00025).toFixed(4) }}</p>
+                <p class="text-[10px] text-slate-400 font-bold mt-1">€0.00025 per chiamata</p>
+              </div>
+            </div>
+
+            <!-- API Key Input -->
+            <div class="space-y-2">
+              <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Chiave API Gemini</label>
+              <div class="flex gap-3">
+                <div class="relative flex-1">
+                  <i class="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-violet-400 text-sm"></i>
+                  <input 
+                    [type]="showApiKey() ? 'text' : 'password'"
+                    [(ngModel)]="geminiApiKeyInput"
+                    placeholder="AIza..."
+                    class="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 transition-all"
+                  >
+                  <button (click)="showApiKey.set(!showApiKey())" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid text-sm" [class]="showApiKey() ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+                <button (click)="saveGeminiApiKey()" class="px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0">
+                  <i class="fa-solid fa-save"></i> Salva
+                </button>
+                <button (click)="testAiConnection()" [disabled]="!geminiApiKey() || isTestingAi()"
+                        class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0">
+                  @if (isTestingAi()) {
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                  } @else {
+                    <i class="fa-solid fa-vial"></i> Testa Connessione
+                  }
+                </button>
+                @if (geminiApiKey()) {
+                  <button (click)="clearGeminiApiKey()" class="px-4 py-3 bg-white border border-red-200 hover:bg-red-50 text-red-600 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm shrink-0">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                }
+              </div>
+              <p class="text-[10px] text-slate-400 font-bold pl-1">La chiave viene salvata localmente nel browser. Non viene mai inviata a terzi.</p>
+            </div>
+
+            <!-- Info + Link Box -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-violet-50 rounded-xl p-5 border border-violet-100">
+                <h4 class="text-xs font-black text-violet-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <i class="fa-solid fa-circle-info text-violet-500"></i> Come ottenere la chiave API
+                </h4>
+                <ol class="space-y-2">
+                  <li class="flex items-start gap-2 text-[11px] text-violet-700 font-bold">
+                    <span class="w-5 h-5 rounded-full bg-violet-600 text-white text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    Accedi a Google AI Studio con il tuo account Google
+                  </li>
+                  <li class="flex items-start gap-2 text-[11px] text-violet-700 font-bold">
+                    <span class="w-5 h-5 rounded-full bg-violet-600 text-white text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    Clicca su <strong>"Get API Key"</strong> → <strong>"Create API Key"</strong>
+                  </li>
+                  <li class="flex items-start gap-2 text-[11px] text-violet-700 font-bold">
+                    <span class="w-5 h-5 rounded-full bg-violet-600 text-white text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    Copia la chiave generata e incollala nel campo sopra
+                  </li>
+                </ol>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
+                   class="mt-4 w-full py-3 flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-md">
+                  <i class="fa-solid fa-external-link-alt"></i>
+                  Apri Google AI Studio
+                </a>
+              </div>
+
+              <div class="bg-slate-50 rounded-xl p-5 border border-slate-100 space-y-3">
+                <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <i class="fa-solid fa-chart-bar text-slate-500"></i> Limiti & Costi
+                </h4>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center text-[11px] font-bold">
+                    <span class="text-slate-500">Piano gratuito (Free Tier)</span>
+                    <span class="text-emerald-600">15 richieste/min</span>
+                  </div>
+                  <div class="flex justify-between items-center text-[11px] font-bold">
+                    <span class="text-slate-500">Costo per foto DDT</span>
+                    <span class="text-slate-700">~€0.00025</span>
+                  </div>
+                  <div class="flex justify-between items-center text-[11px] font-bold">
+                    <span class="text-slate-500">1.000 foto/mese</span>
+                    <span class="text-slate-700">~€0.25</span>
+                  </div>
+                  <div class="h-px bg-slate-200 my-1"></div>
+                  <div class="flex justify-between items-center text-[11px] font-bold">
+                    <span class="text-slate-500">Modello consigliato</span>
+                    <span class="text-violet-600 font-mono">gemini-2.0-flash</span>
+                  </div>
+                </div>
+                <a href="https://ai.google.dev/pricing" target="_blank" rel="noopener noreferrer"
+                   class="mt-2 text-[10px] text-blue-600 font-black hover:underline flex items-center gap-1">
+                  <i class="fa-solid fa-external-link-alt text-[9px]"></i> Vedi prezzi ufficiali Google AI
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <!-- ========================================================= -->
+
       } @else {
         <!-- Collaborator View: Remains Read-Only Summary of THEIR company, with EDIT possibility -->
         <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -302,19 +463,6 @@ import { ToastService } from '../services/toast.service';
                  }
                </div>
 
-               <div class="space-y-1.5 md:col-span-2">
-                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1 flex items-center gap-2">
-                   Indirizzo Server per QR Code
-                   <i class="fa-solid fa-circle-info text-blue-400 cursor-help" title="Inserisci l'indirizzo IP del PC (es: http://192.168.1.13:3000) per far funzionare i QR Code sui cellulari nella stessa rete."></i>
-                 </label>
-                 <div class="relative group">
-                   <i class="fa-solid fa-link absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"></i>
-                   <input type="text" formControlName="qrBaseUrl" [readonly]="!isEditingOperator()"
-                          class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-700 bg-slate-50/50"
-                          placeholder="http://192.168.1.13:3000">
-                 </div>
-                 <p class="text-[9px] text-slate-400 font-bold px-1 italic">Indirizzo utilizzato per generare i link nei QR Code delle etichette.</p>
-               </div>
              </form>
                           <div class="mt-8 p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-start gap-3">
                 <i class="fa-solid fa-circle-info mt-0.5 text-indigo-400"></i>
@@ -342,6 +490,79 @@ export class SettingsViewComponent {
 
   isEditingAdmin = signal(false);
   isEditingOperator = signal(false);
+
+  // --- Gemini AI Config ---
+  geminiApiKey = signal<string>(localStorage.getItem('haccp_gemini_api_key') || '');
+  geminiModel = signal<string>(localStorage.getItem('haccp_gemini_model') || 'gemini-3-flash-preview');
+  geminiCallCount = signal<number>(parseInt(sessionStorage.getItem('haccp_gemini_calls') || '0', 10));
+  showApiKey = signal(false);
+  geminiApiKeyInput = this.geminiApiKey();
+
+  saveGeminiApiKey() {
+    const key = this.geminiApiKeyInput.trim();
+    if (!key.startsWith('AIza') || key.length < 20) {
+      this.toast.error('Chiave non valida', 'La chiave API Gemini deve iniziare con "AIza" e avere almeno 20 caratteri.');
+      return;
+    }
+    localStorage.setItem('haccp_gemini_api_key', key);
+    localStorage.setItem('haccp_gemini_model', this.geminiModel());
+    this.geminiApiKey.set(key);
+    this.toast.success('Configurazione salvata', 'Le impostazioni AI sono state aggiornate.');
+  }
+
+  setGeminiModel(model: string) {
+    this.geminiModel.set(model);
+    localStorage.setItem('haccp_gemini_model', model);
+  }
+
+  clearGeminiApiKey() {
+    localStorage.removeItem('haccp_gemini_api_key');
+    this.geminiApiKey.set('');
+    this.geminiApiKeyInput = '';
+    this.toast.info('Chiave rimossa', 'La chiave API Gemini è stata eliminata.');
+  }
+  isTestingAi = signal(false);
+
+  async testAiConnection() {
+    const key = this.geminiApiKey();
+    const model = this.geminiModel();
+    if (!key) return;
+
+    this.isTestingAi.set(true);
+    try {
+      const body = {
+        contents: [{ parts: [{ text: 'Rispondi solo con la parola "OK" se mi ricevi.' }] }]
+      };
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        this.toast.success('Test Superato', 'La connessione con l\'AI è attiva e funzionante!');
+      } else {
+        const err = await res.json();
+        const msg = err.error?.message || 'Errore ignoto';
+        if (res.status === 429) {
+          this.toast.error('Limite Superato', 'Il tuo account Google ha raggiunto il limite di frequenza. Attendi o cambia chiave.');
+        } else {
+          this.toast.error('Test Fallito', msg);
+        }
+      }
+    } catch (e) {
+      this.toast.error('Errore Connessione', 'Impossibile raggiungere i server Google.');
+    } finally {
+      this.isTestingAi.set(false);
+    }
+  }
+
+  resetGeminiCounters() {
+    sessionStorage.setItem('haccp_gemini_calls', '0');
+    this.geminiCallCount.set(0);
+    this.toast.info('Contatore Azzerato', 'Il conteggio delle chiamate AI per questa sessione è stato resettato.');
+  }
+  // --- End Gemini AI Config ---
 
   adminForm: FormGroup;
   operatorForm: FormGroup;
@@ -376,7 +597,6 @@ export class SettingsViewComponent {
       email: ['', [Validators.email]],
       pec: ['', [Validators.email]],
       logo: [''],
-      qrBaseUrl: [''],
       labelFormat: ['62mm']
     });
   }
@@ -447,7 +667,6 @@ export class SettingsViewComponent {
       email: config.email,
       pec: config.pec || '',
       logo: config.logo || '',
-      qrBaseUrl: config.qrBaseUrl || '',
       labelFormat: config.labelFormat || '62mm'
     });
     this.isEditingOperator.set(true);

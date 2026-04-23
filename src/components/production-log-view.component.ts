@@ -143,7 +143,7 @@ import { FormsModule } from '@angular/forms';
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Nome Ingrediente *</label>
                                         <div class="relative">
                                             <input type="text" [(ngModel)]="newIngredient.name"
-                                                (ngModelChange)="newIngredient.name = formatName(newIngredient.name)"
+                                                (ngModelChange)="onIngredientNameChange($event)"
                                                 list="common-ingredients"
                                                 class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
                                             <datalist id="common-ingredients">
@@ -151,6 +151,28 @@ import { FormsModule } from '@angular/forms';
                                                     <option [value]="base"></option>
                                                 }
                                             </datalist>
+                                            @if (pantryMatches().length > 0) {
+                                              <div class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                                                <div class="px-3 py-1.5 bg-violet-50 border-b border-violet-100">
+                                                  <span class="text-[9px] font-black uppercase text-violet-600 tracking-wider"><i class="fa-solid fa-boxes-stacked mr-1"></i>Dispensa Digitale</span>
+                                                </div>
+                                                @for (match of pantryMatches(); track match.id) {
+                                                  <button type="button" (click)="selectFromPantry(match)"
+                                                          class="w-full px-3 py-2.5 text-left hover:bg-violet-50 transition-colors border-b border-slate-100 last:border-0">
+                                                    <div class="flex justify-between items-center">
+                                                      <span class="text-sm font-black text-slate-800">{{ match.ingredientName }}</span>
+                                                      <span class="text-[9px] font-bold text-slate-400 font-mono">L: {{ match.lotto || '—' }}</span>
+                                                    </div>
+                                                    <div class="flex gap-3 mt-0.5">
+                                                      <span class="text-[10px] text-slate-500 font-bold"><i class="fa-solid fa-truck text-slate-400 mr-1"></i>{{ match.supplierName }}</span>
+                                                      <span class="text-[10px] font-bold text-emerald-600">
+                                                        <i class="fa-solid fa-calendar-xmark mr-1"></i>Scad. {{ match.expiryDate | date:'dd/MM/yy' }}
+                                                      </span>
+                                                    </div>
+                                                  </button>
+                                                }
+                                              </div>
+                                            }
                                         </div>
                                     </div>
                                     <div>
@@ -448,6 +470,7 @@ export class ProductionLogViewComponent {
     tempPhoto: string | null = null;
     zoomedPhoto = signal<string | null>(null);
     labelFormat = signal<'62mm' | '29x90'>('62mm');
+    pantryMatches = signal<any[]>([]);
 
     currentRecord: Partial<ProductionRecord> = {};
     newIngredient: Partial<ProductionIngredient> = {};
@@ -508,6 +531,7 @@ export class ProductionLogViewComponent {
 
     resetIngredientForm() {
         this.tempPhoto = null;
+        this.pantryMatches.set([]);
         this.newIngredient = {
             name: '',
             packingDate: new Date().toISOString().split('T')[0],
@@ -515,6 +539,34 @@ export class ProductionLogViewComponent {
             lotto: '',
             allergens: []
         };
+    }
+
+    onIngredientNameChange(val: string) {
+        this.newIngredient.name = this.formatName(val);
+        if (!val || val.length < 2) { this.pantryMatches.set([]); return; }
+        const q = val.toLowerCase();
+        const today = new Date().toDateString();
+        const local: any[] = JSON.parse(localStorage.getItem('haccp_ddt_pantry') || '[]');
+        const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId;
+        const matches = local
+            .filter((i: any) => i.ingredientName?.toLowerCase().includes(q))
+            .filter((i: any) => !clientId || i.clientId === clientId)
+            .filter((i: any) => !i.expiryDate || new Date(i.expiryDate) >= new Date(today))
+            .slice(0, 5);
+        this.pantryMatches.set(matches);
+    }
+
+    selectFromPantry(item: any) {
+        this.newIngredient.name = item.ingredientName;
+        this.newIngredient.lotto = item.lotto || '';
+        this.newIngredient.expiryDate = item.expiryDate || '';
+        this.pantryMatches.set([]);
+        this.toast.success('Dispensa', `${item.ingredientName} — Lotto e scadenza caricati automaticamente.`);
+    }
+
+    daysToExpiry(d: string): number {
+        if (!d) return 999;
+        return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
     }
 
     async handleFile(event: any) {

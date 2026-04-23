@@ -34,6 +34,7 @@ import { IngredientsBookViewComponent } from './components/ingredients-book-view
 import { OperationalPhasesConfigViewComponent } from './components/operational-phases-config-view.component';
 import { PublicProductInfoComponent } from './components/public-product-info.component';
 import { HomeViewComponent } from './components/home-view.component';
+import { DdtViewComponent } from './components/ddt-view.component';
 
 @Component({
   selector: 'app-root',
@@ -71,7 +72,8 @@ import { HomeViewComponent } from './components/home-view.component';
     IngredientsBookViewComponent,
     OperationalPhasesConfigViewComponent,
     PublicProductInfoComponent,
-    HomeViewComponent
+    HomeViewComponent,
+    DdtViewComponent
   ],
   templateUrl: './app.component.html'
 })

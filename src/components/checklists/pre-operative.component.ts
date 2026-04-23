@@ -928,19 +928,25 @@ export class PreOperationalChecklistComponent {
             }));
         }
 
-        // Auto-post to admin alerts
+        const parentArea = this.areas().find(a => a.steps.some(s => s.id === anomaly.id));
+        const areaName = parentArea ? parentArea.label : 'Generale';
+        const operatorName = this.state.currentUser()?.name || 'Operatore';
+        const currentDate = new Date().toLocaleDateString();
+
+        // Auto-post to admin alerts with detailed info
         this.state.sendMessage(
-            `ANOMALIA: ${anomaly.label}`,
-            `Segnalata anomalia durante la fase pre-operativa.\n\nControllo: ${anomaly.label}\nNote operatore: ${note || 'Nessuna specifica'}`,
-            'ALL'
+            `🚨 ANOMALIA PRE-OPERATIVA: ${anomaly.label}`,
+            `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Pre-operativa (Avvio)\nAREA: ${areaName}\nELEMENTO: ${anomaly.label}\nOPERATORE: ${operatorName}\nDATA: ${currentDate}\n\nNOTE OPERATORE:\n${note || 'Nessuna specifica'}`,
+            'SINGLE',
+            'ADMIN_OFFICE'
         );
 
-        // Persistent record
+        // Persistent record with structured description
         this.state.saveNonConformity({
             id: Math.random().toString(36).substring(2, 9),
             moduleId: 'pre-op-checklist',
             date: this.state.filterDate(),
-            description: note || 'Anomalia durante pre-operativa',
+            description: `[PRE-OP] ${areaName} -> ${anomaly.label}: ${note || 'Anomalia rilevata'}`,
             itemName: anomaly.label
         });
 

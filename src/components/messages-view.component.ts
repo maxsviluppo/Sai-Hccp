@@ -10,23 +10,23 @@ import { ToastService } from '../services/toast.service';
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="space-y-6 max-w-7xl mx-auto p-4 pb-12 overflow-x-hidden">
+    <div class="space-y-4 sm:space-y-6 max-w-7xl mx-auto p-3 sm:p-4 pb-12 overflow-x-hidden">
         <!-- Sleek Professional Header -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden mb-6">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden mb-4 sm:mb-6">
           <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
           
-          <div class="relative z-10 flex items-center gap-5">
-             <div class="h-14 w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0 relative">
-                <i class="fa-solid fa-comments text-2xl"></i>
+          <div class="relative z-10 flex items-center gap-3 sm:gap-5">
+             <div class="h-10 w-10 sm:h-14 sm:w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0 relative">
+                <i class="fa-solid fa-comments text-xl sm:text-2xl"></i>
                 @if (state.unreadMessagesCount() > 0) {
-                    <div class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
-                        <div class="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+                    <div class="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                        <div class="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full animate-ping"></div>
                     </div>
                 }
              </div>
              <div>
-                <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Messaggistica</h2>
-                <p class="text-xs font-semibold text-slate-500 mt-1">Centro comunicazioni e notifiche</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Messaggistica</h2>
+                <p class="text-[10px] sm:text-xs font-semibold text-slate-500 mt-0.5 sm:mt-1">Centro comunicazioni</p>
              </div>
           </div>
 
@@ -48,16 +48,16 @@ import { ToastService } from '../services/toast.service';
         </div>
 
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-full sm:w-fit border border-slate-200">
+        <div class="flex items-center gap-1 mb-4 sm:mb-6 bg-slate-100 p-1 rounded-xl w-full sm:w-fit border border-slate-200">
             <button (click)="activeFilter.set('RECEIVED')" 
-                    [class]="'flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ' + (activeFilter() === 'RECEIVED' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
+                    [class]="'flex-1 sm:flex-none px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm transition-all ' + (activeFilter() === 'RECEIVED' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
                 <i class="fa-solid fa-inbox mr-1 sm:mr-2"></i> Ricevuti
                 @if (activeFilter() === 'RECEIVED' && state.unreadMessagesCount() > 0) {
-                    <span class="ml-1 sm:ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[9px] rounded-full">{{ state.unreadMessagesCount() }}</span>
+                    <span class="ml-1 sm:ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[8px] sm:text-[9px] rounded-full">{{ state.unreadMessagesCount() }}</span>
                 }
             </button>
             <button (click)="activeFilter.set('SENT')" 
-                    [class]="'flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ' + (activeFilter() === 'SENT' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
+                    [class]="'flex-1 sm:flex-none px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm transition-all ' + (activeFilter() === 'SENT' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800')">
                 <i class="fa-solid fa-paper-plane mr-1 sm:mr-2"></i> Inviati
             </button>
         </div>
@@ -166,27 +166,27 @@ import { ToastService } from '../services/toast.service';
 
             @for (message of messages(); track message.id) {
                 <div class="bg-white rounded-xl shadow-sm border transition-all duration-300" [class.border-blue-300]="!message.read" [class.border-slate-200]="message.read">
-                    <div class="p-4 md:p-5 flex justify-between items-start gap-4 cursor-pointer hover:bg-slate-50 transition-colors" [class.bg-blue-50/30]="!message.read" (click)="toggleMessageExpanded(message.id)">
-                        <div class="flex items-start gap-4 flex-1">
-                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-user text-sm"></i></div>
+                    <div class="p-3.5 md:p-5 flex justify-between items-start gap-3 sm:gap-4 cursor-pointer hover:bg-slate-50 transition-colors" [class.bg-blue-50/30]="!message.read" (click)="toggleMessageExpanded(message.id)">
+                        <div class="flex items-start gap-3 sm:gap-4 flex-1">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-user text-[10px] sm:text-sm"></i></div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     <h3 class="text-base md:text-lg font-bold text-slate-800 truncate">{{ message.subject }}</h3>
                                     @if (!message.read) { <span class="px-2 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase shrink-0">NUOVO</span> }
                                 </div>
-                                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-x-3 text-[11px] font-bold text-slate-500 uppercase">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid" 
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-x-3 text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase">
+                                    <div class="flex items-center gap-1.5 sm:gap-2">
+                                        <i class="fa-solid text-[10px]" 
                                            [class.fa-arrow-down-left]="activeFilter() === 'RECEIVED'" 
                                            [class.fa-arrow-up-right]="activeFilter() === 'SENT'" 
                                            [class.text-emerald-500]="activeFilter() === 'RECEIVED'" 
                                            [class.text-blue-500]="activeFilter() === 'SENT'"></i>
-                                        <span class="text-slate-700 truncate max-w-[150px]">
+                                        <span class="text-slate-700 truncate max-w-[120px] sm:max-w-[150px]">
                                             {{ activeFilter() === 'RECEIVED' ? message.senderName : (getClientName(message.recipientId) || 'Tutti') }}
                                         </span>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-regular fa-clock text-[10px]"></i>
+                                    <div class="flex items-center gap-1.5 sm:gap-2">
+                                        <i class="fa-regular fa-clock text-[9px] sm:text-[10px]"></i>
                                         <span>{{ message.timestamp | date:'dd/MM HH:mm' }}</span>
                                     </div>
                                     @if (activeFilter() === 'RECEIVED') {
@@ -195,9 +195,9 @@ import { ToastService } from '../services/toast.service';
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <button (click)="confirmDeleteModal($event, message.id)" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 rounded-xl transition-all"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                            <div class="w-10 h-10 flex items-center justify-center text-slate-400 rounded-xl" [class.bg-slate-100]="isMessageExpanded(message.id)"><i class="fa-solid text-sm transition-transform" [class.fa-chevron-down]="!isMessageExpanded(message.id)" [class.fa-chevron-up]="isMessageExpanded(message.id)"></i></div>
+                        <div class="flex items-center gap-0.5 sm:gap-1">
+                            <button (click)="confirmDeleteModal($event, message.id)" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-red-600 rounded-xl transition-all"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 rounded-xl" [class.bg-slate-100]="isMessageExpanded(message.id)"><i class="fa-solid text-xs sm:text-sm transition-transform" [class.fa-chevron-down]="!isMessageExpanded(message.id)" [class.fa-chevron-up]="isMessageExpanded(message.id)"></i></div>
                         </div>
                     </div>
 
@@ -338,8 +338,15 @@ export class MessagesViewComponent {
 
     openNewMessageForm() {
         this.showNewMessageForm = true;
-        this.newMessage.recipientType = this.state.isAdmin() ? 'ALL' : 'SINGLE';
-        this.newMessage.recipientId = this.state.isAdmin() ? '' : 'ADMIN_OFFICE';
+        const targetClientId = this.state.activeTargetClientId();
+        
+        if (this.state.isAdmin() && targetClientId && targetClientId !== 'demo') {
+            this.newMessage.recipientType = 'SINGLE';
+            this.newMessage.recipientId = targetClientId;
+        } else {
+            this.newMessage.recipientType = this.state.isAdmin() ? 'ALL' : 'SINGLE';
+            this.newMessage.recipientId = this.state.isAdmin() ? '' : 'ADMIN_OFFICE';
+        }
     }
 
     canSendMessage(): boolean {
