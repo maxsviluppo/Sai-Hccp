@@ -168,6 +168,26 @@ export interface IncomingIngredient {
           </div>
         </div>
       }
+      
+      @if (aiRawResponse()) {
+        <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-6 animate-fade-in mx-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="h-8 w-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                <i class="fa-solid fa-bug text-sm"></i>
+              </div>
+              <h4 class="text-xs font-black text-rose-800 uppercase tracking-widest">Diagnostica AI (Risposta Grezza)</h4>
+            </div>
+            <button (click)="aiRawResponse.set(null)" class="h-8 w-8 rounded-lg hover:bg-rose-100 text-rose-400 hover:text-rose-600 transition-all">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="bg-white/80 rounded-xl p-4 border border-rose-100">
+            <pre class="text-[11px] text-rose-600 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed">{{ aiRawResponse() }}</pre>
+          </div>
+          <p class="mt-4 text-[10px] text-rose-400 font-medium italic">* Queste informazioni aiutano lo sviluppatore a capire perché l'AI non ha risposto correttamente.</p>
+        </div>
+      }
 
       <!-- Pantry List -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -431,6 +451,7 @@ export class DdtViewComponent {
         // Robust JSON extraction: look for the first { and last }
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
+          this.aiRawResponse.set(text);
           throw new Error('L\'AI non ha restituito un formato dati valido.');
         }
         
@@ -451,6 +472,7 @@ export class DdtViewComponent {
         }
       } catch (parseError) {
         console.error('JSON Parse Error:', text);
+        this.aiRawResponse.set(text);
         throw new Error('L\'AI ha risposto con un formato non valido. Prova a scattare una foto più dritta e luminosa.');
       }
     } catch (e: any) {
