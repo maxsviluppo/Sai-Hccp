@@ -363,8 +363,6 @@ export interface IncomingIngredient {
             }
           </div>
         }
-v>
-        }
       </div>
 
     </div>
