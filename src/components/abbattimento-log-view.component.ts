@@ -225,9 +225,9 @@ interface AbbattimentoRecord {
                             Annulla
                         </button>
                         <button (click)="saveRecord()" [disabled]="!currentRecord.productName"
-                                class="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-3">
-                            <i class="fa-solid fa-save text-lg"></i>
-                            Conferma e Archivia Processo
+                                class="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-3 px-4">
+                            <i class="fa-solid fa-save text-lg hidden md:inline-block"></i>
+                            <span class="truncate">Conferma e Archivia Processo</span>
                         </button>
                     </div>
                 </div>

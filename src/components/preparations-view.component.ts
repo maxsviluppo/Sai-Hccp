@@ -40,11 +40,29 @@ import { ToastService } from '../services/toast.service';
                       [class]="'px-4 py-2 rounded-lg text-sm font-bold text-left transition-all ' + (selectedCategory() === 'ALL' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50')">
                 Tutte le categorie
               </button>
+              
               @for (cat of allAvailableCategories(); track cat) {
-                <button (click)="selectedCategory.set(cat)"
-                        [class]="'px-4 py-2 rounded-lg text-sm font-bold text-left transition-all ' + (selectedCategory() === cat ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50')">
-                  {{ cat }}
-                </button>
+                <div class="group/cat relative flex items-center">
+                    <button (click)="selectedCategory.set(cat)"
+                            [class]="'flex-1 px-4 py-2 rounded-lg text-sm font-bold text-left transition-all ' + (selectedCategory() === cat ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm pr-16' : 'text-slate-500 hover:bg-slate-50 pr-16')">
+                        {{ cat }}
+                    </button>
+                    
+                    @if (!isBaseCategory(cat)) {
+                      <div class="absolute right-2 opacity-0 group-hover/cat:opacity-100 flex items-center gap-1 transition-all">
+                        <button (click)="askRenameCategory(cat)" 
+                                class="w-7 h-7 flex items-center justify-center rounded-md bg-white text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-slate-100 shadow-sm"
+                                title="Rinomina Categoria">
+                          <i class="fa-solid fa-pen text-[10px]"></i>
+                        </button>
+                        <button (click)="askDeleteCategory(cat)" 
+                                class="w-7 h-7 flex items-center justify-center rounded-md bg-white text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all border border-slate-100 shadow-sm"
+                                title="Elimina Categoria">
+                          <i class="fa-solid fa-trash-can text-[10px]"></i>
+                        </button>
+                      </div>
+                    }
+                </div>
               }
             </div>
           </div>
@@ -198,7 +216,65 @@ import { ToastService } from '../services/toast.service';
         </div>
       }
 
-      <!-- DELETE CONFIRMATION MODAL -->
+      <!-- RENAME CATEGORY MODAL -->
+      @if (showRenameCategoryModal()) {
+        <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md" (click)="showRenameCategoryModal.set(false)"></div>
+          <div class="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 p-10 text-center">
+            <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-8 border border-indigo-100 shadow-inner">
+              <i class="fa-solid fa-pen-nib text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-6">Rinomina Categoria</h3>
+            
+            <div class="text-left mb-8">
+              <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Nuovo Nome per "{{ categoryToRename() }}"</label>
+              <input [(ngModel)]="newCategoryLabel" type="text" 
+                     class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-black text-slate-700 shadow-inner outline-none">
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <button (click)="doRenameCategory()" 
+                      [disabled]="!newCategoryLabel.trim() || newCategoryLabel === categoryToRename()"
+                      class="w-full py-4 bg-indigo-600 text-white font-black uppercase tracking-widest rounded-2xl text-xs shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50">
+                Salva Modifiche
+              </button>
+              <button (click)="showRenameCategoryModal.set(false)" 
+                      class="w-full py-4 bg-white border border-slate-200 text-slate-400 font-black uppercase tracking-widest rounded-2xl text-xs hover:bg-slate-50 transition-all">
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- DELETE CATEGORY CONFIRMATION MODAL -->
+      @if (showDeleteCategoryModal()) {
+        <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md" (click)="showDeleteCategoryModal.set(false)"></div>
+          <div class="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 text-center p-10">
+            <div class="w-24 h-24 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-8 text-4xl border border-rose-100 shadow-inner">
+              <i class="fa-solid fa-folder-minus"></i>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-3">Elimina Categoria?</h3>
+            <p class="text-slate-500 font-medium mb-10 leading-relaxed">
+                Stai per eliminare la categoria <span class="text-slate-900 font-black">"{{ categoryToDelete() }}"</span>.<br>
+                <span class="text-rose-600 font-bold">Attenzione:</span> Verranno eliminate anche tutte le preparazioni associate a questa categoria.
+            </p>
+            <div class="flex flex-col gap-3">
+              <button (click)="doDeleteCategory()" 
+                      class="w-full py-4 bg-rose-600 text-white font-black uppercase tracking-widest rounded-2xl text-xs shadow-xl shadow-rose-200 hover:bg-rose-700 transition-all active:scale-95">
+                Sì, Elimina Tutto
+              </button>
+              <button (click)="showDeleteCategoryModal.set(false)" 
+                      class="w-full py-4 bg-white border border-slate-200 text-slate-400 font-black uppercase tracking-widest rounded-2xl text-xs hover:bg-slate-50 transition-all">
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- DELETE PREP CONFIRMATION MODAL -->
       @if (showDeleteModal()) {
         <div class="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md" (click)="showDeleteModal.set(false)"></div>
@@ -246,6 +322,13 @@ export class PreparationsViewComponent {
   showDeleteModal = signal(false);
   prepToDelete = signal<Preparation | null>(null);
 
+  showDeleteCategoryModal = signal(false);
+  categoryToDelete = signal<string | null>(null);
+
+  showRenameCategoryModal = signal(false);
+  categoryToRename = signal<string | null>(null);
+  newCategoryLabel = '';
+
   baseCategories = [
     'Primi piatti',
     'Secondi piatti',
@@ -255,6 +338,10 @@ export class PreparationsViewComponent {
     'Preparazioni Base',
     'Dolci e Pasticceria'
   ];
+
+  isBaseCategory(cat: string): boolean {
+    return this.baseCategories.includes(cat);
+  }
 
   // Dynamically compute all categories from existing preparations + base ones
   allAvailableCategories = computed(() => {
@@ -324,5 +411,50 @@ export class PreparationsViewComponent {
     }
     this.showDeleteModal.set(false);
     this.prepToDelete.set(null);
+  }
+
+  askDeleteCategory(cat: string) {
+    this.categoryToDelete.set(cat);
+    this.showDeleteCategoryModal.set(true);
+  }
+
+  async doDeleteCategory() {
+    const cat = this.categoryToDelete();
+    if (cat) {
+        const toDelete = this.state.preparations().filter(p => p.category === cat);
+        for (const p of toDelete) {
+            await this.state.deletePreparation(p.id);
+        }
+        if (this.selectedCategory() === cat) {
+            this.selectedCategory.set('ALL');
+        }
+        this.toast.success('Categoria Eliminata', `Rimosse ${toDelete.length} preparazioni.`);
+    }
+    this.showDeleteCategoryModal.set(false);
+    this.categoryToDelete.set(null);
+  }
+
+  askRenameCategory(cat: string) {
+    this.categoryToRename.set(cat);
+    this.newCategoryLabel = cat;
+    this.showRenameCategoryModal.set(true);
+  }
+
+  async doRenameCategory() {
+    const oldName = this.categoryToRename();
+    const newName = this.newCategoryLabel.trim();
+    
+    if (oldName && newName && oldName !== newName) {
+        const toUpdate = this.state.preparations().filter(p => p.category === oldName);
+        for (const p of toUpdate) {
+            await this.state.savePreparation({ ...p, category: newName });
+        }
+        if (this.selectedCategory() === oldName) {
+            this.selectedCategory.set(newName);
+        }
+        this.toast.success('Categoria Rinominata', `Aggiornate ${toUpdate.length} preparazioni.`);
+    }
+    this.showRenameCategoryModal.set(false);
+    this.categoryToRename.set(null);
   }
 }

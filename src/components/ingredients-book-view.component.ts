@@ -51,7 +51,9 @@ import { ToastService } from '../services/toast.service';
 
       <!-- Main Content Area -->
       <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
+        
+        <!-- Desktop Table -->
+        <table class="w-full text-left border-collapse hidden md:table">
           <thead>
             <tr class="bg-slate-50/50 border-b border-slate-100">
               <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Piatto / Preparazione</th>
@@ -103,20 +105,73 @@ import { ToastService } from '../services/toast.service';
                   </button>
                 </td>
               </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="px-6 py-20 text-center">
-                  <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-200">
-                    <i class="fa-solid fa-book-open text-4xl"></i>
-                  </div>
-                  <h3 class="text-lg font-bold text-slate-400 uppercase tracking-widest">Nessuna ricetta</h3>
-                  <p class="text-sm text-slate-400 mt-2">Inizia aggiungendo il primo piatto al libro degli ingredienti.</p>
-                  <button (click)="openAddModal()" class="mt-6 px-8 py-3 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95">CREA ORA</button>
-                </td>
-              </tr>
             }
           </tbody>
         </table>
+
+        <!-- Mobile Cards -->
+        <div class="md:hidden divide-y divide-slate-100">
+          @for (recipe of filteredRecipes(); track recipe.id) {
+            <div class="p-6 space-y-4 bg-white animate-fade-in">
+              <div class="flex justify-between items-start">
+                <div class="flex items-center gap-4">
+                  <div class="h-12 w-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg ring-4 ring-slate-50">
+                    <i class="fa-solid fa-plate-wheat"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-base font-black text-slate-800 leading-tight">{{ recipe.name }}</h4>
+                    <span class="inline-block mt-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-widest border border-indigo-100">
+                      {{ recipe.category || 'Generale' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              @if (recipe.description) {
+                <p class="text-xs text-slate-500 italic leading-relaxed border-l-2 border-slate-100 pl-3">
+                  {{ recipe.description }}
+                </p>
+              }
+
+              <div class="space-y-2">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allergeni Presenti</p>
+                <div class="flex flex-wrap gap-1.5">
+                  @for (all of getAllergensForRecipe(recipe); track all.id) {
+                    <div class="px-2.5 py-1 rounded-lg border flex items-center gap-2 shadow-sm" [class]="all.bg + ' ' + all.active">
+                      <i [class]="'fa-solid ' + all.icon + ' text-[11px]'"></i>
+                      <span class="text-[10px] font-black uppercase">{{ all.code }}</span>
+                    </div>
+                  } @empty {
+                    <span class="text-xs font-bold text-slate-300 italic">Nessun allergene dichiarato</span>
+                  }
+                </div>
+              </div>
+
+              <div class="flex gap-2 pt-2">
+                <button (click)="printSingleRecipe(recipe)" class="flex-1 py-3 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-emerald-50 hover:text-emerald-600 transition-all">
+                  <i class="fa-solid fa-print"></i> Stampa
+                </button>
+                <button (click)="openEditModal(recipe)" class="flex-1 py-3 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                  <i class="fa-solid fa-pen-to-square"></i> Modifica
+                </button>
+                <button (click)="deleteRecipe(recipe)" class="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center transition-all hover:bg-rose-100">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (filteredRecipes().length === 0) {
+          <div class="px-6 py-20 text-center">
+            <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-200">
+              <i class="fa-solid fa-book-open text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-400 uppercase tracking-widest">Nessuna ricetta</h3>
+            <p class="text-sm text-slate-400 mt-2">Inizia aggiungendo il primo piatto al libro degli ingredienti.</p>
+            <button (click)="openAddModal()" class="mt-6 px-8 py-3 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95">CREA ORA</button>
+          </div>
+        }
       </div>
 
       <!-- Add/Edit Recipe Modal -->

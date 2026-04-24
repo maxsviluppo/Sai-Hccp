@@ -172,12 +172,6 @@ import { FormsModule } from '@angular/forms';
                             <div class="sm:col-span-3 space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="md:col-span-2">
-                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Fornitore / Origine</label>
-                                        <input type="text" [(ngModel)]="newIngredient.supplierName" placeholder="es. Global Food Srl o Allevamento Italia"
-                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
-                                    </div>
-
-                                    <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Nome Ingrediente *</label>
                                         <div class="relative">
                                             <input type="text" [(ngModel)]="newIngredient.name"
@@ -238,6 +232,12 @@ import { FormsModule } from '@angular/forms';
                                                        class="w-full bg-white border border-rose-200 rounded-xl pl-9 pr-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-rose-400 transition-all shadow-sm">
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <div class="md:col-span-2">
+                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Fornitore / Origine</label>
+                                        <input type="text" [(ngModel)]="newIngredient.supplierName" placeholder="es. Global Food Srl o Allevamento Italia"
+                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
                                     </div>
 
                                     <div class="md:col-span-2">
@@ -360,7 +360,14 @@ import { FormsModule } from '@angular/forms';
                         <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
                             <div class="flex justify-between items-start mb-4">
                                 <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] font-mono font-bold border border-slate-200">{{ rec.lotto }}</span>
-                                <span class="text-[10px] text-slate-400 font-bold uppercase">{{ rec.recordedDate | date:'dd/MM HH:mm' }}</span>
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase">{{ rec.recordedDate | date:'dd/MM HH:mm' }}</span>
+                                    <div class="w-16 h-16 bg-white border border-slate-100 p-1 rounded-xl shadow-md overflow-hidden flex items-center justify-center">
+                                        <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + getQRCodeUrl(rec)" 
+                                             class="w-full h-full opacity-70 group-hover:opacity-100 transition-opacity"
+                                             alt="QR Code">
+                                    </div>
+                                </div>
                             </div>
                             <h3 class="text-lg font-bold text-slate-800 mb-3 group-hover:text-teal-600 leading-tight line-clamp-2">{{ rec.mainProductName }}</h3>
                             <div class="text-xs text-slate-500 font-bold mb-4 flex flex-col gap-1">

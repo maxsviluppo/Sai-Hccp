@@ -234,16 +234,15 @@ export interface IncomingIngredient {
                      class="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-amber-400 transition-all">
             </div>
           </div>
-        </div>
-
-        @if (filteredPantry().length === 0) {
+               @if (filteredPantry().length === 0) {
           <div class="p-16 text-center">
             <i class="fa-solid fa-boxes-stacked text-4xl text-slate-200 mb-4 block"></i>
             <p class="text-sm font-bold text-slate-500">Dispensa vuota</p>
             <p class="text-xs text-slate-400 mt-1">Aggiungi il primo carico con il pulsante "Nuovo Carico"</p>
           </div>
         } @else {
-          <div class="overflow-x-auto">
+          <!-- Desktop Table -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left">
               <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
@@ -294,7 +293,7 @@ export interface IncomingIngredient {
                         </span>
                       } @else {
                         <span class="text-xs font-black px-2 py-1 rounded-lg"
-                              [class]="expired ? 'bg-red-100 text-red-700 border border-red-200 shadow-sm' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
+                               [class]="expired ? 'bg-red-100 text-red-700 border border-red-200 shadow-sm' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
                           {{ item.expiryDate | date:'dd/MM/yy' }}
                         </span>
                       }
@@ -310,6 +309,61 @@ export interface IncomingIngredient {
               </tbody>
             </table>
           </div>
+
+          <!-- Mobile Cards -->
+          <div class="md:hidden divide-y divide-slate-100">
+            @for (item of filteredPantry(); track item.id) {
+              @let expired = isExpired(item.expiryDate);
+              @let abbItem = findAbbattimentoRecord(item);
+              <div class="p-4 space-y-3 bg-white">
+                <div class="flex justify-between items-start">
+                  <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-100"
+                         [class]="expired ? 'bg-red-50 text-red-500' : abbItem ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'">
+                      <i [class]="'fa-solid ' + (abbItem ? 'fa-icicles' : 'fa-carrot')"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-black text-slate-800 leading-tight">{{ item.ingredientName }}</h4>
+                      <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">{{ item.supplierName }}</p>
+                    </div>
+                  </div>
+                  <button (click)="deleteEntry(item.id)" class="w-9 h-9 flex items-center justify-center text-rose-400 bg-rose-50 rounded-lg">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Lotto / Qta</p>
+                    <p class="text-[10px] font-bold text-slate-600 truncate">
+                      <span class="font-mono">{{ item.lotto || 'N/D' }}</span>
+                      @if (item.quantity) { <span class="mx-1 text-slate-300">•</span> {{ item.quantity }} }
+                    </p>
+                  </div>
+                  <div class="p-2 rounded-lg border flex flex-col justify-center"
+                       [class]="expired ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Scadenza</p>
+                    <p class="text-[10px] font-black" 
+                       [class]="expired ? 'text-red-600' : daysToExpiry(item.expiryDate) <= 7 ? 'text-amber-600' : 'text-emerald-600'">
+                      {{ (abbItem?.postExpiryDate || item.expiryDate) | date:'dd MMMM yyyy' }}
+                      @if (abbItem) { <i class="fa-solid fa-icicles text-[8px] ml-1"></i> }
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-1">
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Caricato il {{ item.entryDate | date:'dd/MM/yy' }}</span>
+                  @if (expired) {
+                    <span class="px-2 py-0.5 bg-rose-600 text-white rounded text-[8px] font-black uppercase tracking-widest animate-pulse">Prodotto Scaduto</span>
+                  } @else if (abbItem) {
+                    <span class="px-2 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black uppercase tracking-widest">Post-Abbattimento</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+v>
         }
       </div>
 
