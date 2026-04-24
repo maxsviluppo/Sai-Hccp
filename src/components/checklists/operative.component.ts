@@ -300,7 +300,7 @@ interface ChecklistItem {
 
                         <!-- Actions & Basic Temp -->
                         <div class="flex items-center gap-3 flex-1 justify-end shrink-0">
-                            @if (item.hasTemperature && !item.isAbbattitore) {
+                            @if (item.hasTemperature) {
                                 <div class="flex flex-col items-end gap-1">
                                     <div class="w-24 bg-white rounded border border-slate-200 px-2 flex items-center gap-1.5 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-shadow h-7 shadow-sm">
                                         <i class="fa-solid fa-temperature-half text-[11px] text-slate-400"></i>
@@ -311,7 +311,12 @@ interface ChecklistItem {
                                                [disabled]="isSubmitted() || !state.isContextEditable()"
                                                class="w-full font-bold text-slate-700 bg-transparent h-full focus:outline-none text-sm disabled:opacity-50">
                                     </div>
-                                    @if (statusMap()[item.id]?.isAutomaticIssue) {
+                                    @if (item.isAbbattitore && statusMap()[item.id]?.temperature !== null && statusMap()[item.id]?.temperature !== undefined) {
+                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-tight"
+                                              [class]="statusMap()[item.id]?.abbattitoreConforme ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-red-600 bg-red-50 border-red-100 animate-pulse'">
+                                            {{ statusMap()[item.id]?.abbattitoreConforme ? 'Conforme' : 'Non Conforme' }}
+                                        </span>
+                                    } @else if (!item.isAbbattitore && statusMap()[item.id]?.isAutomaticIssue) {
                                         <span class="text-[9px] font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 uppercase tracking-tight animate-pulse">
                                             HACCP Fuori Norma
                                         </span>
@@ -544,6 +549,30 @@ export class OperativeChecklistComponent {
       let isIssue = false;
       let alertMsg = '';
 
+      if (nameLower.includes('abbattitore')) {
+          // Abbattitore: read configured range and mark conformity WITHOUT auto-setting status
+          const equipment = (this.state.getGlobalRecord('equipment_census') || []) as any[];
+          const abbEquip = equipment.find((e: any) =>
+              e.name?.toLowerCase().includes('abbattitore') ||
+              e.type?.toLowerCase().includes('abbattitore')
+          );
+          let minTemp = abbEquip?.minTemp ?? -40;
+          let maxTemp = abbEquip?.maxTemp ?? -18;
+          const conforme = tempValue >= minTemp && tempValue <= maxTemp;
+          
+          this.statusMap.update(map => ({
+              ...map,
+              [id]: {
+                  ...map[id],
+                  temperature,
+                  abbattitoreConforme: conforme
+                  // status remains unchanged — operator confirms manually
+              }
+          }));
+          this.autoSave();
+          return;
+      }
+
       if (nameLower.includes('ghiaccio')) {
           if (tempValue !== -20) {
               isIssue = true;
@@ -589,25 +618,6 @@ export class OperativeChecklistComponent {
       this.autoSave();
    }
 
-   updateAbbattitoreData(id: string, field: string, value: any) {
-       this.statusMap.update(map => {
-           const current = map[id] || { status: 'pending' };
-           const abbattitore = current.abbattitore || {};
-           
-           return {
-               ...map,
-               [id]: {
-                   ...current,
-                   status: 'ok', 
-                   abbattitore: {
-                       ...abbattitore,
-                       [field]: value
-                   }
-               }
-           };
-       });
-       this.autoSave();
-   }
 
    setAllOk() {
       const newMap: Record<string, any> = {};
