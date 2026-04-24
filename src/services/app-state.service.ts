@@ -90,6 +90,14 @@ export interface Message {
   replies: MessageReply[];
 }
 
+export interface Preparation {
+  id: string;
+  clientId: string;
+  name: string;
+  category: string;
+  expiryDays: number;
+}
+
 export interface MessageReply {
   id: string;
   senderId: string;
@@ -220,6 +228,9 @@ export class AppStateService {
   public showHome = signal(false);
   // --- Auth State ---
   readonly currentUser = signal<User | null>(null);
+
+  // --- Preparazioni ---
+  readonly preparations = signal<Preparation[]>([]);
 
   // --- GLOBAL INGREDIENTS DATABASE (Memorized List) ---
   readonly baseIngredients = signal<string[]>([
@@ -490,6 +501,7 @@ export class AppStateService {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'production_records' }, () => this.syncProductionRecords())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.syncNonConformities())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, () => this.syncEquipment())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'preparations' }, () => this.syncPreparations())
       .subscribe((status) => {
           console.log('[HACCP-SYNC] Supabase Status:', status);
       });
@@ -546,7 +558,8 @@ export class AppStateService {
         this.syncAccounting(),
         this.syncNonConformities(),
         this.syncRecipes(),
-        this.syncConfig()
+        this.syncConfig(),
+        this.syncPreparations()
       ]);
 
       await this.syncSuspenseStatuses();
@@ -1157,6 +1170,7 @@ export class AppStateService {
     // --- REGISTRI E FASI OPERATIVE ---
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
+    { id: 'preparations', label: 'Anagrafica Preparazioni', icon: 'fa-mortar-pestle', category: 'operations', operatorOnly: true },
     { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'operations' },
     { id: 'abbattimento-log', label: 'Registro Abbattimento', icon: 'fa-icicles', category: 'operations', operatorOnly: true },
     { id: 'ddt-carico', label: 'Carico Merci / DDT', icon: 'fa-truck-ramp-box', category: 'operations', operatorOnly: true },
@@ -2476,6 +2490,63 @@ export class AppStateService {
     } catch (e) {
       console.error('Error deleting reminder:', e);
       this.toastService.error('Errore Database', 'Impossibile eliminare il promemoria.');
+    }
+  }
+
+  async syncPreparations() {
+    const { data: dbPreps } = await supabase.from('preparations').select('*');
+    if (dbPreps) {
+      this.preparations.set(dbPreps.map((p: any) => ({
+        id: p.id,
+        clientId: p.client_id,
+        name: p.name,
+        category: p.category,
+        expiryDays: p.expiry_days
+      })));
+    }
+  }
+
+  async savePreparation(prep: Partial<Preparation>) {
+    const user = this.currentUser();
+    if (!user) return;
+    const clientId = this.activeTargetClientId() || user.clientId || 'demo';
+    
+    const newPrep: Preparation = {
+      id: prep.id || Math.random().toString(36).substring(2, 9),
+      clientId: clientId,
+      name: prep.name || '',
+      category: prep.category || '',
+      expiryDays: prep.expiryDays || 0
+    };
+
+    this.preparations.update(list => {
+      const filtered = list.filter(p => p.id !== newPrep.id);
+      return [...filtered, newPrep];
+    });
+
+    const { error } = await supabase.from('preparations').upsert({
+      id: newPrep.id,
+      client_id: newPrep.clientId,
+      name: newPrep.name,
+      category: newPrep.category,
+      expiry_days: newPrep.expiryDays
+    });
+
+    if (!error) {
+      this.toastService.success('Salvato', `Preparazione "${newPrep.name}" registrata.`);
+    } else {
+        console.error('Error saving preparation:', error);
+        this.toastService.error('Errore Database', error.message || 'Impossibile salvare la preparazione.');
+    }
+  }
+
+  async deletePreparation(id: string) {
+    this.preparations.update(list => list.filter(p => p.id !== id));
+    const { error } = await supabase.from('preparations').delete().eq('id', id);
+    if (!error) {
+      this.toastService.success('Eliminato', 'Preparazione rimossa.');
+    } else {
+        this.toastService.error('Errore Database', 'Impossibile eliminare la preparazione.');
     }
   }
 

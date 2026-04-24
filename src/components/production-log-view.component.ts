@@ -64,16 +64,32 @@ import { FormsModule } from '@angular/forms';
                                            placeholder="es. Sugo alla Genovese"
                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
                                     
-                                    @if (mainProductMatches().length > 0) {
-                                        <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-48 overflow-y-auto animate-slide-up">
-                                            <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
-                                                <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Prodotti Precedenti</span>
-                                            </div>
-                                            @for (match of mainProductMatches(); track match) {
-                                                <button type="button" (click)="selectMainProduct(match)"
-                                                        class="w-full px-4 py-2.5 text-left hover:bg-slate-50 text-sm font-bold text-slate-800 border-b border-slate-50 last:border-0">
-                                                    <i class="fa-solid fa-history text-slate-300 mr-2 text-[10px]"></i> {{ match }}
-                                                </button>
+                                    @if (preparationMatches().length > 0 || mainProductMatches().length > 0) {
+                                        <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up sticky z-50">
+                                            @if (preparationMatches().length > 0) {
+                                                <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
+                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Anagrafica Preparazioni</span>
+                                                </div>
+                                                @for (prep of preparationMatches(); track prep.id) {
+                                                    <button type="button" (click)="selectPreparation(prep)"
+                                                            class="w-full px-4 py-2.5 text-left hover:bg-indigo-50 text-sm font-bold text-slate-800 border-b border-slate-50 last:border-0 group">
+                                                        <div class="flex justify-between items-center">
+                                                            <span><i class="fa-solid fa-mortar-pestle text-indigo-400 mr-2 text-[10px]"></i> {{ prep.name }}</span>
+                                                            <span class="text-[9px] font-black text-indigo-500 bg-white px-1.5 py-0.5 rounded border border-indigo-100">+{{ prep.expiryDays }}gg</span>
+                                                        </div>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (mainProductMatches().length > 0) {
+                                                <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
+                                                    <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Storico Produzioni</span>
+                                                </div>
+                                                @for (match of mainProductMatches(); track match) {
+                                                    <button type="button" (click)="selectMainProduct(match)"
+                                                            class="w-full px-4 py-2.5 text-left hover:bg-slate-50 text-sm font-bold text-slate-800 border-b border-slate-50 last:border-0">
+                                                        <i class="fa-solid fa-history text-slate-300 mr-2 text-[10px]"></i> {{ match }}
+                                                    </button>
+                                                }
                                             }
                                         </div>
                                     }
@@ -668,19 +684,21 @@ export class ProductionLogViewComponent {
     tempPhoto: string | null = null;
     zoomedPhoto = signal<string | null>(null);
     labelFormat = signal<'62mm' | '29x90'>('62mm');
+    
+    searchQuery = signal('');
+    dateFrom = signal(new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]);
+    dateTo = signal(new Date().toISOString().split('T')[0]);
+
+    mainProductMatches = signal<string[]>([]);
+    preparationMatches = signal<any[]>([]);
     pantryMatches = signal<any[]>([]);
     baseMatches = signal<string[]>([]);
-    mainProductMatches = signal<string[]>([]);
     
     selectedAbbattimentoForPrint = signal<any | null>(null);
     labelFormatAbbattimento = signal<'62mm' | '29x90'>('62mm');
 
     currentRecord: Partial<ProductionRecord> = {};
     newIngredient: Partial<ProductionIngredient> = {};
-
-    searchQuery = signal('');
-    dateFrom = signal('');
-    dateTo = signal('');
 
     filteredRecords = computed(() => {
         const targetClientId = this.state.activeTargetClientId();
@@ -742,13 +760,22 @@ export class ProductionLogViewComponent {
         this.currentRecord.mainProductName = this.formatName(val);
         if (!val || val.length < 2) {
             this.mainProductMatches.set([]);
+            this.preparationMatches.set([]);
             return;
         }
         const q = val.toLowerCase();
+        
+        // Match from Preparazioni
+        const preps = this.state.preparations()
+            .filter(p => p.name.toLowerCase().includes(q))
+            .slice(0, 5);
+        this.preparationMatches.set(preps);
+
+        // Match from previous productions
         const matches = this.state.productionRecords()
             .map(r => r.mainProductName)
             .filter((name, index, self) => self.indexOf(name) === index)
-            .filter(name => name.toLowerCase().includes(q))
+            .filter(name => name.toLowerCase().includes(q) && !preps.some(p => p.name.toLowerCase() === name.toLowerCase()))
             .slice(0, 5);
         this.mainProductMatches.set(matches);
     }
@@ -756,6 +783,21 @@ export class ProductionLogViewComponent {
     selectMainProduct(name: string) {
         this.currentRecord.mainProductName = name;
         this.mainProductMatches.set([]);
+        this.preparationMatches.set([]);
+    }
+
+    selectPreparation(prep: any) {
+        this.currentRecord.mainProductName = prep.name;
+        this.mainProductMatches.set([]);
+        this.preparationMatches.set([]);
+
+        // Auto-calculate expiry date
+        if (prep.expiryDays > 0 && this.currentRecord.packagingDate) {
+            const pkgDate = new Date(this.currentRecord.packagingDate);
+            pkgDate.setDate(pkgDate.getDate() + prep.expiryDays);
+            this.currentRecord.expiryDate = pkgDate.toISOString().split('T')[0];
+            this.toast.success('Preparazione Selezionata', `${prep.name} - Scadenza automatica impostata (+${prep.expiryDays}gg)`);
+        }
     }
 
     resetIngredientForm() {
