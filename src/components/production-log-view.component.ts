@@ -1155,18 +1155,6 @@ export class ProductionLogViewComponent {
         return `${baseUrl}?info=${rec.id}`;
     }
 
-    findAbbattimentoRecord(ing: ProductionIngredient): any | null {
-        const raw = this.state.getGlobalRecord('abbattimento_log') as any[] || [];
-        // Match by product name and either lotto or supplier.
-        return raw.find(r => 
-            r.productName?.toLowerCase() === ing.name?.toLowerCase() && 
-            (
-                (ing.lotto && r.originalLotto === ing.lotto) ||
-                (ing.supplierName && r.supplierName === ing.supplierName)
-            )
-        ) || null;
-    }
-
     openAbbattimentoPrintModal(ab: any) {
         this.selectedAbbattimentoForPrint.set(ab);
     }
