@@ -262,14 +262,22 @@ export interface IncomingIngredient {
                   <tr class="hover:bg-slate-50 transition-colors">
                     <td class="px-4 py-3">
                       <div class="flex items-center gap-2">
+                        @let abbItem = findAbbattimentoRecord(item);
                         <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                             [class]="expired ? 'bg-red-50 text-red-400' : 'bg-emerald-50 text-emerald-600'">
-                          <i class="fa-solid fa-carrot text-xs"></i>
+                             [class]="expired ? 'bg-red-50 text-red-400' : abbItem ? 'bg-indigo-50 text-indigo-500' : 'bg-emerald-50 text-emerald-600'">
+                          <i [class]="'text-xs fa-solid ' + (abbItem ? 'fa-icicles' : 'fa-carrot')"></i>
                         </div>
                         <div>
-                          <p class="text-sm font-black text-slate-800">{{ item.ingredientName }}</p>
+                          <p class="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                            {{ item.ingredientName }}
+                            @if (abbItem) {
+                              <i class="fa-solid fa-icicles text-indigo-400 text-[10px]" title="Prodotto Abbattuto"></i>
+                            }
+                          </p>
                           @if (expired) {
                             <span class="text-[9px] font-black text-red-500 uppercase bg-red-50 px-1.5 py-0.5 rounded">SCADUTO</span>
+                          } @else if (abbItem) {
+                            <span class="text-[9px] font-black text-indigo-500 uppercase bg-indigo-50 px-1.5 py-0.5 rounded">Abbattuto</span>
                           }
                         </div>
                       </div>
@@ -278,10 +286,18 @@ export interface IncomingIngredient {
                     <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">{{ item.lotto || '—' }}</td>
                     <td class="px-4 py-3 text-xs font-bold text-slate-500">{{ item.entryDate | date:'dd/MM/yy' }}</td>
                     <td class="px-4 py-3">
-                      <span class="text-xs font-black px-2 py-1 rounded-lg"
-                            [class]="expired ? 'bg-red-100 text-red-700 border border-red-200 shadow-sm' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
-                        {{ item.expiryDate | date:'dd/MM/yy' }}
-                      </span>
+                      @let abbForExpiry = findAbbattimentoRecord(item);
+                      @if (abbForExpiry) {
+                        <span class="text-xs font-black px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm flex items-center gap-1 w-fit">
+                          <i class="fa-solid fa-icicles text-[9px]"></i>
+                          {{ abbForExpiry.postExpiryDate | date:'dd/MM/yy' }}
+                        </span>
+                      } @else {
+                        <span class="text-xs font-black px-2 py-1 rounded-lg"
+                              [class]="expired ? 'bg-red-100 text-red-700 border border-red-200 shadow-sm' : daysToExpiry(item.expiryDate) <= 7 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'">
+                          {{ item.expiryDate | date:'dd/MM/yy' }}
+                        </span>
+                      }
                     </td>
                     <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.quantity || '—' }}</td>
                     <td class="px-4 py-3 text-right">
@@ -690,5 +706,17 @@ export class DdtViewComponent {
     if (!expiryDate) return 999;
     const diff = new Date(expiryDate).getTime() - new Date().getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+  findAbbattimentoRecord(item: IncomingIngredient): any | null {
+    const raw = this.state.getGlobalRecord('abbattimento_log') as any[] || [];
+    return raw.find(r =>
+      r.productName?.toLowerCase() === item.ingredientName?.toLowerCase() &&
+      (
+        (item.lotto && r.originalLotto === item.lotto) ||
+        (item.supplierName && r.supplierName === item.supplierName)
+      ) &&
+      !!r.postExpiryDate
+    ) || null;
   }
 }

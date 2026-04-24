@@ -1046,6 +1046,10 @@ export class AppStateService {
     return 'fa-microchip';
   }
 
+  readonly hasAbbattitore = computed(() => {
+    return this.groupedEquipment().some(e => e.name.toLowerCase().includes('abbattitore'));
+  });
+
   // --- Clients / Companies Database (New) ---
   readonly clients = signal<ClientEntity[]>([]);
 
@@ -1154,6 +1158,7 @@ export class AppStateService {
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
     { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'operations' },
+    { id: 'abbattimento-log', label: 'Registro Abbattimento', icon: 'fa-icicles', category: 'operations', operatorOnly: true },
     { id: 'ddt-carico', label: 'Carico Merci / DDT', icon: 'fa-truck-ramp-box', category: 'operations', operatorOnly: true },
     { id: 'post-op-checklist', label: 'Fase Post-operativa', icon: 'fa-hourglass-end', category: 'operations', operatorOnly: true },
     { id: 'non-compliance', label: 'Non Conformità', icon: 'fa-circle-exclamation', category: 'operations', operatorOnly: true },

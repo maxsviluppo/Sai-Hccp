@@ -21,6 +21,7 @@ import { MicrobioMonitorViewComponent } from './components/microbio-monitor-view
 import { MessagesViewComponent } from './components/messages-view.component';
 import { DocumentationViewComponent } from './components/documentation-view.component';
 import { ProductionLogViewComponent } from './components/production-log-view.component';
+import { AbbattimentoLogViewComponent } from './components/abbattimento-log-view.component';
 import { ToastContainerComponent } from './components/toast-container.component';
 import { ChecklistHistoryComponent } from './components/checklist-history.component';
 import { TemperaturesViewComponent } from './components/temperatures-view.component';
@@ -60,6 +61,7 @@ import { DdtViewComponent } from './components/ddt-view.component';
     MessagesViewComponent,
     DocumentationViewComponent,
     ProductionLogViewComponent,
+    AbbattimentoLogViewComponent,
     ToastContainerComponent,
     ChecklistHistoryComponent,
     TemperaturesViewComponent,
@@ -115,6 +117,14 @@ export class AppComponent {
     if (!id) return '';
     const c = this.state.clients().find(c => c.id === id);
     return c ? c.name : '';
+  }
+
+  handleMenuClick(item: MenuItem) {
+    if (item.id === 'abbattimento-log' && !this.state.hasAbbattitore()) {
+      return;
+    }
+    this.state.setModule(item.id);
+    this.isMobileMenuOpen.set(false);
   }
 
   toggleMobileMenu() {

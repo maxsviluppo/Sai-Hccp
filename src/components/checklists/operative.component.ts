@@ -342,85 +342,6 @@ interface ChecklistItem {
                         </div>
                     </div>
 
-                    <!-- Full Width Abbattitore Form -->
-                    @if (item.isAbbattitore && state.isActivityEnabled('operative-checklist', 'abbattimento')) {
-                        <div class="w-full mt-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-6 animate-fade-in mb-2">
-                            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-2">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-                                        <i class="fa-solid fa-clock-rotate-left text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-black text-slate-800 uppercase tracking-tight">Registro Ciclo Abbattimento</span>
-                                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Parametri Operativi HACCP</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Prodotto</label>
-                                    <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.prodotto" 
-                                           (ngModelChange)="updateAbbattitoreData(item.id, 'prodotto', $event)"
-                                           placeholder="Nome alimento..."
-                                           [disabled]="isSubmitted() || !state.isContextEditable()"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Temp. Abbattimento</label>
-                                    <div class="relative">
-                                        <input type="number" [ngModel]="statusMap()[item.id]?.abbattitore?.tempAbbattimento" 
-                                               (ngModelChange)="updateAbbattitoreData(item.id, 'tempAbbattimento', $event)"
-                                               [disabled]="isSubmitted() || !state.isContextEditable()"
-                                               class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="0">
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">°C</span>
-                                    </div>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lotto</label>
-                                    <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.lotto" 
-                                           (ngModelChange)="updateAbbattitoreData(item.id, 'lotto', $event)"
-                                           placeholder="Codice lotto..."
-                                           [disabled]="isSubmitted() || !state.isContextEditable()"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Inizio</label>
-                                    <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.oraInizio" 
-                                           (ngModelChange)="updateAbbattitoreData(item.id, 'oraInizio', $event)"
-                                           [disabled]="isSubmitted() || !state.isContextEditable()"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="12:00">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fine</label>
-                                    <input type="text" [ngModel]="statusMap()[item.id]?.abbattitore?.oraFine" 
-                                           (ngModelChange)="updateAbbattitoreData(item.id, 'oraFine', $event)"
-                                           [disabled]="isSubmitted() || !state.isContextEditable()"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="13:30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Scadenza</label>
-                                    <input type="date" [ngModel]="statusMap()[item.id]?.abbattitore?.scadenza" 
-                                           (ngModelChange)="updateAbbattitoreData(item.id, 'scadenza', $event)"
-                                           [disabled]="isSubmitted() || !state.isContextEditable()"
-                                           class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Temp. Cons.</label>
-                                    <div class="relative">
-                                        <input type="number" [ngModel]="statusMap()[item.id]?.abbattitore?.tempConservazione" 
-                                               (ngModelChange)="updateAbbattitoreData(item.id, 'tempConservazione', $event)"
-                                               [disabled]="isSubmitted() || !state.isContextEditable()"
-                                               class="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm font-bold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none shadow-sm transition-all disabled:opacity-50" placeholder="0">
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">°C</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
 
                     @if (item.status === 'issue' && item.note) {
                         <div class="w-full mt-2 text-xs text-red-600 font-medium italic bg-red-50 px-3 py-1.5 rounded border border-red-100">
@@ -560,6 +481,7 @@ export class OperativeChecklistComponent {
                         nameLower.includes('fredd') || 
                         nameLower.includes('congelatore') || 
                         nameLower.includes('cella') ||
+                        nameLower.includes('abbattitore') ||
                         nameLower.includes('ghiaccio') ||
                         nameLower.includes('vetrina');
          const isHot = type === 'Caldo' || 
@@ -641,6 +563,11 @@ export class OperativeChecklistComponent {
           if (tempValue < 4 || tempValue > 8) {
               isIssue = true;
               alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
+          }
+      } else if (nameLower.includes('abbattitore')) {
+          if (tempValue > -35) {
+              isIssue = true;
+              alertMsg = 'Abbattitore fuori parametro di esercizio (deve essere ≤ -35°C)';
           }
       }
 

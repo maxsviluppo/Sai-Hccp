@@ -179,7 +179,12 @@ import { FormsModule } from '@angular/forms';
                                                             <button type="button" (click)="selectFromPantry(match)"
                                                                     class="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0 group">
                                                                 <div class="flex justify-between items-center mb-0.5">
-                                                                    <span class="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{{ match.ingredientName }}</span>
+                                                                    <span class="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                                                                        {{ match.ingredientName }}
+                                                                        @if (findAbbattimentoRecord(match)) {
+                                                                            <i class="fa-solid fa-icicles text-indigo-500" title="Prodotto Abbattuto"></i>
+                                                                        }
+                                                                    </span>
                                                                     <span class="text-[9px] font-black text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">Lotto: {{ match.lotto }}</span>
                                                                 </div>
                                                                 <div class="text-[9px] text-slate-400 font-bold flex items-center gap-2">
@@ -279,12 +284,23 @@ import { FormsModule } from '@angular/forms';
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3 font-bold text-slate-800">
-                                                {{ ing.name }}
+                                                @let abbIng = findAbbattimentoRecord(ing);
+                                                <span class="flex items-center gap-1.5">
+                                                    {{ ing.name }}
+                                                    @if (abbIng) {
+                                                        <i class="fa-solid fa-icicles text-indigo-400 text-[10px]" title="Abbattuto il {{ abbIng.recordedDate | date:'dd/MM/yy' }}"></i>
+                                                    }
+                                                </span>
                                                 <div class="flex flex-col gap-0.5 mt-0.5">
                                                     @if (ing.supplierName) {
                                                         <p class="text-[9px] text-blue-500 font-black uppercase tracking-tight">{{ ing.supplierName }}</p>
                                                     }
-                                                    @if (ing.expiryDate) {
+                                                    @if (abbIng) {
+                                                        <p class="text-[9px] font-black uppercase flex items-center gap-0.5 text-indigo-500">
+                                                            <i class="fa-solid fa-icicles text-[8px]"></i>
+                                                            Scad. {{ abbIng.postExpiryDate | date:'dd/MM/yy' }}
+                                                        </p>
+                                                    } @else if (ing.expiryDate) {
                                                         <p class="text-[9px] text-slate-400 font-bold uppercase">Scad. {{ ing.expiryDate | date:'dd/MM/yy' }}</p>
                                                     }
                                                 </div>
@@ -293,8 +309,14 @@ import { FormsModule } from '@angular/forms';
                                                 <span class="text-[10px] font-black text-slate-500 uppercase">{{ ing.supplierName || '—' }}</span>
                                             </td>
                                             <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">{{ ing.lotto || '—' }}</td>
-                                            <td class="px-4 py-3 text-right">
-                                                <button (click)="removeIngredient(ing.id)" class="text-rose-500 hover:text-rose-700 p-2">
+                                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                                @let ab = findAbbattimentoRecord(ing);
+                                                @if (ab) {
+                                                    <button type="button" (click)="openAbbattimentoPrintModal(ab)" class="text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg p-2 mr-2 transition-all shadow-sm" title="Stampa Etichetta Abbattimento ({{ ab.recordedDate | date:'dd/MM' }})">
+                                                        <i class="fa-solid fa-icicles"></i>
+                                                    </button>
+                                                }
+                                                <button type="button" (click)="removeIngredient(ing.id)" class="text-rose-500 hover:text-rose-700 p-2">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </td>
@@ -331,7 +353,15 @@ import { FormsModule } from '@angular/forms';
                             </div>
                             <div class="mt-auto flex gap-2">
                                 <button (click)="openDetail(rec)" class="flex-1 py-2 bg-slate-50 text-slate-600 rounded-lg font-bold text-[10px] uppercase hover:bg-slate-100">Apri</button>
-                                <button (click)="openLabelPreview(rec)" class="w-10 py-2 bg-teal-50 text-teal-600 rounded-lg hover:bg-teal-600 hover:text-white transition-all"><i class="fa-solid fa-print"></i></button>
+                                @let abbRecForCard = findAbbattimentoRecordByProductRecordIngredients(rec);
+                                @if (abbRecForCard) {
+                                    <button (click)="openAbbattimentoPrintModal(abbRecForCard)" class="w-10 py-2 bg-indigo-50 text-indigo-500 rounded-lg hover:bg-indigo-500 hover:text-white transition-all" title="Stampa Etichetta Abbattimento">
+                                        <i class="fa-solid fa-icicles"></i>
+                                    </button>
+                                }
+                                <button (click)="openLabelPreview(rec)" class="w-10 py-2 bg-teal-50 text-teal-600 rounded-lg hover:bg-teal-600 hover:text-white transition-all" title="Stampa Etichetta Prodotto">
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
                                 <button (click)="deleteRecord(rec.id)" class="w-10 py-2 text-rose-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         </div>
@@ -493,6 +523,95 @@ import { FormsModule } from '@angular/forms';
                 </div>
             </div>
         }
+
+        <!-- ABBATTIMENTO LABEL PREVIEW MODAL -->
+        @if (selectedAbbattimentoForPrint()) {
+            <div class="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="selectedAbbattimentoForPrint.set(null)"></div>
+                
+                <div class="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+                    <div class="px-6 py-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest">Etichetta Abbattimento</h3>
+                            <div class="flex bg-white rounded-lg p-0.5 border border-slate-200 shadow-sm">
+                                <button (click)="labelFormatAbbattimento.set('62mm')" [class]="'px-3 py-1 text-[9px] font-bold rounded-md transition-all ' + (labelFormatAbbattimento() === '62mm' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50')">62mm</button>
+                                <button (click)="labelFormatAbbattimento.set('29x90')" [class]="'px-3 py-1 text-[9px] font-bold rounded-md transition-all ' + (labelFormatAbbattimento() === '29x90' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50')">29x90mm</button>
+                            </div>
+                        </div>
+                        <button (click)="selectedAbbattimentoForPrint.set(null)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+
+                    <div class="p-8 bg-slate-50 flex justify-center items-center overflow-auto min-h-[300px]">
+                        @if (labelFormatAbbattimento() === '62mm') {
+                            <!-- PREVIEW: 62mm Format -->
+                            <div id="print-label-preview-62-abb" class="bg-white border-2 border-slate-300 p-3 font-sans text-black w-[280px] shadow-sm flex flex-col">
+                                <div class="text-center border-b-2 border-black pb-2 mb-2">
+                                    <h1 class="m-0 text-lg font-black uppercase leading-tight tracking-tight">SAI FAST HACCP</h1>
+                                    <p class="m-0 text-[10px] font-bold uppercase tracking-widest">Processo Abbattimento</p>
+                                </div>
+                                
+                                <div class="flex flex-col gap-2 flex-1">
+                                    <div>
+                                        <div class="text-[9px] font-black uppercase tracking-widest text-slate-500">Prodotto Abbattuto</div>
+                                        <div class="text-[16px] font-black leading-tight">{{ selectedAbbattimentoForPrint()?.productName }}</div>
+                                    </div>
+                                    
+                                    <div class="flex justify-between border-t border-dashed border-slate-300 pt-2">
+                                        <div>
+                                            <div class="text-[9px] font-black uppercase tracking-widest text-slate-500">Lotto Orig.</div>
+                                            <div class="text-sm font-bold font-mono">{{ selectedAbbattimentoForPrint()?.originalLotto || 'N.D.' }}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-[9px] font-black uppercase tracking-widest text-slate-500">Scad. Orig.</div>
+                                            <div class="text-sm font-bold">{{ selectedAbbattimentoForPrint()?.originalExpiryDate ? (selectedAbbattimentoForPrint()?.originalExpiryDate | date:'dd/MM/yy') : 'N.D.' }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-dashed border-slate-300 pt-2">
+                                        <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Parametri Ciclo ({{ selectedAbbattimentoForPrint()?.recordedDate | date:'dd/MM/yy' }})</div>
+                                        <div class="text-[10px] flex justify-between font-bold">
+                                            <span>Orario: {{ selectedAbbattimentoForPrint()?.startTime }}-{{ selectedAbbattimentoForPrint()?.endTime }}</span>
+                                            <span>Temp: {{ selectedAbbattimentoForPrint()?.startTemp }}° &rarr; {{ selectedAbbattimentoForPrint()?.endTemp }}°C</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 pt-3 border-t-2 border-black text-center bg-slate-50 rounded-lg pb-1">
+                                    <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Nuova Scadenza</div>
+                                    <div class="text-xl font-black">{{ selectedAbbattimentoForPrint()?.postExpiryDate ? (selectedAbbattimentoForPrint()?.postExpiryDate | date:'dd/MM/yyyy') : 'N.D.' }}</div>
+                                    <div class="text-[9px] font-bold mt-1 text-slate-600">Conservare a: {{ selectedAbbattimentoForPrint()?.storageTemp }}°C</div>
+                                </div>
+                            </div>
+                        } @else {
+                            <!-- PREVIEW: 29x90mm Format -->
+                            <div id="print-label-preview-29-abb" class="bg-white border-2 border-slate-300 font-sans text-black w-[340px] h-[110px] flex flex-row overflow-hidden p-2 shadow-sm">
+                                <div class="flex-[1.4] flex flex-col min-w-0 pr-3 border-r border-black">
+                                    <div class="text-[7px] font-black uppercase text-slate-500 mb-0.5">Abbattimento - {{ selectedAbbattimentoForPrint()?.recordedDate | date:'dd/MM/yy' }}</div>
+                                    <div class="text-[12px] font-black uppercase leading-tight line-clamp-2">{{ selectedAbbattimentoForPrint()?.productName }}</div>
+                                    
+                                    <div class="mt-auto pb-1">
+                                        <div class="text-[8px] flex items-baseline gap-1"><span class="font-bold text-slate-500 uppercase">Lotto:</span> <span class="font-mono font-black">{{ selectedAbbattimentoForPrint()?.originalLotto || 'N.D.' }}</span></div>
+                                        <div class="text-[8px] flex items-baseline gap-1"><span class="font-bold text-slate-500 uppercase">Ciclo:</span> <span class="font-black">{{ selectedAbbattimentoForPrint()?.startTime }}-{{ selectedAbbattimentoForPrint()?.endTime }} ({{ selectedAbbattimentoForPrint()?.endTemp }}°C)</span></div>
+                                    </div>
+                                </div>
+                                <div class="flex-1 flex flex-col justify-center pl-3 text-center">
+                                    <div class="text-[8px] font-black uppercase text-slate-500 tracking-widest mb-1">Scadenza</div>
+                                    <div class="text-lg font-black leading-none bg-black text-white py-1.5 rounded">{{ selectedAbbattimentoForPrint()?.postExpiryDate ? (selectedAbbattimentoForPrint()?.postExpiryDate | date:'dd/MM/yy') : 'N.D.' }}</div>
+                                    <div class="text-[7px] font-bold mt-2 uppercase text-slate-600">Cons: {{ selectedAbbattimentoForPrint()?.storageTemp }}°C</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="p-6 bg-white border-t border-slate-100 flex flex-wrap gap-4">
+                        <button (click)="selectedAbbattimentoForPrint.set(null)" class="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl font-black text-xs uppercase hover:bg-slate-100">Chiudi</button>
+                        <button (click)="printAbbattimentoLabel(selectedAbbattimentoForPrint()!, labelFormatAbbattimento())" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase hover:bg-indigo-700 shadow-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-print"></i> Stampa Etichetta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     <!-- PHOTO ZOOM MODAL -->
@@ -552,6 +671,9 @@ export class ProductionLogViewComponent {
     pantryMatches = signal<any[]>([]);
     baseMatches = signal<string[]>([]);
     mainProductMatches = signal<string[]>([]);
+    
+    selectedAbbattimentoForPrint = signal<any | null>(null);
+    labelFormatAbbattimento = signal<'62mm' | '29x90'>('62mm');
 
     currentRecord: Partial<ProductionRecord> = {};
     newIngredient: Partial<ProductionIngredient> = {};
@@ -686,11 +808,20 @@ export class ProductionLogViewComponent {
     selectFromPantry(item: any) {
         this.newIngredient.name = item.ingredientName;
         this.newIngredient.lotto = item.lotto || '';
-        this.newIngredient.expiryDate = item.expiryDate || '';
         this.newIngredient.supplierName = item.supplierName || '';
+        
+        // Check if this product has been blast chilled - if so use the extended expiry date
+        const abb = this.findAbbattimentoRecord(item);
+        if (abb && abb.postExpiryDate) {
+            this.newIngredient.expiryDate = abb.postExpiryDate;
+            this.toast.success('Prodotto Abbattuto ❄️', `${item.ingredientName} — Scadenza estesa al ${new Date(abb.postExpiryDate).toLocaleDateString('it-IT')} caricata automaticamente.`);
+        } else {
+            this.newIngredient.expiryDate = item.expiryDate || '';
+            this.toast.success('Dispensa', `${item.ingredientName} — Lotto e scadenza caricati automaticamente.`);
+        }
+        
         this.pantryMatches.set([]);
         this.baseMatches.set([]);
-        this.toast.success('Dispensa', `${item.ingredientName} — Lotto e scadenza caricati automaticamente.`);
     }
 
     daysToExpiry(d: string): number {
@@ -1022,5 +1153,140 @@ export class ProductionLogViewComponent {
         }
         
         return `${baseUrl}?info=${rec.id}`;
+    }
+
+    findAbbattimentoRecord(ing: ProductionIngredient): any | null {
+        const raw = this.state.getGlobalRecord('abbattimento_log') as any[] || [];
+        // Match by product name and either lotto or supplier.
+        return raw.find(r => 
+            r.productName?.toLowerCase() === ing.name?.toLowerCase() && 
+            (
+                (ing.lotto && r.originalLotto === ing.lotto) ||
+                (ing.supplierName && r.supplierName === ing.supplierName)
+            )
+        ) || null;
+    }
+
+    openAbbattimentoPrintModal(ab: any) {
+        this.selectedAbbattimentoForPrint.set(ab);
+    }
+
+    printAbbattimentoLabel(rec: any, format: '62mm' | '29x90') {
+        const dateFormatted = new Date(rec.recordedDate).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const expiryFormatted = rec.postExpiryDate ? new Date(rec.postExpiryDate).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N.D.';
+        
+        let printContent = '';
+
+        if (format === '62mm') {
+            printContent = `
+                <div id="print-label-sticker" style="font-family: Arial, sans-serif; display:flex; flex-direction:column; background:white;">
+                    <div style="border-bottom: 2px solid black; padding-bottom: 4mm; margin-bottom: 3mm; text-align: center;">
+                        <h1 style="margin: 0; font-size: 16pt; font-weight: 900; text-transform: uppercase;">SAI FAST HACCP</h1>
+                        <p style="margin: 0; font-size: 9pt; font-weight: bold;">PROCESSO ABBATTIMENTO</p>
+                    </div>
+                    <div style="flex: 1; display:flex; flex-direction:column; gap: 2mm;">
+                        <div><div style="font-size: 7pt; font-weight: bold; text-transform: uppercase;">Prodotto Abbattuto</div><div style="font-size: 14pt; font-weight: 900; line-height: 1.1;">${rec.productName}</div></div>
+                        <div style="display:flex; justify-content: space-between; border-top: 1px dashed #ccc; padding-top: 2mm;">
+                            <div><div style="font-size: 7pt; font-weight: bold; text-transform: uppercase;">Lotto Orig.</div><div style="font-size: 11pt; font-weight: bold;">${rec.originalLotto || 'N.D.'}</div></div>
+                            <div style="text-align: right;"><div style="font-size: 7pt; font-weight: bold; text-transform: uppercase;">Scad. Orig.</div><div style="font-size: 11pt; font-weight: bold;">${rec.originalExpiryDate ? new Date(rec.originalExpiryDate).toLocaleDateString('it-IT') : 'N.D.'}</div></div>
+                        </div>
+                        <div style="border-top: 1px dashed #ccc; padding-top: 2mm;">
+                            <div style="font-size: 7pt; font-weight: bold; text-transform: uppercase;">Parametri Ciclo (${dateFormatted})</div>
+                            <div style="font-size: 9pt; display: flex; justify-content: space-between; margin-top: 1mm;">
+                                <span><b>Orario:</b> ${rec.startTime} - ${rec.endTime}</span>
+                                <span><b>Temp:</b> ${rec.startTemp}°C &rarr; ${rec.endTemp}°C</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 3mm; padding-top: 3mm; border-top: 2px solid black; text-align: center;">
+                        <div style="font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Nuova Scadenza</div>
+                        <div style="font-size: 18pt; font-weight: 900;">${expiryFormatted}</div>
+                        <div style="font-size: 7pt; margin-top: 1mm;">Conservare a: ${rec.storageTemp}°C</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            printContent = `
+                <div id="print-label-sticker" style="font-family: Arial, sans-serif; background:white;">
+                    <div style="flex: 1.4; padding-right: 3mm; border-right: 1px dashed black; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 5pt; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5mm;">Abbattimento - ${dateFormatted}</div>
+                            <div style="font-size: 10pt; font-weight: 900; line-height: 1.1; max-width: 50mm; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${rec.productName}</div>
+                        </div>
+                        <div style="margin-top: 1mm;">
+                            <div style="font-size: 6pt; margin-bottom: 0.5mm;">Lotto: <b>${rec.originalLotto || 'N.D.'}</b></div>
+                            <div style="font-size: 6pt;">Ciclo: <b>${rec.startTime}-${rec.endTime} (${rec.endTemp}°C)</b></div>
+                        </div>
+                    </div>
+                    <div style="flex: 1; padding-left: 3mm; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <div style="font-size: 7pt; font-weight: bold; text-transform: uppercase; margin-bottom: 1mm;">Scadenza</div>
+                        <div style="font-size: 14pt; font-weight: 900; background: black; color: white; padding: 1mm 2mm; border-radius: 2mm;">${expiryFormatted}</div>
+                        <div style="font-size: 6pt; margin-top: 1.5mm; text-transform: uppercase;">Cons: ${rec.storageTemp}°C</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const oldFrame = document.getElementById('print-iframe');
+        if (oldFrame) oldFrame.remove();
+
+        const iframe = document.createElement('iframe');
+        iframe.id = 'print-iframe';
+        iframe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;border:none;visibility:hidden;';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc) return;
+
+        let pageCss = '';
+        if (format === '62mm') {
+            pageCss = `
+                @page { size: 62mm auto; margin: 0mm !important; }
+                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                html, body { margin: 0 !important; padding: 0 !important; width: 62mm !important; background: white; overflow: visible !important; }
+                body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+                #print-label-sticker { width: 62mm !important; margin: 0 !important; border: none !important; box-shadow: none !important; padding: 3mm !important; flex-shrink: 0; min-height: 0 !important; }
+            `;
+        } else {
+            pageCss = `
+                @page { size: 90mm 29mm !important; margin: 0 !important; }
+                *, *::before, *::after { box-sizing: border-box !important; }
+                html, body { margin: 0 !important; padding: 0 !important; width: 90mm !important; height: 29mm !important; background: white !important; overflow: hidden !important; }
+                #print-label-sticker { width: 90mm !important; height: 29mm !important; margin: 0 !important; border: none !important; box-shadow: none !important; padding: 2mm 2mm 2mm 4mm !important; display: flex !important; flex-direction: row !important; }
+            `;
+        }
+
+        doc.open();
+        doc.write(`
+            <html><head><style>* { box-sizing: border-box !important; } ${pageCss}</style></head>
+            <body>${printContent}
+            <script>window.onload = function() { setTimeout(() => { window.print(); setTimeout(() => window.parent.document.getElementById('print-iframe').remove(), 1000); }, 500); };</script>
+            </body></html>
+        `);
+        doc.close();
+    }
+
+    /** Match a pantry/ingredient item to an abbattimento log record by name + lotto or supplier. */
+    findAbbattimentoRecord(item: { name?: string; ingredientName?: string; lotto?: string; supplierName?: string }): any | null {
+        const raw = this.state.getGlobalRecord('abbattimento_log') as any[] || [];
+        const name = (item.name || item.ingredientName || '').toLowerCase();
+        return raw.find(r =>
+            r.productName?.toLowerCase() === name &&
+            (
+                (item.lotto && r.originalLotto === item.lotto) ||
+                (item.supplierName && r.supplierName === item.supplierName)
+            ) &&
+            !!r.postExpiryDate
+        ) || null;
+    }
+
+    /** Scan a full ProductionRecord's ingredients and return the first matching abbattimento record. */
+    findAbbattimentoRecordByProductRecordIngredients(rec: ProductionRecord): any | null {
+        const ingredients = rec.ingredients || [];
+        for (const ing of ingredients) {
+            const match = this.findAbbattimentoRecord(ing);
+            if (match) return match;
+        }
+        return null;
     }
 }
