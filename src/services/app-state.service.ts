@@ -2640,8 +2640,6 @@ export class AppStateService {
         updated_at: new Date()
       };
       
-      // If resolution is provided, we update it. 
-      // Note: we use 'resolution' as established in previous session.
       if (resolution !== undefined) {
         updateData.resolution = resolution;
       }
@@ -2653,6 +2651,100 @@ export class AppStateService {
         .eq('client_id', nc.clientId);
 
       if (error) throw error;
+
+      // --- NEW: BACK-SYNC WITH CHECKLIST ---
+      // If we closed the anomaly, and it came from a checklist module, we mark the area as "Conforme" (ok)
+      if (status === 'CLOSED' && nc.moduleId && nc.itemName) {
+          const checklistModules = ['operative-checklist', 'pre-op-checklist', 'post-op-checklist'];
+          if (checklistModules.includes(nc.moduleId)) {
+              // Find the checklist record for that day
+              const record = this.checklistRecords().find(r => 
+                  r.moduleId === nc.moduleId && 
+                  r.clientId === nc.clientId && 
+                  r.date === nc.date
+              );
+
+              if (record && record.data) {
+                  // Pre-op: data is an array of Areas
+                  // Op: data.items is the array
+                  // Post-op: data.areas is the array
+                  let itemsArray: any[] = [];
+                  let dataKey: string | null = null;
+
+                  if (Array.isArray(record.data)) {
+                      itemsArray = record.data;
+                  } else if (record.data.items) {
+                      itemsArray = record.data.items;
+                      dataKey = 'items';
+                  } else if (record.data.areas) {
+                      itemsArray = record.data.areas;
+                      dataKey = 'areas';
+                  }
+
+                  if (itemsArray.length > 0) {
+                      let updated = false;
+                      const cleanItemName = nc.itemName.replace('Anomalia riscontrata in: ', '').trim();
+
+                      // Function to update an array of items/areas
+                      const updateArray = (arr: any[]) => {
+                          return arr.map((item: any) => {
+                              const itemTitle = item.title || item.label;
+                              if (itemTitle === cleanItemName || itemTitle === nc.itemName) {
+                                  updated = true;
+                                  // Mark as Conforme
+                                  const updatedSteps = (item.steps || []).map((s: any) => ({ 
+                                      ...s, 
+                                      status: 'ok', 
+                                      note: `Risolto: ${resolution || 'Procedura completata'}` 
+                                  }));
+                                  
+                                  return {
+                                      ...item,
+                                      status: 'ok',
+                                      steps: updatedSteps
+                                  };
+                              }
+                              return item;
+                          });
+                      };
+
+                      const newItemsArray = updateArray(itemsArray);
+
+                      if (updated || record.data.globalItems) {
+                          let newData: any;
+                          if (dataKey) {
+                              newData = { ...record.data, [dataKey]: newItemsArray };
+                          } else {
+                              newData = newItemsArray;
+                          }
+
+                          // Also check globalItems if present
+                          if (record.data.globalItems) {
+                              const newGlobalItems = updateArray(record.data.globalItems);
+                              if (updated) {
+                                  newData = { ...newData, globalItems: newGlobalItems };
+                              }
+                          }
+
+                          if (updated) {
+                              console.log(`[HACCP-SYNC] Back-updating checklist ${nc.moduleId} for item/area ${nc.itemName}`);
+                              
+                              // Update local state
+                              this.checklistRecords.update(records => 
+                                  records.map(r => r.id === record.id ? { ...r, data: newData } : r)
+                              );
+
+                              // Save to DB
+                              await supabase.from('checklist_records')
+                                  .update({ data: newData })
+                                  .eq('id', record.id);
+                          }
+                      }
+                  }
+              }
+          }
+      }
+      // -------------------------------------
       
       this.toastService.success('Operazione Completata', 'La non conformità è stata aggiornata con successo.');
     } catch (e: any) {

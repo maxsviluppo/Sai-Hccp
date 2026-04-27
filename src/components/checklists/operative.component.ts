@@ -296,55 +296,75 @@ interface ChecklistItem {
                                     </span>
                                 }
                             </div>
-                        </div>
-
-                        <!-- Actions & Basic Temp -->
+                                        <!-- Actions & Enhanced Temperature Box -->
                         <div class="flex items-center gap-3 flex-1 justify-end shrink-0">
                             @if (item.hasTemperature) {
-                                <div class="flex flex-col items-end gap-1">
-                                    <div class="w-24 bg-white rounded border border-slate-200 px-2 flex items-center gap-1.5 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-shadow h-7 shadow-sm">
-                                        <i class="fa-solid fa-temperature-half text-[11px] text-slate-400"></i>
+                                <div class="flex flex-col items-end gap-1.5">
+                                    <div class="relative group/temp">
+                                        <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                            <i class="fa-solid fa-temperature-half text-slate-400 text-sm transition-colors group-focus-within/temp:text-indigo-500"></i>
+                                        </div>
                                         <input type="number" 
                                                [ngModel]="statusMap()[item.id]?.temperature"
                                                (ngModelChange)="updateTemperature(item.id, $event, item.label)"
-                                               placeholder="°C"
+                                               placeholder="0.0"
+                                               step="0.1"
                                                [disabled]="isSubmitted() || !state.isContextEditable()"
-                                               class="w-full font-bold text-slate-700 bg-transparent h-full focus:outline-none text-sm disabled:opacity-50">
+                                               class="w-28 h-14 pl-10 pr-4 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-800 text-lg outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 placeholder:text-slate-300 shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                        <div class="absolute -top-2 -right-2 px-2 py-0.5 bg-slate-800 text-white text-[8px] font-black rounded-full uppercase tracking-widest shadow-sm">°C</div>
                                     </div>
+                                    
                                     @if (item.isAbbattitore && statusMap()[item.id]?.temperature !== null && statusMap()[item.id]?.temperature !== undefined) {
-                                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-tight"
-                                              [class]="statusMap()[item.id]?.abbattitoreConforme ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-red-600 bg-red-50 border-red-100 animate-pulse'">
-                                            {{ statusMap()[item.id]?.abbattitoreConforme ? 'Conforme' : 'Non Conforme' }}
+                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-lg border-2 uppercase tracking-tight shadow-xs"
+                                              [class]="statusMap()[item.id]?.abbattitoreConforme ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 'text-red-700 bg-red-50 border-red-100 animate-pulse'">
+                                            {{ statusMap()[item.id]?.abbattitoreConforme ? 'Abt. Conforme' : 'Abt. Fuori Norma' }}
                                         </span>
                                     } @else if (!item.isAbbattitore && statusMap()[item.id]?.isAutomaticIssue) {
-                                        <span class="text-[9px] font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 uppercase tracking-tight animate-pulse">
-                                            HACCP Fuori Norma
+                                        <span class="text-[9px] font-black text-red-700 bg-red-50 px-2 py-0.5 rounded-lg border-2 border-red-100 uppercase tracking-tight animate-pulse shadow-xs">
+                                            Fuori Norma
                                         </span>
                                     }
                                 </div>
                             }
 
-                            <div class="flex items-center gap-1.5">
-                                @if (item.status === 'pending') {
-                                    <button (click)="setStatus(item.id, 'ok')" 
-                                            [disabled]="isSubmitted() || !state.isContextEditable()"
-                                            class="h-7 px-2.5 rounded bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-400 hover:text-emerald-500 transition-colors shadow-sm flex items-center justify-center disabled:opacity-30">
-                                        <i class="fa-solid fa-check text-xs"></i>
-                                    </button>
-                                    <button (click)="openIssueModal(item)" 
-                                            [disabled]="isSubmitted() || !state.isContextEditable()"
-                                            class="h-7 px-2.5 rounded bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-400 hover:text-red-500 transition-colors shadow-sm flex items-center justify-center disabled:opacity-30">
-                                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                                    </button>
-                                } @else {
+                            <div class="flex items-center gap-2">
+                                <!-- OK BUTTON: emerald if ok, gray if not -->
+                                <button (click)="setStatus(item.id, 'ok')" 
+                                        [disabled]="isSubmitted() || !state.isContextEditable()"
+                                        class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
+                                        [class.border-emerald-200]="statusMap()[item.id]?.status === 'ok'"
+                                        [class.bg-emerald-50]="statusMap()[item.id]?.status === 'ok'"
+                                        [class.text-emerald-600]="statusMap()[item.id]?.status === 'ok'"
+                                        [class.border-slate-200]="statusMap()[item.id]?.status !== 'ok'"
+                                        [class.bg-slate-50]="statusMap()[item.id]?.status !== 'ok'"
+                                        [class.text-slate-400]="statusMap()[item.id]?.status !== 'ok'">
+                                    <i class="fa-solid fa-check text-xl"></i>
+                                    <span class="text-[9px] font-black uppercase tracking-widest">OK</span>
+                                </button>
+
+                                <!-- NO BUTTON: red if issue, gray if not -->
+                                <button (click)="openIssueModal(item)" 
+                                        [disabled]="isSubmitted() || !state.isContextEditable()"
+                                        class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
+                                        [class.border-red-200]="statusMap()[item.id]?.status === 'issue'"
+                                        [class.bg-red-50]="statusMap()[item.id]?.status === 'issue'"
+                                        [class.text-red-600]="statusMap()[item.id]?.status === 'issue'"
+                                        [class.border-slate-200]="statusMap()[item.id]?.status !== 'issue'"
+                                        [class.bg-slate-50]="statusMap()[item.id]?.status !== 'issue'"
+                                        [class.text-slate-400]="statusMap()[item.id]?.status !== 'issue'">
+                                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                                    <span class="text-[9px] font-black uppercase tracking-widest">NO</span>
+                                </button>
+
+                                @if (statusMap()[item.id]?.status && statusMap()[item.id]?.status !== 'pending') {
                                     <button (click)="setStatus(item.id, 'pending')" 
                                             [disabled]="isSubmitted() || !state.isContextEditable()"
-                                            class="h-7 px-2.5 rounded bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-[11px] uppercase tracking-widest transition-colors border border-slate-200 disabled:opacity-30">
-                                        <i class="fa-solid fa-rotate-left"></i>
+                                            class="h-14 w-10 rounded-2xl border-2 border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center shadow-sm active:scale-90 disabled:opacity-30">
+                                        <i class="fa-solid fa-rotate-left text-sm"></i>
                                     </button>
                                 }
                             </div>
-                        </div>
+                        </div>             </div>
                     </div>
 
 
@@ -398,7 +418,7 @@ interface ChecklistItem {
                      </div>
                      <!-- Body -->
                      <div class="p-6 space-y-4">
-                        <textarea #issueInput class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-red-400 focus:border-red-400 focus:outline-none h-32 transition-colors text-lg resize-none custom-scrollbar" placeholder="Descrivi brevemente l'anomalia..."></textarea>
+                        <textarea #issueInput [value]="anomalySubject" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-red-400 focus:border-red-400 focus:outline-none h-32 transition-colors text-lg resize-none custom-scrollbar" placeholder="Descrivi brevemente l'anomalia..."></textarea>
                         
                         <div class="flex gap-3">
                            <button class="flex-1 py-2 bg-slate-50 border border-slate-200 text-slate-600 font-bold uppercase tracking-widest rounded-lg text-xs hover:bg-slate-100 transition-colors" (click)="closeModal()">Annulla</button>
@@ -422,6 +442,14 @@ interface ChecklistItem {
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.5);
     }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
   `]
 })
 export class OperativeChecklistComponent {
@@ -430,6 +458,7 @@ export class OperativeChecklistComponent {
 
    isModalOpen = signal(false);
    currentItem = signal<ChecklistItem | null>(null);
+   anomalySubject = '';
    selectedDate = signal(this.state.filterDate());
    isSubmitted = signal(false);
    currentRecordId = signal<string | undefined>(undefined);
@@ -636,6 +665,7 @@ export class OperativeChecklistComponent {
 
    openIssueModal(item: ChecklistItem) {
       this.currentItem.set(item);
+      this.anomalySubject = `Anomalia riscontrata in: ${item.label}`;
       this.isModalOpen.set(true);
    }
 

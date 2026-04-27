@@ -181,12 +181,38 @@ interface AreaChecklist {
                                     </div>
                                     
                                     <div class="flex items-center gap-3 shrink-0">
-                                        <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
-                                                [disabled]="isSubmitted() || !state.isContextEditable()"
-                                                class="h-7 w-7 rounded bg-emerald-50 text-emerald-500 hover:bg-emerald-100 transition-colors flex items-center justify-center border border-emerald-100 disabled:opacity-30" title="Imposta tutti conformi">
-                                            <i class="fa-solid fa-check-double text-xs"></i>
-                                        </button>
-                                        <i class="fa-solid fa-chevron-down text-slate-400 text-base transition-transform duration-300" [class.rotate-180]="area.expanded"></i>
+                                        <!-- MOBILE-FIRST BANNER CONTROLS -->
+                                        <div class="flex items-center gap-3">
+                                            <!-- OK BUTTON -->
+                                            <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
+                                                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                    class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
+                                                    [class.border-emerald-200]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                    [class.bg-emerald-50]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                    [class.text-emerald-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                    [class.border-slate-200]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
+                                                    [class.bg-slate-50]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
+                                                    [class.text-slate-400]="!isAreaComplete(area.id) || hasAreaIssues(area.id)">
+                                                <i class="fa-solid fa-check text-xl"></i>
+                                                <span class="text-[9px] font-black uppercase tracking-widest">OK</span>
+                                            </button>
+
+                                            <!-- NO BUTTON -->
+                                            <button (click)="setAreaIssue(area.id); $event.stopPropagation()" 
+                                                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                    class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
+                                                    [class.border-red-200]="hasAreaIssues(area.id)"
+                                                    [class.bg-red-50]="hasAreaIssues(area.id)"
+                                                    [class.text-red-600]="hasAreaIssues(area.id)"
+                                                    [class.border-slate-200]="!hasAreaIssues(area.id)"
+                                                    [class.bg-slate-50]="!hasAreaIssues(area.id)"
+                                                    [class.text-slate-400]="!hasAreaIssues(area.id)">
+                                                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                                                <span class="text-[9px] font-black uppercase tracking-widest">NO</span>
+                                            </button>
+                                        </div>
+                                        <div class="w-px h-10 bg-slate-200 mx-1"></div>
+                                        <i class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300" [class.rotate-180]="area.expanded"></i>
                                     </div>
                                 </div>
                     <!-- Steps Content (Expanded) -->
@@ -205,19 +231,14 @@ interface AreaChecklist {
                                         </span>
                                     </div>
                                     <div class="flex gap-2 shrink-0">
-                                        @if (step.status === 'pending') {
-                                            <button (click)="setStepStatus(area.id, step.id, 'ok')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-7 h-7 rounded border border-emerald-200 text-emerald-500 hover:bg-emerald-50 transition-colors flex items-center justify-center bg-white disabled:opacity-30"><i class="fa-solid fa-check text-xs"></i></button>
-                                            <button (click)="setStepStatus(area.id, step.id, 'issue')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-7 h-7 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors flex items-center justify-center bg-white disabled:opacity-30"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
-                                        } @else {
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-[10px] font-black uppercase tracking-widest px-1"
-                                                      [class.text-emerald-500]="step.status === 'ok'"
-                                                      [class.text-red-500]="step.status === 'issue'">
-                                                    {{ step.status === 'ok' ? 'Conforme' : 'Anomalia' }}
-                                                </span>
-                                                <button (click)="setStepStatus(area.id, step.id, 'pending')" [disabled]="isSubmitted() || !state.isContextEditable()" class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors flex items-center justify-center disabled:opacity-30"><i class="fa-solid fa-rotate-left text-[11px]"></i></button>
-                                            </div>
-                                        }
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-black uppercase tracking-widest px-1"
+                                                  [class.text-emerald-500]="step.status === 'ok'"
+                                                  [class.text-red-500]="step.status === 'issue'"
+                                                  [class.text-slate-300]="step.status === 'pending'">
+                                                {{ step.status === 'ok' ? 'Conforme' : (step.status === 'issue' ? 'Anomalia' : 'In attesa') }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             }
@@ -296,6 +317,7 @@ interface AreaChecklist {
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Dettaglio Anomalia / Azione Correttiva</label>
                             <textarea #anomalyText
+                                      [value]="anomalySubject"
                                       placeholder="Descrivi l'anomalia riscontrata e l'eventuale azione correttiva immediata intrapresa..."
                                       class="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-base font-medium text-slate-700 transition-all shadow-sm bg-white resize-none"></textarea>
                         </div>
@@ -360,6 +382,8 @@ export class PostOperationalChecklistComponent {
     // Anomaly Modal State
     isAnomalyModalOpen = signal(false);
     currentAnomalyStep = signal<{areaId: string, id: string, label: string} | null>(null);
+    selectedAreaForIssue = signal<string | null>(null);
+    anomalySubject = '';
 
     getInitialSteps(areaId: string): StepStatus[] {
         const isEquipment = areaId.startsWith('eq-');
@@ -499,16 +523,6 @@ export class PostOperationalChecklistComponent {
     setStepStatus(areaId: string, stepId: string, status: 'pending' | 'ok' | 'issue') {
         if (!this.state.isContextEditable()) return;
 
-        if (status === 'issue') {
-            const area = this.areas().find(a => a.id === areaId);
-            const step = area?.steps.find(s => s.id === stepId);
-            if (step) {
-                this.currentAnomalyStep.set({ areaId, id: stepId, label: step.label });
-                this.isAnomalyModalOpen.set(true);
-            }
-            return;
-        }
-
         this.areas.update(areas => areas.map(a => {
             if (a.id === areaId) {
                 return {
@@ -520,6 +534,15 @@ export class PostOperationalChecklistComponent {
         }));
 
         this.autoSave();
+    }
+
+    setAreaIssue(areaId: string) {
+        const area = this.areas().find(a => a.id === areaId);
+        if (!area) return;
+
+        this.selectedAreaForIssue.set(areaId);
+        this.anomalySubject = `Anomalia riscontrata in: ${area.label}`;
+        this.isAnomalyModalOpen.set(true);
     }
 
     private autoSaveTimeout: any;
@@ -719,21 +742,36 @@ export class PostOperationalChecklistComponent {
     closeAnomalyModal() {
         this.isAnomalyModalOpen.set(false);
         this.currentAnomalyStep.set(null);
+        this.selectedAreaForIssue.set(null);
     }
 
     confirmAnomaly(note: string) {
         const anomaly = this.currentAnomalyStep();
-        if (!anomaly) return;
-
-        this.areas.update(areas => areas.map(a => {
-            if (a.id === anomaly.areaId) {
-                return {
-                    ...a,
-                    steps: a.steps.map(s => s.id === anomaly.id ? { ...s, status: 'issue', note } : s)
-                };
-            }
-            return a;
-        }));
+        const areaId = this.selectedAreaForIssue();
+        
+        if (areaId) {
+            // Whole area issue
+            this.areas.update(areas => areas.map(a => {
+                if (a.id === areaId) {
+                    return {
+                        ...a,
+                        steps: a.steps.map(s => ({ ...s, status: 'issue', note: note || 'Anomalia area' }))
+                    };
+                }
+                return a;
+            }));
+        } else if (anomaly) {
+            // Single step issue
+            this.areas.update(areas => areas.map(a => {
+                if (a.id === anomaly.areaId) {
+                    return {
+                        ...a,
+                        steps: a.steps.map(s => s.id === anomaly.id ? { ...s, status: 'issue', note } : s)
+                    };
+                }
+                return a;
+            }));
+        } else return;
 
         this.state.saveRecord('post-op-checklist', {
             areas: this.areas(),
@@ -742,8 +780,9 @@ export class PostOperationalChecklistComponent {
         });
 
         // Persistent record
-        const parentArea = this.areas().find(a => a.steps.some(s => s.id === anomaly.id));
-        const areaName = parentArea ? parentArea.label : 'Generale';
+        const area = this.areas().find(a => a.id === (areaId || anomaly?.areaId));
+        const areaName = area ? area.label : 'Generale';
+        const itemName = areaId ? areaName : (anomaly?.label || areaName);
         const operatorName = this.state.currentUser()?.name || 'Operatore';
         const currentDate = new Date().toLocaleDateString();
 
@@ -752,14 +791,14 @@ export class PostOperationalChecklistComponent {
             id: Math.random().toString(36).substring(2, 9),
             moduleId: 'post-op-checklist',
             date: this.state.filterDate(),
-            description: `[POST-OP] ${areaName} -> ${anomaly.label}: ${note || 'Anomalia rilevata'}`,
-            itemName: anomaly.label
+            description: `[POST-OP] ${areaName}${anomaly ? ' -> ' + anomaly.label : ''}: ${note || 'Anomalia rilevata'}`,
+            itemName: itemName
         });
 
         // Notifica chat all'amministrazione con dettagli strutturati
         this.state.sendMessage(
-            `🚨 ANOMALIA POST-OPERATIVA: ${anomaly.label}`,
-            `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Post-operativa (Fine Servizio)\nAREA: ${areaName}\nELEMENTO: ${anomaly.label}\nOPERATORE: ${operatorName}\nDATA: ${currentDate}\n\nNOTE OPERATORE:\n${note || 'Nessuna specifica'}`,
+            `🚨 ANOMALIA POST-OPERATIVA: ${itemName}`,
+            `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Post-operativa (Fine Servizio)\nAREA: ${areaName}\nELEMENTO: ${itemName}\nOPERATORE: ${operatorName}\nDATA: ${currentDate}\n\nNOTE OPERATORE:\n${note || 'Nessuna specifica'}`,
             'SINGLE',
             'ADMIN_OFFICE'
         );
