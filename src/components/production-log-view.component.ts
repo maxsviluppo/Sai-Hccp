@@ -62,7 +62,7 @@ import { FormsModule } from '@angular/forms';
                                     <input type="text" [(ngModel)]="currentRecord.mainProductName" 
                                            (ngModelChange)="onMainProductNameChange($event)"
                                            placeholder="es. Sugo alla Genovese"
-                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm md:text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
+                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
                                     
                                     @if (preparationMatches().length > 0 || mainProductMatches().length > 0) {
                                         <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up sticky z-50">
@@ -96,21 +96,21 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </div>
 
-                            <div class="flex flex-col md:grid md:grid-cols-2 gap-4">
-                                <div class="space-y-1.5">
-                                    <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Confezionamento</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-tight pl-1">Conf.</label>
                                     <div class="relative">
-                                        <i class="fa-solid fa-calendar-check absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                                        <i class="fa-solid fa-calendar-check absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
                                         <input type="date" [(ngModel)]="currentRecord.packagingDate"
-                                               class="w-[98%] mx-auto block md:w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-base font-bold text-slate-800 text-center focus:border-teal-400 focus:bg-white outline-none transition-all">
+                                               class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-7 pr-1 text-xs font-bold text-slate-800 focus:border-teal-400 focus:bg-white outline-none transition-all">
                                     </div>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Scadenza</label>
+                                <div class="space-y-1">
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-tight pl-1">Scadenza</label>
                                     <div class="relative">
-                                        <i class="fa-solid fa-calendar-xmark absolute left-4 top-1/2 -translate-y-1/2 text-rose-300 text-xs"></i>
+                                        <i class="fa-solid fa-calendar-xmark absolute left-2 top-1/2 -translate-y-1/2 text-rose-300 text-[10px]"></i>
                                         <input type="date" [(ngModel)]="currentRecord.expiryDate"
-                                               class="w-[98%] mx-auto block md:w-full bg-slate-50 border border-rose-200 rounded-xl px-4 py-3 pl-10 text-base font-bold text-slate-800 text-center focus:border-rose-400 focus:bg-white outline-none focus:ring-2 focus:ring-rose-100 transition-all">
+                                               class="w-full bg-slate-50 border border-rose-200 rounded-lg py-2 pl-7 pr-1 text-xs font-bold text-slate-800 focus:border-rose-400 focus:bg-white outline-none focus:ring-2 focus:ring-rose-100 transition-all">
                                     </div>
                                 </div>
                             </div>
@@ -183,7 +183,7 @@ import { FormsModule } from '@angular/forms';
                                             <input type="text" [(ngModel)]="newIngredient.name"
                                                 (ngModelChange)="onIngredientNameChange($event)"
                                                 placeholder="Cerca in dispensa o database..."
-                                                class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
+                                                class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-base font-bold text-slate-800 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm first-letter:uppercase">
                                             
                                             @if (pantryMatches().length > 0 || baseMatches().length > 0) {
                                                 <div class="mt-2 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up">
@@ -226,16 +226,16 @@ import { FormsModule } from '@angular/forms';
 
                                     <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto e Scadenza</label>
-                                        <div class="flex flex-col md:flex-row gap-3">
-                                            <div class="flex-1 relative">
-                                                <i class="fa-solid fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
-                                                <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Numero Lotto"
-                                                       class="w-[98%] mx-auto block md:w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-base font-mono font-bold text-slate-600 text-center focus:border-teal-400 transition-all shadow-sm">
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="relative">
+                                                <i class="fa-solid fa-barcode absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
+                                                <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
+                                                       class="w-full bg-white border border-slate-200 rounded-lg py-2 pl-7 pr-1 text-xs font-mono font-bold text-slate-600 focus:border-teal-400 transition-all shadow-sm">
                                             </div>
-                                            <div class="flex-1 relative">
-                                                <i class="fa-solid fa-calendar-day absolute left-3 top-1/2 -translate-y-1/2 text-rose-300 text-[10px]"></i>
+                                            <div class="relative">
+                                                <i class="fa-solid fa-calendar-day absolute left-2 top-1/2 -translate-y-1/2 text-rose-300 text-[10px]"></i>
                                                 <input type="date" [(ngModel)]="newIngredient.expiryDate"
-                                                       class="w-[98%] mx-auto block md:w-full bg-white border border-rose-200 rounded-xl pl-9 pr-4 py-3 text-base font-bold text-slate-800 text-center outline-none focus:border-rose-400 transition-all shadow-sm">
+                                                       class="w-full bg-white border border-rose-200 rounded-lg py-2 pl-7 pr-1 text-xs font-bold text-slate-800 outline-none focus:border-rose-400 transition-all shadow-sm">
                                             </div>
                                         </div>
                                     </div>
