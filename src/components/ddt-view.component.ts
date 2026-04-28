@@ -209,32 +209,37 @@ export interface IncomingIngredient {
 
       <!-- Pantry List -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-amber-600">
-              <i class="fa-solid" [class]="viewMode() === 'activePantry' ? 'fa-boxes-stacked' : 'fa-truck-ramp-box'"></i>
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-amber-600">
+                <i class="fa-solid" [class]="viewMode() === 'activePantry' ? 'fa-boxes-stacked' : 'fa-truck-ramp-box'"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-slate-800">{{ viewMode() === 'daily' ? 'Carichi del Giorno' : 'Dispensa Attiva' }}</h3>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {{ viewMode() === 'daily' ? (filteredPantry().length + ' prodotti registrati') : (filteredPantry().length + ' prodotti attivi') }}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 class="font-bold text-slate-800">{{ viewMode() === 'daily' ? 'Carichi del Giorno' : 'Dispensa Attiva' }}</h3>
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                {{ viewMode() === 'daily' ? (filteredPantry().length + ' prodotti registrati il ' + (state.filterDate() | date:'dd/MM')) : (filteredPantry().length + ' prodotti in corso di validità') }}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
+            <!-- Row 1: View Toggle -->
             <button (click)="viewMode.set(viewMode() === 'daily' ? 'activePantry' : 'daily')" 
-                    class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all border"
-                    [class]="viewMode() === 'daily' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'">
+                    class="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all border shadow-sm"
+                    [class]="viewMode() === 'daily' ? 'bg-indigo-600 border-indigo-700 text-white hover:bg-indigo-700' : 'bg-amber-600 border-amber-700 text-white hover:bg-amber-700'">
               <i class="fa-solid" [class]="viewMode() === 'daily' ? 'fa-boxes-stacked' : 'fa-calendar-day'"></i>
-              {{ viewMode() === 'daily' ? 'Vedi Dispensa Attiva' : 'Vedi Carichi Giorno' }}
+              {{ viewMode() === 'daily' ? 'Vedi Dispensa' : 'Vedi Carichi Giorno' }}
             </button>
-            <div class="relative">
-              <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-              <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca prodotto..."
-                     class="pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-amber-400 transition-all">
-            </div>
           </div>
-               @if (filteredPantry().length === 0) {
+          
+          <!-- Row 2: Search (Full width on mobile) -->
+          <div class="relative w-full">
+            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca per prodotto o fornitore..."
+                   class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-50 transition-all shadow-sm">
+          </div>
+        </div>
+
+        @if (filteredPantry().length === 0) {
           <div class="p-16 text-center">
             <i class="fa-solid fa-boxes-stacked text-4xl text-slate-200 mb-4 block"></i>
             <p class="text-sm font-bold text-slate-500">Dispensa vuota</p>
@@ -300,7 +305,7 @@ export interface IncomingIngredient {
                     </td>
                     <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.quantity || '—' }}</td>
                     <td class="px-4 py-3 text-right">
-                      <button (click)="deleteEntry(item.id)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ml-auto">
+                      <button (click)="confirmDelete(item)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ml-auto">
                         <i class="fa-solid fa-trash-can text-xs"></i>
                       </button>
                     </td>
@@ -327,8 +332,8 @@ export interface IncomingIngredient {
                       <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">{{ item.supplierName }}</p>
                     </div>
                   </div>
-                  <button (click)="deleteEntry(item.id)" class="w-9 h-9 flex items-center justify-center text-rose-400 bg-rose-50 rounded-lg">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  <button (click)="confirmDelete(item)" class="w-9 h-9 flex items-center justify-center text-rose-500 bg-rose-50 border border-rose-100 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
                   </button>
                 </div>
 
@@ -365,6 +370,36 @@ export interface IncomingIngredient {
         }
       </div>
 
+      <!-- Delete Confirmation Modal -->
+      @if (itemToDelete()) {
+        <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="itemToDelete.set(null)"></div>
+          <div class="relative bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+            <div class="p-8 text-center">
+              <div class="h-20 w-20 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-3xl mx-auto mb-6 border border-rose-100 shadow-inner">
+                <i class="fa-solid fa-trash-can"></i>
+              </div>
+              <h3 class="text-xl font-black text-slate-800 mb-2">Elimina Prodotto?</h3>
+              <p class="text-sm text-slate-500 leading-relaxed mb-8">
+                Stai per eliminare <span class="font-bold text-slate-800">{{ itemToDelete()?.ingredientName }}</span> dal carico del {{ itemToDelete()?.entryDate | date:'dd/MM/yy' }}.<br>
+                Questa azione non può essere annullata.
+              </p>
+              
+              <div class="flex flex-col gap-3">
+                <button (click)="executeDelete()" 
+                        class="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg shadow-rose-200">
+                  Sì, Elimina Definivamente
+                </button>
+                <button (click)="itemToDelete.set(null)" 
+                        class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                  Annulla
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`.animate-fade-in { animation: fadeIn 0.4s ease-out; } @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`]
@@ -381,6 +416,7 @@ export class DdtViewComponent {
   searchQuery = signal('');
   showNewSupplierModal = signal(false);
   aiRawResponse = signal<string | null>(null);
+  itemToDelete = signal<IncomingIngredient | null>(null);
 
   form: {
     supplierName: string;
@@ -733,7 +769,25 @@ export class DdtViewComponent {
     this.cancelForm();
   }
 
+  confirmDelete(item: IncomingIngredient) {
+    this.itemToDelete.set(item);
+  }
+
+  async executeDelete() {
+    const item = this.itemToDelete();
+    if (!item) return;
+
+    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
+    const updated = currentPantry.filter(i => i.id !== item.id);
+    this.state.saveGlobalRecord('ddt_pantry', updated);
+    this.pantry.set(updated);
+    
+    this.toast.success('Prodotto eliminato', `${item.ingredientName} rimosso dalla dispensa.`);
+    this.itemToDelete.set(null);
+  }
+
   async deleteEntry(id: string) {
+    // Legacy support or internal use
     const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
     const updated = currentPantry.filter(i => i.id !== id);
     this.state.saveGlobalRecord('ddt_pantry', updated);

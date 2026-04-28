@@ -229,15 +229,15 @@ import { FormsModule } from '@angular/forms';
 
                                     <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto e Scadenza</label>
-                                        <div class="space-y-4 py-2">
-                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3">
+                                        <div class="flex flex-col md:flex-row items-center gap-4 py-2">
+                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3 w-full md:w-1/2">
                                                 <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
                                                     <i class="fa-solid fa-barcode text-xl"></i>
                                                 </div>
                                                 <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
                                                        class="w-full max-w-[240px] bg-white border border-slate-200 rounded-xl py-3 text-base font-mono font-bold text-slate-600 text-center focus:border-teal-400 transition-all shadow-sm">
                                             </div>
-                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3">
+                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3 w-full md:w-1/2">
                                                 <div class="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400 border border-rose-50">
                                                     <i class="fa-solid fa-calendar-day text-xl"></i>
                                                 </div>
