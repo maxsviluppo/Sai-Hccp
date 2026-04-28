@@ -273,7 +273,8 @@ export class AppStateService {
     'Carciofo Romanesco (Mammola)', 'Carciofo Spinoso di Sardegna', 'Carciofo di Paestum', 'Asparago Verde di Altedo', 'Asparago Bianco di Bassano', 'Asparago Selvatico', 'Broccolo Fiolaro', 'Cima di Rapa', 'Friariello Campano', 'Cavolo Nero Toscano', 'Cavolo Kale', 'Cavolo Pak Choi', 'Cavolo Cinese', 'Cavolo Cappuccio Viola', 'Cavolo di Bruxelles', 'Finocchio Maschio', 'Sedano Bianco di Sperlonga',
     'Lattuga Romana', 'Lattuga Gentilina', 'Insatala Salanova', 'Valeriana (Songino)', 'Misticanza di campo', 'Spinacio Baby (Novello)', 'Rucola della Piana del Sele', 'Radicchio Tardivo di Treviso', 'Radicchio di Castelfranco', 'Belga (Indivia)', 'Scarola Riccia', 'Escarola Liscia', 'Portulaca', 'Agretto (Barba di Frate)',
     'Fungo Cardoncello', 'Fungo Pleurotus', 'Fungo Pioppino', 'Fungo Shiitake Fresco', 'Tartufo Nero Estivo (Scorzone)', 'Tartufo Bianco d\'Alba', 'Prugnolo', 'Gallinaccio (Finferlo)',
-    'Zenzero Fresco (Radice)', 'Curcuma Fresca', 'Rafano (Armoracia)', 'Wasabi Originale', 'Citronella (Lemongrass)'
+    'Latte Intero (UHT)', 'Latte Scremato', 'Latte Microfiltrato', 'Latte di Capra', 'Latte di Asina', 'Caciotta Fresca', 'Caciotta Toscana', 'Formaggio Grattugiato (Mix)', 'Formaggio di Fossa', 'Squaquerone di Romagna', 'Pecorino Toscano',
+    'Noci Intere', 'Gherigli di Noci', 'Nocciole Tostate', 'Nocciole Intere', 'Arachidi Tostate', 'Arachidi Salate', 'Anacardi al Naturale', 'Anacardi Tostati', 'Mandorle Pelate', 'Mandorle a Lamelle', 'Pistacchi di Bronte', 'Pistacchi Sgusciati', 'Noci Pecan', 'Noci del Brasile', 'Noci Macadamia', 'Pinoli Mediterranei'
   ]);
 
   addBaseIngredient(name: string) {
