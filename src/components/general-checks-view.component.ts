@@ -356,24 +356,26 @@ interface CheckCategory {
                 <!-- Content -->
                 <div class="flex-1 min-w-0">
                   <div class="flex flex-wrap items-center gap-2 mb-1">
-                    <span class="text-sm font-bold text-slate-800">{{ nc.itemName || 'Anomalia' }}</span>
-                    <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border"
-                          [class.bg-red-50]="nc.status === 'OPEN'" [class.text-red-600]="nc.status === 'OPEN'" [class.border-red-200]="nc.status === 'OPEN'"
-                          [class.bg-amber-50]="nc.status === 'IN_PROGRESS'" [class.text-amber-700]="nc.status === 'IN_PROGRESS'" [class.border-amber-200]="nc.status === 'IN_PROGRESS'"
-                          [class.bg-emerald-50]="nc.status === 'CLOSED'" [class.text-emerald-700]="nc.status === 'CLOSED'" [class.border-emerald-200]="nc.status === 'CLOSED'">
-                      {{ nc.status === 'OPEN' ? 'APERTA' : nc.status === 'IN_PROGRESS' ? 'IN CORSO' : 'CHIUSA' }}
+                    <span class="text-sm font-black text-slate-800 uppercase tracking-tight">{{ nc.itemName || 'Anomalia' }}</span>
+                    <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border shadow-sm"
+                          [class.bg-red-500]="nc.status === 'OPEN'" [class.text-white]="nc.status === 'OPEN'" [class.border-red-600]="nc.status === 'OPEN'"
+                          [class.bg-amber-100]="nc.status === 'IN_PROGRESS'" [class.text-amber-700]="nc.status === 'IN_PROGRESS'" [class.border-amber-200]="nc.status === 'IN_PROGRESS'"
+                          [class.bg-emerald-100]="nc.status === 'CLOSED'" [class.text-emerald-700]="nc.status === 'CLOSED'" [class.border-emerald-200]="nc.status === 'CLOSED'">
+                      {{ nc.status === 'OPEN' ? 'DA RISOLVERE' : nc.status === 'IN_PROGRESS' ? 'IN LAVORAZIONE' : 'CHIUSA' }}
                     </span>
-                    <span class="text-[9px] font-bold uppercase text-slate-400 px-2 py-0.5 rounded bg-slate-50 border border-slate-100 tracking-widest">
-                      {{ getModuleLabel(nc.moduleId) }}
+                    <span class="text-[9px] font-black uppercase text-indigo-600 px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 tracking-widest shadow-xs">
+                      <i class="fa-solid fa-layer-group mr-1"></i>{{ getModuleLabel(nc.moduleId) }}
                     </span>
                     @if (!selectedCompanyId()) {
-                      <span class="text-[9px] font-black px-2 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 uppercase tracking-widest">
+                      <span class="text-[9px] font-black px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-slate-500 uppercase tracking-widest">
                         {{ getClientName(nc.clientId) }}
                       </span>
                     }
                   </div>
 
-                  <p class="text-xs text-slate-600 leading-relaxed mb-2">{{ nc.description }}</p>
+                  <p class="text-xs font-bold text-red-600 leading-relaxed mb-2 bg-red-50 p-2 rounded-lg border border-red-100">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i>{{ nc.description }}
+                  </p>
 
                   @if (nc.resolution) {
                     <div class="bg-emerald-50/50 p-2 rounded-lg border border-emerald-100 mb-2 flex items-start gap-2 max-w-lg">

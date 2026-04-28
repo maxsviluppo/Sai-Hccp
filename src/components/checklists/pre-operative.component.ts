@@ -204,23 +204,43 @@ interface AreaChecklist {
                                 <div class="flex flex-col">
                                     <!-- Area Header -->
                                     <div class="p-4 flex items-center justify-between transition-all cursor-pointer select-none border-b border-slate-100"
-                                         [class.bg-slate-50]="area.expanded" [class.hover:bg-slate-50]="!area.expanded"
-                                         (click)="toggleArea(area.id)">
+                                         [class.bg-slate-50]="area.expanded" 
+                                         [class.bg-red-50]="hasAreaIssues(area.id)"
+                                         [class.border-red-200]="hasAreaIssues(area.id)"
+                                         [class.hover:bg-slate-50]="!area.expanded"
+                                         (click)="hasAreaIssues(area.id) ? openProcedureModal(area) : toggleArea(area.id)">
                                         <div class="flex items-center gap-3 flex-1">
                                             <div class="h-10 w-10 rounded-xl flex items-center justify-center text-xl transition-all border shadow-sm"
-                                                 [class.bg-blue-50]="isAreaComplete(area.id)" [class.text-blue-600]="isAreaComplete(area.id)" [class.border-blue-100]="isAreaComplete(area.id)"
+                                                 [class.bg-red-500]="hasAreaIssues(area.id)" [class.text-white]="hasAreaIssues(area.id)" [class.border-red-600]="hasAreaIssues(area.id)"
+                                                 [class.bg-blue-50]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-blue-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.border-blue-100]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
                                                  [class.bg-white]="!isAreaComplete(area.id)" [class.text-slate-400]="!isAreaComplete(area.id)" [class.border-slate-200]="!isAreaComplete(area.id)">
-                                                <i [class]="'fa-solid ' + area.icon"></i>
+                                                <i [class]="'fa-solid ' + (hasAreaIssues(area.id) ? 'fa-triangle-exclamation' : area.icon)"></i>
                                             </div>
                                             <div>
-                                                <h3 class="font-bold text-slate-800 text-lg leading-tight uppercase tracking-tight">{{ area.label }}</h3>
-                                                <div class="flex items-center gap-2 mt-0.5">
-                                                    <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                                                <h3 class="font-bold text-slate-800 text-lg leading-tight uppercase tracking-tight"
+                                                    [class.text-red-800]="hasAreaIssues(area.id)">{{ area.label }}</h3>
+                                                <div class="flex flex-col gap-1 mt-0.5">
+                                                    <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded w-fit"
                                                           [class.bg-emerald-100]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-emerald-700]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
                                                           [class.bg-red-100]="hasAreaIssues(area.id)" [class.text-red-700]="hasAreaIssues(area.id)"
                                                           [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-500]="!isAreaComplete(area.id)">
                                                         {{ getAreaStatusLabel(area.id) }}
                                                     </span>
+                                                    
+                                                    <!-- NON-CONFORMITY SUMMARY -->
+                                                    @if (hasAreaIssues(area.id)) {
+                                                        <div class="flex flex-col gap-0.5 mt-1 animate-pulse">
+                                                            @for (step of getIssueSteps(area.id); track step.id) {
+                                                                <p class="text-[10px] font-black text-red-600 flex items-center gap-1.5">
+                                                                    <i class="fa-solid fa-circle text-[4px]"></i>
+                                                                    ANOMALIA: {{ step.label }}
+                                                                </p>
+                                                            }
+                                                            <p class="text-[9px] font-bold text-red-400 mt-1 italic uppercase tracking-tighter">
+                                                                <i class="fa-solid fa-hand-pointer mr-1"></i> Clicca per Procedura Correttiva
+                                                            </p>
+                                                        </div>
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
@@ -257,7 +277,9 @@ interface AreaChecklist {
                                                 </button>
                                             </div>
                                             <div class="w-px h-10 bg-slate-200 mx-1"></div>
-                                            <i class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300" [class.rotate-180]="area.expanded"></i>
+                                            <i class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300" 
+                                               [class.rotate-180]="area.expanded"
+                                               [class.hidden]="hasAreaIssues(area.id)"></i>
                                         </div>
                                     </div>
 
@@ -265,9 +287,10 @@ interface AreaChecklist {
                                     @if (area.expanded) {
                                         <div class="bg-slate-50 border-t border-slate-200/60 px-4 py-2 divide-y divide-slate-200/50 shadow-inner">
                                             @for (step of area.steps; track step.id; let j = $index) {
-                                                <div class="py-4 flex items-center justify-between gap-4 group/step">
+                                                <div class="py-4 px-3 flex items-center justify-between gap-4 group/step cursor-pointer hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100"
+                                                     (click)="step.status === 'issue' ? openProcedureModal(area) : toggleStepStatus(area.id, step.id)">
                                                     <div class="flex items-center gap-3 flex-1">
-                                                        <span class="text-[11px] font-black text-slate-400 w-5 h-5 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 leading-none shadow-xs">
+                                                        <span class="text-[11px] font-black text-slate-400 w-5 h-5 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 leading-none shadow-xs group-hover/step:border-indigo-200 group-hover/step:text-indigo-400 transition-colors">
                                                             {{ j + 1 }}
                                                         </span>
                                                         <span class="text-lg font-bold text-slate-600 leading-tight"
@@ -598,6 +621,88 @@ interface AreaChecklist {
             </div>
         }
 
+        <!-- PROCEDURE MODAL (Procedimento Correttivo) -->
+        @if (isProcedureModalOpen()) {
+            <div class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeProcedureModal()"></div>
+                <div class="relative bg-white w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
+                    
+                    <!-- Header -->
+                    <div class="p-8 bg-gradient-to-br from-red-600 to-rose-700 text-white flex-shrink-0">
+                        <div class="flex items-center gap-5">
+                            <div class="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-lg border border-white/30">
+                                <i class="fa-solid fa-hand-holding-medical"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black tracking-tight">Procedimento Correttivo</h3>
+                                <p class="text-rose-100 text-[10px] font-black uppercase tracking-widest opacity-80">Azione richiesta per ripristinare la conformità</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-8 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                        <div class="p-5 bg-red-50 rounded-3xl border border-red-100">
+                            <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Area Interessata
+                            </h4>
+                            <p class="text-xl font-bold text-slate-800 leading-tight">
+                                {{ selectedProcedureArea()?.label }}
+                            </p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                @for (step of getIssueSteps(selectedProcedureArea()?.id || ''); track step.id) {
+                                    <span class="px-2 py-1 bg-white border border-red-200 text-red-700 text-[10px] font-bold rounded-lg uppercase shadow-xs">
+                                        {{ step.label }}
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Protocollo di Intervanto</h4>
+                            
+                            <div class="space-y-3">
+                                @for (step of getAreaProcedures(selectedProcedureArea()?.id || ''); track $index) {
+                                    <div class="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:border-red-200 group">
+                                        <div class="h-8 w-8 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 font-black text-xs shadow-sm group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 transition-all">
+                                            {{ $index + 1 }}
+                                        </div>
+                                        <p class="text-sm font-bold text-slate-600 leading-relaxed group-hover:text-slate-800 transition-colors">
+                                            {{ step }}
+                                        </p>
+                                    </div>
+                                } @empty {
+                                    <div class="p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Procedura standard non definita</p>
+                                        <p class="text-[10px] text-slate-400 mt-1 italic">Contattare il responsabile HACCP per indicazioni specifiche.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="p-5 bg-blue-50 rounded-3xl border border-blue-100">
+                            <div class="flex gap-3">
+                                <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                                <p class="text-xs text-blue-800 leading-relaxed">
+                                    <b>Nota:</b> Dopo aver eseguito le azioni sopra indicate, è obbligatorio verificare nuovamente l'area e, se conforme, aggiornare lo stato del registro.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-8 pt-0 flex gap-4">
+                        <button (click)="closeProcedureModal()"
+                                class="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200">
+                            Chiudi
+                        </button>
+                        <button (click)="resolveAreaIssues(selectedProcedureArea()?.id || '')"
+                                class="flex-[1.5] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95">
+                            Risolto e Conforme
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- Footer Actions -->
 
         <!-- Footer Actions -->
@@ -658,6 +763,41 @@ export class PreOperationalChecklistComponent {
     currentAnomalyStep = signal<{areaId: string, id: string, label: string} | null>(null);
     currentAnomalyType = signal<'global' | 'step'>('step');
     anomalySubject = '';
+
+    // Procedure Modal State
+    isProcedureModalOpen = signal(false);
+    selectedProcedureArea = signal<AreaChecklist | null>(null);
+
+    private readonly AREA_PROCEDURES: Record<string, string[]> = {
+        'staff-hygiene': [
+            'Allontanare temporaneamente l\'operatore dall\'area di produzione.',
+            'Richiedere il cambio immediato del vestiario o l\'uso dei DPI (copricapo).',
+            'Effettuare un nuovo lavaggio antisettico delle mani.',
+            'Registrare l\'intervento formativo nel registro del personale.'
+        ],
+        'cucina-sala': [
+            'Isolare le superfici o le attrezzature non conformi.',
+            'Eseguire una detersione meccanica con sgrassante specifico.',
+            'Procedere alla disinfezione con soluzione a base di cloro o alcolica.',
+            'Risciacquare accuratamente se previsto dal protocollo chimico.'
+        ],
+        'area-lavaggio': [
+            'Ripristinare immediatamente le scorte di sapone e carta asciugamani.',
+            'Verificare la temperatura dell\'acqua calda (deve essere > 45°C).',
+            'Pulire e disinfettare il lavello e la rubinetteria.'
+        ],
+        'deposito': [
+            'Isolare i materiali con imballo danneggiato.',
+            'Verificare l\'integrità del prodotto interno.',
+            'Spostare i prodotti in area protetta o procedere allo smaltimento se contaminati.',
+            'Sanificare il ripiano di stoccaggio.'
+        ],
+        'pavimenti': [
+            'Rimuovere i residui grossolani con scopa a panno umido.',
+            'Lavare con soluzione detergente ad alta concentrazione.',
+            'Asciugare completamente per prevenire rischi di scivolamento e muffe.'
+        ]
+    };
 
     masterEquipmentList = [
         { area: 'Area Lavaggio', items: ['Mobile pensile', 'Lavello', 'Tavolo da lavoro'] },
@@ -991,6 +1131,21 @@ export class PreOperationalChecklistComponent {
         this.closeAnomalyModal();
     }
 
+    toggleStepStatus(areaId: string, stepId: string) {
+        if (this.isSubmitted() || !this.state.isContextEditable()) return;
+        
+        const area = this.areas().find(a => a.id === areaId);
+        const step = area?.steps.find(s => s.id === stepId);
+        
+        if (!step) return;
+
+        if (step.status === 'ok') {
+            this.setStepStatus(areaId, stepId, 'issue');
+        } else {
+            this.setStepStatus(areaId, stepId, 'ok');
+        }
+    }
+
     setAllStepsInArea(areaId: string, status: 'ok' | 'issue') {
         this.areas.update(areas => areas.map(a => {
             if (a.id === areaId) {
@@ -1040,6 +1195,45 @@ export class PreOperationalChecklistComponent {
     getAreaStatusLabel(id: string) {
         if (!this.isAreaComplete(id)) return 'In corso';
         return this.hasAreaIssues(id) ? 'Rilevate Anomalie' : 'Conforme';
+    }
+
+    getIssueSteps(areaId: string) {
+        const area = this.areas().find(a => a.id === areaId);
+        return area?.steps.filter(s => s.status === 'issue') || [];
+    }
+
+    getAreaProcedures(areaId: string): string[] {
+        // Handle equipment areas
+        if (areaId.startsWith('eq-')) {
+            return [
+                'Scollegare l\'apparecchiatura se presenta difetti elettrici.',
+                'Pulire le guarnizioni e le superfici interne con sanificante.',
+                'Chiamare l\'assistenza tecnica se il malfunzionamento persiste.',
+                'Spostare eventuali alimenti in un altro frigo/cella conforme.'
+            ];
+        }
+        return this.AREA_PROCEDURES[areaId] || [
+            'Identificare la causa specifica della non conformità.',
+            'Eseguire un intervento di pulizia o manutenzione mirato.',
+            'Verificare il ripristino delle condizioni igienico-sanitarie.',
+            'Documentare l\'azione correttiva nel registro specifico.'
+        ];
+    }
+
+    openProcedureModal(area: AreaChecklist) {
+        this.selectedProcedureArea.set(area);
+        this.isProcedureModalOpen.set(true);
+    }
+
+    closeProcedureModal() {
+        this.isProcedureModalOpen.set(false);
+        this.selectedProcedureArea.set(null);
+    }
+
+    resolveAreaIssues(areaId: string) {
+        this.setAllStepsInArea(areaId, 'ok');
+        this.closeProcedureModal();
+        this.toast.success('Problemi Risolti', 'L\'area è stata ripristinata e segnata come conforme.');
     }
 
     totalStepsCount() { return (this.areas().length * this.stepDefinitions.length); }

@@ -286,14 +286,21 @@ interface ChecklistItem {
                                 <i [class]="'fa-solid text-base ' + item.icon"></i>
                             </div>
 
-                            <div class="flex-1 min-w-0">
+                            <div class="flex-1 min-w-0 cursor-pointer" (click)="item.status === 'issue' ? openProcedureModal(item) : setStatus(item.id, 'ok')">
                                 <h4 class="font-bold text-slate-700 text-sm leading-tight group-hover/row:text-indigo-600 transition-colors">{{ item.label }}</h4>
                                 @if (item.status !== 'pending') {
-                                    <span class="text-[10px] font-black uppercase tracking-widest mt-0.5 block"
-                                          [class.text-emerald-500]="item.status === 'ok'"
-                                          [class.text-red-500]="item.status === 'issue'">
-                                        {{ item.status === 'ok' ? 'CONFORME' : 'NON CONFORME' }}
-                                    </span>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-[10px] font-black uppercase tracking-widest block"
+                                              [class.text-emerald-500]="item.status === 'ok'"
+                                              [class.text-red-500]="item.status === 'issue'">
+                                            {{ item.status === 'ok' ? 'CONFORME' : 'NON CONFORME' }}
+                                        </span>
+                                        @if (item.status === 'issue') {
+                                            <span class="text-[9px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-tighter border border-red-100 flex items-center gap-1">
+                                                <i class="fa-solid fa-hand-pointer animate-bounce"></i> Clicca per Procedura
+                                            </span>
+                                        }
+                                    </div>
                                 }
                             </div>
                                         <!-- Actions & Enhanced Temperature Box -->
@@ -428,6 +435,76 @@ interface ChecklistItem {
                   </div>
                </div>
             }
+
+            <!-- PROCEDURE MODAL (Procedimento Correttivo) -->
+            @if (isProcedureModalOpen()) {
+                <div class="fixed inset-0 z-[130] flex items-center justify-center p-4">
+                    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeProcedureModal()"></div>
+                    <div class="relative bg-white w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
+                        
+                        <!-- Header -->
+                        <div class="p-8 bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex-shrink-0">
+                            <div class="flex items-center gap-5">
+                                <div class="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-lg border border-white/30">
+                                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-black tracking-tight">Protocollo Tecnico</h3>
+                                    <p class="text-indigo-100 text-[10px] font-black uppercase tracking-widest opacity-80">Risoluzione Non Conformità Operativa</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-8 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                            <div class="p-5 bg-indigo-50 rounded-3xl border border-indigo-100">
+                                <h4 class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-cube"></i> Attrezzatura / Elemento
+                                </h4>
+                                <p class="text-xl font-bold text-slate-800 leading-tight">
+                                    {{ selectedProcedureItem()?.label }}
+                                </p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Azioni Correttive Suggerite</h4>
+                                
+                                <div class="space-y-3">
+                                    @for (step of getItemProcedures(selectedProcedureItem()); track $index) {
+                                        <div class="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:border-indigo-200 group">
+                                            <div class="h-8 w-8 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 font-black text-xs shadow-sm group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
+                                                {{ $index + 1 }}
+                                            </div>
+                                            <p class="text-sm font-bold text-slate-600 leading-relaxed group-hover:text-slate-800 transition-colors">
+                                                {{ step }}
+                                            </p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="p-5 bg-amber-50 rounded-3xl border border-amber-100">
+                                <div class="flex gap-3">
+                                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+                                    <p class="text-xs text-amber-800 leading-relaxed">
+                                        <b>Importante:</b> Se la temperatura non rientra nei parametri dopo l'azione correttiva, isolare i prodotti e informare il responsabile qualità.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-8 pt-0 flex gap-4">
+                            <button (click)="closeProcedureModal()"
+                                    class="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200">
+                                Chiudi
+                            </button>
+                            <button (click)="resolveItemIssue(selectedProcedureItem()?.id || '')"
+                                    class="flex-[1.5] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95">
+                                Problema Risolto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
   `,
    styles: [`
@@ -462,6 +539,10 @@ export class OperativeChecklistComponent {
    selectedDate = signal(this.state.filterDate());
    isSubmitted = signal(false);
    currentRecordId = signal<string | undefined>(undefined);
+
+   // Procedure Modal State
+   isProcedureModalOpen = signal(false);
+   selectedProcedureItem = signal<ChecklistItem | null>(null);
 
    statusMap = signal<Record<string, { 
       status: ChecklistItem['status'], 
@@ -799,6 +880,58 @@ export class OperativeChecklistComponent {
       this.statusMap.set(map);
       this.isSubmitted.set(!!record.data?.status);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+   }
+
+   openProcedureModal(item: ChecklistItem) {
+      this.selectedProcedureItem.set(item);
+      this.isProcedureModalOpen.set(true);
+   }
+
+   closeProcedureModal() {
+      this.isProcedureModalOpen.set(false);
+      this.selectedProcedureItem.set(null);
+   }
+
+   getItemProcedures(item: ChecklistItem | null): string[] {
+      if (!item) return [];
+      const label = item.label.toLowerCase();
+
+      if (label.includes('frigo') || label.includes('cella') || label.includes('refrigerato')) {
+         return [
+            'Verificare la chiusura ermetica delle porte.',
+            'Controllare che non ci sia un sovraccarico di merce che ostacoli il ricircolo d\'aria.',
+            'Verificare la pulizia dell\'evaporatore e del condensatore.',
+            'Monitorare la temperatura per i successivi 30 minuti.'
+         ];
+      }
+      if (label.includes('congelatore')) {
+         return [
+            'Effettuare sbrinamento se presente ghiaccio eccessivo.',
+            'Controllare le guarnizioni delle porte.',
+            'Verificare il funzionamento del termostato.',
+            'Spostare i prodotti in un altro congelatore se la temperatura sale sopra i -15°C.'
+         ];
+      }
+      if (label.includes('cottura') || label.includes('forno') || label.includes('caldo')) {
+         return [
+            'Aumentare la potenza del sistema di riscaldamento.',
+            'Verificare l\'integrità delle resistenze o bruciatori.',
+            'Mantenere i contenitori coperti.',
+            'Verificare al cuore del prodotto la temperatura (deve essere > 65°C).'
+         ];
+      }
+      return [
+         'Scollegare e ricollegare l\'attrezzatura.',
+         'Effettuare una pulizia profonda dei sensori.',
+         'Consultare il manuale tecnico del produttore.',
+         'Segnalare al manutentore se il problema persiste.'
+      ];
+   }
+
+   resolveItemIssue(id: string) {
+      this.setStatus(id, 'ok');
+      this.closeProcedureModal();
+      this.toast.success('Stato Aggiornato', 'L\'elemento è stato segnato come conforme dopo l\'azione correttiva.');
    }
 
    getFormattedDate() {
