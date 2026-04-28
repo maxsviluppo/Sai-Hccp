@@ -641,7 +641,7 @@ export class DashboardViewComponent {
 
   handleAlertAction(alert: SystemAlert) {
     if (alert.type === 'error' || alert.title.toLowerCase().includes('anomalia')) {
-      this.state.setModule('non-compliance');
+      this.state.setModule('general-checks');
     } else {
       this.state.setModule('collaborators');
     }

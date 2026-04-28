@@ -654,23 +654,9 @@ export class PostOperationalChecklistComponent {
         this.areas.update(areas => areas.map(a => a.id === id ? { ...a, expanded: !a.expanded } : a));
     }
 
-    setStepStatus(areaId: string, stepId: string, status: 'pending' | 'ok' | 'issue') {
-        if (!this.state.isContextEditable()) return;
-
-        this.areas.update(areas => areas.map(a => {
-            if (a.id === areaId) {
-                return {
-                    ...a,
-                    steps: a.steps.map(s => s.id === stepId ? { ...s, status, note: undefined } : s)
-                };
-            }
-            return a;
-        }));
-
-        this.autoSave();
-    }
 
     setAreaIssue(areaId: string) {
+
         const area = this.areas().find(a => a.id === areaId);
         if (!area) return;
 
