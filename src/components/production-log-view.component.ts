@@ -96,22 +96,25 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </div>
 
-                            <div class="flex flex-row gap-2 items-end">
-                                <div class="w-1/2 space-y-1">
-                                    <label class="text-[8px] font-black text-slate-400 uppercase tracking-tighter pl-1">Conf.</label>
-                                    <div class="relative">
-                                        <i class="fa-solid fa-calendar-check absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[9px]"></i>
-                                        <input type="date" [(ngModel)]="currentRecord.packagingDate"
-                                               class="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg py-1.5 pl-6 pr-1 text-[10px] font-bold text-slate-800 focus:border-teal-400 focus:bg-white outline-none transition-all">
+                            <div class="space-y-4 py-2">
+                                <!-- CONFEZIONAMENTO BLOCK -->
+                                <div class="bg-slate-50/50 border border-slate-200 rounded-[32px] p-6 flex flex-col items-center text-center space-y-3 shadow-sm">
+                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-teal-500 shadow-sm border border-slate-100">
+                                        <i class="fa-solid fa-calendar-check text-2xl"></i>
                                     </div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Confezionamento</label>
+                                    <input type="date" [(ngModel)]="currentRecord.packagingDate"
+                                           class="w-full max-w-[280px] bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 text-base font-bold text-slate-800 text-center focus:border-teal-500 outline-none transition-all shadow-sm">
                                 </div>
-                                <div class="w-1/2 space-y-1">
-                                    <label class="text-[8px] font-black text-slate-400 uppercase tracking-tighter pl-1">Scadenza</label>
-                                    <div class="relative">
-                                        <i class="fa-solid fa-calendar-xmark absolute left-2 top-1/2 -translate-y-1/2 text-rose-300 text-[9px]"></i>
-                                        <input type="date" [(ngModel)]="currentRecord.expiryDate"
-                                               class="w-full min-w-0 bg-slate-50 border border-rose-200 rounded-lg py-1.5 pl-6 pr-1 text-[10px] font-bold text-slate-800 focus:border-rose-400 focus:bg-white outline-none focus:ring-1 focus:ring-rose-100 transition-all">
+
+                                <!-- SCADENZA BLOCK -->
+                                <div class="bg-rose-50/30 border border-rose-100 rounded-[32px] p-6 flex flex-col items-center text-center space-y-3 shadow-sm">
+                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-rose-400 shadow-sm border border-rose-50">
+                                        <i class="fa-solid fa-calendar-xmark text-2xl"></i>
                                     </div>
+                                    <label class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]">Data di Scadenza</label>
+                                    <input type="date" [(ngModel)]="currentRecord.expiryDate"
+                                           class="w-full max-w-[280px] bg-white border-2 border-rose-200 rounded-2xl px-4 py-3 text-base font-bold text-slate-800 text-center focus:border-rose-500 outline-none transition-all shadow-sm">
                                 </div>
                             </div>
 
@@ -226,16 +229,20 @@ import { FormsModule } from '@angular/forms';
 
                                     <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto e Scadenza</label>
-                                        <div class="flex flex-row gap-2">
-                                            <div class="w-1/2 relative">
-                                                <i class="fa-solid fa-barcode absolute left-2 top-1/2 -translate-y-1/2 text-slate-300 text-[9px]"></i>
+                                        <div class="space-y-4 py-2">
+                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3">
+                                                <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
+                                                    <i class="fa-solid fa-barcode text-xl"></i>
+                                                </div>
                                                 <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
-                                                       class="w-full min-w-0 bg-white border border-slate-200 rounded-lg py-1.5 pl-6 pr-1 text-[10px] font-mono font-bold text-slate-600 focus:border-teal-400 transition-all shadow-sm">
+                                                       class="w-full max-w-[240px] bg-white border border-slate-200 rounded-xl py-3 text-base font-mono font-bold text-slate-600 text-center focus:border-teal-400 transition-all shadow-sm">
                                             </div>
-                                            <div class="w-1/2 relative">
-                                                <i class="fa-solid fa-calendar-day absolute left-2 top-1/2 -translate-y-1/2 text-rose-300 text-[9px]"></i>
+                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3">
+                                                <div class="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400 border border-rose-50">
+                                                    <i class="fa-solid fa-calendar-day text-xl"></i>
+                                                </div>
                                                 <input type="date" [(ngModel)]="newIngredient.expiryDate"
-                                                       class="w-full min-w-0 bg-white border border-rose-200 rounded-lg py-1.5 pl-6 pr-1 text-[10px] font-bold text-slate-800 outline-none focus:border-rose-400 transition-all shadow-sm">
+                                                       class="w-full max-w-[240px] bg-white border border-rose-200 rounded-xl py-3 text-base font-bold text-slate-800 text-center outline-none focus:border-rose-400 transition-all shadow-sm">
                                             </div>
                                         </div>
                                     </div>
