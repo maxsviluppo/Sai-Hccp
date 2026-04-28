@@ -171,8 +171,8 @@ import { ToastService } from '../services/toast.service';
                             <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-user text-[10px] sm:text-sm"></i></div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
-                                    <h3 class="text-base md:text-lg font-bold text-slate-800 truncate">{{ message.subject }}</h3>
-                                    @if (!message.read) { <span class="px-2 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase shrink-0">NUOVO</span> }
+                                    <h3 class="text-sm sm:text-lg font-bold text-slate-800 truncate flex-1 min-w-[120px]">{{ message.subject }}</h3>
+                                    @if (!message.read) { <span class="px-2 py-0.5 bg-blue-500 text-white text-[8px] sm:text-[9px] font-black rounded uppercase shrink-0">NUOVO</span> }
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-x-3 text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase">
                                     <div class="flex items-center gap-1.5 sm:gap-2">
@@ -202,15 +202,15 @@ import { ToastService } from '../services/toast.service';
                     </div>
 
                     @if (isMessageExpanded(message.id)) {
-                        <div class="border-t border-slate-100 bg-white rounded-b-xl p-6">
-                            <div class="text-slate-700 whitespace-pre-wrap font-medium mb-6">{{ message.content }}</div>
+                        <div class="border-t border-slate-100 bg-white rounded-b-xl p-4 sm:p-6">
+                            <div class="text-slate-700 whitespace-pre-wrap break-words font-medium text-sm sm:text-base mb-6">{{ message.content }}</div>
                             @if (message.attachmentName) {
                                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
                                     <div class="flex items-center gap-4">
-                                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 border border-slate-100 shadow-sm"><i class="fa-solid fa-file-arrow-down text-xl"></i></div>
-                                        <div>
-                                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Allegato</p>
-                                            <p class="text-sm font-bold text-slate-700 truncate max-w-[200px]">{{ message.attachmentName }}</p>
+                                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl flex items-center justify-center text-blue-600 border border-slate-100 shadow-sm shrink-0"><i class="fa-solid fa-file-arrow-down text-lg sm:text-xl"></i></div>
+                                        <div class="min-w-0">
+                                            <p class="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 sm:mb-1">Allegato</p>
+                                            <p class="text-xs sm:text-sm font-bold text-slate-700 truncate max-w-[150px] sm:max-w-[200px]">{{ message.attachmentName }}</p>
                                         </div>
                                     </div>
                                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -223,9 +223,9 @@ import { ToastService } from '../services/toast.service';
                             @if (message.replies.length > 0) {
                                 <div class="space-y-3 mb-6">
                                     @for (reply of message.replies; track reply.id) {
-                                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 ml-8 relative">
-                                            <div class="text-[10px] font-bold text-slate-500 uppercase mb-2"><span>{{ reply.senderName }}</span> • {{ reply.timestamp | date:'dd/MM HH:mm' }}</div>
-                                            <p class="text-sm font-medium text-slate-700">{{ reply.content }}</p>
+                                        <div class="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-100 ml-4 sm:ml-8 relative">
+                                            <div class="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase mb-1.5 sm:mb-2"><span>{{ reply.senderName }}</span> • {{ reply.timestamp | date:'dd/MM HH:mm' }}</div>
+                                            <p class="text-xs sm:text-sm font-medium text-slate-700 break-words">{{ reply.content }}</p>
                                         </div>
                                     }
                                 </div>
