@@ -158,84 +158,92 @@ interface AreaChecklist {
                         @for (area of areas(); track area.id) {
                             <div class="flex flex-col">
                                 <!-- Area Header -->
-                                <div class="px-4 py-3 flex items-center justify-between transition-all cursor-pointer select-none border-b border-slate-100"
+                                <div (click)="hasAreaIssues(area.id) ? openProcedureModal(area) : toggleArea(area.id)"
+                                     class="p-5 flex flex-col gap-4 transition-all cursor-pointer select-none border-b border-slate-100 group"
                                      [class.bg-slate-50]="area.expanded" 
-                                     [class.bg-red-50]="hasAreaIssues(area.id)"
-                                     [class.border-red-200]="hasAreaIssues(area.id)"
-                                     [class.hover:bg-slate-50]="!area.expanded"
-                                     (click)="hasAreaIssues(area.id) ? openProcedureModal(area) : toggleArea(area.id)">
-                                    <div class="flex items-center gap-3 flex-1">
-                                        <div class="h-10 w-10 rounded-xl flex items-center justify-center text-xl transition-all border shadow-sm"
-                                             [class.bg-red-500]="hasAreaIssues(area.id)" [class.text-white]="hasAreaIssues(area.id)" [class.border-red-600]="hasAreaIssues(area.id)"
-                                             [class.bg-purple-50]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-purple-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.border-purple-200]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                             [class.bg-white]="!isAreaComplete(area.id)" [class.text-slate-400]="!isAreaComplete(area.id)" [class.border-slate-200]="!isAreaComplete(area.id)">
-                                            <i [class]="'fa-solid ' + (hasAreaIssues(area.id) ? 'fa-triangle-exclamation' : area.icon)"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="font-bold text-slate-800 text-lg leading-tight uppercase tracking-tight"
-                                                [class.text-red-800]="hasAreaIssues(area.id)">{{ area.label }}</h3>
-                                            <div class="flex flex-col gap-1 mt-0.5">
-                                                <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded w-fit"
-                                                      [class.bg-emerald-100]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-emerald-700]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                      [class.bg-red-100]="hasAreaIssues(area.id)" [class.text-red-700]="hasAreaIssues(area.id)"
-                                                      [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-500]="!isAreaComplete(area.id)">
-                                                    {{ getAreaStatusLabel(area.id) }}
-                                                </span>
-                                                
-                                                <!-- NON-CONFORMITY SUMMARY -->
-                                                @if (hasAreaIssues(area.id)) {
-                                                    <div class="flex flex-col gap-0.5 mt-1 animate-pulse">
-                                                        @for (step of getIssueSteps(area.id); track step.id) {
-                                                            <p class="text-[10px] font-black text-red-600 flex items-center gap-1.5">
-                                                                <i class="fa-solid fa-circle text-[4px]"></i>
-                                                                ANOMALIA: {{ step.label }}
-                                                            </p>
-                                                        }
-                                                        <p class="text-[9px] font-bold text-red-400 mt-1 italic uppercase tracking-tighter">
-                                                            <i class="fa-solid fa-hand-pointer mr-1"></i> Clicca per Procedura Correttiva
-                                                        </p>
-                                                    </div>
-                                                }
+                                     [class.bg-red-50/50]="hasAreaIssues(area.id)"
+                                     [class.border-red-200]="hasAreaIssues(area.id)">
+                                    
+                                    <!-- Row 1: Info & Title -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-12 w-12 rounded-2xl flex items-center justify-center text-xl transition-all border shadow-sm"
+                                                 [class.bg-red-500]="hasAreaIssues(area.id)" [class.text-white]="hasAreaIssues(area.id)" [class.border-red-600]="hasAreaIssues(area.id)"
+                                                 [class.bg-purple-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-white]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.border-purple-700]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                 [class.bg-white]="!isAreaComplete(area.id)" [class.text-slate-400]="!isAreaComplete(area.id)" [class.border-slate-200]="!isAreaComplete(area.id)">
+                                                <i [class]="'fa-solid ' + (hasAreaIssues(area.id) ? 'fa-triangle-exclamation' : area.icon)"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-black text-slate-800 text-lg leading-tight uppercase tracking-tight"
+                                                    [class.text-red-800]="hasAreaIssues(area.id)">{{ area.label }}</h3>
+                                                <div class="flex items-center gap-2 mt-1">
+                                                    <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                                                          [class.bg-emerald-100]="isAreaComplete(area.id) && !hasAreaIssues(area.id)" [class.text-emerald-700]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                          [class.bg-red-100]="hasAreaIssues(area.id)" [class.text-red-700]="hasAreaIssues(area.id)"
+                                                          [class.bg-slate-100]="!isAreaComplete(area.id)" [class.text-slate-500]="!isAreaComplete(area.id)">
+                                                        {{ getAreaStatusLabel(area.id) }}
+                                                    </span>
+                                                    @if (!hasAreaIssues(area.id)) {
+                                                        <span class="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">
+                                                            {{ area.expanded ? 'Chiudi' : 'Dettagli' }} <i class="fa-solid" [class.fa-chevron-up]="area.expanded" [class.fa-chevron-down]="!area.expanded"></i>
+                                                        </span>
+                                                    }
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-3 shrink-0">
-                                        <!-- MOBILE-FIRST BANNER CONTROLS -->
-                                        <div class="flex items-center gap-3">
-                                            <!-- OK BUTTON -->
-                                            <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
-                                                    [disabled]="isSubmitted() || !state.isContextEditable()"
-                                                    class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
-                                                    [class.border-emerald-200]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                    [class.bg-emerald-50]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                    [class.text-emerald-600]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                    [class.border-slate-200]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
-                                                    [class.bg-slate-50]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
-                                                    [class.text-slate-400]="!isAreaComplete(area.id) || hasAreaIssues(area.id)">
-                                                <i class="fa-solid fa-check text-xl"></i>
-                                                <span class="text-[9px] font-black uppercase tracking-widest">OK</span>
-                                            </button>
 
-                                            <!-- NO BUTTON -->
-                                            <button (click)="setAreaIssue(area.id); $event.stopPropagation()" 
-                                                    [disabled]="isSubmitted() || !state.isContextEditable()"
-                                                    class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
-                                                    [class.border-red-200]="hasAreaIssues(area.id)"
-                                                    [class.bg-red-50]="hasAreaIssues(area.id)"
-                                                    [class.text-red-600]="hasAreaIssues(area.id)"
-                                                    [class.border-slate-200]="!hasAreaIssues(area.id)"
-                                                    [class.bg-slate-50]="!hasAreaIssues(area.id)"
-                                                    [class.text-slate-400]="!hasAreaIssues(area.id)">
-                                                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                                                <span class="text-[9px] font-black uppercase tracking-widest">NO</span>
-                                            </button>
-                                        </div>
-                                        <div class="w-px h-10 bg-slate-200 mx-1"></div>
-                                        <i class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300" 
-                                           [class.rotate-180]="area.expanded"
-                                           [class.hidden]="hasAreaIssues(area.id)"></i>
+                                        @if (hasAreaIssues(area.id)) {
+                                            <div class="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center animate-pulse border border-red-200">
+                                                <i class="fa-solid fa-hand-pointer"></i>
+                                            </div>
+                                        }
                                     </div>
+
+                                    <!-- Row 2: Large Touch-Friendly Buttons -->
+                                    <div class="flex items-center gap-3 w-full">
+                                        <!-- OK BUTTON -->
+                                        <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
+                                                [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                class="flex-1 h-16 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95 disabled:opacity-30"
+                                                [class.border-emerald-500]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                [class.bg-emerald-500]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                [class.text-white]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
+                                                [class.border-slate-200]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
+                                                [class.bg-white]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
+                                                [class.text-slate-400]="!isAreaComplete(area.id) || hasAreaIssues(area.id)">
+                                            <i class="fa-solid fa-circle-check text-2xl"></i>
+                                            <span class="text-xs font-black uppercase tracking-widest">CONFORME</span>
+                                        </button>
+
+                                        <!-- NO BUTTON -->
+                                        <button (click)="setAreaIssue(area.id); $event.stopPropagation()" 
+                                                [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                class="flex-1 h-16 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95 disabled:opacity-30"
+                                                [class.border-red-500]="hasAreaIssues(area.id)"
+                                                [class.bg-red-500]="hasAreaIssues(area.id)"
+                                                [class.text-white]="hasAreaIssues(area.id)"
+                                                [class.border-slate-200]="!hasAreaIssues(area.id)"
+                                                [class.bg-white]="!hasAreaIssues(area.id)"
+                                                [class.text-slate-400]="!hasAreaIssues(area.id)">
+                                            <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+                                            <span class="text-xs font-black uppercase tracking-widest">ANOMALIA</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- NON-CONFORMITY SUMMARY (Only if issues) -->
+                                    @if (hasAreaIssues(area.id)) {
+                                        <div class="p-4 bg-white/60 rounded-xl border border-red-100 space-y-1">
+                                            @for (step of getIssueSteps(area.id); track step.id) {
+                                                <p class="text-[11px] font-bold text-red-600 flex items-center gap-2">
+                                                    <i class="fa-solid fa-circle text-[4px]"></i>
+                                                    {{ step.label }}
+                                                </p>
+                                            }
+                                            <p class="text-[10px] font-black text-red-400 mt-2 uppercase tracking-tight italic">
+                                                <i class="fa-solid fa-circle-info mr-1"></i> Clicca il banner per i dettagli
+                                            </p>
+                                        </div>
+                                    }
                                 </div>
                     <!-- Steps Content (Expanded) -->
                     @if (area.expanded) {
@@ -539,9 +547,9 @@ export class PostOperationalChecklistComponent {
 
     constructor() {
         effect(() => {
-            // Re-load data when global filters change or equipment changes
             this.state.filterDate();
-            this.state.selectedEquipment(); // re-run when equipment changes
+            this.state.checklistRecords(); // Reattività ai record
+            this.state.selectedEquipment(); // Re-run when equipment changes
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
     }

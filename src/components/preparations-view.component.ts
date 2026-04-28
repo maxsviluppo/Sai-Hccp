@@ -15,7 +15,7 @@ import { ToastService } from '../services/toast.service';
       <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
         <div class="flex items-center gap-6 relative z-10">
-          <div class="h-16 w-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+          <div class="h-16 w-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
             <i class="fa-solid fa-mortar-pestle text-3xl"></i>
           </div>
           <div>
@@ -89,7 +89,7 @@ import { ToastService } from '../services/toast.service';
                 </div>
 
                 <div class="flex items-start gap-4 mb-6">
-                  <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                  <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shrink-0">
                     <i class="fa-solid fa-bowl-food text-2xl"></i>
                   </div>
                   <div class="pr-12">

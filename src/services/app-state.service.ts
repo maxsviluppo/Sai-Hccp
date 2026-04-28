@@ -2653,81 +2653,104 @@ export class AppStateService {
       if (error) throw error;
 
       // --- NEW: BACK-SYNC WITH CHECKLIST ---
-      // If we closed the anomaly, and it came from a checklist module, we mark the area as "Conforme" (ok)
+      // If we closed the anomaly, and it came from a checklist/cleaning module, we mark the area as "Conforme" (ok)
       if (status === 'CLOSED' && nc.moduleId && nc.itemName) {
-          const checklistModules = ['operative-checklist', 'pre-op-checklist', 'post-op-checklist'];
+          const checklistModules = ['operative-checklist', 'pre-op-checklist', 'post-op-checklist', 'cleaning-maintenance'];
           if (checklistModules.includes(nc.moduleId)) {
-              // Find the checklist record for that day
-              const record = this.checklistRecords().find(r => 
+              // Find all matching checklist records for that day/client
+              const matchingRecords = this.checklistRecords().filter(r => 
                   r.moduleId === nc.moduleId && 
                   r.clientId === nc.clientId && 
                   r.date === nc.date
               );
 
-              if (record && record.data) {
-                  // Pre-op: data is an array of Areas
-                  // Op: data.items is the array
-                  // Post-op: data.areas is the array
-                  let itemsArray: any[] = [];
-                  let dataKey: string | null = null;
+              if (matchingRecords.length > 0) {
+                  const cleanItemName = nc.itemName
+                    .replace('Anomalia riscontrata in: ', '')
+                    .replace('Anomalia pulizia riscontrata in: ', '')
+                    .trim();
+                    
+                  const targetName = nc.itemName.toLowerCase().trim();
+                  const targetClean = cleanItemName.toLowerCase().trim();
 
-                  if (Array.isArray(record.data)) {
-                      itemsArray = record.data;
-                  } else if (record.data.items) {
-                      itemsArray = record.data.items;
-                      dataKey = 'items';
-                  } else if (record.data.areas) {
-                      itemsArray = record.data.areas;
-                      dataKey = 'areas';
-                  }
+                  for (const record of matchingRecords) {
+                      if (!record.data) continue;
 
-                  if (itemsArray.length > 0) {
-                      let updated = false;
-                      const cleanItemName = nc.itemName.replace('Anomalia riscontrata in: ', '').trim();
+                      let itemsArray: any[] = [];
+                      let dataKey: string | null = null;
 
-                      // Function to update an array of items/areas
-                      const updateArray = (arr: any[]) => {
-                          return arr.map((item: any) => {
-                              const itemTitle = item.title || item.label;
-                              if (itemTitle === cleanItemName || itemTitle === nc.itemName) {
-                                  updated = true;
-                                  // Mark as Conforme
-                                  const updatedSteps = (item.steps || []).map((s: any) => ({ 
-                                      ...s, 
-                                      status: 'ok', 
-                                      note: `Risolto: ${resolution || 'Procedura completata'}` 
-                                  }));
+                      if (Array.isArray(record.data)) {
+                          itemsArray = record.data;
+                      } else if (record.data.items) {
+                          itemsArray = record.data.items;
+                          dataKey = 'items';
+                      } else if (record.data.areas) {
+                          itemsArray = record.data.areas;
+                          dataKey = 'areas';
+                      }
+
+                      if (itemsArray.length > 0) {
+                          let updated = false;
+
+                          // Function to update an array of items/areas (recursive for nested steps)
+                          const updateArray = (arr: any[]) => {
+                              return arr.map((item: any) => {
+                                  const itemTitle = (item.title || item.label || item.id || '').toString().toLowerCase().trim();
+                                  const resolutionNote = `Risolto: ${resolution || 'Azione correttiva completata'}`;
                                   
-                                  return {
-                                      ...item,
-                                      status: 'ok',
-                                      steps: updatedSteps
-                                  };
-                              }
-                              return item;
-                          });
-                      };
+                                  // 1. Check if the top-level item matches
+                                  const isTopMatch = itemTitle === targetName || 
+                                                    itemTitle === targetClean || 
+                                                    targetName.includes(itemTitle) || 
+                                                    itemTitle.includes(targetClean);
 
-                      const newItemsArray = updateArray(itemsArray);
+                                  let newItem = { ...item };
+                                  let itemChanged = false;
 
-                      if (updated || record.data.globalItems) {
-                          let newData: any;
-                          if (dataKey) {
-                              newData = { ...record.data, [dataKey]: newItemsArray };
-                          } else {
-                              newData = newItemsArray;
-                          }
+                                  if (isTopMatch) {
+                                      updated = true;
+                                      itemChanged = true;
+                                      newItem.status = 'ok';
+                                      newItem.note = resolutionNote;
+                                  }
 
-                          // Also check globalItems if present
-                          if (record.data.globalItems) {
+                                  // 2. Deep check in steps if they exist (for Pre-op/Post-op)
+                                  if (item.steps && Array.isArray(item.steps)) {
+                                      let stepsChanged = false;
+                                      const newSteps = item.steps.map((s: any) => {
+                                          const stepTitle = (s.title || s.label || s.id || '').toString().toLowerCase().trim();
+                                          if (stepTitle === targetName || stepTitle === targetClean || 
+                                              targetName.includes(stepTitle) || stepTitle.includes(targetClean)) {
+                                              stepsChanged = true;
+                                              updated = true;
+                                              return { ...s, status: 'ok', note: resolutionNote };
+                                          }
+                                          return s;
+                                      });
+
+                                      if (stepsChanged) {
+                                          newItem.steps = newSteps;
+                                          itemChanged = true;
+                                          // Also force top status to ok if it was an issue
+                                          if (newItem.status === 'issue') newItem.status = 'ok';
+                                      }
+                                  }
+
+                                  return itemChanged ? newItem : item;
+                              });
+                          };
+
+                          const newItemsArray = updateArray(itemsArray);
+                          let newData = dataKey ? { ...record.data, [dataKey]: newItemsArray } : newItemsArray;
+
+                          // Also check globalItems (pre-op)
+                          if (record.data && record.data.globalItems) {
                               const newGlobalItems = updateArray(record.data.globalItems);
-                              if (updated) {
-                                  newData = { ...newData, globalItems: newGlobalItems };
-                              }
+                              if (updated) newData = { ...newData, globalItems: newGlobalItems };
                           }
 
                           if (updated) {
-                              console.log(`[HACCP-SYNC] Back-updating checklist ${nc.moduleId} for item/area ${nc.itemName}`);
+                              console.log(`[HACCP-SYNC] Updating ${nc.moduleId} record ${record.id} for ${nc.itemName}`);
                               
                               // Update local state
                               this.checklistRecords.update(records => 

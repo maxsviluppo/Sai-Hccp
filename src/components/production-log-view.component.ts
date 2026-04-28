@@ -96,16 +96,16 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-1.5">
                                     <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Confezionamento</label>
                                     <input type="date" [(ngModel)]="currentRecord.packagingDate"
-                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-xs md:text-sm font-bold text-slate-800 focus:border-teal-400 focus:bg-white outline-none">
+                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-teal-400 focus:bg-white outline-none transition-all">
                                 </div>
                                 <div class="space-y-1.5">
                                     <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Scadenza</label>
                                     <input type="date" [(ngModel)]="currentRecord.expiryDate"
-                                           class="w-full bg-slate-50 border border-rose-200 rounded-xl px-3 py-3 text-xs md:text-sm font-bold text-slate-800 focus:border-rose-400 focus:bg-white outline-none focus:ring-2 focus:ring-rose-100">
+                                           class="w-full bg-slate-50 border border-rose-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 focus:border-rose-400 focus:bg-white outline-none focus:ring-2 focus:ring-rose-100 transition-all">
                                 </div>
                             </div>
 
@@ -374,6 +374,19 @@ import { FormsModule } from '@angular/forms';
                                 <div><i class="fa-solid fa-box-archive mr-2"></i> {{ rec.packagingDate | date:'dd/MM/yy' }}</div>
                                 <div class="text-rose-600"><i class="fa-solid fa-calendar-xmark mr-2"></i> {{ rec.expiryDate | date:'dd/MM/yy' }}</div>
                             </div>
+
+                            <!-- ALLERGENS LIST IN CARD -->
+                            @let cardAllergens = getRecordAllergens(rec);
+                            @if (cardAllergens.length > 0) {
+                                <div class="mb-4 pt-3 border-t border-slate-50">
+                                    <div class="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Allergeni:</div>
+                                    <div class="flex flex-wrap gap-1">
+                                        @for (alg of cardAllergens; track alg) {
+                                            <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-bold uppercase border border-indigo-100">{{ alg }}</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
                             <div class="mt-auto flex gap-2">
                                 <button (click)="openDetail(rec)" class="flex-1 py-2 bg-slate-50 text-slate-600 rounded-lg font-bold text-[10px] uppercase hover:bg-slate-100">Apri</button>
                                 @let abbRecForCard = findAbbattimentoRecordByProductRecordIngredients(rec);
@@ -1103,6 +1116,16 @@ export class ProductionLogViewComponent {
         ingredients.forEach(i => i.allergens?.forEach(a => manual.add(a)));
         
         const detected = this.detectAllergens(ingredients.map(i => i.name));
+        detected.forEach(d => manual.add(d));
+        
+        return Array.from(manual);
+    }
+
+    getRecordAllergens(rec: ProductionRecord): string[] {
+        const manual = new Set<string>();
+        rec.ingredients.forEach(i => i.allergens?.forEach(a => manual.add(a)));
+        
+        const detected = this.detectAllergens(rec.ingredients.map(i => i.name));
         detected.forEach(d => manual.add(d));
         
         return Array.from(manual);

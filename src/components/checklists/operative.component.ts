@@ -271,116 +271,106 @@ interface ChecklistItem {
                 <div class="px-4 py-3 flex flex-col transition-colors hover:bg-slate-50 relative group/row"
                      [class.bg-emerald-50/40]="item.status === 'ok'"
                      [class.bg-red-50/40]="item.status === 'issue'">
-                    
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                        <!-- Label & Icon -->
-                        <div class="flex items-center gap-3 flex-[2] min-w-0">
-                            <span class="text-[11px] font-black w-5 h-5 rounded bg-slate-50 flex items-center justify-center border border-slate-200 shrink-0 text-slate-400">
-                                {{ $any(item).index + 1 }}
-                            </span>
-                            
-                            <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center transition-colors border"
-                                 [class.bg-slate-50]="item.status === 'pending'" [class.border-slate-200]="item.status === 'pending'" [class.text-slate-400]="item.status === 'pending'"
-                                 [class.bg-emerald-50]="item.status === 'ok'" [class.border-emerald-200]="item.status === 'ok'" [class.text-emerald-500]="item.status === 'ok'"
-                                 [class.bg-red-50]="item.status === 'issue'" [class.border-red-200]="item.status === 'issue'" [class.text-red-500]="item.status === 'issue'">
-                                <i [class]="'fa-solid text-base ' + item.icon"></i>
-                            </div>
+                        <div class="flex flex-col gap-4">
+                        <!-- Row 1: Label & Icon -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="text-[10px] font-black w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200 shrink-0 text-slate-400 shadow-sm">
+                                    {{ $any(item).index + 1 }}
+                                </span>
+                                
+                                <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center transition-all border shadow-sm"
+                                     [class.bg-slate-50]="item.status === 'pending'" [class.border-slate-200]="item.status === 'pending'" [class.text-slate-400]="item.status === 'pending'"
+                                     [class.bg-emerald-500]="item.status === 'ok'" [class.border-emerald-600]="item.status === 'ok'" [class.text-white]="item.status === 'ok'"
+                                     [class.bg-red-500]="item.status === 'issue'" [class.border-red-600]="item.status === 'issue'" [class.text-white]="item.status === 'issue'">
+                                    <i [class]="'fa-solid text-xl ' + item.icon"></i>
+                                </div>
 
-                            <div class="flex-1 min-w-0 cursor-pointer" (click)="item.status === 'issue' ? openProcedureModal(item) : setStatus(item.id, 'ok')">
-                                <h4 class="font-bold text-slate-700 text-sm leading-tight group-hover/row:text-indigo-600 transition-colors">{{ item.label }}</h4>
-                                @if (item.status !== 'pending') {
-                                    <div class="flex items-center gap-2 mt-0.5">
-                                        <span class="text-[10px] font-black uppercase tracking-widest block"
-                                              [class.text-emerald-500]="item.status === 'ok'"
-                                              [class.text-red-500]="item.status === 'issue'">
-                                            {{ item.status === 'ok' ? 'CONFORME' : 'NON CONFORME' }}
+                                <div class="flex-1 min-w-0 cursor-pointer" (click)="item.status === 'issue' ? openProcedureModal(item) : setStatus(item.id, 'ok')">
+                                    <h4 class="font-black text-slate-800 text-lg leading-tight uppercase tracking-tight group-hover/row:text-indigo-600 transition-colors">{{ item.label }}</h4>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                                              [class.bg-emerald-100]="item.status === 'ok'" [class.text-emerald-700]="item.status === 'ok'"
+                                              [class.bg-red-100]="item.status === 'issue'" [class.text-red-700]="item.status === 'issue'"
+                                              [class.bg-slate-100]="item.status === 'pending'" [class.text-slate-500]="item.status === 'pending'">
+                                            {{ item.status === 'ok' ? 'CONFORME' : (item.status === 'issue' ? 'NON CONFORME' : 'IN ATTESA') }}
                                         </span>
                                         @if (item.status === 'issue') {
-                                            <span class="text-[9px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-tighter border border-red-100 flex items-center gap-1">
-                                                <i class="fa-solid fa-hand-pointer animate-bounce"></i> Clicca per Procedura
+                                            <span class="text-[9px] font-bold text-red-500 animate-pulse uppercase tracking-tighter">
+                                                <i class="fa-solid fa-hand-pointer"></i> Procedura
                                             </span>
                                         }
                                     </div>
-                                }
+                                </div>
                             </div>
-                                        <!-- Actions & Enhanced Temperature Box -->
-                        <div class="flex items-center gap-3 flex-1 justify-end shrink-0">
-                            @if (item.hasTemperature) {
-                                <div class="flex flex-col items-end gap-1.5">
-                                    <div class="relative group/temp">
+                        </div>
+
+                        <!-- Row 2: Temperature & Reset -->
+                        @if (item.hasTemperature || (statusMap()[item.id]?.status && statusMap()[item.id]?.status !== 'pending')) {
+                            <div class="flex items-center gap-3">
+                                @if (item.hasTemperature) {
+                                    <div class="flex-1 relative">
                                         <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                            <i class="fa-solid fa-temperature-half text-slate-400 text-sm transition-colors group-focus-within/temp:text-indigo-500"></i>
+                                            <i class="fa-solid fa-temperature-half text-slate-400 text-xs"></i>
                                         </div>
                                         <input type="number" 
                                                [ngModel]="statusMap()[item.id]?.temperature"
                                                (ngModelChange)="updateTemperature(item.id, $event, item.label)"
-                                               placeholder="0.0"
+                                               placeholder="Inserisci Temperatura °C"
                                                step="0.1"
                                                [disabled]="isSubmitted() || !state.isContextEditable()"
-                                               class="w-28 h-14 pl-10 pr-4 rounded-2xl border-2 border-slate-200 bg-white font-black text-slate-800 text-lg outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 placeholder:text-slate-300 shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                        <div class="absolute -top-2 -right-2 px-2 py-0.5 bg-slate-800 text-white text-[8px] font-black rounded-full uppercase tracking-widest shadow-sm">°C</div>
+                                               class="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white font-bold text-slate-800 text-sm focus:border-indigo-500 outline-none transition-all shadow-sm">
                                     </div>
-                                    
-                                    @if (item.isAbbattitore && statusMap()[item.id]?.temperature !== null && statusMap()[item.id]?.temperature !== undefined) {
-                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-lg border-2 uppercase tracking-tight shadow-xs"
-                                              [class]="statusMap()[item.id]?.abbattitoreConforme ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 'text-red-700 bg-red-50 border-red-100 animate-pulse'">
-                                            {{ statusMap()[item.id]?.abbattitoreConforme ? 'Abt. Conforme' : 'Abt. Fuori Norma' }}
-                                        </span>
-                                    } @else if (!item.isAbbattitore && statusMap()[item.id]?.isAutomaticIssue) {
-                                        <span class="text-[9px] font-black text-red-700 bg-red-50 px-2 py-0.5 rounded-lg border-2 border-red-100 uppercase tracking-tight animate-pulse shadow-xs">
-                                            Fuori Norma
-                                        </span>
-                                    }
-                                </div>
-                            }
-
-                            <div class="flex items-center gap-2">
-                                <!-- OK BUTTON: emerald if ok, gray if not -->
-                                <button (click)="setStatus(item.id, 'ok')" 
-                                        [disabled]="isSubmitted() || !state.isContextEditable()"
-                                        class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
-                                        [class.border-emerald-200]="statusMap()[item.id]?.status === 'ok'"
-                                        [class.bg-emerald-50]="statusMap()[item.id]?.status === 'ok'"
-                                        [class.text-emerald-600]="statusMap()[item.id]?.status === 'ok'"
-                                        [class.border-slate-200]="statusMap()[item.id]?.status !== 'ok'"
-                                        [class.bg-slate-50]="statusMap()[item.id]?.status !== 'ok'"
-                                        [class.text-slate-400]="statusMap()[item.id]?.status !== 'ok'">
-                                    <i class="fa-solid fa-check text-xl"></i>
-                                    <span class="text-[9px] font-black uppercase tracking-widest">OK</span>
-                                </button>
-
-                                <!-- NO BUTTON: red if issue, gray if not -->
-                                <button (click)="openIssueModal(item)" 
-                                        [disabled]="isSubmitted() || !state.isContextEditable()"
-                                        class="h-14 min-w-[70px] px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-90 disabled:opacity-30"
-                                        [class.border-red-200]="statusMap()[item.id]?.status === 'issue'"
-                                        [class.bg-red-50]="statusMap()[item.id]?.status === 'issue'"
-                                        [class.text-red-600]="statusMap()[item.id]?.status === 'issue'"
-                                        [class.border-slate-200]="statusMap()[item.id]?.status !== 'issue'"
-                                        [class.bg-slate-50]="statusMap()[item.id]?.status !== 'issue'"
-                                        [class.text-slate-400]="statusMap()[item.id]?.status !== 'issue'">
-                                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                                    <span class="text-[9px] font-black uppercase tracking-widest">NO</span>
-                                </button>
+                                }
 
                                 @if (statusMap()[item.id]?.status && statusMap()[item.id]?.status !== 'pending') {
                                     <button (click)="setStatus(item.id, 'pending')" 
                                             [disabled]="isSubmitted() || !state.isContextEditable()"
-                                            class="h-14 w-10 rounded-2xl border-2 border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center shadow-sm active:scale-90 disabled:opacity-30">
-                                        <i class="fa-solid fa-rotate-left text-sm"></i>
+                                            class="h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-400 flex items-center gap-2 shadow-inner active:scale-95 transition-all">
+                                        <i class="fa-solid fa-undo-alt"></i>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Reset</span>
                                     </button>
                                 }
                             </div>
-                        </div>             </div>
-                    </div>
+                        }
 
+                        <!-- Row 3: Main Actions (Large) -->
+                        <div class="flex items-center gap-3 w-full">
+                            <!-- OK BUTTON -->
+                            <button (click)="setStatus(item.id, 'ok')" 
+                                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                                    class="flex-1 h-16 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95 disabled:opacity-30"
+                                    [class.border-emerald-500]="statusMap()[item.id]?.status === 'ok'"
+                                    [class.bg-emerald-500]="statusMap()[item.id]?.status === 'ok'"
+                                    [class.text-white]="statusMap()[item.id]?.status === 'ok'"
+                                    [class.border-slate-200]="statusMap()[item.id]?.status !== 'ok'"
+                                    [class.bg-white]="statusMap()[item.id]?.status !== 'ok'"
+                                    [class.text-slate-400]="statusMap()[item.id]?.status !== 'ok'">
+                                <i class="fa-solid fa-circle-check text-2xl"></i>
+                                <span class="text-xs font-black uppercase tracking-widest">CONFORME</span>
+                            </button>
 
-                    @if (item.status === 'issue' && item.note) {
-                        <div class="w-full mt-2 text-xs text-red-600 font-medium italic bg-red-50 px-3 py-1.5 rounded border border-red-100">
-                             Nota: {{ item.note }}
+                            <!-- NO BUTTON -->
+                            <button (click)="openIssueModal(item)" 
+                                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                                    class="flex-1 h-16 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95 disabled:opacity-30"
+                                    [class.border-red-500]="statusMap()[item.id]?.status === 'issue'"
+                                    [class.bg-red-500]="statusMap()[item.id]?.status === 'issue'"
+                                    [class.text-white]="statusMap()[item.id]?.status === 'issue'"
+                                    [class.border-slate-200]="statusMap()[item.id]?.status !== 'issue'"
+                                    [class.bg-white]="statusMap()[item.id]?.status !== 'issue'"
+                                    [class.text-slate-400]="statusMap()[item.id]?.status !== 'issue'">
+                                <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+                                <span class="text-xs font-black uppercase tracking-widest">ANOMALIA</span>
+                            </button>
                         </div>
-                    }
+                    </div>
                 </div>
+                @if (item.status === 'issue' && item.note) {
+                    <div class="w-full mt-2 text-xs text-red-600 font-medium italic bg-red-50 px-3 py-1.5 rounded border border-red-100">
+                         Nota: {{ item.note }}
+                    </div>
+                }
             </ng-template>
 
             <!-- Fixed Footer Actions -->
@@ -574,6 +564,7 @@ export class OperativeChecklistComponent {
 
       effect(() => {
          this.state.filterDate();
+         this.state.checklistRecords(); // Reattività ai record
          untracked(() => this.loadByDate());
       }, { allowSignalWrites: true });
    }
