@@ -199,16 +199,16 @@ interface CheckItem {
                                 </div>
                             </div>
                             
-                            <div class="flex items-center gap-2 shrink-0">
+                            <div class="flex flex-row items-center gap-2 w-full md:w-auto">
                                 @if (nc.status !== 'CLOSED') {
                                     <button (click)="openResolutionModal(nc)"
-                                            class="h-10 px-5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-rose-200 shadow-sm active:scale-95">
-                                        <i class="fa-solid fa-check-to-slot"></i> Gestisci
+                                            class="flex-1 md:flex-none h-11 md:h-10 px-4 md:px-5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-rose-200 shadow-sm active:scale-95">
+                                        <i class="fa-solid fa-check-to-slot text-sm"></i> Gestisci
                                     </button>
                                 }
                                 <button (click)="printAnomaly(nc)" 
-                                        class="h-10 px-5 bg-slate-900 hover:bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                                    <i class="fa-solid fa-print"></i> Stampa
+                                        class="flex-1 md:flex-none h-11 md:h-10 px-4 md:px-5 bg-slate-900 hover:bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                                    <i class="fa-solid fa-print text-sm"></i> Stampa
                                 </button>
                             </div>
                         </div>
@@ -308,7 +308,7 @@ interface CheckItem {
                         <textarea [ngModel]="resolutionText"
                                   (ngModelChange)="resolutionText = $event"
                                   placeholder="Descrivi come è stata gestita l'anomalia e quali azioni sono state intraprese per risolverla..."
-                                  class="w-full h-32 p-5 bg-white border-2 border-slate-100 rounded-[24px] text-sm text-slate-700 focus:outline-none focus:border-emerald-500 transition-all shadow-inner resize-none"></textarea>
+                                  class="w-full h-32 p-5 bg-white border-2 border-slate-100 rounded-[24px] text-base text-slate-700 focus:outline-none focus:border-emerald-500 transition-all shadow-inner resize-none"></textarea>
                         </div>
                     </div>
 
