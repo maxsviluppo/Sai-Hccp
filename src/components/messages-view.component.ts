@@ -168,11 +168,13 @@ import { ToastService } from '../services/toast.service';
                 <div class="bg-white rounded-xl shadow-sm border transition-all duration-300" [class.border-blue-300]="!message.read" [class.border-slate-200]="message.read">
                     <div class="p-3.5 md:p-5 flex justify-between items-start gap-3 sm:gap-4 cursor-pointer hover:bg-slate-50 transition-colors" [class.bg-blue-50/30]="!message.read" (click)="toggleMessageExpanded(message.id)">
                         <div class="flex items-start gap-3 sm:gap-4 flex-1">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-user text-[10px] sm:text-sm"></i></div>
+
                             <div class="flex-1 min-w-0">
-                                <div class="flex flex-wrap items-center gap-2 mb-1">
-                                    <h3 class="text-sm sm:text-lg font-bold text-slate-800 truncate flex-1 min-w-[120px]">{{ message.subject }}</h3>
-                                    @if (!message.read) { <span class="px-2 py-0.5 bg-blue-500 text-white text-[8px] sm:text-[9px] font-black rounded uppercase shrink-0">NUOVO</span> }
+                                <div class="flex flex-col gap-1 mb-2">
+                                    <div class="flex items-center gap-2">
+                                        @if (!message.read) { <span class="px-1.5 py-0.5 bg-blue-600 text-white text-[7px] sm:text-[8px] font-black rounded-md uppercase shrink-0 shadow-sm border border-blue-400">NUOVO</span> }
+                                        <h3 class="text-sm sm:text-lg font-black text-slate-800 leading-tight break-words flex-1">{{ message.subject }}</h3>
+                                    </div>
                                 </div>
                                 <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-x-3 text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase">
                                     <div class="flex items-center gap-1.5 sm:gap-2">
@@ -195,9 +197,14 @@ import { ToastService } from '../services/toast.service';
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-0.5 sm:gap-1">
-                            <button (click)="confirmDeleteModal($event, message.id)" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-red-600 rounded-xl transition-all"><i class="fa-solid fa-trash-can text-xs sm:text-sm"></i></button>
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 rounded-xl" [class.bg-slate-100]="isMessageExpanded(message.id)"><i class="fa-solid text-xs sm:text-sm transition-transform" [class.fa-chevron-down]="!isMessageExpanded(message.id)" [class.fa-chevron-up]="isMessageExpanded(message.id)"></i></div>
+                        <div class="flex items-center gap-1">
+                            <button (click)="confirmDeleteModal($event, message.id)" 
+                                    class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-90">
+                                <i class="fa-solid fa-trash-can text-sm sm:text-base"></i>
+                            </button>
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 rounded-xl" [class.bg-slate-100]="isMessageExpanded(message.id)">
+                                <i class="fa-solid text-xs sm:text-sm transition-transform" [class.fa-chevron-down]="!isMessageExpanded(message.id)" [class.fa-chevron-up]="isMessageExpanded(message.id)"></i>
+                            </div>
                         </div>
                     </div>
 
