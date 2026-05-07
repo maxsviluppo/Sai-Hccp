@@ -34,8 +34,8 @@ import { ToastService } from '../services/toast.service';
         <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto relative z-10">
           <div class="relative w-full md:w-64">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca piatto o ingrediente..." 
-                   class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 md:py-2.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
+              <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca piatto o ingrediente..." 
+                     class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 md:py-2.5 text-base font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
           </div>
           <div class="flex gap-2 w-full md:w-auto">
             <button (click)="printIngredientsBook()" 
@@ -226,7 +226,7 @@ import { ToastService } from '../services/toast.service';
                              [ngModel]="presetSearchQuery()" 
                              (ngModelChange)="presetSearchQuery.set($event)"
                              placeholder="Es: Carbonara, Pizza, Torta..." 
-                             class="w-full bg-white border-2 border-indigo-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-400 outline-none transition-all shadow-sm placeholder:text-slate-300">
+                             class="w-full bg-white border-2 border-indigo-100 rounded-2xl px-5 py-4 text-base font-bold text-slate-700 focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-400 outline-none transition-all shadow-sm placeholder:text-slate-300">
                     </div>
 
                     <!-- Select Menu -->
@@ -236,7 +236,7 @@ import { ToastService } from '../services/toast.service';
                       </label>
                       <div class="relative">
                         <select (change)="loadPreset($any($event.target).value)" 
-                                class="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-8 focus:ring-slate-500/5 focus:border-slate-300 outline-none transition-all shadow-sm appearance-none cursor-pointer">
+                                class="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-4 text-base font-bold text-slate-700 focus:ring-8 focus:ring-slate-500/5 focus:border-slate-300 outline-none transition-all shadow-sm appearance-none cursor-pointer">
                           <option value="">-- {{ filteredPresetKeys().length }} Piatti Disponibili --</option>
                           
                           <optgroup label="🥂 ANTIPASTI">
@@ -315,7 +315,7 @@ import { ToastService } from '../services/toast.service';
                   <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nome del Piatto</label>
                   <div class="relative flex flex-col md:flex-row items-center gap-3 w-full">
                     <input type="text" [(ngModel)]="currentRecipe.name" placeholder="Es: Risotto ai Funghi Porcini..." 
-                           class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-inner text-center md:text-left">
+                           class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-base font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-inner text-center md:text-left">
                     <button (click)="simulateAIAutocomplete()" 
                             [disabled]="isGenerating || !currentRecipe.name"
                             class="w-full md:w-auto px-6 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 shadow-lg">
@@ -328,7 +328,7 @@ import { ToastService } from '../services/toast.service';
                 <div class="space-y-2 flex flex-col items-center md:items-start w-full">
                   <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Categoria</label>
                   <select [(ngModel)]="currentRecipe.category" 
-                          class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-inner appearance-none cursor-pointer text-center md:text-left">
+                          class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-base font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all shadow-inner appearance-none cursor-pointer text-center md:text-left">
                     <option value="Antipasti">Antipasti</option>
                     <option value="Primi">Primi</option>
                     <option value="Secondi">Secondi</option>
@@ -360,7 +360,7 @@ import { ToastService } from '../services/toast.service';
                         </div>
                         <input type="text" [(ngModel)]="ing.name" placeholder="Ingrediente (con percentuale)..." 
                                list="common-ingredients-book"
-                               class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all">
+                               class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all">
                         <datalist id="common-ingredients-book">
                           @for (base of state.baseIngredients(); track base) {
                             <option [value]="base"></option>
@@ -368,7 +368,7 @@ import { ToastService } from '../services/toast.service';
                         </datalist>
                         <div class="relative w-28">
                           <input type="number" [(ngModel)]="ing.percentage" (ngModelChange)="sortIngredients()"
-                                 placeholder="Q.tà" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all pr-8">
+                                 placeholder="Q.tà" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all pr-8">
                           <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-300">%</span>
                         </div>
                         <button (click)="removeIngredientRow(i)" class="w-10 h-10 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all shrink-0">
@@ -395,7 +395,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Note di Preparazione</label>
                 <textarea [(ngModel)]="currentRecipe.description" placeholder="Es: Cottura 12 min, abbattimento rapido..." 
-                          class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-medium text-slate-700 focus:bg-white border-indigo-500/20 outline-none transition-all shadow-inner h-24 resize-none"></textarea>
+                          class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-base font-medium text-slate-700 focus:bg-white border-indigo-500/20 outline-none transition-all shadow-inner h-24 resize-none"></textarea>
               </div>
             </div>
 

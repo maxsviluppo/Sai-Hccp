@@ -314,7 +314,7 @@ import { ToastService } from '../services/toast.service';
               
               <div>
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sede di Appartenenza</label>
-                <select formControlName="clientId" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm font-bold text-slate-700 hover:border-indigo-200 transition-all shadow-sm">
+                <select formControlName="clientId" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-base font-bold text-slate-700 hover:border-indigo-200 transition-all shadow-sm">
                   <option value="">-- Seleziona Sede --</option>
                   @for (client of state.clients(); track client.id) {
                     <option [value]="client.id">{{ client.name }}</option>
@@ -326,11 +326,11 @@ import { ToastService } from '../services/toast.service';
                  <div>
                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nome / Reparto</label>
                    <input type="text" formControlName="department" placeholder="Es. Cucina, Bar..." 
-                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm bg-white transition-all placeholder:font-normal font-bold text-slate-700 hover:border-indigo-200 shadow-sm">
+                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base bg-white transition-all placeholder:font-normal font-bold text-slate-700 hover:border-indigo-200 shadow-sm">
                  </div>
                  <div>
                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Ruolo Accesso</label>
-                   <select formControlName="role" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-sm font-bold text-slate-700 transition-all hover:border-indigo-200 shadow-sm">
+                   <select formControlName="role" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-base font-bold text-slate-700 transition-all hover:border-indigo-200 shadow-sm">
                      <option value="COLLABORATOR">Operatore</option>
                      <option value="ADMIN">Amministratore</option>
                    </select>
@@ -342,7 +342,7 @@ import { ToastService } from '../services/toast.service';
                  <div class="relative">
                     <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                     <input type="text" formControlName="name" placeholder="Es. Mario Rossi"
-                           class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                           class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
 
@@ -351,7 +351,7 @@ import { ToastService } from '../services/toast.service';
                  <div class="relative">
                     <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                     <input type="email" formControlName="email" placeholder="operatore@esempio.it"
-                           class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                           class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
 
@@ -361,7 +361,7 @@ import { ToastService } from '../services/toast.service';
                     <div class="relative">
                         <i class="fa-solid fa-at absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                         <input type="text" formControlName="username" placeholder="mario.cucina"
-                               class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                               class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                     </div>
                   </div>
                   <div>
@@ -369,7 +369,7 @@ import { ToastService } from '../services/toast.service';
                     <div class="relative">
                         <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                         <input type="text" formControlName="password" placeholder="Pass123!"
-                               class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                               class="w-full pl-10 px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                     </div>
                   </div>
               </div>
@@ -408,31 +408,31 @@ import { ToastService } from '../services/toast.service';
               <div>
                  <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Ragione Sociale / Nome</label>
                  <input type="text" formControlName="name" placeholder="Es. Ristorante Da Mario S.r.l."
-                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-800 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
               </div>
 
               <div>
                  <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Partita IVA</label>
                  <input type="text" formControlName="piva" placeholder="12345678901"
-                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-mono font-bold text-slate-700 transition-all placeholder:font-sans placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-mono font-bold text-slate-700 transition-all placeholder:font-sans placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
               </div>
 
               <div>
                  <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Indirizzo Sede Operativa</label>
                  <input type="text" formControlName="address" placeholder="Via Roma 1, Milano"
-                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                        class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
               </div>
 
                <div class="grid grid-cols-2 gap-4">
                  <div>
                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Telefono</label>
                    <input type="text" formControlName="phone" placeholder="02 1234567" 
-                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
                  <div>
                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email Aziendale</label>
                    <input type="email" formControlName="email" placeholder="info@azienda.it" 
-                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
+                          class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-base font-bold text-slate-700 transition-all placeholder:font-normal hover:border-indigo-200 shadow-sm bg-white">
                  </div>
               </div>
 

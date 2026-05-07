@@ -283,35 +283,54 @@ interface AreaChecklist {
         </div>
 
         <!-- Footer Actions -->
-        <div class="fixed bottom-6 right-6 z-50">
-            @if (!isSubmitted()) {
-                <button (click)="submitChecklist()" [disabled]="!isAllCompleted() || !state.isContextEditable()"
-                        class="h-12 px-6 bg-slate-900 border border-slate-800 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 hover:bg-slate-800 hover:shadow-xl group">
-                    <span>REGISTRA POST-OPERATIVA</span>
-                    <div class="w-px h-4 bg-white/20"></div>
-                    <i class="fa-solid fa-check-double group-hover:-translate-y-0.5 transition-transform text-pink-400"></i>
+        <!-- Bottom Utility Actions (Discrete) -->
+        <div class="mt-8 mb-20 px-6 flex flex-col items-center gap-6">
+            <div class="h-px w-24 bg-slate-200"></div>
+            
+            <div class="flex items-center gap-4 w-full max-w-xs">
+                <button (click)="printReport()" 
+                        class="flex-1 h-12 rounded-2xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
+                    <i class="fa-solid fa-print text-sm"></i> Stampa
                 </button>
-            } @else {
-                <div class="bg-white p-2 rounded-xl shadow-xl flex items-center gap-2 border border-slate-200 animate-slide-up">
-                    <div class="px-4 py-2 border rounded-lg flex items-center gap-2"
-                         [class.bg-emerald-50]="!hasIssues()" [class.border-emerald-100]="!hasIssues()" [class.text-emerald-600]="!hasIssues()"
-                         [class.bg-red-50]="hasIssues()" [class.border-red-100]="hasIssues()" [class.text-red-600]="hasIssues()">
-                        <i class="fa-solid" [class.fa-check]="!hasIssues()" [class.fa-triangle-exclamation]="hasIssues()"></i>
-                        <span class="font-bold text-xs uppercase tracking-widest">{{ hasIssues() ? 'NON CONFORME' : 'REGISTRATO' }}</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 px-2">
-                        <button (click)="printReport()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-pink-600 flex items-center justify-center transition-colors" title="Stampa"><i class="fa-solid fa-print text-base"></i></button>
-                        <button *ngIf="state.isContextEditable()" (click)="isSubmitted.set(false)" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-amber-600 flex items-center justify-center transition-colors" title="Modifica"><i class="fa-solid fa-pen-to-square text-base"></i></button>
-                        <button (click)="sendEmail()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-pink-600 flex items-center justify-center transition-colors" title="Invia Email"><i class="fa-solid fa-envelope text-base"></i></button>
-                        <button (click)="sendInternalMessage()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-pink-600 flex items-center justify-center transition-colors" title="Chat Interna"><i class="fa-solid fa-comments text-base"></i></button>
-                    </div>
-                    <div class="w-px h-6 bg-slate-200"></div>
-                    <button (click)="startNewChecklist()" class="h-8 px-4 rounded bg-pink-50 border border-pink-100 text-pink-600 hover:bg-pink-600 hover:text-white flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors">
-                        <i class="fa-solid fa-plus text-base"></i> NUOVA
-                    </button>
-                </div>
-            }
+                <button (click)="isResetModalOpen.set(true)" 
+                        class="flex-1 h-12 rounded-2xl text-rose-500 bg-white border border-rose-100 hover:bg-rose-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
+                    <i class="fa-solid fa-rotate-left text-sm"></i> Reset
+                </button>
+            </div>
+            
+            <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                <i class="fa-solid fa-cloud-check text-emerald-400 mr-1"></i> Salvataggio Automatico Attivo
+            </p>
         </div>
+
+        <!-- RESET CONFIRMATION MODAL -->
+        @if (isResetModalOpen()) {
+           <div class="fixed inset-0 z-[150] flex items-center justify-center p-4">
+              <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isResetModalOpen.set(false)"></div>
+              <div class="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+                 <div class="p-8 text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-sm">
+                       <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800 mb-2">Reset Post-Op?</h3>
+                    <p class="text-xs font-bold text-slate-500 leading-relaxed mb-8">
+                       Questa azione cancellerà tutti i dati inseriti nella fase post-operativa attuale. L'operazione non è reversibile.
+                    </p>
+                    
+                    <div class="flex flex-col gap-3">
+                       <button (click)="confirmReset()" 
+                               class="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-200 active:scale-95 transition-all">
+                          SÌ, RESETTA TUTTO
+                       </button>
+                       <button (click)="isResetModalOpen.set(false)" 
+                               class="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">
+                          ANNULLA
+                       </button>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        }
 
         <!-- ANOMALY REPORTING MODAL -->
         @if (isAnomalyModalOpen()) {
@@ -490,6 +509,7 @@ export class PostOperationalChecklistComponent {
 
     areas = signal<AreaChecklist[]>([]);
 
+    isResetModalOpen = signal(false);
     isSubmitted = signal(false);
     currentRecordId = signal<string | null>(null);
 
@@ -904,6 +924,12 @@ export class PostOperationalChecklistComponent {
             steps: this.getInitialSteps(a.id),
             expanded: false
         })));
+    }
+
+    confirmReset() {
+        this.resetForm();
+        this.isResetModalOpen.set(false);
+        this.toast.info('Scheda Resettata', 'I dati post-operativi sono stati azzerati.');
     }
 
     setAllOk() {

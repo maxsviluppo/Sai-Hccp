@@ -39,7 +39,7 @@ import { ToastService } from '../services/toast.service';
              
              <div class="flex gap-2 w-full sm:w-auto relative">
                  <input type="email" #newEmail [value]="state.reportRecipientEmail()"
-                         class="bg-white text-slate-800 border border-slate-200 rounded text-xs px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 w-full sm:min-w-[200px]"
+                         class="bg-white text-slate-800 border border-slate-200 rounded text-base px-3 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 w-full sm:min-w-[200px]"
                          placeholder="email@esempio.it">
                  <button (click)="state.setReportRecipientEmail(newEmail.value)"
                          class="px-4 py-2 bg-white border border-slate-200 hover:bg-cyan-50 text-cyan-600 rounded text-[11px] font-bold transition-colors shadow-sm whitespace-nowrap">
@@ -99,7 +99,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5 lg:col-span-1">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Ragione Sociale</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="name" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                  <input type="text" formControlName="name" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().name || '-' }}</p>
                 }
@@ -108,7 +108,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Partita IVA</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="piva" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors font-mono uppercase">
+                  <input type="text" formControlName="piva" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors font-mono uppercase">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded font-mono">{{ state.adminCompany().piva || '-' }}</p>
                 }
@@ -117,7 +117,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Indirizzo Sede Centrale</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="address" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                  <input type="text" formControlName="address" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().address || '-' }}</p>
                 }
@@ -126,7 +126,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Email Amministrativa</label>
                 @if (isEditingAdmin()) {
-                  <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase">
+                  <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().email || '-' }}</p>
                 }
@@ -135,7 +135,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">PEC</label>
                 @if (isEditingAdmin()) {
-                  <input type="email" formControlName="pec" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase">
+                  <input type="email" formControlName="pec" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase">
                 } @else {
                   <p class="text-sm font-bold text-indigo-600 bg-indigo-50/50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().pec || '-' }}</p>
                 }
@@ -144,7 +144,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Codice Univoco (SDI)</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="sdi" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
+                  <input type="text" formControlName="sdi" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 font-mono tracking-widest bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().sdi || '-' }}</p>
                 }
@@ -153,7 +153,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Telefono Fisso</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                  <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().phone || '-' }}</p>
                 }
@@ -162,7 +162,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Cellulare</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="cellphone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                  <input type="text" formControlName="cellphone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.adminCompany().cellphone || '-' }}</p>
                 }
@@ -171,7 +171,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">WhatsApp</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="whatsapp" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                  <input type="text" formControlName="whatsapp" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
                 } @else {
                   <p class="text-sm font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 border border-transparent px-3 py-2 rounded">
                     <i class="fa-brands fa-whatsapp"></i> {{ state.adminCompany().whatsapp || '-' }}
@@ -182,7 +182,7 @@ import { ToastService } from '../services/toast.service';
               <div class="space-y-1.5 lg:col-span-1">
                 <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Nr. Licenza Master</label>
                 @if (isEditingAdmin()) {
-                  <input type="text" formControlName="licenseNumber" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
+                  <input type="text" formControlName="licenseNumber" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
                 } @else {
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded font-mono">{{ state.adminCompany().licenseNumber || '-' }}</p>
                 }
@@ -273,7 +273,7 @@ import { ToastService } from '../services/toast.service';
                     [type]="showApiKey() ? 'text' : 'password'"
                     [(ngModel)]="geminiApiKeyInput"
                     placeholder="AIza..."
-                    class="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 transition-all"
+                    class="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-mono font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 transition-all"
                   >
                   <button (click)="showApiKey.set(!showApiKey())" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                     <i class="fa-solid text-sm" [class]="showApiKey() ? 'fa-eye-slash' : 'fa-eye'"></i>
@@ -419,7 +419,7 @@ import { ToastService } from '../services/toast.service';
                <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Sede Operativa (Indirizzo)</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="address" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Indirizzo">
+                   <input type="text" formControlName="address" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Indirizzo">
                  } @else {
                    <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded truncate">{{ state.companyConfig().address || 'Non specificato' }}</p>
                  }
@@ -428,7 +428,7 @@ import { ToastService } from '../services/toast.service';
                <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Email di Contatto</label>
                  @if (isEditingOperator()) {
-                   <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase" placeholder="Email">
+                   <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase" placeholder="Email">
                  } @else {
                    <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded truncate">{{ state.companyConfig().email || 'Non specificato' }}</p>
                  }
@@ -437,7 +437,7 @@ import { ToastService } from '../services/toast.service';
                <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Indirizzo PEC</label>
                  @if (isEditingOperator()) {
-                   <input type="email" formControlName="pec" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase" placeholder="pec@esempio.it">
+                   <input type="email" formControlName="pec" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors lowercase" placeholder="pec@esempio.it">
                  } @else {
                    <p class="text-sm font-bold text-indigo-600 bg-indigo-50 border border-transparent px-3 py-2 rounded truncate">{{ state.companyConfig().pec || 'Non specificato' }}</p>
                  }
@@ -446,7 +446,7 @@ import { ToastService } from '../services/toast.service';
                <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Telefono Fisso</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Prefisso e numero">
+                   <input type="text" formControlName="phone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Prefisso e numero">
                  } @else {
                    <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.companyConfig().phone || 'Non specificato' }}</p>
                  }
@@ -455,7 +455,7 @@ import { ToastService } from '../services/toast.service';
                <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Cellulare / Mobile</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="cellphone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Cellulare">
+                   <input type="text" formControlName="cellphone" class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="Cellulare">
                  } @else {
                    <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded">{{ state.companyConfig().cellphone || '-' }}</p>
                  }
@@ -464,7 +464,7 @@ import { ToastService } from '../services/toast.service';
                <div class="space-y-1.5">
                  <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">WhatsApp Business</label>
                  @if (isEditingOperator()) {
-                   <input type="text" formControlName="whatsapp" class="w-full px-3 py-2 bg-emerald-50/50 border border-emerald-200 rounded text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="WhatsApp">
+                   <input type="text" formControlName="whatsapp" class="w-full px-3 py-2 bg-emerald-50/50 border border-emerald-200 rounded text-base focus:ring-2 focus:ring-emerald-500/20 outline-none font-bold text-slate-800 transition-colors" placeholder="WhatsApp">
                  } @else {
                    <p class="text-sm font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 border border-transparent px-3 py-2 rounded">
                      <i class="fa-brands fa-whatsapp text-lg"></i> {{ state.companyConfig().whatsapp || '-' }}

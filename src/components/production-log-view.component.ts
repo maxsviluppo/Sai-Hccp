@@ -31,15 +31,15 @@ import { FormsModule } from '@angular/forms';
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                     <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca lotto o nome..." 
-                           class="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-50 bg-white shadow-sm transition-all">
+                           class="w-full pl-8 pr-3 py-2 text-base rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-50 bg-white shadow-sm transition-all">
                 </div>
                  
                 <div class="flex items-center gap-2 w-full sm:w-auto">
                     <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event)" 
-                           class="w-full sm:w-auto px-2 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 shadow-sm bg-white text-slate-600">
+                           class="w-full sm:w-auto px-2 py-2 text-base rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 shadow-sm bg-white text-slate-600">
                     <span class="text-slate-400 text-xs font-bold">-</span>
                     <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event)" 
-                           class="w-full sm:w-auto px-2 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 shadow-sm bg-white text-slate-600">
+                           class="w-full sm:w-auto px-2 py-2 text-base rounded-xl border border-slate-200 focus:outline-none focus:border-teal-400 shadow-sm bg-white text-slate-600">
                 </div>
             </div>
         </div>
@@ -250,7 +250,7 @@ import { FormsModule } from '@angular/forms';
                                     <div class="md:col-span-2">
                                         <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Fornitore / Origine</label>
                                         <input type="text" [(ngModel)]="newIngredient.supplierName" placeholder="es. Global Food Srl o Allevamento Italia"
-                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
+                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-base font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
                                     </div>
 
                                     <div class="md:col-span-2">

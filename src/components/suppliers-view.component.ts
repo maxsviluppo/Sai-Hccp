@@ -135,7 +135,7 @@ interface Supplier {
                       <i class="fa-solid fa-building text-xs"></i>
                    </div>
                    <input [(ngModel)]="newSupplier.ragioneSociale" type="text" placeholder="Nome Azienda Srl..." 
-                          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-base font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
                 </div>
               </div>
               
@@ -143,12 +143,12 @@ interface Supplier {
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Partita IVA</label>
                   <input [(ngModel)]="newSupplier.piva" type="text" placeholder="IT..." 
-                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Responsabile</label>
                   <input [(ngModel)]="newSupplier.responsabile" type="text" placeholder="Nome Cognome" 
-                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
                 </div>
               </div>
 
@@ -156,12 +156,12 @@ interface Supplier {
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
                   <input [(ngModel)]="newSupplier.email" type="email" placeholder="azienda@info.it" 
-                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Telefono</label>
                   <input [(ngModel)]="newSupplier.telefono" type="text" placeholder="+39..." 
-                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
                 </div>
               </div>
 
@@ -172,7 +172,7 @@ interface Supplier {
                       <i class="fa-solid fa-location-dot text-xs"></i>
                    </div>
                    <input [(ngModel)]="newSupplier.indirizzo" type="text" placeholder="Via/Piazza, CAP Città" 
-                          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
+                          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-base font-bold text-slate-700 focus:bg-white focus:border-indigo-400 outline-none transition-all shadow-inner">
                 </div>
               </div>
             </div>
@@ -243,39 +243,39 @@ interface Supplier {
                 
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ragione Sociale</label>
-                  <input [(ngModel)]="editingSupplier()!.ragioneSociale" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                  <input [(ngModel)]="editingSupplier()!.ragioneSociale" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base font-bold text-slate-700">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Partita IVA</label>
-                    <input [(ngModel)]="editingSupplier()!.piva" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                    <input [(ngModel)]="editingSupplier()!.piva" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base font-bold text-slate-700">
                   </div>
                   <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Responsabile</label>
-                    <input [(ngModel)]="editingSupplier()!.responsabile" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                    <input [(ngModel)]="editingSupplier()!.responsabile" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base font-bold text-slate-700">
                   </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
-                    <input [(ngModel)]="editingSupplier()!.email" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                    <input [(ngModel)]="editingSupplier()!.email" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base font-bold text-slate-700">
                   </div>
                   <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Telefono</label>
-                    <input [(ngModel)]="editingSupplier()!.telefono" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                    <input [(ngModel)]="editingSupplier()!.telefono" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base font-bold text-slate-700">
                   </div>
                 </div>
 
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Indirizzo Sede Legale</label>
-                  <input [(ngModel)]="editingSupplier()!.indirizzo" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                  <input [(ngModel)]="editingSupplier()!.indirizzo" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base font-bold text-slate-700">
                 </div>
 
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Note Libere</label>
-                  <textarea [(ngModel)]="editingSupplier()!.note" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 resize-none"></textarea>
+                  <textarea [(ngModel)]="editingSupplier()!.note" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-base text-slate-700 resize-none"></textarea>
                 </div>
               </div>
 

@@ -101,12 +101,12 @@ export interface IncomingIngredient {
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornitore *</label>
                   <input type="text" [(ngModel)]="form.supplierName" placeholder="Nome fornitore"
-                         class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
+                         class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Documento *</label>
                   <input type="date" [(ngModel)]="form.entryDate"
-                         class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
+                         class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
                 </div>
               </div>
 
@@ -123,19 +123,19 @@ export interface IncomingIngredient {
                   <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white border border-slate-200 p-3 rounded-xl relative group">
                     <div class="md:col-span-4 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Prodotto</label>
-                      <input type="text" [(ngModel)]="item.ingredientName" placeholder="es. Patate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:border-amber-400 outline-none">
+                      <input type="text" [(ngModel)]="item.ingredientName" placeholder="es. Patate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
                     </div>
                     <div class="md:col-span-3 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Lotto</label>
-                      <input type="text" [(ngModel)]="item.lotto" placeholder="Lotto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold focus:border-amber-400 outline-none">
+                      <input type="text" [(ngModel)]="item.lotto" placeholder="Lotto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono font-bold focus:border-amber-400 outline-none">
                     </div>
                     <div class="md:col-span-2 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Quantità</label>
-                      <input type="text" [(ngModel)]="item.quantity" placeholder="es. 10 kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:border-amber-400 outline-none">
+                      <input type="text" [(ngModel)]="item.quantity" placeholder="es. 10 kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
                     </div>
                     <div class="md:col-span-3 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Scadenza</label>
-                      <input type="date" [(ngModel)]="item.expiryDate" class="w-full px-3 py-2 bg-slate-50 border border-rose-200 rounded-lg text-xs font-bold focus:border-rose-400 outline-none text-rose-700">
+                      <input type="date" [(ngModel)]="item.expiryDate" class="w-full px-3 py-2 bg-slate-50 border border-rose-200 rounded-lg text-base font-bold focus:border-rose-400 outline-none text-rose-700">
                     </div>
                     
                     <button (click)="removeItem($index)" class="absolute -right-2 -top-2 w-6 h-6 bg-white border border-slate-200 rounded-full text-rose-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-rose-50 hover:border-rose-200">
@@ -235,7 +235,7 @@ export interface IncomingIngredient {
           <div class="relative w-full">
             <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
             <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca per prodotto o fornitore..."
-                   class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-50 transition-all shadow-sm">
+                   class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-50 transition-all shadow-sm">
           </div>
         </div>
 

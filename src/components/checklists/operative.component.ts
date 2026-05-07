@@ -305,30 +305,48 @@ interface ChecklistItem {
                             </div>
                         </div>
 
-                        <!-- Row 2: Temperature & Reset -->
+                        <!-- Row 2: Temperature & Verification Actions -->
                         @if (item.hasTemperature || (statusMap()[item.id]?.status && statusMap()[item.id]?.status !== 'pending')) {
-                            <div class="flex items-center gap-3">
+                            <div class="flex flex-wrap items-center gap-2">
                                 @if (item.hasTemperature) {
-                                    <div class="flex-1 relative">
-                                        <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                            <i class="fa-solid fa-temperature-half text-slate-400 text-xs"></i>
+                                    <div class="flex-1 flex items-center gap-1.5 min-w-[200px]">
+                                        <div class="relative flex-1">
+                                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                                <i class="fa-solid fa-temperature-half text-slate-400 text-[10px]"></i>
+                                            </div>
+                                            <input type="number" 
+                                                   [ngModel]="statusMap()[item.id]?.temperature"
+                                                   (ngModelChange)="handleTemperatureInput(item.id, $event)"
+                                                   (keyup.enter)="validateTemperature(item.id, item.label)"
+                                                   placeholder="Valore °C"
+                                                   step="0.1"
+                                                   [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                   class="w-full h-12 pl-9 pr-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-slate-800 text-base focus:border-indigo-500 outline-none transition-all shadow-sm">
                                         </div>
-                                        <input type="number" 
-                                               [ngModel]="statusMap()[item.id]?.temperature"
-                                               (ngModelChange)="updateTemperature(item.id, $event, item.label)"
-                                               placeholder="Inserisci Temperatura °C"
-                                               step="0.1"
-                                               [disabled]="isSubmitted() || !state.isContextEditable()"
-                                               class="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white font-bold text-slate-800 text-sm focus:border-indigo-500 outline-none transition-all shadow-sm">
+                                        
+                                        <!-- ACTION BUTTONS NEXT TO INPUT -->
+                                        <button (click)="validateTemperature(item.id, item.label)"
+                                                [disabled]="isSubmitted() || !state.isContextEditable() || !statusMap()[item.id]?.temperature"
+                                                class="h-12 w-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md active:scale-90 disabled:opacity-30 disabled:scale-100 transition-all"
+                                                title="Conferma ed Elabora Esito">
+                                            <i class="fa-solid fa-check text-lg"></i>
+                                        </button>
+
+                                        <button (click)="handleTemperatureInput(item.id, '')"
+                                                [disabled]="isSubmitted() || !state.isContextEditable() || !statusMap()[item.id]?.temperature"
+                                                class="h-12 w-12 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center active:scale-90 disabled:opacity-30 disabled:scale-100 transition-all"
+                                                title="Cancella Valore">
+                                            <i class="fa-solid fa-eraser text-lg"></i>
+                                        </button>
                                     </div>
                                 }
 
                                 @if (statusMap()[item.id]?.status && statusMap()[item.id]?.status !== 'pending') {
                                     <button (click)="setStatus(item.id, 'pending')" 
                                             [disabled]="isSubmitted() || !state.isContextEditable()"
-                                            class="h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-400 flex items-center gap-2 shadow-inner active:scale-95 transition-all">
-                                        <i class="fa-solid fa-undo-alt"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Reset</span>
+                                            class="h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-slate-400 flex items-center gap-2 shadow-inner active:scale-95 transition-all ml-auto">
+                                        <i class="fa-solid fa-rotate-left"></i>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Azzera Esito</span>
                                     </button>
                                 }
                             </div>
@@ -373,31 +391,24 @@ interface ChecklistItem {
                 }
             </ng-template>
 
-            <!-- Fixed Footer Actions -->
-            <div class="fixed bottom-6 right-6 z-50">
-                @if (!isSubmitted()) {
-                    <button (click)="submitChecklist()" [disabled]="!isAllCompleted() || !state.isContextEditable()"
-                            class="h-12 px-6 bg-slate-900 border border-slate-800 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-3 disabled:opacity-50 hover:bg-slate-800 hover:shadow-xl group">
-                        <span>REGISTRA OPERAZIONI</span>
-                        <div class="w-px h-4 bg-white/20"></div>
-                        <i class="fa-solid fa-cloud-arrow-up group-hover:-translate-y-0.5 transition-transform"></i>
+            <!-- Bottom Utility Actions (Discrete) -->
+            <div class="mt-8 mb-20 px-6 flex flex-col items-center gap-6">
+                <div class="h-px w-24 bg-slate-200"></div>
+                
+                <div class="flex items-center gap-4 w-full max-w-xs">
+                    <button (click)="printReport()" 
+                            class="flex-1 h-12 rounded-2xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
+                        <i class="fa-solid fa-print text-sm"></i> Stampa
                     </button>
-                } @else {
-                    <div class="bg-white p-2 rounded-xl shadow-xl flex items-center gap-2 border border-slate-200 animate-slide-up">
-                        <div class="px-4 py-2 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg flex items-center gap-2">
-                            <i class="fa-solid" [class.fa-check]="!hasIssues()" [class.fa-triangle-exclamation]="hasIssues()"></i>
-                            <span class="font-bold text-xs uppercase tracking-widest">{{ hasIssues() ? 'NON CONFORME' : 'REGISTRATO' }}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 px-2">
-                            <button (click)="printReport()" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-indigo-600 flex items-center justify-center transition-colors" title="Stampa"><i class="fa-solid fa-print text-base"></i></button>
-                            <button *ngIf="state.isContextEditable()" (click)="isSubmitted.set(false)" class="h-8 w-8 rounded text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:text-amber-600 flex items-center justify-center transition-colors" title="Modifica"><i class="fa-solid fa-pen-to-square text-base"></i></button>
-                        </div>
-                        <div class="w-px h-6 bg-slate-200"></div>
-                        <button (click)="startNewChecklist()" class="h-8 px-4 rounded bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white flex items-center gap-2 font-bold text-xs uppercase tracking-widest transition-colors">
-                            <i class="fa-solid fa-plus text-base"></i> NUOVA
-                        </button>
-                    </div>
-                }
+                    <button (click)="isResetModalOpen.set(true)" 
+                            class="flex-1 h-12 rounded-2xl text-rose-500 bg-white border border-rose-100 hover:bg-rose-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
+                        <i class="fa-solid fa-rotate-left text-sm"></i> Reset
+                    </button>
+                </div>
+                
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                    <i class="fa-solid fa-cloud-check text-emerald-400 mr-1"></i> Salvataggio Automatico Attivo
+                </p>
             </div>
 
             <!-- Issue Modal -->
@@ -495,6 +506,34 @@ interface ChecklistItem {
                     </div>
                 </div>
             }
+            <!-- RESET CONFIRMATION MODAL -->
+            @if (isResetModalOpen()) {
+               <div class="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isResetModalOpen.set(false)"></div>
+                  <div class="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+                     <div class="p-8 text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-sm">
+                           <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800 mb-2">Reset Completo?</h3>
+                        <p class="text-xs font-bold text-slate-500 leading-relaxed mb-8">
+                           Questa azione cancellerà tutti i dati inseriti nella scheda attuale. L'operazione non è reversibile.
+                        </p>
+                        
+                        <div class="flex flex-col gap-3">
+                           <button (click)="confirmReset()" 
+                                   class="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-200 active:scale-95 transition-all">
+                              SÌ, RESETTA TUTTO
+                           </button>
+                           <button (click)="isResetModalOpen.set(false)" 
+                                   class="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">
+                              ANNULLA
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            }
         </div>
   `,
    styles: [`
@@ -524,6 +563,7 @@ export class OperativeChecklistComponent {
    toast = inject(ToastService);
 
    isModalOpen = signal(false);
+   isResetModalOpen = signal(false);
    currentItem = signal<ChecklistItem | null>(null);
    anomalySubject = '';
    selectedDate = signal(this.state.filterDate());
@@ -628,6 +668,12 @@ export class OperativeChecklistComponent {
 
 
    setStatus(id: string, status: ChecklistItem['status']) {
+       const item = this.items().find(i => i.id === id);
+       const current = this.statusMap()[id];
+       if (status === 'ok' && item?.hasTemperature && (!current?.temperature || current.temperature.trim() === '')) {
+           this.toast.warning('Dato Mancante', `Inserisci prima la temperatura per: ${item.label}`);
+           return;
+       }
       this.statusMap.update(map => ({
          ...map,
          [id]: { ...map[id], status, note: status === 'ok' ? undefined : map[id]?.note }
@@ -635,90 +681,97 @@ export class OperativeChecklistComponent {
       this.autoSave();
    }
 
-   updateTemperature(id: string, temperature: string, label: string) {
-      if (!temperature) {
-          this.statusMap.update(map => ({
-              ...map,
-              [id]: { ...map[id], temperature: '', status: 'pending', isAutomaticIssue: false, note: undefined }
-          }));
-          return;
-      }
-
-      const tempValue = parseFloat(temperature);
-      const nameLower = label.toLowerCase();
-      
-      let isIssue = false;
-      let alertMsg = '';
-
-      if (nameLower.includes('abbattitore')) {
-          // Abbattitore: read configured range and mark conformity WITHOUT auto-setting status
-          const equipment = (this.state.getGlobalRecord('equipment_census') || []) as any[];
-          const abbEquip = equipment.find((e: any) =>
-              e.name?.toLowerCase().includes('abbattitore') ||
-              e.type?.toLowerCase().includes('abbattitore')
-          );
-          let minTemp = abbEquip?.minTemp ?? -40;
-          let maxTemp = abbEquip?.maxTemp ?? -18;
-          const conforme = tempValue >= minTemp && tempValue <= maxTemp;
-          
-          this.statusMap.update(map => ({
-              ...map,
-              [id]: {
-                  ...map[id],
-                  temperature,
-                  abbattitoreConforme: conforme
-                  // status remains unchanged — operator confirms manually
-              }
-          }));
-          this.autoSave();
-          return;
-      }
-
-      if (nameLower.includes('ghiaccio')) {
-          if (tempValue !== -20) {
-              isIssue = true;
-              alertMsg = 'Macchina del Ghiaccio fuori parametro (deve essere esattamente -20°C)';
-          }
-      } else if (nameLower.includes('congelatore')) {
-          if (tempValue > -18) {
-              isIssue = true;
-              alertMsg = 'Prodotto Congelato fuori parametro (deve essere ≤ -18°C)';
-          }
-      } else if (nameLower.includes('cald') || nameLower.includes('cottura') || nameLower.includes('forno')) {
-          if (tempValue < 65) {
-              isIssue = true;
-              alertMsg = 'Catena del Caldo fuori parametro (deve essere ≥ 65°C)';
-          }
-      } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella') || nameLower.includes('fredd') || nameLower.includes('vetrina')) {
-          if (tempValue < 4 || tempValue > 8) {
-              isIssue = true;
-              alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
-          }
-      } else if (nameLower.includes('abbattitore')) {
-          if (tempValue > -35) {
-              isIssue = true;
-              alertMsg = 'Abbattitore fuori parametro di esercizio (deve essere ≤ -35°C)';
-          }
-      }
-
-      this.statusMap.update(map => ({
-         ...map,
-         [id]: { 
-             ...map[id], 
-             temperature, 
-             status: isIssue ? 'issue' : 'ok',
-             isAutomaticIssue: isIssue,
-             note: isIssue ? alertMsg : undefined
-         }
-      }));
-
-      if (isIssue) {
-          this.toast.error('HACCP Warning', alertMsg);
-      }
-      
-      this.autoSave();
+   handleTemperatureInput(id: string, temperature: string) {
+       this.statusMap.update(map => ({
+           ...map,
+           [id]: { 
+               ...map[id], 
+               temperature, 
+               status: 'pending',
+               isAutomaticIssue: false,
+               note: undefined
+           }
+       }));
+       this.autoSave();
    }
 
+   validateTemperature(id: string, label: string) {
+       const item = this.statusMap()[id];
+       if (!item || !item.temperature) return;
+
+       const tempValue = parseFloat(item.temperature);
+       const nameLower = label.toLowerCase();
+       
+       if (isNaN(tempValue)) {
+           this.statusMap.update(map => ({
+               ...map,
+               [id]: { ...map[id], status: 'pending', isAutomaticIssue: false, note: undefined }
+           }));
+           return;
+       }
+       
+       let isIssue = false;
+       let alertMsg = '';
+
+       if (nameLower.includes('abbattitore')) {
+           const equipment = (this.state.getGlobalRecord('equipment_census') || []) as any[];
+           const abbEquip = equipment.find((e: any) =>
+               e.name?.toLowerCase().includes('abbattitore') ||
+               e.type?.toLowerCase().includes('abbattitore')
+           );
+           let minTemp = abbEquip?.minTemp ?? -40;
+           let maxTemp = abbEquip?.maxTemp ?? -18;
+           const conforme = tempValue >= minTemp && tempValue <= maxTemp;
+           
+           this.statusMap.update(map => ({
+               ...map,
+               [id]: {
+                   ...map[id],
+                   abbattitoreConforme: conforme
+               }
+           }));
+           this.autoSave();
+           return;
+       }
+
+       if (nameLower.includes('ghiaccio')) {
+           if (tempValue !== -20) {
+               isIssue = true;
+               alertMsg = 'Macchina del Ghiaccio fuori parametro (deve essere esattamente -20°C)';
+           }
+       } else if (nameLower.includes('congelatore')) {
+           if (tempValue > -18) {
+               isIssue = true;
+               alertMsg = 'Prodotto Congelato fuori parametro (deve essere ≤ -18°C)';
+           }
+       } else if (nameLower.includes('cald') || nameLower.includes('cottura') || nameLower.includes('forno')) {
+           if (tempValue < 65) {
+               isIssue = true;
+               alertMsg = 'Catena del Caldo fuori parametro (deve essere ≥ 65°C)';
+           }
+       } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella') || nameLower.includes('fredd') || nameLower.includes('vetrina')) {
+           if (tempValue < 4 || tempValue > 8) {
+               isIssue = true;
+               alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
+           }
+       }
+
+       this.statusMap.update(map => ({
+          ...map,
+          [id]: { 
+              ...map[id], 
+              status: isIssue ? 'issue' : 'ok',
+              isAutomaticIssue: isIssue,
+              note: isIssue ? alertMsg : undefined
+          }
+       }));
+
+       if (isIssue) {
+           this.toast.error('HACCP Warning', alertMsg);
+       }
+       
+       this.autoSave();
+   }
 
    setAllOk() {
       const newMap: Record<string, any> = {};
@@ -824,6 +877,12 @@ export class OperativeChecklistComponent {
 
       this.toast.success('Registro Inviato', 'I dati sono stati salvati correttamente.');
       this.isSubmitted.set(true);
+   }
+
+   confirmReset() {
+      this.startNewChecklist();
+      this.isResetModalOpen.set(false);
+      this.toast.info('Scheda Resettata', 'I dati sono stati azzerati correttamente.');
    }
 
    startNewChecklist() {

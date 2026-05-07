@@ -53,7 +53,7 @@ interface CheckCategory {
           <div class="bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200 flex flex-col justify-center min-w-[220px] shadow-sm">
             <label class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5 leading-none">Azienda Filtro</label>
             <select [ngModel]="selectedCompanyId()" (ngModelChange)="selectedCompanyId.set($event)"
-                    class="bg-transparent text-slate-800 font-bold text-sm focus:outline-none cursor-pointer border-none p-0 w-full appearance-none">
+                    class="bg-transparent text-slate-800 font-bold text-base focus:outline-none cursor-pointer border-none p-0 w-full appearance-none">
               <option value="" class="text-slate-800">Tutte le Aziende</option>
               @for (client of state.clients(); track client.id) {
                 <option [value]="client.id" class="text-slate-800">{{ client.name }}</option>
@@ -456,7 +456,7 @@ interface CheckCategory {
                         <textarea [ngModel]="ncResolutionText"
                                   (ngModelChange)="ncResolutionText = $event"
                                   placeholder="Descrivi come è stata gestita l'anomalia e quali azioni sono state intraprese per risolverla..."
-                                  class="w-full h-32 p-5 bg-white border-2 border-slate-100 rounded-[24px] text-sm text-slate-700 focus:outline-none focus:border-emerald-500 transition-all shadow-inner resize-none"></textarea>
+                                  class="w-full h-32 p-5 bg-white border-2 border-slate-100 rounded-[24px] text-base text-slate-700 focus:outline-none focus:border-emerald-500 transition-all shadow-inner resize-none"></textarea>
                     </div>
                 </div>
 
