@@ -140,10 +140,15 @@ import { ToastService } from '../services/toast.service';
                                     <div class="flex justify-between items-start mb-1">
                                         <div>
                                             <h4 class="font-bold text-slate-800 text-sm leading-tight truncate">{{ user.name }}</h4>
-                                            <div class="flex items-center gap-2">
+                                            <div class="flex flex-wrap items-center gap-2">
                                                 <p class="text-[10px] text-slate-500 font-bold truncate">{{ user.email }}</p>
                                                 <span class="text-[10px] text-indigo-400 font-black">•</span>
                                                 <p class="text-[10px] text-indigo-600 font-black truncate">@{{ user.username }}</p>
+                                                <span class="text-[10px] text-slate-300 font-black">•</span>
+                                                <span [class]="user.role === 'ADMIN' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'"
+                                                      class="px-1.5 py-0.5 border text-[9px] font-black uppercase tracking-wider rounded">
+                                                    {{ user.role === 'ADMIN' ? 'Titolare' : 'Operatore' }}
+                                                </span>
                                             </div>
                                         </div>
                                         <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-white text-slate-500 border border-slate-200 group-hover:border-indigo-200 transition-colors">
@@ -330,13 +335,16 @@ import { ToastService } from '../services/toast.service';
                  </div>
                  <div>
                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Ruolo Accesso</label>
-                   <select formControlName="role" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-base font-bold text-slate-700 transition-all hover:border-indigo-200 shadow-sm">
-                     <option value="COLLABORATOR">Operatore</option>
-                     <option value="ADMIN">Amministratore</option>
-                   </select>
-                 </div>
-              </div>
-
+                    <select formControlName="role" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-base font-bold text-slate-700 transition-all hover:border-indigo-200 shadow-sm">
+                      <option value="COLLABORATOR">Operatore (Compila Registri e Checklist)</option>
+                      <option value="ADMIN">Titolare / Amministratore Azienda (Monitora Dashboard e Report)</option>
+                     </select>
+                     <p class="text-[9px] text-slate-400 mt-1.5 font-bold leading-tight">
+                       * <strong>Operatore</strong>: compila le checklist quotidiane.<br>
+                       * <strong>Titolare</strong>: visualizza dashboard, documenti e report.
+                     </p>
+                  </div>
+               </div>
               <div>
                  <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Responsabile (Nome e Cognome)</label>
                  <div class="relative">

@@ -1211,15 +1211,15 @@ export class AppStateService {
       return true;
     }
 
-    // Standard User Access (Collaborators only)
+    // Standard User Access (Collaborators & Company Admins)
     const user = this.systemUsers().find(u => u.username === username && u.password === pass && u.active);
 
     if (user) {
-      // BLOCK: Admins cannot log in through this standard path
-      if (user.role === 'ADMIN') {
+      // BLOCK: Global/Master Admins cannot log in through this standard path (must use dev/dev)
+      if (user.role === 'ADMIN' && !user.clientId) {
         this.toastService.error(
           'Accesso Negato',
-          'L\'account amministratore non è accessibile con queste credenziali.'
+          'L\'account amministratore di sistema non è accessibile con queste credenziali.'
         );
         return false;
       }
