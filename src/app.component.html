@@ -251,7 +251,7 @@
                 <option value="">Azienda...</option>
                 @for (client of state.groupedViewClients(); track client.id) {
                 <option [value]="client.id">
-                    {{ client.piva ? client.name.split(' ')[0] : client.name }}
+                    {{ client.name }}
                 </option>
                 }
             </select>
@@ -318,7 +318,7 @@
             <option value="">-- Seleziona Azienda --</option>
             @for (client of state.groupedViewClients(); track client.id) {
             <option [value]="client.id">
-              {{ client.piva ? client.name.split(' ')[0] : client.name }}
+              {{ client.name }}
             </option>
             }
           </select>

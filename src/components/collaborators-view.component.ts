@@ -337,11 +337,9 @@ import { ToastService } from '../services/toast.service';
                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Ruolo Accesso</label>
                     <select formControlName="role" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-base font-bold text-slate-700 transition-all hover:border-indigo-200 shadow-sm">
                       <option value="COLLABORATOR">Operatore (Compila Registri e Checklist)</option>
-                      <option value="ADMIN">Titolare / Amministratore Azienda (Monitora Dashboard e Report)</option>
                      </select>
                      <p class="text-[9px] text-slate-400 mt-1.5 font-bold leading-tight">
-                       * <strong>Operatore</strong>: compila le checklist quotidiane.<br>
-                       * <strong>Titolare</strong>: visualizza dashboard, documenti e report.
+                       * <strong>Operatore</strong>: compila le checklist quotidiane.
                      </p>
                   </div>
                </div>
