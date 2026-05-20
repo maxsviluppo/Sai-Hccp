@@ -96,10 +96,11 @@ import { AppStateService } from '../services/app-state.service';
       }
 
       <!-- OPERATIONAL GRID - EXTREMELY RESPONSIVE -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
         @for (action of quickActions; track action.id) {
-            <button (click)="state.setModule(action.id)"
-                    [class]="'group relative overflow-hidden bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 transition-all duration-300 text-center flex flex-col items-center justify-center gap-4 active:scale-95 h-full ' + (action.mobileOnly ? 'md:hidden' : '')">
+            <button (click)="action.id === 'abbattimento-log' && !state.hasAbbattitore() ? null : state.setModule(action.id)"
+                    [disabled]="action.id === 'abbattimento-log' && !state.hasAbbattitore()"
+                    [class]="'group relative overflow-hidden bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 transition-all duration-300 text-center flex flex-col items-center justify-center gap-4 active:scale-95 h-full ' + (action.id === 'abbattimento-log' && !state.hasAbbattitore() ? 'opacity-40 cursor-not-allowed filter grayscale' : '')">
                 <div [class]="'h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg ' + action.bg + ' ' + action.color">
                     <i class="fa-solid {{ action.icon }} text-2xl"></i>
                 </div>
@@ -224,12 +225,14 @@ export class OperatorDashboardViewComponent {
   state = inject(AppStateService);
 
   quickActions = [
-    { id: 'preparations', label: 'Preparazioni', sub: 'Anagrafica', icon: 'fa-mortar-pestle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { id: 'production-log', label: 'Produzione', sub: 'Tracciabilità', icon: 'fa-barcode', color: 'text-amber-600', bg: 'bg-amber-50' },
-    { id: 'ddt-carico', label: 'Carico Merci', sub: 'DDT / Fatture', icon: 'fa-truck-ramp-box', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 'ddt-carico', label: 'Carico Merci', sub: 'DDT / Ricezione', icon: 'fa-truck-ramp-box', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 'preparations', label: 'Preparazioni', sub: 'Anagrafica Prodotti', icon: 'fa-mortar-pestle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { id: 'ingredients-book', label: 'Libro Ingredienti', sub: 'Ricettario / Allergeni', icon: 'fa-book-open', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { id: 'temperatures', label: 'Controllo Temperature', sub: 'Registro Rilevazioni', icon: 'fa-temperature-half', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+    { id: 'production-log', label: 'Rintracciabilità', sub: 'Lotti / Produzione', icon: 'fa-barcode', color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'abbattimento-log', label: 'Abbattitore', sub: 'Registro Freddo', icon: 'fa-icicles', color: 'text-sky-600', bg: 'bg-sky-50' },
-    { id: 'operative-checklist', label: 'Checklist', sub: 'Monitoraggio', icon: 'fa-clipboard-list', color: 'text-purple-600', bg: 'bg-purple-50' },
-    { id: 'micro-bio', label: 'Analisi', sub: 'Microbio', icon: 'fa-vial-virus', color: 'text-rose-600', bg: 'bg-rose-50', mobileOnly: true }
+    { id: 'micro-bio', label: 'Monitoraggio Ambiente', sub: 'Analisi Biologiche', icon: 'fa-vial-virus', color: 'text-violet-600', bg: 'bg-violet-50' },
+    { id: 'cleaning-maintenance', label: 'Sanificazione', sub: 'Registro Pulizie', icon: 'fa-broom', color: 'text-rose-600', bg: 'bg-rose-50' }
   ];
 
   openAnomalies = computed(() => {
