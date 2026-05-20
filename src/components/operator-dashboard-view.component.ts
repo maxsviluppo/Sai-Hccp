@@ -229,10 +229,12 @@ export class OperatorDashboardViewComponent {
     { id: 'preparations', label: 'Preparazioni', sub: 'Anagrafica Prodotti', icon: 'fa-mortar-pestle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'ingredients-book', label: 'Libro Ingredienti', sub: 'Ricettario / Allergeni', icon: 'fa-book-open', color: 'text-orange-600', bg: 'bg-orange-50' },
     { id: 'temperatures', label: 'Controllo Temperature', sub: 'Registro Rilevazioni', icon: 'fa-temperature-half', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+    { id: 'food-conservation', label: 'Controllo Scadenze', sub: 'Conservazione Alimenti', icon: 'fa-calendar-xmark', color: 'text-red-600', bg: 'bg-red-50' },
     { id: 'production-log', label: 'Rintracciabilità', sub: 'Lotti / Produzione', icon: 'fa-barcode', color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'abbattimento-log', label: 'Abbattitore', sub: 'Registro Freddo', icon: 'fa-icicles', color: 'text-sky-600', bg: 'bg-sky-50' },
     { id: 'micro-bio', label: 'Monitoraggio Ambiente', sub: 'Analisi Biologiche', icon: 'fa-vial-virus', color: 'text-violet-600', bg: 'bg-violet-50' },
-    { id: 'cleaning-maintenance', label: 'Sanificazione', sub: 'Registro Pulizie', icon: 'fa-broom', color: 'text-rose-600', bg: 'bg-rose-50' }
+    { id: 'cleaning-maintenance', label: 'Sanificazione', sub: 'Registro Pulizie', icon: 'fa-broom', color: 'text-rose-600', bg: 'bg-rose-50' },
+    { id: 'production-log', label: 'Prep. Etichette', sub: 'Stampa Etichette', icon: 'fa-tag', color: 'text-teal-600', bg: 'bg-teal-50' }
   ];
 
   openAnomalies = computed(() => {
