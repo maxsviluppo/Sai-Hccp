@@ -176,7 +176,7 @@ import { ToastService } from '../services/toast.service';
                                         <div class="flex items-center gap-4 overflow-hidden">
                                             <div [class]="'w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden shadow-sm bg-' + getDocColor(doc.type) + '-50 border-' + getDocColor(doc.type) + '-100 text-' + getDocColor(doc.type) + '-600'">
                                                 @if (isImage(doc.fileType) && doc.fileData) {
-                                                    <img [src]="doc.fileData" class="w-full h-full object-cover">
+                                                    <img [src]="getSafeFileData(doc)" class="w-full h-full object-cover">
                                                 } @else {
                                                     <i [class]="'fa-solid ' + getDocIcon(doc.type) + ' text-2xl'"></i>
                                                 }
@@ -244,10 +244,10 @@ import { ToastService } from '../services/toast.service';
                 <div class="flex-1 bg-slate-100 flex flex-col items-center justify-center relative overflow-hidden">
                     @if (isImage(previewDoc()?.fileType || '')) {
                         <div class="w-full h-full flex items-center justify-center p-6">
-                            <img [src]="previewDoc()?.fileData" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/50">
+                            <img [src]="getSafeFileData(previewDoc())" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/50">
                         </div>
                     } @else if (isPdf(previewDoc()?.fileType || '')) {
-                        <iframe [src]="getSafeUrl(previewDoc()?.fileData || '')" class="w-full h-full border-none shadow-inner bg-white"></iframe>
+                        <iframe [src]="getSafeUrl(getSafeFileData(previewDoc()))" class="w-full h-full border-none shadow-inner bg-white"></iframe>
                     } @else {
                         <div class="text-center max-w-sm mx-auto p-12">
                             <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl border border-slate-200 text-4xl text-slate-300">
@@ -312,7 +312,6 @@ export class DocumentationViewComponent implements OnInit {
         { id: 'haccp_cert', label: 'Attestato HACCP / Sicurezza', icon: 'fa-graduation-cap', color: 'emerald', isTraining: true },
         { id: 'haccp_update', label: 'Aggiornamenti Sicurezza', icon: 'fa-arrows-rotate', color: 'emerald', isTraining: true },
         { id: 'haccp_procedures', label: 'Procedure Operative Standard', icon: 'fa-book-open-reader', color: 'emerald', isTraining: true },
-        { id: 'manuali', label: 'Manuali', icon: 'fa-book', color: 'emerald', isTraining: true },
         { id: 'multe_verbali', label: 'Multe e Verbali', icon: 'fa-gavel', color: 'rose' }
     ];
 
@@ -415,16 +414,23 @@ export class DocumentationViewComponent implements OnInit {
         this.toast.success('Caricato', `${files.length} file aggiunti.`);
     }
 
+    getSafeFileData(doc: AppDocument | null): string {
+        if (!doc || !doc.fileData) return '';
+        if (doc.fileData.startsWith('data:')) return doc.fileData;
+        return `data:${doc.fileType};base64,${doc.fileData}`;
+    }
+
     async previewFile(doc: AppDocument) {
         if (!doc.fileData) {
             this.toast.info('Caricamento...', 'Download dal cloud.');
             const data = await this.state.fetchDocumentData(doc.id);
             if (data) {
-                const finalData = (data && !data.startsWith('data:')) ? `data:${doc.fileType};base64,${data}` : data;
-                this.previewDoc.set({ ...doc, fileData: finalData || '' });
+                const finalData = data.startsWith('data:') ? data : `data:${doc.fileType};base64,${data}`;
+                this.previewDoc.set({ ...doc, fileData: finalData });
             }
         } else {
-            this.previewDoc.set({ ...doc });
+            const finalData = doc.fileData.startsWith('data:') ? doc.fileData : `data:${doc.fileType};base64,${doc.fileData}`;
+            this.previewDoc.set({ ...doc, fileData: finalData });
         }
     }
 
@@ -448,12 +454,18 @@ export class DocumentationViewComponent implements OnInit {
 
     async downloadDoc(doc: any | null) {
         if (!doc) return;
-        if (!doc.fileData) {
+        let fileData = doc.fileData;
+        if (!fileData) {
             const data = await this.state.fetchDocumentData(doc.id);
-            if (data) doc.fileData = data;
+            if (data) {
+                fileData = data;
+                doc.fileData = data;
+            }
         }
+        if (!fileData) return;
+        const finalData = fileData.startsWith('data:') ? fileData : `data:${doc.fileType};base64,${fileData}`;
         const link = document.createElement('a');
-        link.href = doc.fileData;
+        link.href = finalData;
         link.download = this.getDisplayFileName(doc.fileName);
         link.click();
     }

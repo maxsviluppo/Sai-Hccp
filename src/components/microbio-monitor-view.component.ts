@@ -58,7 +58,7 @@ import { FormsModule } from '@angular/forms';
                         <div class="flex items-start gap-4 mb-6">
                             <div [class]="'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ' + (isImage(doc.fileType) ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-rose-50 border-rose-100 text-rose-600')">
                                 @if (isImage(doc.fileType) && doc.fileData) {
-                                    <img [src]="doc.fileData" class="w-full h-full object-cover rounded-xl">
+                                    <img [src]="getSafeFileData(doc)" class="w-full h-full object-cover rounded-xl">
                                 } @else {
                                     <i class="fa-solid text-2xl" [class.fa-file-pdf]="isPdf(doc.fileType)" [class.fa-file-lines]="!isPdf(doc.fileType)"></i>
                                 }
@@ -136,7 +136,7 @@ import { FormsModule } from '@angular/forms';
                                 <div class="flex items-center gap-4">
                                     <div [class]="'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm border ' + (isImage(doc.fileType) ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-rose-50 border-rose-100 text-rose-600')">
                                         @if (isImage(doc.fileType) && doc.fileData) {
-                                            <img [src]="doc.fileData" class="w-full h-full object-cover rounded-lg">
+                                            <img [src]="getSafeFileData(doc)" class="w-full h-full object-cover rounded-lg">
                                         } @else {
                                             <i class="fa-solid text-xl" [class.fa-file-pdf]="isPdf(doc.fileType)" [class.fa-file-lines]="!isPdf(doc.fileType)"></i>
                                         }
@@ -206,10 +206,10 @@ import { FormsModule } from '@angular/forms';
                 <div class="flex-1 bg-slate-100 flex flex-col items-center justify-center relative overflow-hidden">
                     @if (isImage(previewDoc()?.fileType || '')) {
                         <div class="w-full h-full flex items-center justify-center p-6">
-                            <img [src]="previewDoc()?.fileData" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/50">
+                            <img [src]="getSafeFileData(previewDoc())" class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/50">
                         </div>
                     } @else if (isPdf(previewDoc()?.fileType || '')) {
-                        <iframe [src]="getSafeUrl(previewDoc()?.fileData || '')" class="w-full h-full border-none shadow-inner bg-white"></iframe>
+                        <iframe [src]="getSafeUrl(getSafeFileData(previewDoc()))" class="w-full h-full border-none shadow-inner bg-white"></iframe>
                     } @else {
                         <div class="text-center p-12">
                             <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl border border-slate-200 text-4xl text-slate-300">
@@ -489,15 +489,23 @@ export class MicrobioMonitorViewComponent implements OnInit {
         return parseInt(name.split('|')[1], 10) || 0;
     }
 
+    getSafeFileData(doc: AppDocument | null): string {
+        if (!doc || !doc.fileData) return '';
+        if (doc.fileData.startsWith('data:')) return doc.fileData;
+        return `data:${doc.fileType};base64,${doc.fileData}`;
+    }
+
     async previewFile(doc: AppDocument) {
         if (!doc.fileData) {
+            this.toast.info('Caricamento...', 'Download dal cloud.');
             const data = await this.state.fetchDocumentData(doc.id);
             if (data) {
-                const finalData = (data && !data.startsWith('data:')) ? `data:${doc.fileType};base64,${data}` : data;
-                this.previewDoc.set({ ...doc, fileData: finalData || '' });
+                const finalData = data.startsWith('data:') ? data : `data:${doc.fileType};base64,${data}`;
+                this.previewDoc.set({ ...doc, fileData: finalData });
             }
         } else {
-            this.previewDoc.set({ ...doc });
+            const finalData = doc.fileData.startsWith('data:') ? doc.fileData : `data:${doc.fileType};base64,${doc.fileData}`;
+            this.previewDoc.set({ ...doc, fileData: finalData });
         }
     }
 
@@ -513,13 +521,20 @@ export class MicrobioMonitorViewComponent implements OnInit {
         }
     }
 
-    async downloadDoc(doc: AppDocument) {
-        if (!doc.fileData) {
+    async downloadDoc(doc: AppDocument | null) {
+        if (!doc) return;
+        let fileData = doc.fileData;
+        if (!fileData) {
             const data = await this.state.fetchDocumentData(doc.id);
-            if (data) doc.fileData = data;
+            if (data) {
+                fileData = data;
+                doc.fileData = data; // Cache locale
+            }
         }
+        if (!fileData) return;
+        const finalData = fileData.startsWith('data:') ? fileData : `data:${doc.fileType};base64,${fileData}`;
         const link = document.createElement('a');
-        link.href = doc.fileData;
+        link.href = finalData;
         link.download = this.getDisplayFileName(doc.fileName);
         link.click();
     }
