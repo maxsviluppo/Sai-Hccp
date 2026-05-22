@@ -1847,7 +1847,19 @@ export class AppStateService {
       users.map(u => u.id === id ? { ...u, ...updates } : u)
     );
 
-    const { error } = await supabase.from('system_users').update(updates).eq('id', id);
+    // Mappatura esplicita per evitare colonne inesistenti (es. clientId in camelCase)
+    const dbUpdates: any = {};
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.role !== undefined) dbUpdates.role = updates.role;
+    if (updates.department !== undefined) dbUpdates.department = updates.department;
+    if (updates.active !== undefined) dbUpdates.active = updates.active;
+    if (updates.avatar !== undefined) dbUpdates.avatar = updates.avatar;
+    if (updates.username !== undefined) dbUpdates.username = updates.username;
+    if (updates.password !== undefined) dbUpdates.password = updates.password;
+
+    const { error } = await supabase.from('system_users').update(dbUpdates).eq('id', id);
 
     // Auto-suspend company if all users are now disabled
     if (updates.active === false) {
@@ -1859,6 +1871,9 @@ export class AppStateService {
 
     if (!error) {
       this.toastService.success('Aggiornato', 'I dati del collaboratore sono stati salvati.');
+    } else {
+      console.error('Error updating system user:', error);
+      this.toastService.error('Errore', 'Impossibile salvare le modifiche del collaboratore sul database.');
     }
   }
 
