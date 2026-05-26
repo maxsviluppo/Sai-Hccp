@@ -326,14 +326,14 @@ interface ChecklistItem {
                                         
                                         <!-- ACTION BUTTONS NEXT TO INPUT -->
                                         <button (click)="validateTemperature(item.id, item.label)"
-                                                [disabled]="isSubmitted() || !state.isContextEditable() || !statusMap()[item.id]?.temperature"
+                                                [disabled]="isSubmitted() || !state.isContextEditable() || statusMap()[item.id]?.temperature === undefined || statusMap()[item.id]?.temperature === null || statusMap()[item.id]?.temperature === ''"
                                                 class="h-12 w-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md active:scale-90 disabled:opacity-30 disabled:scale-100 transition-all"
                                                 title="Conferma ed Elabora Esito">
                                             <i class="fa-solid fa-check text-lg"></i>
                                         </button>
 
                                         <button (click)="handleTemperatureInput(item.id, '')"
-                                                [disabled]="isSubmitted() || !state.isContextEditable() || !statusMap()[item.id]?.temperature"
+                                                [disabled]="isSubmitted() || !state.isContextEditable() || statusMap()[item.id]?.temperature === undefined || statusMap()[item.id]?.temperature === null || statusMap()[item.id]?.temperature === ''"
                                                 class="h-12 w-12 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center active:scale-90 disabled:opacity-30 disabled:scale-100 transition-all"
                                                 title="Cancella Valore">
                                             <i class="fa-solid fa-eraser text-lg"></i>
@@ -659,7 +659,7 @@ export class OperativeChecklistComponent {
 
    items = computed(() => [...this.group1Items(), ...this.group2Items()]);
 
-   completedCount = computed(() => this.items().filter(i => i.status !== 'pending').length);
+completedCount = computed(() => this.items().filter(i => i.status !== 'pending').length);
    progressPercentage = computed(() => {
       const total = this.items().length;
       return total > 0 ? (this.completedCount() / total) * 100 : 0;
@@ -668,12 +668,12 @@ export class OperativeChecklistComponent {
 
 
    setStatus(id: string, status: ChecklistItem['status']) {
-       const item = this.items().find(i => i.id === id);
-       const current = this.statusMap()[id];
-       if (status === 'ok' && item?.hasTemperature && (!current?.temperature || current.temperature.trim() === '')) {
-           this.toast.warning('Dato Mancante', `Inserisci prima la temperatura per: ${item.label}`);
-           return;
-       }
+        const item = this.items().find(i => i.id === id);
+        const current = this.statusMap()[id];
+        if (status === 'ok' && item?.hasTemperature && (current?.temperature === undefined || current.temperature === null || String(current.temperature).trim() === '')) {
+            this.toast.warning('Dato Mancante', `Inserisci prima la temperatura per: ${item.label}`);
+            return;
+        }
       this.statusMap.update(map => ({
          ...map,
          [id]: { ...map[id], status, note: status === 'ok' ? undefined : map[id]?.note }
@@ -696,43 +696,55 @@ export class OperativeChecklistComponent {
    }
 
    validateTemperature(id: string, label: string) {
-       const item = this.statusMap()[id];
-       if (!item || !item.temperature) return;
+        const item = this.statusMap()[id];
+        if (!item || item.temperature === undefined || item.temperature === null || String(item.temperature).trim() === '') return;
 
-       const tempValue = parseFloat(item.temperature);
-       const nameLower = label.toLowerCase();
-       
-       if (isNaN(tempValue)) {
-           this.statusMap.update(map => ({
-               ...map,
-               [id]: { ...map[id], status: 'pending', isAutomaticIssue: false, note: undefined }
-           }));
-           return;
-       }
-       
-       let isIssue = false;
-       let alertMsg = '';
+        const cleanTemp = String(item.temperature).replace(',', '.');
+        const tempValue = parseFloat(cleanTemp);
+        const nameLower = label.toLowerCase();
+        
+        if (isNaN(tempValue)) {
+            this.statusMap.update(map => ({
+                ...map,
+                [id]: { ...map[id], status: 'pending', isAutomaticIssue: false, note: undefined }
+            }));
+            return;
+        }
+        
+        let isIssue = false;
+        let alertMsg = '';
 
-       if (nameLower.includes('abbattitore')) {
-           const equipment = (this.state.getGlobalRecord('equipment_census') || []) as any[];
-           const abbEquip = equipment.find((e: any) =>
-               e.name?.toLowerCase().includes('abbattitore') ||
-               e.type?.toLowerCase().includes('abbattitore')
-           );
-           let minTemp = abbEquip?.minTemp ?? -40;
-           let maxTemp = abbEquip?.maxTemp ?? -18;
-           const conforme = tempValue >= minTemp && tempValue <= maxTemp;
-           
-           this.statusMap.update(map => ({
-               ...map,
-               [id]: {
-                   ...map[id],
-                   abbattitoreConforme: conforme
-               }
-           }));
-           this.autoSave();
-           return;
-       }
+        if (nameLower.includes('abbattitore')) {
+            const equipment = this.state.groupedEquipment();
+            const abbEquip = equipment.find((e: any) =>
+                e.name?.toLowerCase().includes('abbattitore') ||
+                e.type?.toLowerCase().includes('abbattitore')
+            );
+            let minTemp = (abbEquip as any)?.minTemp ?? -40;
+            let maxTemp = (abbEquip as any)?.maxTemp ?? 3; // +3°C limit to accommodate positive blast chilling
+            const conforme = tempValue >= minTemp && tempValue <= maxTemp;
+            
+            isIssue = !conforme;
+            alertMsg = `Abbattitore fuori parametro (deve essere tra ${minTemp}° e +${maxTemp}°C)`;
+            
+            this.statusMap.update(map => ({
+                ...map,
+                [id]: {
+                    ...map[id],
+                    status: isIssue ? 'issue' : 'ok',
+                    isAutomaticIssue: isIssue,
+                    note: isIssue ? alertMsg : undefined,
+                    abbattitoreConforme: conforme
+                }
+            }));
+
+            if (isIssue) {
+                this.toast.error('HACCP Warning', alertMsg);
+            }
+            
+            this.autoSave();
+            return;
+        }
 
        if (nameLower.includes('ghiaccio')) {
            if (tempValue !== -20) {

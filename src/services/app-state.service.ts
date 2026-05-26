@@ -840,10 +840,21 @@ export class AppStateService {
     // Load AI Config from system_config (Shared between Admin & Operators)
     const { data: aiSettings } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
     if (aiSettings && aiSettings.master_data) {
+        const DEPRECATED_MODELS = ['gemini-3.1-flash-lite-preview', 'gemini-3-flash-preview', 'gemini-3.0-flash-preview', 'gemini-1.5-pro', 'gemini-2.5-flash-preview-05-20'];
+        const loadedModel = aiSettings.master_data.model || 'gemini-2.0-flash';
+        const migratedModel = (DEPRECATED_MODELS.includes(loadedModel) || loadedModel.startsWith('gemini-3.'))
+            ? 'gemini-2.0-flash'
+            : loadedModel;
         this.aiConfig.set({
             ...aiSettings.master_data,
+            model: migratedModel,
             apiKey: this.deobfuscate(aiSettings.master_data.apiKey)
         });
+        // Se il modello era deprecato, aggiorna il DB silenziosamente
+        if (migratedModel !== loadedModel) {
+            console.warn(`[HACCP AI] Modello deprecato "${loadedModel}" → aggiornato a "${migratedModel}"`);
+            this.saveAiConfig({ ...aiSettings.master_data, model: migratedModel, apiKey: this.deobfuscate(aiSettings.master_data.apiKey) });
+        }
     }
   }
 

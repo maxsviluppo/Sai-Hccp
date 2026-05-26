@@ -222,15 +222,15 @@ import { ToastService } from '../services/toast.service';
                 <div class="flex flex-col gap-2">
                   <button (click)="setGeminiModel('gemini-2.0-flash')" 
                           [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 3 Flash (Veloce)
+                    Gemini 2.0 Flash (Veloce)
                   </button>
-                  <button (click)="setGeminiModel('gemini-3.1-flash-lite-preview')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-3.1-flash-lite-preview' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 3.1 Flash-Lite (Lite - Stabile)
+                  <button (click)="setGeminiModel('gemini-2.0-flash-lite')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash-lite' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
+                    Gemini 2.0 Flash-Lite (Alta Quota)
                   </button>
-                  <button (click)="setGeminiModel('gemini-1.5-pro')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-pro' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
-                    Gemini 3.1 Pro (Heavy)
+                  <button (click)="setGeminiModel('gemini-1.5-flash')" 
+                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-flash' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
+                    Gemini 1.5 Flash (Stabile)
                   </button>
                 </div>
                 <div class="mt-3 space-y-1">
