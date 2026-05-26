@@ -219,19 +219,9 @@ import { ToastService } from '../services/toast.service';
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Modello Attivo</p>
-                <div class="flex flex-col gap-2">
-                  <button (click)="setGeminiModel('gemini-2.0-flash')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 2.0 Flash (Veloce)
-                  </button>
-                  <button (click)="setGeminiModel('gemini-2.0-flash-lite')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-2.0-flash-lite' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300')">
-                    Gemini 2.0 Flash-Lite (Alta Quota)
-                  </button>
-                  <button (click)="setGeminiModel('gemini-1.5-flash')" 
-                          [class]="'px-3 py-1.5 rounded-lg text-xs font-black transition-all border ' + (state.aiConfig()?.model === 'gemini-1.5-flash' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300')">
-                    Gemini 1.5 Flash (Stabile)
-                  </button>
+                <div class="flex items-center gap-2 bg-violet-50 border border-violet-100 p-3 rounded-xl text-violet-700 font-bold text-xs">
+                  <i class="fa-solid fa-robot"></i>
+                  <span>Gemini 3.5 Flash (Standard & Compatibile)</span>
                 </div>
                 <div class="mt-3 space-y-1">
                   <p class="text-[9px] text-slate-500 font-bold leading-tight"><span class="text-emerald-600">Tariffa Free:</span> Gratuito fino a 15 RPM / 1500 RPD.</p>

@@ -549,7 +549,7 @@ export class DdtViewComponent {
     const config = this.state.aiConfig();
     const key = config?.apiKey;
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-1.5-flash';
+    const initialModel = config?.model || 'gemini-3.5-flash';
 
     if (!key) {
       this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
@@ -570,7 +570,7 @@ export class DdtViewComponent {
     let attempts = 0;
     const maxAttempts = 3;
     let currentModel = initialModel;
-    const fallbackModel = 'gemini-3.1-flash-lite-preview';
+    const fallbackModel = 'gemini-3.1-flash-lite';
 
     while (attempts < maxAttempts) {
       try {
@@ -580,11 +580,36 @@ export class DdtViewComponent {
         const body = {
           contents: [{
             parts: [
-              { text: `Analyze this DDT (shipping document) and extract ALL products. Return ONLY a JSON object exactly like this: {"supplierName":"","entryDate":"YYYY-MM-DD","items":[{"ingredientName":"","lotto":"","quantity":"","expiryDate":"YYYY-MM-DD"}]}. Do not include markdown formatting. Extract every product row found.` },
+              { text: "Analyze this DDT (shipping document) and extract all products. Extract the supplier name, document date (entryDate), and the list of items with their name, lot number, quantity, and expiry date. If some fields are not readable, return them as empty strings." },
               { inlineData: { mimeType, data: base64 } }
             ]
           }],
-          generationConfig: { maxOutputTokens: 500, temperature: 0.1 }
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                supplierName: { type: 'STRING' },
+                entryDate: { type: 'STRING' },
+                items: {
+                  type: 'ARRAY',
+                  items: {
+                    type: 'OBJECT',
+                    properties: {
+                      ingredientName: { type: 'STRING' },
+                      lotto: { type: 'STRING' },
+                      quantity: { type: 'STRING' },
+                      expiryDate: { type: 'STRING' }
+                    },
+                    required: ['ingredientName', 'lotto', 'quantity', 'expiryDate']
+                  }
+                }
+              },
+              required: ['supplierName', 'entryDate', 'items']
+            },
+            maxOutputTokens: 1000,
+            temperature: 0.1
+          }
         };
 
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${key}`, {
@@ -628,32 +653,44 @@ export class DdtViewComponent {
         }
 
         try {
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) {
+          const startIndex = text.indexOf('{');
+          if (startIndex === -1) {
             this.aiRawResponse.set(text);
             throw new Error('L\'AI non ha restituito un formato dati valido.');
           }
           
-          const cleanedText = jsonMatch[0];
+          let cleanedText = text.substring(startIndex).trim();
+          
+          // Rimuove blocchi di codice markdown (es. ```json o ``` alla fine)
+          if (cleanedText.endsWith('```')) {
+            cleanedText = cleanedText.replace(/```$/, '').trim();
+          }
+          
+          // Rimuove virgole di chiusura prima di parentesi quadre/graffe
+          cleanedText = cleanedText.replace(/,\s*([\]}])/g, '$1');
+          
+          // Ripara JSON incompleto/troncato
+          cleanedText = this.repairJson(cleanedText);
+          
           const parsed = JSON.parse(cleanedText);
           
           // Ensure valid structure
           this.form.supplierName = parsed.supplierName || '';
-          this.form.entryDate = parsed.entryDate || new Date().toISOString().split('T')[0];
+          this.form.entryDate = this.formatDateToISO(parsed.entryDate) || new Date().toISOString().split('T')[0];
           
           if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
             this.form.items = parsed.items.map((i: any) => ({
               ingredientName: i.ingredientName || '',
               lotto: i.lotto || '',
               quantity: i.quantity || '',
-              expiryDate: i.expiryDate || ''
+              expiryDate: this.formatDateToISO(i.expiryDate) || ''
             }));
           } else if (parsed.ingredientName) { // Fallback if AI still returns single item flat
             this.form.items = [{
               ingredientName: parsed.ingredientName || '',
               lotto: parsed.lotto || '',
               quantity: parsed.quantity || '',
-              expiryDate: parsed.expiryDate || ''
+              expiryDate: this.formatDateToISO(parsed.expiryDate) || ''
             }];
           }
 
@@ -673,8 +710,8 @@ export class DdtViewComponent {
             }
           }
           break; // Success! Exit loop
-        } catch (parseError) {
-          console.error('JSON Parse Error:', text);
+        } catch (parseError: any) {
+          console.error('JSON Parse Error:', parseError.message, text);
           this.aiRawResponse.set(text);
           throw new Error('L\'AI ha risposto con un formato non valido.');
         }
@@ -690,6 +727,89 @@ export class DdtViewComponent {
     }
     
     this.isAnalyzing.set(false);
+  }
+
+  repairJson(str: string): string {
+    str = str.trim();
+    str = str.replace(/,\s*$/, '');
+    
+    const stack: string[] = [];
+    let insideString = false;
+    let escape = false;
+    
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (char === '\\') {
+        escape = true;
+        continue;
+      }
+      if (char === '"') {
+        insideString = !insideString;
+        continue;
+      }
+      if (insideString) continue;
+      
+      if (char === '{' || char === '[') {
+        stack.push(char);
+      } else if (char === '}') {
+        if (stack[stack.length - 1] === '{') {
+          stack.pop();
+        }
+      } else if (char === ']') {
+        if (stack[stack.length - 1] === '[') {
+          stack.pop();
+        }
+      }
+    }
+    
+    while (stack.length > 0) {
+      const last = stack.pop();
+      if (last === '{') str += '}';
+      if (last === '[') str += ']';
+    }
+    
+    return str;
+  }
+
+  formatDateToISO(dateStr: string): string {
+    if (!dateStr) return '';
+    dateStr = dateStr.trim();
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+    
+    const dmyMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dmyMatch) {
+      const day = dmyMatch[1].padStart(2, '0');
+      const month = dmyMatch[2].padStart(2, '0');
+      const year = dmyMatch[3];
+      return `${year}-${month}-${day}`;
+    }
+    
+    const months: Record<string, string> = {
+      'gennaio': '01', 'febbraio': '02', 'marzo': '03', 'aprile': '04', 'maggio': '05', 'giugno': '06',
+      'luglio': '07', 'agosto': '08', 'settembre': '09', 'ottobre': '10', 'novembre': '11', 'dicembre': '12',
+      'gen': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'mag': '05', 'giu': '06',
+      'lug': '07', 'ago': '08', 'set': '09', 'ott': '10', 'nov': '11', 'dic': '12'
+    };
+    
+    const textMatch = dateStr.match(/^(\d{1,2})\s+([a-zA-Z\x7f-\xff]+)\s+(\d{4})$/i);
+    if (textMatch) {
+      const day = textMatch[1].padStart(2, '0');
+      const monthName = textMatch[2].toLowerCase();
+      const year = textMatch[3];
+      const month = months[monthName];
+      if (month) {
+        return `${year}-${month}-${day}`;
+      }
+    }
+    
+    return dateStr;
   }
 
   confirmNewSupplier() {
