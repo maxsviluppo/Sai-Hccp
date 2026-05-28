@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/haccp-enterprise-manager/browser",
+  "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
     {
