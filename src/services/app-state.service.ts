@@ -2321,6 +2321,10 @@ export class AppStateService {
         // 1. My own sent messages
         if (msg.senderId === user.id) return true;
 
+        // Ensure the sender is an administrator (ADMIN) for incoming messages
+        const sender = this.systemUsers().find(u => u.id === msg.senderId);
+        if (sender?.role !== 'ADMIN') return false;
+
         // 2. Broadcasts (ALL) - Usually from Admin
         if (msg.recipientType === 'ALL') return true;
 
