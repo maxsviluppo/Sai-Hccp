@@ -64,16 +64,23 @@ export interface IncomingIngredient {
                 <div class="w-full md:w-48 h-36 rounded-xl border-2 border-dashed border-violet-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-violet-50 transition-all relative overflow-hidden"
                      (click)="ddtFileInput.click()">
                   @if (ddtPreview()) {
-                    <img [src]="ddtPreview()" class="w-full h-full object-cover rounded-xl">
+                    @if (isPdfPreview()) {
+                      <div class="w-full h-full bg-rose-50 flex flex-col items-center justify-center rounded-xl p-2 border border-rose-100">
+                        <i class="fa-solid fa-file-pdf text-4xl text-rose-500 mb-1"></i>
+                        <span class="text-[9px] font-black text-rose-700 truncate w-full text-center">Documento PDF</span>
+                      </div>
+                    } @else {
+                      <img [src]="ddtPreview()" class="w-full h-full object-cover rounded-xl">
+                    }
                     <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all rounded-xl">
-                      <span class="text-white text-xs font-bold">Cambia foto</span>
+                      <span class="text-white text-xs font-bold">Cambia file</span>
                     </div>
                   } @else {
                     <i class="fa-solid fa-file-image text-3xl text-violet-300 mb-2"></i>
-                    <span class="text-[11px] font-bold text-violet-400 uppercase tracking-wider text-center px-2">Foto DDT</span>
+                    <span class="text-[11px] font-bold text-violet-400 uppercase tracking-wider text-center px-2">Foto o PDF DDT</span>
                   }
                 </div>
-                <input #ddtFileInput type="file" accept="image/*" class="hidden" (change)="handleDdtPhoto($event)">
+                <input #ddtFileInput type="file" accept="image/*,application/pdf" class="hidden" (change)="handleDdtPhoto($event)">">
                 <div class="flex-1">
                   <p class="text-[11px] text-violet-700 font-bold mb-3">Scatta o carica la foto del DDT: l'AI estrarrà automaticamente i dati del carico.</p>
                   <button (click)="analyzeWithAI()" [disabled]="!ddtPreview() || isAnalyzing()"
@@ -411,6 +418,7 @@ export class DdtViewComponent {
   showForm = signal(false);
   isAnalyzing = signal(false);
   ddtPreview = signal<string | null>(null);
+  isPdfPreview = signal(false);
   pantry = signal<IncomingIngredient[]>([]);
   viewMode = signal<'daily' | 'activePantry'>('daily');
   searchQuery = signal('');
@@ -493,10 +501,24 @@ export class DdtViewComponent {
     
     // We can accept larger files now because we compress them
     if (file.size > 20 * 1024 * 1024) { 
-      this.toast.error('Foto troppo grande', 'Max 20MB prima della compressione'); 
+      this.toast.error('File troppo grande', 'Max 20MB prima della compressione'); 
       return; 
     }
 
+    if (file.type === 'application/pdf') {
+      // PDF File: Skip image compression and read directly
+      this.isPdfPreview.set(true);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fileUrl = e.target?.result as string;
+        this.ddtPreview.set(fileUrl);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Otherwise treat as Image
+    this.isPdfPreview.set(false);
     const reader = new FileReader();
     reader.onload = (e) => {
       const imgUrl = e.target?.result as string;
@@ -509,7 +531,7 @@ export class DdtViewComponent {
         const MAX_HEIGHT = 1600;
         let width = img.width;
         let height = img.height;
-
+ 
         if (width > height) {
           if (width > MAX_WIDTH) {
             height *= MAX_WIDTH / width;
@@ -521,7 +543,7 @@ export class DdtViewComponent {
             height = MAX_HEIGHT;
           }
         }
-
+ 
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
@@ -549,7 +571,7 @@ export class DdtViewComponent {
     const config = this.state.aiConfig();
     const key = config?.apiKey;
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-3.5-flash';
+    const initialModel = config?.model || 'gemini-3-flash-preview';
 
     if (!key) {
       this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
@@ -567,52 +589,114 @@ export class DdtViewComponent {
     const current = parseInt(sessionStorage.getItem('haccp_gemini_calls') || '0', 10);
     sessionStorage.setItem('haccp_gemini_calls', String(current + 1));
 
-    let attempts = 0;
-    const maxAttempts = 3;
+    const modelsToTry = [
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash'
+    ];
+
     let currentModel = initialModel;
-    const fallbackModel = 'gemini-3.1-flash-lite';
+    let text = '';
 
-    while (attempts < maxAttempts) {
-      try {
-        const base64 = img.split(',')[1];
-        const mimeType = img.split(';')[0].split(':')[1];
+    try {
+      const base64 = img.split(',')[1];
+      const mimeType = img.split(';')[0].split(':')[1];
+      let parsed: any;
 
-        const body = {
-          contents: [{
-            parts: [
-              { text: "Analyze this DDT (shipping document) and extract all products. Extract the supplier name, document date (entryDate), and the list of items with their name, lot number, quantity, and expiry date. If some fields are not readable, return them as empty strings." },
-              { inlineData: { mimeType, data: base64 } }
-            ]
-          }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                supplierName: { type: 'STRING' },
-                entryDate: { type: 'STRING' },
-                items: {
-                  type: 'ARRAY',
-                  items: {
-                    type: 'OBJECT',
-                    properties: {
-                      ingredientName: { type: 'STRING' },
-                      lotto: { type: 'STRING' },
-                      quantity: { type: 'STRING' },
-                      expiryDate: { type: 'STRING' }
-                    },
-                    required: ['ingredientName', 'lotto', 'quantity', 'expiryDate']
-                  }
-                }
-              },
-              required: ['supplierName', 'entryDate', 'items']
-            },
-            maxOutputTokens: 1000,
-            temperature: 0.1
+      const host = window.location.hostname;
+      const isLocalhost = host === 'localhost' || 
+                           host === '127.0.0.1' || 
+                           host.startsWith('192.168.') || 
+                           host.startsWith('172.') || 
+                           host.startsWith('10.');
+
+      if (isLocalhost) {
+        let lastError = '';
+        let success = false;
+
+        for (const modelName of modelsToTry) {
+          try {
+            console.log(`[AI OCR] Prova modello: ${modelName}`);
+            const directBody = {
+              contents: [{
+                parts: [
+                  { text: "Analyze this DDT (shipping document) and extract all products. Extract the supplier name, document date (entryDate), and the list of items with their name, lot number, quantity, and expiry date. If some fields are not readable, return them as empty strings." },
+                  { inlineData: { mimeType, data: base64 } }
+                ]
+              }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                  type: 'OBJECT',
+                  properties: {
+                    supplierName: { type: 'STRING' },
+                    entryDate: { type: 'STRING' },
+                    items: {
+                      type: 'ARRAY',
+                      items: {
+                        type: 'OBJECT',
+                        properties: {
+                          ingredientName: { type: 'STRING' },
+                          lotto: { type: 'STRING' },
+                          quantity: { type: 'STRING' },
+                          expiryDate: { type: 'STRING' }
+                        },
+                        required: ['ingredientName', 'lotto', 'quantity', 'expiryDate']
+                      }
+                    }
+                  },
+                  required: ['supplierName', 'entryDate', 'items']
+                },
+                maxOutputTokens: 1500,
+                temperature: 0.1
+              }
+            };
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(directBody)
+            });
+
+            if (!res.ok) {
+              const errorData = await res.json();
+              throw new Error(errorData.error?.message || `Status ${res.status}`);
+            }
+
+            const data = await res.json();
+            text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (!text) {
+              throw new Error('Testo vuoto restituito dal modello.');
+            }
+            parsed = JSON.parse(text);
+            success = true;
+            currentModel = modelName;
+            console.log(`[AI OCR] Successo con modello: ${modelName}`);
+            break; // Success! Exit loop
+
+          } catch (modelErr: any) {
+            console.warn(`[AI OCR] Fallito modello ${modelName}:`, modelErr.message);
+            lastError = modelErr.message;
           }
+        }
+
+        if (!success) {
+          this.toast.error('Errore AI', `Impossibile completare l'analisi. Errore: ${lastError}`);
+          this.isAnalyzing.set(false);
+          return;
+        }
+
+      } else {
+        // Production: secure serverless proxy call on Vercel
+        const body = {
+          base64,
+          mimeType,
+          apiKey: key
         };
 
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${key}`, {
+        const res = await fetch(`/api/analyze-ddt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -620,110 +704,68 @@ export class DdtViewComponent {
 
         if (!res.ok) {
           const errorData = await res.json();
-          const errorMsg = errorData.error?.message || '';
-
-          // 503 or High Demand or Timeout -> Retry with backoff
-          if (res.status === 503 || res.status === 504 || errorMsg.toLowerCase().includes('high demand') || errorMsg.toLowerCase().includes('timeout')) {
-            attempts++;
-            if (attempts < maxAttempts) {
-              const waitTime = attempts * 2500; // 2.5s, 5s...
-              this.toast.info('Server Occupato', `Google sta elaborando troppe immagini. Riprovo tra ${waitTime/1000}s...`);
-              
-              await new Promise(r => setTimeout(r, waitTime));
-              continue; // Retry loop
-            }
-          }
-
-          // Other errors
-          if (res.status === 400 && errorMsg.includes('model')) {
-            this.toast.error('Modello non trovato', 'Il modello selezionato non è disponibile per la tua chiave.');
-          } else if (res.status === 429) {
-            this.toast.error('Limite superato', 'Troppe richieste. Attendi un minuto.');
+          const errorMsg = errorData.error || '';
+          if (res.status === 429) {
+            this.toast.error('Limite superato', 'Troppe richieste a Gemini. Attendi un minuto o passa a una chiave a pagamento.');
           } else {
-            this.toast.error('Errore API', errorMsg || `Errore server (${res.status})`);
+            this.toast.error('Errore AI', errorMsg || `Errore server (${res.status})`);
           }
+          this.isAnalyzing.set(false);
           return;
         }
 
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!text) {
-          throw new Error('L\'AI non ha restituito testo. Prova con una foto più chiara.');
+        const serverRes = await res.json();
+        if (!serverRes.success) {
+          throw new Error(serverRes.error || 'Errore AI sconosciuto.');
         }
-
-        try {
-          const startIndex = text.indexOf('{');
-          if (startIndex === -1) {
-            this.aiRawResponse.set(text);
-            throw new Error('L\'AI non ha restituito un formato dati valido.');
-          }
-          
-          let cleanedText = text.substring(startIndex).trim();
-          
-          // Rimuove blocchi di codice markdown (es. ```json o ``` alla fine)
-          if (cleanedText.endsWith('```')) {
-            cleanedText = cleanedText.replace(/```$/, '').trim();
-          }
-          
-          // Rimuove virgole di chiusura prima di parentesi quadre/graffe
-          cleanedText = cleanedText.replace(/,\s*([\]}])/g, '$1');
-          
-          // Ripara JSON incompleto/troncato
-          cleanedText = this.repairJson(cleanedText);
-          
-          const parsed = JSON.parse(cleanedText);
-          
-          // Ensure valid structure
-          this.form.supplierName = parsed.supplierName || '';
-          this.form.entryDate = this.formatDateToISO(parsed.entryDate) || new Date().toISOString().split('T')[0];
-          
-          if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
-            this.form.items = parsed.items.map((i: any) => ({
-              ingredientName: i.ingredientName || '',
-              lotto: i.lotto || '',
-              quantity: i.quantity || '',
-              expiryDate: this.formatDateToISO(i.expiryDate) || ''
-            }));
-          } else if (parsed.ingredientName) { // Fallback if AI still returns single item flat
-            this.form.items = [{
-              ingredientName: parsed.ingredientName || '',
-              lotto: parsed.lotto || '',
-              quantity: parsed.quantity || '',
-              expiryDate: this.formatDateToISO(parsed.expiryDate) || ''
-            }];
-          }
-
-          this.aiRawResponse.set(null);
-          this.toast.success('AI completato', `Trovati ${this.form.items.length} prodotti! Verifica i dati.`);
-          
-          // Update usage stats
-          this.state.updateAiUsage(currentModel);
-          
-          // Check if supplier is new
-          if (this.form.supplierName) {
-            const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
-            const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
-            if (!exists) {
-              // We'll still show the modal to let them know/fill info, but saveMultipleEntries will auto-save too
-              this.showNewSupplierModal.set(true);
-            }
-          }
-          break; // Success! Exit loop
-        } catch (parseError: any) {
-          console.error('JSON Parse Error:', parseError.message, text);
-          this.aiRawResponse.set(text);
-          throw new Error('L\'AI ha risposto con un formato non valido.');
-        }
-      } catch (e: any) {
-        if (attempts >= maxAttempts - 1) {
-          console.error('AI OCR error after retries:', e);
-          this.toast.error('Errore AI', e.message || 'Impossibile analizzare il DDT. Compila manualmente.');
-          break;
-        }
-        attempts++;
-        await new Promise(r => setTimeout(r, 1000));
+        parsed = serverRes.data;
+        text = JSON.stringify(parsed);
       }
+
+      // Data is already parsed by serverRes.data
+      try {
+        this.form.supplierName = parsed.supplierName || '';
+        this.form.entryDate = this.formatDateToISO(parsed.entryDate) || new Date().toISOString().split('T')[0];
+        
+        if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+          this.form.items = parsed.items.map((i: any) => ({
+            ingredientName: i.ingredientName || '',
+            lotto: i.lotto || '',
+            quantity: i.quantity || '',
+            expiryDate: this.formatDateToISO(i.expiryDate) || ''
+          }));
+        } else if (parsed.ingredientName) { // Fallback if AI still returns single item flat
+          this.form.items = [{
+            ingredientName: parsed.ingredientName || '',
+            lotto: parsed.lotto || '',
+            quantity: parsed.quantity || '',
+            expiryDate: this.formatDateToISO(parsed.expiryDate) || ''
+          }];
+        }
+
+        this.aiRawResponse.set(null);
+        this.toast.success('AI completato', `Trovati ${this.form.items.length} prodotti! Verifica i dati.`);
+        
+        // Update usage stats
+        this.state.updateAiUsage(currentModel);
+        
+        // Check if supplier is new
+        if (this.form.supplierName) {
+          const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
+          const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
+          if (!exists) {
+            // We'll still show the modal to let them know/fill info, but saveMultipleEntries will auto-save too
+            this.showNewSupplierModal.set(true);
+          }
+        }
+      } catch (parseError: any) {
+        console.error('JSON Parse Error:', parseError.message, text);
+        this.aiRawResponse.set(text);
+        throw new Error('L\'AI ha risposto con un formato non valido.');
+      }
+    } catch (e: any) {
+      console.error('AI OCR error:', e);
+      this.toast.error('Errore AI', e.message || 'Impossibile analizzare il DDT. Compila manualmente.');
     }
     
     this.isAnalyzing.set(false);
