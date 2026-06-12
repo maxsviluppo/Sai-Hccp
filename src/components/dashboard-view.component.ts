@@ -558,9 +558,66 @@ export class DashboardViewComponent {
         return String(cid) === String(clientId);
       }).length;
 
-      if (moduleId === 'pre-op-checklist') return 42 + (clientEquipmentCount * 2);
-      if (moduleId === 'operative-checklist') return 2 + clientEquipmentCount;
-      if (moduleId === 'post-op-checklist') return 22 + (clientEquipmentCount * 2);
+      if (moduleId === 'pre-op-checklist') {
+        let count = 0;
+
+        const areaSteps: Record<string, number> = {
+          'staff-hygiene': 2,
+          'cucina-sala': 4,
+          'area-lavaggio': 3,
+          'deposito': 3,
+          'spogliatoio': 3,
+          'antibagno-bagno-personale': 4,
+          'bagno-clienti': 4,
+          'pavimenti': 2,
+          'pareti': 1,
+          'soffitto': 2,
+          'infissi': 2
+        };
+
+        Object.keys(areaSteps).forEach(areaId => {
+          if (this.state.isActivityEnabled('pre-op-checklist', areaId, clientId)) {
+            count += areaSteps[areaId];
+          }
+        });
+
+        count += (clientEquipmentCount * 2);
+        return count;
+      }
+
+      if (moduleId === 'operative-checklist') {
+        let count = 0;
+        if (this.state.isActivityEnabled('operative-checklist', 'temperature', clientId)) {
+          count += clientEquipmentCount;
+        }
+        return count;
+      }
+
+      if (moduleId === 'post-op-checklist') {
+        let count = 0;
+        const areaSteps: Record<string, number> = {
+          'cucina-sala': 3,
+          'area-lavaggio': 3,
+          'deposito': 3,
+          'spogliatoio': 3,
+          'antibagno-bagno-personale': 3,
+          'bagno-clienti': 3,
+          'pavimenti': 3,
+          'pareti': 2,
+          'soffitto': 2,
+          'infissi': 2,
+          'reti-antiintrusione': 2
+        };
+
+        Object.keys(areaSteps).forEach(areaId => {
+          if (this.state.isActivityEnabled('post-op-checklist', areaId, clientId)) {
+            count += areaSteps[areaId];
+          }
+        });
+
+        count += (clientEquipmentCount * 2);
+        return count;
+      }
       return 1;
     };
 
@@ -569,8 +626,7 @@ export class DashboardViewComponent {
       if (!data) return 0;
       if (record.moduleId === 'pre-op-checklist') {
         const areaDone = (data.areas || []).reduce((acc: number, a: any) => acc + (a.steps || []).filter((s: any) => s.status !== 'pending').length, 0);
-        const globalDone = (data.globalItems || []).filter((i: any) => i.status !== 'pending').length;
-        return areaDone + globalDone;
+        return areaDone;
       }
       if (record.moduleId === 'operative-checklist') {
         return (data.items || []).filter((i: any) => i.status !== 'pending').length;
@@ -588,11 +644,25 @@ export class DashboardViewComponent {
       let issueCount = 0;
 
       targetClients.forEach(client => {
-        totalPossible += getModulePossibleChecks(client.id, moduleId);
-        const clientRec = moduleRecords.find(r => {
-           const user = this.state.systemUsers().find(u => u.id === r.userId);
-           return user?.clientId === client.id;
-        });
+        const clientRec = moduleRecords.find(r => r.clientId === client.id);
+
+        let possibleForClient = 0;
+        if (clientRec) {
+          if (moduleId === 'pre-op-checklist') {
+            possibleForClient = (clientRec.data?.areas || []).reduce((acc: number, a: any) => acc + (a.steps || []).length, 0);
+          } else if (moduleId === 'operative-checklist') {
+            possibleForClient = (clientRec.data?.items || []).length;
+          } else if (moduleId === 'post-op-checklist') {
+            possibleForClient = (clientRec.data?.areas || []).reduce((acc: number, a: any) => acc + (a.steps || []).length, 0);
+          }
+        }
+
+        if (!clientRec || possibleForClient === 0) {
+          possibleForClient = getModulePossibleChecks(client.id, moduleId);
+        }
+
+        totalPossible += possibleForClient;
+
         if (clientRec) {
           totalDone += countCompletedItemsInRecord(clientRec);
           const hasIssue = (clientRec.data?.status === 'Non Conforme' || clientRec.data?.areas?.some((a: any) => a.steps?.some((s: any) => s.status === 'issue')) || clientRec.data?.items?.some((i: any) => i.status === 'issue'));

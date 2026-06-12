@@ -478,7 +478,9 @@ export class AppStateService {
       disabledDocs: this.disabledDocs(),
       checklistRecords: this.checklistRecords(),
       productionRecords: this.productionRecords(),
-      messages: this.messages()
+      messages: this.messages(),
+      clients: this.clients(),
+      systemUsers: this.systemUsers()
     };
     localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
   }
@@ -572,52 +574,67 @@ export class AppStateService {
   }
 
   async syncClients() {
-    const { data: dbClients } = await supabase.from('clients').select('*');
-    if (dbClients) {
-      this.clients.set(dbClients.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        piva: c.piva,
-        address: c.address,
-        phone: c.phone,
-        cellphone: c.cellphone,
-        whatsapp: c.whatsapp,
-        email: c.email,
-        licenseNumber: c.license_number,
-        suspended: c.suspended,
-        paymentBalanceDue: !!c.payment_balance_due,
-        licenseExpiryDate: c.license_expiry_date,
-        logo: c.logo,
-        printerModel: c.printer_model,
-        labelFormat: c.label_format,
-        printerDriverUrl: c.printer_driver_url
-      })));
+    try {
+      const { data: dbClients, error } = await supabase.from('clients').select('*');
+      if (error) {
+        console.error('[HACCP-SYNC] Error syncing clients:', error);
+        return;
+      }
+      if (dbClients && Array.isArray(dbClients) && dbClients.length > 0) {
+        this.clients.set(dbClients.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          piva: c.piva,
+          address: c.address,
+          phone: c.phone,
+          cellphone: c.cellphone,
+          whatsapp: c.whatsapp,
+          email: c.email,
+          licenseNumber: c.license_number,
+          suspended: c.suspended,
+          paymentBalanceDue: !!c.payment_balance_due,
+          licenseExpiryDate: c.license_expiry_date,
+          logo: c.logo,
+          printerModel: c.printer_model,
+          labelFormat: c.label_format,
+          printerDriverUrl: c.printer_driver_url
+        })));
+      }
+    } catch (e) {
+      console.error('[HACCP-SYNC] Exception in syncClients:', e);
     }
   }
 
   async syncUsers() {
-    const validClientIds = this.clients().map(c => c.id);
-    const { data: dbUsers } = await supabase.from('system_users').select('*');
-    if (dbUsers) {
-      this.systemUsers.set(dbUsers
-        .filter((u: any) => {
-          const isDemo = u.name.toLowerCase().includes('demo') || u.name.toLowerCase().includes('sviluppatore');
-          const isOrphaned = u.role !== 'ADMIN' && !validClientIds.includes(u.client_id);
-          return !isDemo && !isOrphaned;
-        })
-        .map((u: any) => ({
-          id: u.id,
-          clientId: u.client_id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          department: u.department,
-          active: u.active,
-          avatar: u.avatar,
-          initials: this.generateInitials(u.name),
-          username: u.username,
-          password: u.password
-        })));
+    try {
+      const validClientIds = this.clients().map(c => c.id);
+      const { data: dbUsers, error } = await supabase.from('system_users').select('*');
+      if (error) {
+        console.error('[HACCP-SYNC] Error syncing users:', error);
+        return;
+      }
+      if (dbUsers && Array.isArray(dbUsers) && dbUsers.length > 0) {
+        this.systemUsers.set(dbUsers
+          .filter((u: any) => {
+            const isOrphaned = u.role !== 'ADMIN' && !validClientIds.includes(u.client_id);
+            return !isOrphaned;
+          })
+          .map((u: any) => ({
+            id: u.id,
+            clientId: u.client_id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            department: u.department,
+            active: u.active,
+            avatar: u.avatar,
+            initials: this.generateInitials(u.name),
+            username: u.username,
+            password: u.password
+          })));
+      }
+    } catch (e) {
+      console.error('[HACCP-SYNC] Exception in syncUsers:', e);
     }
   }
 
@@ -937,6 +954,12 @@ export class AppStateService {
         if (data.documents) this.documents.set(data.documents);
         if (data.selectedEquipment) this.selectedEquipment.set(data.selectedEquipment);
         if (data.disabledDocs) this.disabledDocs.set(data.disabledDocs);
+        if (data.clients && Array.isArray(data.clients) && data.clients.length > 0) {
+          this.clients.set(data.clients);
+        }
+        if (data.systemUsers && Array.isArray(data.systemUsers) && data.systemUsers.length > 0) {
+          this.systemUsers.set(data.systemUsers);
+        }
         if (data.checklistRecords) {
           // Restore dates correctly
           const restoredRecords = data.checklistRecords.map((r: any) => ({
@@ -1075,10 +1098,89 @@ export class AppStateService {
   });
 
   // --- Clients / Companies Database (New) ---
-  readonly clients = signal<ClientEntity[]>([]);
+  readonly clients = signal<ClientEntity[]>([
+    {
+      id: 'mtvmrp0tn',
+      name: 'demo',
+      piva: '12345678901',
+      address: 'via roma',
+      phone: '01010202',
+      email: 'info@gmail.com',
+      suspended: false,
+      licenseNumber: ''
+    },
+    {
+      id: 'xxt1xctnd',
+      name: 'Demo test',
+      piva: '12345789',
+      address: 'via pollo',
+      phone: '025225',
+      email: 'test@test.it',
+      suspended: false,
+      licenseNumber: ''
+    },
+    {
+      id: 'z5lynsuj1',
+      name: 'azienda',
+      piva: '42432432',
+      address: 'Via Roma 145',
+      phone: '3478127440',
+      email: 'test@test.it',
+      suspended: false,
+      licenseNumber: ''
+    }
+  ]);
 
   // --- System Users State ---
-  readonly systemUsers = signal<SystemUser[]>([]);
+  readonly systemUsers = signal<SystemUser[]>([
+    {
+      id: 'dev-admin',
+      clientId: 'demo',
+      name: 'Sviluppatore (Admin)',
+      email: 'admin@haccppro.it',
+      role: 'ADMIN',
+      active: true,
+      avatar: 'https://ui-avatars.com/api/?name=Sviluppatore%20Admin&background=random&color=fff',
+      username: 'dev',
+      password: 'dev'
+    },
+    {
+      id: 'f93t2gdb2',
+      clientId: 'mtvmrp0tn',
+      name: 'user demo',
+      email: 'demo@test.it',
+      role: 'COLLABORATOR',
+      department: 'demo bar',
+      active: true,
+      avatar: 'https://ui-avatars.com/api/?name=user%20demo&background=random&color=fff',
+      username: 'test',
+      password: '123'
+    },
+    {
+      id: '7rs2w9rek',
+      clientId: 'xxt1xctnd',
+      name: 'test user',
+      email: 'test@test.it',
+      role: 'COLLABORATOR',
+      department: 'bar test',
+      active: true,
+      avatar: 'https://ui-avatars.com/api/?name=test%20user&background=random&color=fff',
+      username: 'test',
+      password: '123'
+    },
+    {
+      id: 'tzdqhkjce',
+      clientId: 'z5lynsuj1',
+      name: 'mario test',
+      email: 'mario@gmail.com',
+      role: 'COLLABORATOR',
+      department: 'test',
+      active: true,
+      avatar: 'https://ui-avatars.com/api/?name=mario%20test&background=random&color=fff',
+      username: 'test',
+      password: '123'
+    }
+  ]);
 
   // --- Current Active Company Config ---
   // Automatically follows the activeTargetClientId (global Firm filter for Admin)
@@ -1150,8 +1252,17 @@ export class AppStateService {
     return records[0].data;
   });
 
-  isActivityEnabled(moduleId: string, activityId: string): boolean {
-    const config = this.operationalPhasesConfig();
+  isActivityEnabled(moduleId: string, activityId: string, clientId?: string): boolean {
+    const targetClientId = clientId || this.activeTargetClientId();
+    const records = this.checklistRecords().filter(r => 
+        r.moduleId === 'operative-phases-config' && 
+        r.clientId === targetClientId
+    );
+    const config = records.length > 0 ? records[0].data : { 
+      'pre-op-checklist': { enabled: true, activities: {} }, 
+      'operative-checklist': { enabled: true, activities: {} }, 
+      'post-op-checklist': { enabled: true, activities: {} }
+    };
     const modConfig = config[moduleId];
     if (!modConfig) return true;
     if (modConfig.enabled === false) return false;

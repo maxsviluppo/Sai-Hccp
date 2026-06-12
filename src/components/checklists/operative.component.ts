@@ -604,7 +604,7 @@ export class OperativeChecklistComponent {
 
       effect(() => {
          this.state.filterDate();
-         this.state.checklistRecords(); // Reattività ai record
+         this.state.filterCollaboratorId(); // Reload when selected collaborator changes
          untracked(() => this.loadByDate());
       }, { allowSignalWrites: true });
    }
@@ -860,7 +860,8 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
                     congelatore: this.congelatoreCount(),
                     pozzetto: this.pozzettoCount()
                 },
-                timestamp: new Date()
+                timestamp: new Date(),
+                status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
             });
         }, 2000); // 2 seconds debounce to let the operator click multiple items smoothly
     }
@@ -883,7 +884,8 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
                congelatore: this.congelatoreCount(),
                pozzetto: this.pozzettoCount()
             },
-            timestamp: new Date()
+            timestamp: new Date(),
+            status: this.hasIssues() ? 'Non Conforme' : 'Conforme'
          }
       });
 

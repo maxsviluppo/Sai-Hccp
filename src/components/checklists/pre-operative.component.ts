@@ -874,6 +874,12 @@ export class PreOperationalChecklistComponent {
 
     getInitialSteps(areaId: string) {
         if (areaId === 'staff-hygiene') return this.getStaffHygieneSteps();
+        if (areaId.startsWith('eq-')) {
+            return [
+                { id: 'ispezione', label: 'Ispezione visiva', icon: 'fa-eye', status: 'pending' as const },
+                { id: 'integrita', label: 'Integrità e funzionamento', icon: 'fa-screwdriver-wrench', status: 'pending' as const }
+            ];
+        }
         return this.stepDefinitions
             .filter(def => {
                 // Area Lavaggio and Pavimenti: elimina Integrità attrezzature
@@ -939,7 +945,7 @@ export class PreOperationalChecklistComponent {
     constructor() {
         effect(() => {
             this.state.filterDate();
-            this.state.checklistRecords(); // Reattività ai record
+            this.state.filterCollaboratorId(); // Reload when selected collaborator changes
             this.state.selectedEquipment(); // Re-run when equipment changes
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
@@ -1032,7 +1038,7 @@ export class PreOperationalChecklistComponent {
               this.currentRecordId.set(rawRecord.id);
             }
 
-            this.isSubmitted.set(!!rawRecord.data?.status);
+            this.isSubmitted.set(!!rawRecord?.data?.status);
         } else {
             this.isSubmitted.set(false);
             this.currentRecordId.set(null);
@@ -1203,7 +1209,8 @@ export class PreOperationalChecklistComponent {
 
             this.state.saveRecord('pre-op-checklist', {
                 areas: this.areas(),
-                globalItems: this.globalItems()
+                globalItems: this.globalItems(),
+                status: this.isSubmitted() ? ((this.areas().some(a => a.steps.some(s => s.status === 'issue')) || this.globalItems().some(i => i.status === 'issue')) ? 'Non Conforme' : 'Conforme') : undefined
             });
         }, 2000);
     }
@@ -1267,7 +1274,9 @@ export class PreOperationalChecklistComponent {
         this.toast.success('Problemi Risolti', 'L\'area è stata ripristinata e segnata come conforme.');
     }
 
-    totalStepsCount() { return (this.areas().length * this.stepDefinitions.length); }
+    totalStepsCount() {
+        return this.areas().reduce((acc, a) => acc + a.steps.length, 0);
+    }
 
     completedStepsCount() {
         return this.areas().reduce((acc, a) => acc + a.steps.filter(s => s.status !== 'pending').length, 0);

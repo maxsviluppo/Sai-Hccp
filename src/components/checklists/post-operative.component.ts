@@ -568,7 +568,7 @@ export class PostOperationalChecklistComponent {
     constructor() {
         effect(() => {
             this.state.filterDate();
-            this.state.checklistRecords(); // Reattività ai record
+            this.state.filterCollaboratorId(); // Reload when selected collaborator changes
             this.state.selectedEquipment(); // Re-run when equipment changes
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
@@ -700,7 +700,8 @@ export class PostOperationalChecklistComponent {
             this.state.saveRecord('post-op-checklist', {
                 areas: this.areas(),
                 totalSteps: this.totalStepsCount(),
-                completedSteps: this.completedStepsCount()
+                completedSteps: this.completedStepsCount(),
+                status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
             });
         }, 2000);
     }
@@ -723,7 +724,8 @@ export class PostOperationalChecklistComponent {
         this.state.saveRecord('post-op-checklist', {
             areas: this.areas(),
             totalSteps: this.totalStepsCount(),
-            completedSteps: this.completedStepsCount()
+            completedSteps: this.completedStepsCount(),
+            status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
         });
 
         // Show feedback
@@ -769,7 +771,8 @@ export class PostOperationalChecklistComponent {
         this.state.saveRecord('post-op-checklist', {
             areas: this.areas(),
             totalSteps: this.totalStepsCount(),
-            completedSteps: this.completedStepsCount()
+            completedSteps: this.completedStepsCount(),
+            status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
         });
     }
 
@@ -1009,7 +1012,8 @@ export class PostOperationalChecklistComponent {
         this.state.saveRecord('post-op-checklist', {
             areas: this.areas(),
             totalSteps: this.totalStepsCount(),
-            completedSteps: this.completedStepsCount()
+            completedSteps: this.completedStepsCount(),
+            status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
         });
 
         // Persistent record
