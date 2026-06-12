@@ -226,6 +226,9 @@ export class AppStateService {
   ];
   
   public showHome = signal(false);
+  public initialSyncDone = signal(false);
+  private dbWriteQueue = Promise.resolve();
+  private upsertTimeouts = new Map<string, any>();
   // --- Auth State ---
   readonly currentUser = signal<User | null>(null);
 
@@ -566,6 +569,7 @@ export class AppStateService {
       ]);
 
       await this.syncSuspenseStatuses();
+      this.initialSyncDone.set(true);
     } catch (err) {
       console.error('Error refreshing data:', err);
     } finally {
@@ -1463,7 +1467,7 @@ export class AppStateService {
 
   // --- Data Access Methods ---
 
-  saveChecklist(moduleIdOrObj: string | any, data?: any) {
+  saveChecklist(moduleIdOrObj: string | any, data?: any, silent = false) {
     const user = this.currentUser();
     if (!user) return;
 
@@ -1521,20 +1525,35 @@ export class AppStateService {
       return [...filtered, record as any];
     });
 
-    // Supabase Sync
-    supabase.from('checklist_records').upsert({
-      id: record.id,
-      user_id: record.userId,
-      client_id: record.clientId,
-      module_id: record.moduleId,
-      date: record.date,
-      timestamp: record.timestamp,
-      data: record.data
-    }).then(({ error }) => {
-        if (error) console.error('Error syncing checklist record:', error);
-    });
+    // Cancel existing pending write for this record to debounce database traffic
+    if (this.upsertTimeouts.has(record.id)) {
+      clearTimeout(this.upsertTimeouts.get(record.id));
+    }
 
-    this.toastService.success('Registrazione Salvata', 'I dati sono stati archiviati correttamente.');
+    // Schedule Supabase Sync (Debounced by 1s and Queued)
+    const timeout = setTimeout(() => {
+      this.upsertTimeouts.delete(record.id);
+
+      this.dbWriteQueue = this.dbWriteQueue.then(() => 
+        supabase.from('checklist_records').upsert({
+          id: record.id,
+          user_id: record.userId,
+          client_id: record.clientId,
+          module_id: record.moduleId,
+          date: record.date,
+          timestamp: record.timestamp,
+          data: record.data
+        }).then(({ error }) => {
+            if (error) console.error('Error syncing checklist record:', error);
+        })
+      );
+    }, 1000);
+
+    this.upsertTimeouts.set(record.id, timeout);
+
+    if (!silent) {
+      this.toastService.success('Registrazione Salvata', 'I dati sono stati archiviati correttamente.');
+    }
 
     // Feed to Operator if Admin is editing
     if (this.isAdmin() && this.filterCollaboratorId()) {
@@ -1549,7 +1568,7 @@ export class AppStateService {
   }
 
   saveRecord(moduleId: string, data: any) {
-    return this.saveChecklist(moduleId, data);
+    return this.saveChecklist(moduleId, data, true);
   }
 
   saveGlobalRecord(moduleId: string, data: any) {

@@ -947,6 +947,7 @@ export class PreOperationalChecklistComponent {
             this.state.filterDate();
             this.state.filterCollaboratorId(); // Reload when selected collaborator changes
             this.state.selectedEquipment(); // Re-run when equipment changes
+            this.state.initialSyncDone(); // Depend on initial sync done status
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
     }

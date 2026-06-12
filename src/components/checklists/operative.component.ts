@@ -605,6 +605,7 @@ export class OperativeChecklistComponent {
       effect(() => {
          this.state.filterDate();
          this.state.filterCollaboratorId(); // Reload when selected collaborator changes
+         this.state.initialSyncDone(); // Depend on initial sync done status
          untracked(() => this.loadByDate());
       }, { allowSignalWrites: true });
    }
