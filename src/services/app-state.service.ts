@@ -227,6 +227,8 @@ export class AppStateService {
   
   public showHome = signal(false);
   public initialSyncDone = signal(false);
+  public supabaseSyncFailed = signal(false);
+  private syncWarningShown = false;
   private dbWriteQueue = Promise.resolve();
   private upsertTimeouts = new Map<string, any>();
   // --- Auth State ---
@@ -437,14 +439,10 @@ export class AppStateService {
 
   constructor() {
     this.checkPublicInfo();
+    this.stripLegacyClientCache();
     this.loadState();
     this.initSupabase();
     this.loadBaseIngredients();
-
-    // AUTO-LOGIN FOR LOCAL DEV (without verification)
-    if (!this.currentUser() && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-      this.loginWithCredentials('dev', 'dev');
-    }
 
     // Auto-save State when critical data changes
     effect(() => {
@@ -481,11 +479,24 @@ export class AppStateService {
       disabledDocs: this.disabledDocs(),
       checklistRecords: this.checklistRecords(),
       productionRecords: this.productionRecords(),
-      messages: this.messages(),
-      clients: this.clients(),
-      systemUsers: this.systemUsers()
+      messages: this.messages()
     };
     localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
+  }
+
+  /** Rimuove aziende/utenti demo dalla cache locale: Supabase è l'unica fonte. */
+  private stripLegacyClientCache() {
+    const saved = localStorage.getItem('haccp_pro_persistence');
+    if (!saved) return;
+    try {
+      const data = JSON.parse(saved);
+      if (!data.clients && !data.systemUsers) return;
+      delete data.clients;
+      delete data.systemUsers;
+      localStorage.setItem('haccp_pro_persistence', JSON.stringify(data));
+    } catch {
+      localStorage.removeItem('haccp_pro_persistence');
+    }
   }
 
   private syncInterval: any;
@@ -493,6 +504,10 @@ export class AppStateService {
     if (this.syncInterval) clearInterval(this.syncInterval);
     
     await this.refreshAllData();
+
+    if (!this.currentUser() && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      this.loginWithCredentials('dev', 'dev');
+    }
 
     // Comprehensive Real-time Subscriptions - Optimized for immediate sync
     // Ensure we only have one channel subscription
@@ -577,35 +592,51 @@ export class AppStateService {
     }
   }
 
+  private mapDbClient(c: any): ClientEntity {
+    return {
+      id: c.id,
+      name: c.name,
+      piva: c.piva,
+      address: c.address,
+      phone: c.phone,
+      cellphone: c.cellphone,
+      whatsapp: c.whatsapp,
+      email: c.email,
+      licenseNumber: c.license_number,
+      suspended: c.suspended,
+      paymentBalanceDue: !!c.payment_balance_due,
+      licenseExpiryDate: c.license_expiry_date,
+      logo: c.logo,
+      printerModel: c.printer_model,
+      labelFormat: c.label_format,
+      printerDriverUrl: c.printer_driver_url
+    };
+  }
+
+  private notifySyncFailure() {
+    this.supabaseSyncFailed.set(true);
+    if (this.syncWarningShown) return;
+    this.syncWarningShown = true;
+    this.toastService.warning(
+      'Database non raggiungibile',
+      'Impossibile caricare le aziende da Supabase. Controlla connessione e stato del progetto.'
+    );
+  }
+
   async syncClients() {
     try {
       const { data: dbClients, error } = await supabase.from('clients').select('*');
       if (error) {
         console.error('[HACCP-SYNC] Error syncing clients:', error);
+        this.notifySyncFailure();
         return;
       }
-      if (dbClients && Array.isArray(dbClients) && dbClients.length > 0) {
-        this.clients.set(dbClients.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          piva: c.piva,
-          address: c.address,
-          phone: c.phone,
-          cellphone: c.cellphone,
-          whatsapp: c.whatsapp,
-          email: c.email,
-          licenseNumber: c.license_number,
-          suspended: c.suspended,
-          paymentBalanceDue: !!c.payment_balance_due,
-          licenseExpiryDate: c.license_expiry_date,
-          logo: c.logo,
-          printerModel: c.printer_model,
-          labelFormat: c.label_format,
-          printerDriverUrl: c.printer_driver_url
-        })));
-      }
+      this.clients.set((dbClients ?? []).map((c: any) => this.mapDbClient(c)));
+      this.supabaseSyncFailed.set(false);
+      console.log('[HACCP-SYNC] Clients synced:', this.clients().length);
     } catch (e) {
       console.error('[HACCP-SYNC] Exception in syncClients:', e);
+      this.notifySyncFailure();
     }
   }
 
@@ -615,30 +646,30 @@ export class AppStateService {
       const { data: dbUsers, error } = await supabase.from('system_users').select('*');
       if (error) {
         console.error('[HACCP-SYNC] Error syncing users:', error);
+        this.notifySyncFailure();
         return;
       }
-      if (dbUsers && Array.isArray(dbUsers) && dbUsers.length > 0) {
-        this.systemUsers.set(dbUsers
-          .filter((u: any) => {
-            const isOrphaned = u.role !== 'ADMIN' && !validClientIds.includes(u.client_id);
-            return !isOrphaned;
-          })
-          .map((u: any) => ({
-            id: u.id,
-            clientId: u.client_id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            department: u.department,
-            active: u.active,
-            avatar: u.avatar,
-            initials: this.generateInitials(u.name),
-            username: u.username,
-            password: u.password
-          })));
-      }
+      this.systemUsers.set((dbUsers ?? [])
+        .filter((u: any) => {
+          const isOrphaned = u.role !== 'ADMIN' && !validClientIds.includes(u.client_id);
+          return !isOrphaned;
+        })
+        .map((u: any) => ({
+          id: u.id,
+          clientId: u.client_id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          department: u.department,
+          active: u.active,
+          avatar: u.avatar,
+          initials: this.generateInitials(u.name),
+          username: u.username,
+          password: u.password
+        })));
     } catch (e) {
       console.error('[HACCP-SYNC] Exception in syncUsers:', e);
+      this.notifySyncFailure();
     }
   }
 
@@ -958,12 +989,6 @@ export class AppStateService {
         if (data.documents) this.documents.set(data.documents);
         if (data.selectedEquipment) this.selectedEquipment.set(data.selectedEquipment);
         if (data.disabledDocs) this.disabledDocs.set(data.disabledDocs);
-        if (data.clients && Array.isArray(data.clients) && data.clients.length > 0) {
-          this.clients.set(data.clients);
-        }
-        if (data.systemUsers && Array.isArray(data.systemUsers) && data.systemUsers.length > 0) {
-          this.systemUsers.set(data.systemUsers);
-        }
         if (data.checklistRecords) {
           // Restore dates correctly
           const restoredRecords = data.checklistRecords.map((r: any) => ({
@@ -1102,89 +1127,10 @@ export class AppStateService {
   });
 
   // --- Clients / Companies Database (New) ---
-  readonly clients = signal<ClientEntity[]>([
-    {
-      id: 'mtvmrp0tn',
-      name: 'demo',
-      piva: '12345678901',
-      address: 'via roma',
-      phone: '01010202',
-      email: 'info@gmail.com',
-      suspended: false,
-      licenseNumber: ''
-    },
-    {
-      id: 'xxt1xctnd',
-      name: 'Demo test',
-      piva: '12345789',
-      address: 'via pollo',
-      phone: '025225',
-      email: 'test@test.it',
-      suspended: false,
-      licenseNumber: ''
-    },
-    {
-      id: 'z5lynsuj1',
-      name: 'azienda',
-      piva: '42432432',
-      address: 'Via Roma 145',
-      phone: '3478127440',
-      email: 'test@test.it',
-      suspended: false,
-      licenseNumber: ''
-    }
-  ]);
+  readonly clients = signal<ClientEntity[]>([]);
 
   // --- System Users State ---
-  readonly systemUsers = signal<SystemUser[]>([
-    {
-      id: 'dev-admin',
-      clientId: 'demo',
-      name: 'Sviluppatore (Admin)',
-      email: 'admin@haccppro.it',
-      role: 'ADMIN',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=Sviluppatore%20Admin&background=random&color=fff',
-      username: 'dev',
-      password: 'dev'
-    },
-    {
-      id: 'f93t2gdb2',
-      clientId: 'mtvmrp0tn',
-      name: 'user demo',
-      email: 'demo@test.it',
-      role: 'COLLABORATOR',
-      department: 'demo bar',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=user%20demo&background=random&color=fff',
-      username: 'test',
-      password: '123'
-    },
-    {
-      id: '7rs2w9rek',
-      clientId: 'xxt1xctnd',
-      name: 'test user',
-      email: 'test@test.it',
-      role: 'COLLABORATOR',
-      department: 'bar test',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=test%20user&background=random&color=fff',
-      username: 'test',
-      password: '123'
-    },
-    {
-      id: 'tzdqhkjce',
-      clientId: 'z5lynsuj1',
-      name: 'mario test',
-      email: 'mario@gmail.com',
-      role: 'COLLABORATOR',
-      department: 'test',
-      active: true,
-      avatar: 'https://ui-avatars.com/api/?name=mario%20test&background=random&color=fff',
-      username: 'test',
-      password: '123'
-    }
-  ]);
+  readonly systemUsers = signal<SystemUser[]>([]);
 
   // --- Current Active Company Config ---
   // Automatically follows the activeTargetClientId (global Firm filter for Admin)
