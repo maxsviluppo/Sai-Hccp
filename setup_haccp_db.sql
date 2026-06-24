@@ -180,3 +180,26 @@ ALTER TABLE system_config DISABLE ROW LEVEL SECURITY;
 INSERT INTO system_config (id, report_email, master_data)
 SELECT 'master', 'amministrazione@haccppro.it', '{"name": "HACCP PRO - Sede Centrale", "piva": "01234567890", "address": "Via dell''Innovazione 10, Milano (MI)", "pec": "haccppro@legalmail.it", "sdi": "M5UXCR1"}'::jsonb
 WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE id = 'master');
+
+-- Enable Realtime Replication for all tables
+-- Run this in your Supabase SQL Editor to activate instant real-time sync via postgres_changes
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+END $$;
+
+ALTER PUBLICATION supabase_realtime ADD TABLE clients;
+ALTER PUBLICATION supabase_realtime ADD TABLE system_users;
+ALTER PUBLICATION supabase_realtime ADD TABLE checklist_records;
+ALTER PUBLICATION supabase_realtime ADD TABLE documents;
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE message_replies;
+ALTER PUBLICATION supabase_realtime ADD TABLE equipment;
+ALTER PUBLICATION supabase_realtime ADD TABLE production_records;
+ALTER PUBLICATION supabase_realtime ADD TABLE non_conformities;
+ALTER PUBLICATION supabase_realtime ADD TABLE accounting_payments;
+ALTER PUBLICATION supabase_realtime ADD TABLE journal_entries;
+ALTER PUBLICATION supabase_realtime ADD TABLE accounting_reminders;
+ALTER PUBLICATION supabase_realtime ADD TABLE system_config;

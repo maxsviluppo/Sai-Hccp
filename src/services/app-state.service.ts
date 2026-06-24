@@ -499,6 +499,7 @@ export class AppStateService {
     }
   }
 
+  private realtimeChannel: any;
   private syncInterval: any;
   async initSupabase() {
     if (this.syncInterval) clearInterval(this.syncInterval);
@@ -513,7 +514,7 @@ export class AppStateService {
     // Ensure we only have one channel subscription
     supabase.removeAllChannels();
 
-    supabase.channel('haccp-realtime-global')
+    this.realtimeChannel = supabase.channel('haccp-realtime-global')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.syncClients())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, (payload) => this.syncChecklistRecords())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.syncMessages())
@@ -523,6 +524,10 @@ export class AppStateService {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'non_conformities' }, () => this.syncNonConformities())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, () => this.syncEquipment())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'preparations' }, () => this.syncPreparations())
+      .on('broadcast', { event: 'data-changed' }, (payload) => {
+         console.log('[HACCP-SYNC] Broadcast data-changed received:', payload);
+         this.handleBroadcastChange(payload.payload);
+      })
       .subscribe((status) => {
           console.log('[HACCP-SYNC] Supabase Status:', status);
       });
@@ -531,6 +536,40 @@ export class AppStateService {
     this.syncInterval = setInterval(() => {
         this.refreshAllData();
     }, 30000);
+  }
+
+  private handleBroadcastChange(payload: any) {
+    if (!payload || !payload.table) {
+      this.refreshAllData();
+      return;
+    }
+    console.log(`[HACCP-SYNC] Syncing table due to broadcast: ${payload.table}`);
+    switch (payload.table) {
+      case 'clients': this.syncClients(); break;
+      case 'checklist_records': this.syncChecklistRecords(); break;
+      case 'messages': this.syncMessages(); break;
+      case 'system_users': this.syncUsers(); break;
+      case 'documents': this.syncDocuments(); break;
+      case 'production_records': this.syncProductionRecords(); break;
+      case 'non_conformities': this.syncNonConformities(); break;
+      case 'equipment': this.syncEquipment(); break;
+      case 'preparations': this.syncPreparations(); break;
+      default: this.refreshAllData();
+    }
+  }
+
+  private broadcastChange(table: string) {
+    if (this.realtimeChannel) {
+      this.realtimeChannel.send({
+        type: 'broadcast',
+        event: 'data-changed',
+        payload: { table }
+      }).then(resp => {
+        console.log(`[HACCP-SYNC] Broadcast sent for table ${table}:`, resp);
+      }).catch(err => {
+        console.warn('[HACCP-SYNC] Broadcast failed:', err);
+      });
+    }
   }
 
   private handleEquipmentInsert(newEq: any) {
@@ -567,7 +606,7 @@ export class AppStateService {
 
     try {
       // Must sync clients FIRST because other syncs depend on validClientIds filtering
-      await this.syncClients();
+      await this.syncClientsWithRetry();
       
       await Promise.all([
         this.syncUsers(),
@@ -613,7 +652,7 @@ export class AppStateService {
     };
   }
 
-  private notifySyncFailure() {
+  private notifyClientsSyncFailure() {
     this.supabaseSyncFailed.set(true);
     if (this.syncWarningShown) return;
     this.syncWarningShown = true;
@@ -623,21 +662,34 @@ export class AppStateService {
     );
   }
 
-  async syncClients() {
+  async syncClients(): Promise<boolean> {
     try {
       const { data: dbClients, error } = await supabase.from('clients').select('*');
       if (error) {
         console.error('[HACCP-SYNC] Error syncing clients:', error);
-        this.notifySyncFailure();
-        return;
+        return false;
       }
       this.clients.set((dbClients ?? []).map((c: any) => this.mapDbClient(c)));
       this.supabaseSyncFailed.set(false);
+      this.syncWarningShown = false;
       console.log('[HACCP-SYNC] Clients synced:', this.clients().length);
+      return true;
     } catch (e) {
       console.error('[HACCP-SYNC] Exception in syncClients:', e);
-      this.notifySyncFailure();
+      return false;
     }
+  }
+
+  /** Supabase può impiegare qualche secondo al risveglio: riprova prima di avvisare l'utente. */
+  private async syncClientsWithRetry(attempts = 3): Promise<void> {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      if (await this.syncClients()) return;
+      if (attempt < attempts) {
+        console.warn(`[HACCP-SYNC] Retry clients sync (${attempt}/${attempts})...`);
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+      }
+    }
+    this.notifyClientsSyncFailure();
   }
 
   async syncUsers() {
@@ -646,7 +698,6 @@ export class AppStateService {
       const { data: dbUsers, error } = await supabase.from('system_users').select('*');
       if (error) {
         console.error('[HACCP-SYNC] Error syncing users:', error);
-        this.notifySyncFailure();
         return;
       }
       this.systemUsers.set((dbUsers ?? [])
@@ -669,7 +720,6 @@ export class AppStateService {
         })));
     } catch (e) {
       console.error('[HACCP-SYNC] Exception in syncUsers:', e);
-      this.notifySyncFailure();
     }
   }
 
@@ -1491,6 +1541,7 @@ export class AppStateService {
           data: record.data
         }).then(({ error }) => {
             if (error) console.error('Error syncing checklist record:', error);
+            else this.broadcastChange('checklist_records');
         })
       );
     }, 1000);
@@ -1647,6 +1698,7 @@ export class AppStateService {
         .eq('client_id', record.clientId);
 
       if (error) throw error;
+      this.broadcastChange('checklist_records');
       this.toastService.success('Record Eliminato', 'La registrazione è stata rimossa dal database.');
     } catch (e) {
       console.error('Error deleting checklist record:', e);
@@ -1670,6 +1722,7 @@ export class AppStateService {
         .eq('client_id', nc.clientId);
 
       if (error) throw error;
+      this.broadcastChange('non_conformities');
       this.toastService.success('Anomalia Eliminata', 'La non conformità è stata rimossa permanentemente.');
     } catch (e) {
       console.error('Error deleting non-conformity:', e);
@@ -2479,6 +2532,8 @@ export class AppStateService {
     if (error) {
       console.error('Error syncing production record:', error);
       this.toastService.error('Errore Cloud', `Impossibile salvare la scheda: ${error.message || 'Controlla dimensione foto o permessi'}`);
+    } else {
+      this.broadcastChange('production_records');
     }
   }
 
@@ -2492,6 +2547,7 @@ export class AppStateService {
         console.error('Error deleting production record:', error);
         this.toastService.error('Errore', 'Impossibile eliminare la scheda dal cloud.');
     } else {
+        this.broadcastChange('production_records');
         this.toastService.success('Eliminato', 'Scheda di produzione rimossa correttamente.');
     }
   }
@@ -2709,17 +2765,22 @@ export class AppStateService {
             created_at: new Date()
         });
         if (error) throw error;
+        this.broadcastChange('non_conformities');
         
         // Also send a message to Admin
-        await supabase.from('messages').insert({
-            id: Math.random().toString(36).substring(2, 9),
-            senderId: this.currentUser()?.id,
-            recipientId: client_id,
-            recipientType: 'ADMIN',
+        const msgId = Math.random().toString(36).substring(2, 9);
+        const { error: msgErr } = await supabase.from('messages').insert({
+            id: msgId,
+            sender_id: this.currentUser()?.id,
+            recipient_id: client_id,
+            recipient_type: 'ADMIN',
             content: `NUOVA NON CONFORMITÀ: ${nc.itemName || ''} - ${nc.description}`,
             category: 'ALERT',
             timestamp: new Date().toISOString()
         });
+        if (!msgErr) {
+            this.broadcastChange('messages');
+        }
 
         this.syncNonConformities();
     } catch (e) {
@@ -2757,6 +2818,7 @@ export class AppStateService {
         .eq('client_id', nc.clientId);
 
       if (error) throw error;
+      this.broadcastChange('non_conformities');
 
       // --- NEW: BACK-SYNC WITH CHECKLIST ---
       // If we closed the anomaly, and it came from a checklist/cleaning module, we mark the area as "Conforme" (ok)

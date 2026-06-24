@@ -2,6 +2,8 @@ import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
+import { ToastService } from '../services/toast.service';
+import { countSupplierLoads, findMatchingSupplier, groupPantryLoadsByDocument, SupplierRecord } from '../utils/supplier-match';
 
 interface Supplier {
   id: string;
@@ -64,7 +66,11 @@ interface Supplier {
                    </div>
                    <div class="min-w-0">
                       <h3 class="text-sm font-bold text-slate-800 truncate leading-tight">{{ s.ragioneSociale }}</h3>
-                      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">P.IVA: {{ s.piva }}</p>
+                      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">P.IVA: {{ s.piva || '—' }}</p>
+                      <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-1">
+                        <i class="fa-solid fa-box-open text-[9px]"></i>
+                        {{ getLoadCount(s) }} carichi registrati
+                      </p>
                    </div>
                 </div>
                 
@@ -281,16 +287,19 @@ interface Supplier {
 
               <!-- Right Column: DDT History -->
               <div class="flex-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                <h3 class="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Archivio Carichi (DDT)</h3>
+                <h3 class="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center justify-between">
+                  <span>Archivio Carichi (DDT)</span>
+                  <span class="text-[10px] font-black text-indigo-500 uppercase">{{ getSupplierDDTs(editingSupplier()!).length }} documenti</span>
+                </h3>
                 
                 <div class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
-                  @if (getSupplierDDTs(editingSupplier()!.ragioneSociale).length === 0) {
+                  @if (getSupplierDDTs(editingSupplier()!).length === 0) {
                     <div class="text-center py-10">
                       <i class="fa-solid fa-box-open text-3xl text-slate-200 mb-3"></i>
                       <p class="text-xs text-slate-400 font-bold uppercase">Nessun carico registrato</p>
                     </div>
                   } @else {
-                    @for (load of getSupplierDDTs(editingSupplier()!.ragioneSociale); track load.id) {
+                    @for (load of getSupplierDDTs(editingSupplier()!); track load.id) {
                       <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all">
                         <!-- Banner Header -->
                         <div class="flex items-center gap-4 p-3 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
@@ -402,6 +411,7 @@ interface Supplier {
 })
 export class SuppliersViewComponent {
   state = inject(AppStateService);
+  toast = inject(ToastService);
   moduleId = 'suppliers';
 
   suppliers = signal<Supplier[]>([]);
@@ -441,11 +451,21 @@ export class SuppliersViewComponent {
   }
 
   addSupplier() {
-    if (!this.newSupplier.ragioneSociale) return;
+    if (!this.newSupplier.ragioneSociale?.trim()) return;
+
+    const suppliers = this.suppliers();
+    const existing = findMatchingSupplier(suppliers, this.newSupplier.ragioneSociale, this.newSupplier.piva);
+    if (existing) {
+      this.toast.info('Fornitore esistente', `"${existing.ragioneSociale}" è già in anagrafica.`);
+      this.openSupplier(existing as Supplier);
+      this.isAddModalOpen.set(false);
+      return;
+    }
 
     const supplier: Supplier = {
       id: Date.now().toString(),
       ...this.newSupplier,
+      ragioneSociale: this.newSupplier.ragioneSociale.trim(),
       status: 'pending',
       note: ''
     };
@@ -494,33 +514,14 @@ export class SuppliersViewComponent {
     this.editingSupplier.set(null);
   }
 
-  getSupplierDDTs(supplierName: string): any[] {
+  getLoadCount(s: Supplier): number {
+    const pantry = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
+    return countSupplierLoads(pantry, s as SupplierRecord);
+  }
+
+  getSupplierDDTs(supplier: Supplier): any[] {
     const ddtPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
-    if (!supplierName) return [];
-    
-    // Group items by DDT (by image/date) to save space as user requested
-    const loads = ddtPantry.filter(d => d.supplierName?.toLowerCase() === supplierName.toLowerCase());
-    
-    // Create a grouped array
-    const grouped = new Map<string, any>();
-    
-    for (const item of loads) {
-      const key = `${item.entryDate}_${item.ddtImageUrl || 'no-img'}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          id: item.id, // reference ID for deletion
-          entryDate: item.entryDate,
-          ddtImageUrl: item.ddtImageUrl,
-          ingredientName: item.ingredientName,
-          items: [item]
-        });
-      } else {
-        const group = grouped.get(key);
-        group.items.push(item);
-      }
-    }
-    
-    return Array.from(grouped.values()).sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+    return groupPantryLoadsByDocument(ddtPantry, supplier as SupplierRecord);
   }
 
   viewImage(url: string) {

@@ -178,6 +178,28 @@ ALTER TABLE system_config DISABLE ROW LEVEL SECURITY;
 INSERT INTO system_users (id, name, email, role, active, username, password, avatar)
 SELECT 'dev-admin', 'Sviluppatore (Admin)', 'admin@haccppro.it', 'ADMIN', true, 'dev', 'dev', 'https://ui-avatars.com/api/?name=Dev&background=000&color=fff'
 WHERE NOT EXISTS (SELECT 1 FROM system_users WHERE id = 'dev-admin');
+
+-- Enable Realtime Replication for all tables
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    CREATE PUBLICATION supabase_realtime;
+  END IF;
+END $$;
+
+ALTER PUBLICATION supabase_realtime ADD TABLE clients;
+ALTER PUBLICATION supabase_realtime ADD TABLE system_users;
+ALTER PUBLICATION supabase_realtime ADD TABLE checklist_records;
+ALTER PUBLICATION supabase_realtime ADD TABLE documents;
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE message_replies;
+ALTER PUBLICATION supabase_realtime ADD TABLE equipment;
+ALTER PUBLICATION supabase_realtime ADD TABLE production_records;
+ALTER PUBLICATION supabase_realtime ADD TABLE non_conformities;
+ALTER PUBLICATION supabase_realtime ADD TABLE accounting_payments;
+ALTER PUBLICATION supabase_realtime ADD TABLE journal_entries;
+ALTER PUBLICATION supabase_realtime ADD TABLE accounting_reminders;
+ALTER PUBLICATION supabase_realtime ADD TABLE system_config;
 `;
 
 async function run() {

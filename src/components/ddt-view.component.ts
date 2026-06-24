@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
-import { supabase } from '../supabase';
+import { DDT_AI_PROMPT, DDT_AI_SCHEMA, DdtFormItem, findMatchingSupplier, normalizeParsedDdt, NormalizedDdtParse, SupplierRecord } from '../utils/supplier-match';
 
 export interface IncomingIngredient {
   id: string;
   clientId: string;
+  supplierId?: string;
   supplierName: string;
   ingredientName: string;
   lotto: string;
@@ -80,7 +81,7 @@ export interface IncomingIngredient {
                     <span class="text-[11px] font-bold text-violet-400 uppercase tracking-wider text-center px-2">Foto o PDF DDT</span>
                   }
                 </div>
-                <input #ddtFileInput type="file" accept="image/*,application/pdf" class="hidden" (change)="handleDdtPhoto($event)">">
+                <input #ddtFileInput type="file" accept="image/*,application/pdf" class="hidden" (change)="handleDdtPhoto($event)">
                 <div class="flex-1">
                   <p class="text-[11px] text-violet-700 font-bold mb-3">Scatta o carica la foto del DDT: l'AI estrarrà automaticamente i dati del carico.</p>
                   <button (click)="analyzeWithAI()" [disabled]="!ddtPreview() || isAnalyzing()"
@@ -107,42 +108,73 @@ export interface IncomingIngredient {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornitore *</label>
-                  <input type="text" [(ngModel)]="form.supplierName" placeholder="Nome fornitore"
+                  <input type="text" [(ngModel)]="form().supplierName" (ngModelChange)="onSupplierNameChange()"
+                         placeholder="Nome fornitore"
                          class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-all">
                 </div>
                 <div class="space-y-1.5">
                   <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Documento *</label>
-                  <input type="date" [(ngModel)]="form.entryDate"
+                  <input type="date" [(ngModel)]="form().entryDate" (ngModelChange)="bumpFormRevision()"
                          class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition-all">
                 </div>
               </div>
 
+              <!-- Supplier Register Checkbox (Step 2) -->
+              @if (form().supplierName && !linkedSupplier()) {
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <h4 class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
+                      <i class="fa-solid fa-circle-info text-indigo-600"></i> Nuovo Fornitore Rilevato
+                    </h4>
+                    <p class="text-[11px] text-indigo-700/80 font-bold mt-0.5">
+                      "{{ form().supplierName }}" non esiste in anagrafica. Vuoi registrarlo all'importazione?
+                    </p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button type="button" (click)="registerNewSupplier.set(false)" 
+                            class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border"
+                            [class]="!registerNewSupplier() ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
+                      No, solo DDT
+                    </button>
+                    <button type="button" (click)="registerNewSupplier.set(true)" 
+                            class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border"
+                            [class]="registerNewSupplier() ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
+                      Sì, Registra
+                    </button>
+                  </div>
+                </div>
+              }
+
               <!-- Products List -->
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Prodotti nel Carico</h4>
+                  <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Prodotti nel Carico (Anteprima)</h4>
                   <button (click)="addEmptyItem()" class="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-all">
                     + Aggiungi Riga
                   </button>
                 </div>
                 
-                @for (item of form.items; track $index) {
+                @for (item of form().items; track $index) {
                   <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white border border-slate-200 p-3 rounded-xl relative group">
                     <div class="md:col-span-4 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Prodotto</label>
-                      <input type="text" [(ngModel)]="item.ingredientName" placeholder="es. Patate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
+                      <input type="text" [(ngModel)]="item.ingredientName" (ngModelChange)="bumpFormRevision()"
+                         placeholder="es. Patate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
                     </div>
                     <div class="md:col-span-3 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Lotto</label>
-                      <input type="text" [(ngModel)]="item.lotto" placeholder="Lotto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono font-bold focus:border-amber-400 outline-none">
+                      <input type="text" [(ngModel)]="item.lotto" (ngModelChange)="bumpFormRevision()"
+                         placeholder="Lotto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono font-bold focus:border-amber-400 outline-none">
                     </div>
                     <div class="md:col-span-2 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Quantità</label>
-                      <input type="text" [(ngModel)]="item.quantity" placeholder="es. 10 kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
+                      <input type="text" [(ngModel)]="item.quantity" (ngModelChange)="bumpFormRevision()"
+                         placeholder="es. 10 kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
                     </div>
                     <div class="md:col-span-3 space-y-1">
                       <label class="text-[9px] font-bold uppercase text-slate-400">Scadenza</label>
-                      <input type="date" [(ngModel)]="item.expiryDate" class="w-full px-3 py-2 bg-slate-50 border border-rose-200 rounded-lg text-base font-bold focus:border-rose-400 outline-none text-rose-700">
+                      <input type="date" [(ngModel)]="item.expiryDate" (ngModelChange)="bumpFormRevision()" 
+                             class="w-full px-3 py-2 bg-slate-50 border border-rose-200 rounded-lg text-base font-bold focus:border-rose-400 outline-none text-rose-700">
                     </div>
                     
                     <button (click)="removeItem($index)" class="absolute -right-2 -top-2 w-6 h-6 bg-white border border-slate-200 rounded-full text-rose-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-rose-50 hover:border-rose-200">
@@ -155,44 +187,16 @@ export interface IncomingIngredient {
 
             <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
               <button (click)="cancelForm()" class="px-5 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-100 transition-all">Annulla</button>
-              <button (click)="saveMultipleEntries()" [disabled]="!form.supplierName || !form.entryDate || form.items.length === 0 || !form.items[0].ingredientName"
+              <button (click)="saveMultipleEntries()" [disabled]="!canImportForm()"
                       class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-boxes-stacked"></i> Registra {{ form.items.length }} Prodotti
+                <i class="fa-solid fa-circle-check"></i> Importa Tutto ({{ validItemCount() }})
               </button>
             </div>
           </div>
         </div>
       }
       
-      <!-- New Supplier Confirmation Modal -->
-      @if (showNewSupplierModal()) {
-        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="showNewSupplierModal.set(false)"></div>
-          <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
-            <div class="p-6 text-center">
-              <div class="h-16 w-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-amber-100 shadow-sm">
-                <i class="fa-solid fa-truck-field"></i>
-              </div>
-              <h3 class="text-lg font-bold text-slate-800 mb-2">Nuovo Fornitore?</h3>
-              <p class="text-sm text-slate-500 leading-relaxed mb-6">
-                L'AI ha rilevato <span class="font-bold text-indigo-600">{{ form.supplierName }}</span>.<br>
-                Vuoi aggiungerlo all'anagrafica fornitori?
-              </p>
-              
-              <div class="flex gap-3">
-                <button (click)="showNewSupplierModal.set(false)" 
-                        class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
-                  No, Solo DDT
-                </button>
-                <button (click)="confirmNewSupplier()" 
-                        class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md">
-                  Sì, Registra
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
+      <!-- Removed old blocking new supplier confirmation modal -->
       
       @if (aiRawResponse()) {
         <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-6 animate-fade-in mx-6">
@@ -425,16 +429,31 @@ export class DdtViewComponent {
   showNewSupplierModal = signal(false);
   aiRawResponse = signal<string | null>(null);
   itemToDelete = signal<IncomingIngredient | null>(null);
+  formRevision = signal(0);
+  linkedSupplier = signal<SupplierRecord | null>(null);
+  importDraft = signal<NormalizedDdtParse | null>(null);
+  rawAiPayload = signal<any | null>(null);
+  registerNewSupplier = signal(true);
 
-  form: {
+  form = signal<{
+    supplierId?: string;
     supplierName: string;
+    supplierPiva: string;
     entryDate: string;
-    items: { ingredientName: string; lotto: string; quantity: string; expiryDate: string }[];
-  } = {
+    items: DdtFormItem[];
+  }>({
     supplierName: '',
+    supplierPiva: '',
     entryDate: '',
     items: []
-  };
+  });
+
+  validItemCount = computed(() => {
+    this.formRevision();
+    this.importDraft();
+    this.rawAiPayload();
+    return this.collectImportItems().length;
+  });
 
   activeCount = computed(() => this.pantry().filter(i => !this.isExpired(i.expiryDate)).length);
   expiredCount = computed(() => this.pantry().filter(i => this.isExpired(i.expiryDate)).length);
@@ -468,26 +487,290 @@ export class DdtViewComponent {
       // Load data without tracking everything else
       untracked(() => {
         this.loadPantry();
-        this.resetForm();
+        if (!this.showForm()) {
+          this.resetForm();
+        }
       });
     }, { allowSignalWrites: true });
   }
 
   resetForm() {
-    this.form = {
+    this.linkedSupplier.set(null);
+    this.importDraft.set(null);
+    this.rawAiPayload.set(null);
+    this.showNewSupplierModal.set(false);
+    this.registerNewSupplier.set(true);
+    this.form.set({
+      supplierId: undefined,
       supplierName: '',
+      supplierPiva: '',
       entryDate: this.state.filterDate() || new Date().toISOString().split('T')[0],
       items: [{ ingredientName: '', lotto: '', quantity: '', expiryDate: '' }]
-    };
+    });
     this.ddtPreview.set(null);
+    this.formRevision.update(v => v + 1);
+  }
+
+  onSupplierNameChange() {
+    const current = this.form();
+    const matched = findMatchingSupplier(this.getSuppliersList(), current.supplierName, current.supplierPiva);
+    this.linkedSupplier.set(matched);
+    if (matched) {
+      current.supplierId = matched.id;
+      current.supplierName = matched.ragioneSociale;
+      this.registerNewSupplier.set(false);
+    } else {
+      current.supplierId = undefined;
+      this.registerNewSupplier.set(true);
+    }
+    this.formRevision.update(v => v + 1);
+  }
+
+  onSupplierPivaChange() {
+    const current = this.form();
+    const matched = findMatchingSupplier(this.getSuppliersList(), current.supplierName, current.supplierPiva);
+    this.linkedSupplier.set(matched);
+    if (matched) {
+      current.supplierId = matched.id;
+      current.supplierName = matched.ragioneSociale;
+      this.registerNewSupplier.set(false);
+    } else {
+      current.supplierId = undefined;
+      this.registerNewSupplier.set(true);
+    }
+    this.formRevision.update(v => v + 1);
+  }
+
+  canImportForm(): boolean {
+    this.formRevision();
+    this.importDraft();
+    this.rawAiPayload();
+    this.linkedSupplier();
+    const items = this.collectImportItems();
+    const entryDate = this.getImportContext().entryDate;
+    return items.length > 0 && !!entryDate;
+  }
+
+  bumpFormRevision() {
+    this.formRevision.update(v => v + 1);
+  }
+
+  private ensureIsoDate(dateStr: string): string {
+    const formatted = this.formatDateToISO(dateStr);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(formatted)) return formatted;
+    return '';
+  }
+
+  private applyParsedDdtToForm(parsed: any) {
+    this.rawAiPayload.set(parsed);
+    const normalized = normalizeParsedDdt(parsed);
+    this.importDraft.set(normalized);
+    const entryDate = this.ensureIsoDate(normalized.entryDate) || this.state.filterDate() || new Date().toISOString().split('T')[0];
+
+    this.form.set({
+      supplierId: undefined,
+      supplierName: normalized.supplierName,
+      supplierPiva: normalized.supplierPiva,
+      entryDate,
+      items: normalized.items.length > 0
+        ? normalized.items.map(item => ({
+            ingredientName: item.ingredientName,
+            lotto: item.lotto,
+            quantity: item.quantity,
+            expiryDate: this.ensureIsoDate(item.expiryDate)
+          }))
+        : [{ ingredientName: '', lotto: '', quantity: '', expiryDate: '' }]
+    });
+    this.formRevision.update(v => v + 1);
+
+    const matched = findMatchingSupplier(this.getSuppliersList(), normalized.supplierName, normalized.supplierPiva);
+    this.syncLinkedSupplier(matched);
+    if (matched) {
+      this.registerNewSupplier.set(false);
+    } else {
+      this.registerNewSupplier.set(true);
+    }
+
+    return normalized.items.length;
+  }
+
+  private async retryExtractProductsOnly(base64: string, mimeType: string, key: string): Promise<any | null> {
+    const prompt = `Guarda questo DDT italiano. Estrai SOLO la tabella prodotti/merci (ogni riga del corpo documento).
+Rispondi in JSON con formato:
+{"items":[{"ingredientName":"nome prodotto","lotto":"","quantity":"","expiryDate":""}]}
+Includi TUTTE le righe prodotto visibili. ingredientName è obbligatorio per ogni riga.`;
+
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+
+    for (const modelName of modelsToTry) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inlineData: { mimeType, data: base64 } }
+              ]
+            }],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              maxOutputTokens: 8192,
+              temperature: 0.1
+            }
+          })
+        });
+
+        if (!res.ok) continue;
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (!text) continue;
+        return JSON.parse(text);
+      } catch {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  private normalizeItemRows(items: DdtFormItem[] | undefined): DdtFormItem[] {
+    return (items || []).map(item => ({
+      ingredientName: item.ingredientName?.trim() || '',
+      lotto: item.lotto?.trim() || '',
+      quantity: item.quantity?.trim() || '',
+      expiryDate: this.ensureIsoDate(item.expiryDate)
+    })).filter(item => item.ingredientName);
+  }
+
+  private collectImportItems(): DdtFormItem[] {
+    const fromForm = this.normalizeItemRows(this.form().items);
+    if (fromForm.length > 0) return fromForm;
+
+    // Fallback to draft or raw only if form is completely empty
+    const isFormPopulated = this.form().items.some(item => item.ingredientName?.trim() || item.lotto?.trim() || item.quantity?.trim());
+    if (isFormPopulated) {
+      return this.form().items.map(item => ({
+        ingredientName: item.ingredientName?.trim() || 'Prodotto',
+        lotto: item.lotto?.trim() || '',
+        quantity: item.quantity?.trim() || '',
+        expiryDate: this.ensureIsoDate(item.expiryDate)
+      }));
+    }
+
+    const fromDraft = this.normalizeItemRows(this.importDraft()?.items);
+    if (fromDraft.length > 0) return fromDraft;
+
+    const raw = this.rawAiPayload();
+    if (raw) {
+      const fromRaw = this.normalizeItemRows(normalizeParsedDdt(raw).items);
+      if (fromRaw.length > 0) return fromRaw;
+    }
+
+    return [];
+  }
+
+  private getImportContext() {
+    const current = this.form();
+    const draft = this.importDraft();
+    const entryDate =
+      this.ensureIsoDate(current.entryDate) ||
+      this.ensureIsoDate(draft?.entryDate || '') ||
+      this.state.filterDate() ||
+      new Date().toISOString().split('T')[0];
+
+    return {
+      supplierId: current.supplierId,
+      supplierName: current.supplierName?.trim() || draft?.supplierName?.trim() || '',
+      supplierPiva: current.supplierPiva?.trim() || draft?.supplierPiva?.trim() || '',
+      entryDate,
+      items: this.collectImportItems()
+    };
+  }
+
+  private getSuppliersList(): SupplierRecord[] {
+    return (this.state.getGlobalRecord('suppliers') || []) as SupplierRecord[];
+  }
+
+  private findExistingSupplier(formData: {
+    supplierId?: string;
+    supplierName: string;
+    supplierPiva: string;
+  }): SupplierRecord | null {
+    const suppliers = this.getSuppliersList();
+
+    if (formData.supplierId) {
+      const byId = suppliers.find(s => s.id === formData.supplierId);
+      if (byId) return byId;
+    }
+
+    return findMatchingSupplier(suppliers, formData.supplierName, formData.supplierPiva);
+  }
+
+  private syncLinkedSupplier(supplier: SupplierRecord | null) {
+    this.linkedSupplier.set(supplier);
+    if (supplier) {
+      this.form.update(current => ({
+        ...current,
+        supplierId: supplier.id,
+        supplierName: supplier.ragioneSociale
+      }));
+      this.formRevision.update(v => v + 1);
+    }
+  }
+
+  private persistImport(
+    clientId: string,
+    supplierId: string | undefined,
+    supplierName: string,
+    entryDate: string,
+    validItems: DdtFormItem[]
+  ) {
+    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
+    const newEntries: IncomingIngredient[] = [];
+    const loadGroupId = `load_${Date.now()}`;
+
+    for (const item of validItems) {
+      const entry: IncomingIngredient = {
+        id: `ddt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        clientId,
+        supplierId,
+        supplierName,
+        ingredientName: item.ingredientName,
+        lotto: item.lotto || '',
+        quantity: item.quantity || '',
+        entryDate,
+        expiryDate: item.expiryDate || '',
+        ddtImageUrl: this.ddtPreview() || undefined,
+        createdAt: new Date().toISOString()
+      };
+      (entry as any).loadGroupId = loadGroupId;
+      (entry as any).supplierPiva = this.form().supplierPiva || this.importDraft()?.supplierPiva || '';
+      newEntries.push(entry);
+      this.state.addBaseIngredient(entry.ingredientName);
+    }
+
+    const updatedPantry = [...newEntries, ...currentPantry];
+    this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
+    this.pantry.set(updatedPantry);
+    this.toast.success('Importazione completata', `${newEntries.length} prodotti importati nella Dispensa.`);
+    this.cancelForm();
   }
 
   addEmptyItem() {
-    this.form.items.push({ ingredientName: '', lotto: '', quantity: '', expiryDate: '' });
+    this.form.update(current => ({
+      ...current,
+      items: [...current.items, { ingredientName: '', lotto: '', quantity: '', expiryDate: '' }]
+    }));
+    this.bumpFormRevision();
   }
 
   removeItem(index: number) {
-    this.form.items.splice(index, 1);
+    this.form.update(current => ({
+      ...current,
+      items: current.items.filter((_, i) => i !== index)
+    }));
+    this.bumpFormRevision();
   }
 
   cancelForm() {
@@ -622,34 +905,14 @@ export class DdtViewComponent {
             const directBody = {
               contents: [{
                 parts: [
-                  { text: "Analyze this DDT (shipping document) and extract all products. Extract the supplier name, document date (entryDate), and the list of items with their name, lot number, quantity, and expiry date. If some fields are not readable, return them as empty strings." },
+                  { text: DDT_AI_PROMPT },
                   { inlineData: { mimeType, data: base64 } }
                 ]
               }],
               generationConfig: {
                 responseMimeType: 'application/json',
-                responseSchema: {
-                  type: 'OBJECT',
-                  properties: {
-                    supplierName: { type: 'STRING' },
-                    entryDate: { type: 'STRING' },
-                    items: {
-                      type: 'ARRAY',
-                      items: {
-                        type: 'OBJECT',
-                        properties: {
-                          ingredientName: { type: 'STRING' },
-                          lotto: { type: 'STRING' },
-                          quantity: { type: 'STRING' },
-                          expiryDate: { type: 'STRING' }
-                        },
-                        required: ['ingredientName', 'lotto', 'quantity', 'expiryDate']
-                      }
-                    }
-                  },
-                  required: ['supplierName', 'entryDate', 'items']
-                },
-                maxOutputTokens: 1500,
+                responseSchema: DDT_AI_SCHEMA,
+                maxOutputTokens: 8192,
                 temperature: 0.1
               }
             };
@@ -724,39 +987,41 @@ export class DdtViewComponent {
 
       // Data is already parsed by serverRes.data
       try {
-        this.form.supplierName = parsed.supplierName || '';
-        this.form.entryDate = this.formatDateToISO(parsed.entryDate) || new Date().toISOString().split('T')[0];
-        
-        if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
-          this.form.items = parsed.items.map((i: any) => ({
-            ingredientName: i.ingredientName || '',
-            lotto: i.lotto || '',
-            quantity: i.quantity || '',
-            expiryDate: this.formatDateToISO(i.expiryDate) || ''
-          }));
-        } else if (parsed.ingredientName) { // Fallback if AI still returns single item flat
-          this.form.items = [{
-            ingredientName: parsed.ingredientName || '',
-            lotto: parsed.lotto || '',
-            quantity: parsed.quantity || '',
-            expiryDate: this.formatDateToISO(parsed.expiryDate) || ''
-          }];
+        let itemCount = this.applyParsedDdtToForm(parsed);
+
+        if (itemCount === 0) {
+          const retryPayload = await this.retryExtractProductsOnly(base64, mimeType, key);
+          if (retryPayload) {
+            const merged = {
+              ...parsed,
+              items: retryPayload.items ?? retryPayload.prodotti ?? retryPayload.products ?? retryPayload
+            };
+            this.rawAiPayload.set(merged);
+            itemCount = this.applyParsedDdtToForm(merged);
+          }
         }
 
-        this.aiRawResponse.set(null);
-        this.toast.success('AI completato', `Trovati ${this.form.items.length} prodotti! Verifica i dati.`);
+        if (itemCount === 0) {
+          this.aiRawResponse.set(JSON.stringify(parsed, null, 2));
+          this.toast.error(
+            'Prodotti non rilevati',
+            'L\'AI non ha letto le righe della tabella prodotti. Usa una foto nitida del DDT (non PDF sfocato) o inserisci i prodotti manualmente.'
+          );
+        } else {
+          this.aiRawResponse.set(null);
+          this.toast.success('AI completato', `Trovati ${itemCount} prodotti! Verifica e conferma l\'importazione.`);
+        }
         
-        // Update usage stats
         this.state.updateAiUsage(currentModel);
-        
-        // Check if supplier is new
-        if (this.form.supplierName) {
-          const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
-          const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
-          if (!exists) {
-            // We'll still show the modal to let them know/fill info, but saveMultipleEntries will auto-save too
-            this.showNewSupplierModal.set(true);
-          }
+
+        const ctx = this.getImportContext();
+        const existing = this.findExistingSupplier(ctx);
+        this.syncLinkedSupplier(existing);
+
+        if (existing) {
+          this.toast.info('Fornitore riconosciuto', `"${existing.ragioneSociale}" già in anagrafica. Clicca "Conferma Dati Importazione" per aggiungere i prodotti.`);
+        } else if (ctx.supplierName) {
+          this.showNewSupplierModal.set(true);
         }
       } catch (parseError: any) {
         console.error('JSON Parse Error:', parseError.message, text);
@@ -825,11 +1090,19 @@ export class DdtViewComponent {
       return dateStr;
     }
     
-    const dmyMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    const dmyMatch = dateStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
     if (dmyMatch) {
       const day = dmyMatch[1].padStart(2, '0');
       const month = dmyMatch[2].padStart(2, '0');
       const year = dmyMatch[3];
+      return `${year}-${month}-${day}`;
+    }
+
+    const ymdMatch = dateStr.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+    if (ymdMatch) {
+      const year = ymdMatch[1];
+      const month = ymdMatch[2].padStart(2, '0');
+      const day = ymdMatch[3].padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
     
@@ -850,85 +1123,68 @@ export class DdtViewComponent {
         return `${year}-${month}-${day}`;
       }
     }
-    
-    return dateStr;
+
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? dateStr : '';
   }
 
-  confirmNewSupplier() {
-    if (!this.form.supplierName) return;
-    
-    const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
-    const newSupplier = {
+  private registerNewSupplierInAnagrafica(supplierName: string, supplierPiva: string): string {
+    const suppliers = this.getSuppliersList();
+    const existing = findMatchingSupplier(suppliers, supplierName, supplierPiva);
+    if (existing) return existing.id;
+
+    const newSupplier: SupplierRecord = {
       id: Date.now().toString(),
-      ragioneSociale: this.form.supplierName,
+      ragioneSociale: supplierName,
       responsabile: '',
-      piva: '',
+      piva: supplierPiva || '',
       telefono: '',
       email: '',
       indirizzo: '',
       status: 'pending',
       note: ''
     };
-    
+
     this.state.saveGlobalRecord('suppliers', [...suppliers, newSupplier]);
-    this.showNewSupplierModal.set(false);
-    this.toast.success('Fornitore Registrato', `${this.form.supplierName} è stato aggiunto all'anagrafica.`);
-    
-    // Automatically continue with the saving process
-    this.saveMultipleEntries();
+    this.toast.success('Fornitore registrato', `${supplierName} aggiunto all'anagrafica.`);
+    return newSupplier.id;
   }
 
   async saveMultipleEntries() {
+    if (!this.showForm()) return;
     const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo';
-    
-    // Check for new supplier to warn user if they didn't use AI or ignored the modal
-    if (this.form.supplierName) {
-      const suppliers = (this.state.getGlobalRecord('suppliers') || []) as any[];
-      const exists = suppliers.some(s => s.ragioneSociale?.toLowerCase() === this.form.supplierName?.toLowerCase());
-      if (!exists) {
-        this.showNewSupplierModal.set(true);
-        this.toast.info('Nuovo Fornitore', 'Per favore conferma la registrazione del nuovo fornitore prima di procedere.');
-        return; // Pause saving until supplier is confirmed
-      }
-    }
+    const items = this.collectImportItems();
+    const ctx = this.getImportContext();
 
-    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
-    
-    const newEntries: IncomingIngredient[] = [];
-    
-    for (const item of this.form.items) {
-      if (!item.ingredientName) continue; // Skip empty rows
-      
-      const entry: IncomingIngredient = {
-        id: `ddt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        clientId: clientId,
-        supplierName: this.form.supplierName || '',
-        ingredientName: item.ingredientName || '',
-        lotto: item.lotto || '',
-        quantity: item.quantity || '',
-        entryDate: this.form.entryDate || new Date().toISOString().split('T')[0],
-        expiryDate: item.expiryDate || '',
-        ddtImageUrl: this.ddtPreview() || undefined,
-        createdAt: new Date().toISOString()
-      };
-      
-      newEntries.push(entry);
-      this.state.addBaseIngredient(entry.ingredientName);
-    }
-
-    if (newEntries.length === 0) {
-      this.toast.error('Nessun prodotto', 'Aggiungi almeno un ingrediente valido.');
+    if (items.length === 0) {
+      console.warn('[DDT Import] Nessun prodotto trovato', {
+        formItems: this.form().items,
+        draftItems: this.importDraft()?.items,
+        rawPayload: this.rawAiPayload()
+      });
+      this.toast.error('Dati incompleti', 'Nessun prodotto rilevato nel DDT. Rianalizza il documento o inserisci i prodotti manualmente.');
       return;
     }
 
-    const updatedPantry = [...newEntries, ...currentPantry];
-    this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
-    
-    // Update local signal for immediate UI reflection
-    this.pantry.set(updatedPantry);
+    if (!ctx.entryDate) {
+      this.toast.error('Dati incompleti', 'Manca la data documento.');
+      return;
+    }
 
-    this.toast.success('Carico registrato', `${newEntries.length} prodotti aggiunti alla Dispensa.`);
-    this.cancelForm();
+    const existingSupplier = this.linkedSupplier() || this.findExistingSupplier(ctx);
+    let supplierId = existingSupplier?.id;
+    let supplierName = existingSupplier?.ragioneSociale || ctx.supplierName;
+
+    if (!existingSupplier && this.registerNewSupplier() && ctx.supplierName) {
+      supplierId = this.registerNewSupplierInAnagrafica(ctx.supplierName, ctx.supplierPiva);
+    }
+
+    this.persistImport(
+      clientId,
+      supplierId,
+      supplierName || 'Fornitore DDT',
+      ctx.entryDate,
+      items
+    );
   }
 
   confirmDelete(item: IncomingIngredient) {
