@@ -228,7 +228,6 @@ export class OperatorDashboardViewComponent {
     { id: 'ddt-carico', label: 'Carico Merci', sub: 'DDT / Ricezione', icon: 'fa-truck-ramp-box', color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { id: 'preparations', label: 'Preparazioni', sub: 'Anagrafica Prodotti', icon: 'fa-mortar-pestle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'ingredients-book', label: 'Libro Ingredienti', sub: 'Ricettario / Allergeni', icon: 'fa-book-open', color: 'text-orange-600', bg: 'bg-orange-50' },
-    { id: 'temperatures', label: 'Controllo Temperature', sub: 'Registro Rilevazioni', icon: 'fa-temperature-half', color: 'text-cyan-600', bg: 'bg-cyan-50' },
     { id: 'food-conservation', label: 'Controllo Scadenze', sub: 'Conservazione Alimenti', icon: 'fa-calendar-xmark', color: 'text-red-600', bg: 'bg-red-50' },
     { id: 'production-log', label: 'Rintracciabilità', sub: 'Lotti / Produzione', icon: 'fa-barcode', color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'abbattimento-log', label: 'Abbattitore', sub: 'Registro Freddo', icon: 'fa-icicles', color: 'text-sky-600', bg: 'bg-sky-50' },

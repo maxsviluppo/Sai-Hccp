@@ -63,7 +63,7 @@ interface CheckCategory {
 
           <!-- Print Action -->
           <button (click)="printCompleteList()" 
-                  [disabled]="!selectedCompanyId()"
+                  [disabled]="!selectedClient()"
                   class="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale shadow-lg active:scale-95 group">
             <i class="fa-solid fa-print text-lg group-hover:rotate-12 transition-transform"></i>
             <span class="hidden sm:inline">Report</span>
@@ -366,7 +366,7 @@ interface CheckCategory {
                     <span class="text-[9px] font-black uppercase text-indigo-600 px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 tracking-widest shadow-xs">
                       <i class="fa-solid fa-layer-group mr-1"></i>{{ getModuleLabel(nc.moduleId) }}
                     </span>
-                    @if (!selectedCompanyId()) {
+                    @if (!selectedClient()) {
                       <span class="text-[9px] font-black px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-slate-500 uppercase tracking-widest">
                         {{ getClientName(nc.clientId) }}
                       </span>
@@ -525,11 +525,13 @@ export class GeneralChecksViewComponent {
             return this.state.clients().find(c => c.id === localId) || null;
         }
 
-        // Otherwise fallback to global filter
-        const filterId = this.state.filterCollaboratorId();
-        if (!filterId) return null;
-        const user = this.state.systemUsers().find(u => u.id === filterId);
-        return user ? this.state.clients().find(c => c.id === user.clientId) : null;
+        // Otherwise fallback to global active target client
+        const activeClientId = this.state.activeTargetClientId();
+        if (activeClientId) {
+            return this.state.clients().find(c => c.id === activeClientId) || null;
+        }
+
+        return null;
     });
 
     // Real logic to check if a specific checklist is completed for current selection

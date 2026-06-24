@@ -567,23 +567,28 @@ export class PostOperationalChecklistComponent {
 
     constructor() {
         effect(() => {
+            const record = this.state.recordToEdit();
+            if (record && record.moduleId === 'post-op-checklist') {
+                untracked(() => this.loadData());
+                setTimeout(() => this.state.completeEditing(), 100);
+            }
+        }, { allowSignalWrites: true });
+
+        effect(() => {
             this.state.filterDate();
-            this.state.filterCollaboratorId(); // Reload when selected collaborator changes
-            this.state.selectedEquipment(); // Re-run when equipment changes
-            this.state.initialSyncDone(); // Depend on initial sync done status
+            this.state.filterCollaboratorId();
+            this.state.activeTargetClientId();
+            this.state.selectedEquipment();
+            this.state.initialSyncDone();
+            this.state.currentUser()?.id;
+            this.state.checklistRecords().length;
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
     }
 
     loadData() {
         const date = this.state.filterDate() || new Date().toISOString().split('T')[0];
-
-        // 1. First check if we have a submitted record for this date/module in history
-        const historyRecord = this.state.checklistRecords().find(r =>
-            r.moduleId === 'post-op-checklist' &&
-            r.date === date &&
-            r.userId === this.state.currentUser()?.id
-        );
+        const rawRecord = this.state.getChecklistRecord('post-op-checklist', date);
 
         // Census equipment to be added as areas
         const census = this.state.groupedEquipment();
@@ -617,9 +622,10 @@ export class PostOperationalChecklistComponent {
                 steps: this.getInitialSteps(a.id)
             }));
 
-        const savedData = this.state.getRecord('post-op-checklist');
+        const savedData = rawRecord?.data || this.state.getRecord('post-op-checklist', date);
 
-        if (historyRecord) {
+        if (rawRecord?.data) {
+            const historyRecord = rawRecord;
             const savedAreas = historyRecord.data.areas || [];
             // Merge: take everything in currentAreas, if it was in savedAreas use saved status
             const merged = currentAreas.map(a => {
@@ -668,7 +674,7 @@ export class PostOperationalChecklistComponent {
             });
             this.areas.set(merged);
             this.isSubmitted.set(false);
-            this.currentRecordId.set(null);
+            this.currentRecordId.set(rawRecord?.id || null);
         } else {
             this.areas.set(currentAreas.map(a => {
                 const existing = this.areas().find(ea => ea.id === a.id);

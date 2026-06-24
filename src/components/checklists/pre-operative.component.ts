@@ -944,16 +944,28 @@ export class PreOperationalChecklistComponent {
 
     constructor() {
         effect(() => {
+            const record = this.state.recordToEdit();
+            if (record && (record.moduleId === 'pre-op-checklist' || record.moduleId === 'pre-operative')) {
+                untracked(() => this.loadData());
+                setTimeout(() => this.state.completeEditing(), 100);
+            }
+        }, { allowSignalWrites: true });
+
+        effect(() => {
             this.state.filterDate();
-            this.state.filterCollaboratorId(); // Reload when selected collaborator changes
-            this.state.selectedEquipment(); // Re-run when equipment changes
-            this.state.initialSyncDone(); // Depend on initial sync done status
+            this.state.filterCollaboratorId();
+            this.state.activeTargetClientId();
+            this.state.selectedEquipment();
+            this.state.initialSyncDone();
+            this.state.currentUser()?.id;
+            this.state.checklistRecords().length;
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
     }
 
     loadData() {
-        const historyRecord: any = this.state.getRecord('pre-op-checklist');
+        const rawRecord = this.state.getChecklistRecord('pre-op-checklist');
+        const historyRecord: any = rawRecord?.data;
 
         // Equipment areas from census (same as operative/post-operative)
         const census = this.state.groupedEquipment();
@@ -1029,12 +1041,6 @@ export class PreOperationalChecklistComponent {
             }
 
             // Find and set the actual record ID
-            const rawRecord = this.state.checklistRecords().find(r => 
-                r.moduleId === 'pre-op-checklist' && 
-                r.date === this.state.filterDate() &&
-                r.userId === (this.state.isAdmin() && this.state.filterCollaboratorId() ? this.state.filterCollaboratorId() : this.state.currentUser()?.id)
-            );
-            
             if (rawRecord) {
               this.currentRecordId.set(rawRecord.id);
             }
@@ -1200,11 +1206,7 @@ export class PreOperationalChecklistComponent {
         this.autoSaveTimeout = setTimeout(() => {
             let recordId = this.currentRecordId();
             if (!recordId) {
-                const existingRecord = this.state.checklistRecords().find(r => 
-                    r.moduleId === 'pre-op-checklist' && 
-                    r.date === this.state.filterDate() &&
-                    r.userId === (this.state.isAdmin() && this.state.filterCollaboratorId() ? this.state.filterCollaboratorId() : this.state.currentUser()?.id)
-                );
+                const existingRecord = this.state.getChecklistRecord('pre-op-checklist');
                 if (existingRecord) recordId = existingRecord.id;
             }
 

@@ -150,7 +150,7 @@ interface ChecklistItem {
                             </div>
                             <div class="flex-1">
                                 <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Data Competenza</label>
-                                <input type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value)" 
+                                <input type="date" [value]="state.filterDate()" (change)="onDateChange($any($event.target).value)" 
                                        class="w-full font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer border-none p-0 text-lg leading-none">
                             </div>
                         </div>
@@ -566,7 +566,6 @@ export class OperativeChecklistComponent {
    isResetModalOpen = signal(false);
    currentItem = signal<ChecklistItem | null>(null);
    anomalySubject = '';
-   selectedDate = signal(this.state.filterDate());
    isSubmitted = signal(false);
    currentRecordId = signal<string | undefined>(undefined);
 
@@ -604,8 +603,11 @@ export class OperativeChecklistComponent {
 
       effect(() => {
          this.state.filterDate();
-         this.state.filterCollaboratorId(); // Reload when selected collaborator changes
-         this.state.initialSyncDone(); // Depend on initial sync done status
+         this.state.filterCollaboratorId();
+         this.state.activeTargetClientId();
+         this.state.initialSyncDone();
+         this.state.currentUser()?.id;
+         this.state.checklistRecords().length;
          untracked(() => this.loadByDate());
       }, { allowSignalWrites: true });
    }
@@ -828,7 +830,7 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
          this.state.saveNonConformity({
             id: Math.random().toString(36).substring(2, 9),
             moduleId: 'operative-checklist',
-            date: this.selectedDate(),
+            date: this.state.filterDate(),
             description: `[OPERATIVA] ${this.currentItem()?.label}: ${note || 'Anomalia rilevata'}`,
             itemName: this.currentItem()?.label
          });
@@ -874,7 +876,7 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
       this.state.saveChecklist({
          id: recordId,
          moduleId: 'operative-checklist',
-         date: this.selectedDate(),
+         date: this.state.filterDate(),
          data: {
             items: this.items().map(i => ({
                ...i,
@@ -907,26 +909,27 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
       this.pozzettoCount.set(0);
       this.isSubmitted.set(false);
       this.currentRecordId.set(undefined);
-      this.selectedDate.set(this.state.filterDate());
+   }
+
+   onDateChange(value: string) {
+      this.state.filterDate.set(value);
    }
 
    loadByDate() {
-      const record = this.state.getRecord('operative-checklist');
-      if (record) {
-         this.loadRecord({ id: 'saved', date: this.state.filterDate(), data: record });
+      const rawRecord = this.state.getChecklistRecord('operative-checklist');
+      if (rawRecord) {
+         this.loadRecord(rawRecord);
       } else {
          this.isSubmitted.set(false);
          this.statusMap.set({});
          this.frigoCount.set(0);
          this.congelatoreCount.set(0);
          this.pozzettoCount.set(0);
-         this.selectedDate.set(this.state.filterDate());
       }
    }
 
    loadRecord(record: any) {
       this.currentRecordId.set(record.id);
-      this.selectedDate.set(record.date);
       const data = record.data;
       const counts = data.counts || { frigo: 0, congelatore: 0, pozzetto: 0 };
       this.frigoCount.set(counts.frigo);
@@ -1000,8 +1003,8 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
    }
 
    getFormattedDate() {
-      const parts = this.selectedDate().split('-');
-      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : this.selectedDate();
+      const parts = this.state.filterDate().split('-');
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : this.state.filterDate();
    }
 
    hasIssues = computed(() => this.items().some(i => i.status === 'issue'));

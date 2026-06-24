@@ -610,7 +610,7 @@ export class AppStateService {
       
       await Promise.all([
         this.syncUsers(),
-        this.syncChecklistRecords(),
+        this.syncChecklistRecordsWithRetry(),
         this.syncProductionRecords(),
         this.syncDocuments(),
         this.syncEquipment(),
@@ -723,22 +723,71 @@ export class AppStateService {
     }
   }
 
-  async syncChecklistRecords() {
+  private notifyChecklistSyncFailure() {
+    this.supabaseSyncFailed.set(true);
+    if (this.syncWarningShown) return;
+    this.syncWarningShown = true;
+    this.toastService.warning(
+      'Database non raggiungibile',
+      'Supabase non risponde: mostro i dati in cache locale. Riapri il progetto dalla dashboard Supabase se è in pausa.'
+    );
+  }
+
+  async syncChecklistRecords(): Promise<boolean> {
     const validClientIds = this.clients().map(c => c.id);
-    const { data: dbRecords } = await supabase.from('checklist_records').select('*');
-    if (dbRecords) {
-      this.checklistRecords.set(dbRecords
-        .filter((r: any) => r.client_id === 'demo' || r.client_id === 'GLOBAL' || validClientIds.includes(r.client_id))
-        .map((r: any) => ({
-          id: r.id,
-          moduleId: r.module_id,
-          userId: r.user_id,
-          clientId: r.client_id,
-          date: r.date,
-          data: r.data,
-          timestamp: r.timestamp
-        })));
+    const since = new Date();
+    since.setDate(since.getDate() - 120);
+    const sinceStr = since.toISOString().split('T')[0];
+
+    const { data: dbRecords, error } = await supabase
+      .from('checklist_records')
+      .select('id, module_id, user_id, client_id, date, data, timestamp')
+      .or(`date.gte.${sinceStr},date.eq.GLOBAL`);
+
+    if (error) {
+      console.error('[HACCP-SYNC] Error syncing checklist records:', error);
+      return false;
     }
+
+    const mapped = (dbRecords ?? [])
+      .filter((r: any) => r.client_id === 'demo' || r.client_id === 'GLOBAL' || validClientIds.includes(r.client_id))
+      .map((r: any) => ({
+        id: r.id,
+        moduleId: r.module_id,
+        userId: r.user_id,
+        clientId: r.client_id,
+        date: r.date,
+        data: r.data,
+        timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
+      }))
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    const serverIds = new Set(mapped.map(r => r.id));
+    const pendingLocal = this.checklistRecords().filter(r => !serverIds.has(r.id));
+    const merged = [...mapped, ...pendingLocal].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    this.checklistRecords.set(merged);
+    console.log('[HACCP-SYNC] Checklist records synced:', mapped.length, 'local pending:', pendingLocal.length);
+    return true;
+  }
+
+  private async syncChecklistRecordsWithRetry(attempts = 3): Promise<void> {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      if (await this.syncChecklistRecords()) {
+        return;
+      }
+      if (attempt < attempts) {
+        console.warn(`[HACCP-SYNC] Retry checklist sync (${attempt}/${attempts})...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      }
+    }
+    this.notifyChecklistSyncFailure();
+  }
+
+  /** Riprova sync manuale (banner UI). */
+  retrySync() {
+    this.syncWarningShown = false;
+    void this.refreshAllData();
   }
 
   async syncDocuments() {
@@ -1040,10 +1089,9 @@ export class AppStateService {
         if (data.selectedEquipment) this.selectedEquipment.set(data.selectedEquipment);
         if (data.disabledDocs) this.disabledDocs.set(data.disabledDocs);
         if (data.checklistRecords) {
-          // Restore dates correctly
           const restoredRecords = data.checklistRecords.map((r: any) => ({
             ...r,
-            timestamp: new Date(r.timestamp)
+            timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
           }));
           this.checklistRecords.set(restoredRecords);
         }
@@ -1411,6 +1459,7 @@ export class AppStateService {
     this.currentModuleId.set('dashboard');
     this.filterCollaboratorId.set('');
     this.filterDate.set(new Date().toISOString().split('T')[0]);
+    void this.refreshAllData();
   }
 
   setModule(id: string) {
@@ -1502,14 +1551,15 @@ export class AppStateService {
       data: actualData
     };
 
-    // Logic to prevent duplicates and ensure updates
+    // Logic to prevent duplicates and ensure updates (per azienda + utente + data)
     const existingIndex = this.checklistRecords().findIndex(r => {
       const sameModule = r.moduleId === moduleId;
       const sameDate = (r as any).date === record.date;
+      const sameClient = r.clientId === record.clientId;
       if (record.date === 'GLOBAL') {
-        return sameModule && sameDate && r.clientId === record.clientId;
+        return sameModule && sameDate && sameClient;
       }
-      return sameModule && sameDate && r.userId === targetUserId;
+      return sameModule && sameDate && sameClient && r.userId === targetUserId;
     });
 
     if (existingIndex > -1) {
@@ -1521,32 +1571,25 @@ export class AppStateService {
       return [...filtered, record as any];
     });
 
-    // Cancel existing pending write for this record to debounce database traffic
-    if (this.upsertTimeouts.has(record.id)) {
-      clearTimeout(this.upsertTimeouts.get(record.id));
-    }
-
-    // Schedule Supabase Sync (Debounced by 1s and Queued)
-    const timeout = setTimeout(() => {
-      this.upsertTimeouts.delete(record.id);
-
-      this.dbWriteQueue = this.dbWriteQueue.then(() => 
-        supabase.from('checklist_records').upsert({
-          id: record.id,
-          user_id: record.userId,
-          client_id: record.clientId,
-          module_id: record.moduleId,
-          date: record.date,
-          timestamp: record.timestamp,
-          data: record.data
-        }).then(({ error }) => {
-            if (error) console.error('Error syncing checklist record:', error);
-            else this.broadcastChange('checklist_records');
-        })
-      );
-    }, 1000);
-
-    this.upsertTimeouts.set(record.id, timeout);
+    // Supabase Sync (Immediate, no debounce or write queue)
+    void supabase.from('checklist_records').upsert({
+      id: record.id,
+      user_id: record.userId,
+      client_id: record.clientId,
+      module_id: record.moduleId,
+      date: record.date,
+      timestamp: record.timestamp,
+      data: record.data
+    }, { onConflict: 'id' }).then(({ error }) => {
+        if (error) {
+          console.error('[HACCP-SYNC] Error syncing checklist record:', error);
+          if (!silent) {
+            this.toastService.error('Errore salvataggio', 'Impossibile salvare la registrazione nel database.');
+          }
+        } else {
+          this.broadcastChange('checklist_records');
+        }
+    });
 
     if (!silent) {
       this.toastService.success('Registrazione Salvata', 'I dati sono stati archiviati correttamente.');
@@ -1564,8 +1607,49 @@ export class AppStateService {
     }
   }
 
-  saveRecord(moduleId: string, data: any) {
+  saveRecord(moduleId: string, data: any, date?: string) {
+    if (date) {
+      return this.saveChecklist({ moduleId, data, date }, undefined, true);
+    }
     return this.saveChecklist(moduleId, data, true);
+  }
+
+  /** Utente di riferimento per registrazioni (operatore o collaboratore selezionato dall'admin). */
+  resolveTargetUserId(): string | undefined {
+    const user = this.currentUser();
+    if (!user) return undefined;
+    if (this.isAdmin() && this.filterCollaboratorId()) {
+      return this.filterCollaboratorId();
+    }
+    return user.id;
+  }
+
+  private matchesChecklistModule(recordModuleId: string, moduleId: string): boolean {
+    if (recordModuleId === moduleId) return true;
+    if (moduleId === 'pre-op-checklist' && recordModuleId === 'pre-operative') return true;
+    return false;
+  }
+
+  /** Record checklist completo per azienda + utente + data correnti. */
+  getChecklistRecord(moduleId: string, date?: string) {
+    const targetUserId = this.resolveTargetUserId();
+    const targetDate = date || this.filterDate();
+    const targetClientId = this.activeTargetClientId();
+    if (!targetClientId) return null;
+
+    const matches = this.checklistRecords().filter(r =>
+      this.matchesChecklistModule(r.moduleId, moduleId) &&
+      r.date === targetDate &&
+      r.clientId === targetClientId
+    );
+
+    // Admin senza collaboratore: stesso criterio del dashboard (record del giorno per azienda)
+    if (this.isAdmin() && !this.filterCollaboratorId()) {
+      return matches.at(-1) || null;
+    }
+
+    if (!targetUserId) return null;
+    return matches.filter(r => r.userId === targetUserId).at(-1) || null;
   }
 
   saveGlobalRecord(moduleId: string, data: any) {
@@ -1740,27 +1824,8 @@ export class AppStateService {
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
-  getRecord(moduleId: string) {
-    // Determine context
-    let targetUserId = this.currentUser()?.id;
-    const targetDate = this.filterDate();
-
-    if (this.isAdmin() && this.filterCollaboratorId()) {
-      targetUserId = this.filterCollaboratorId();
-    }
-
-    // If admin has NO filter selected, maybe show nothing or aggregate?
-    // User requested: "selezionando ... un collaboratore e la data ... mi deve apparire"
-    // So if no collaborator is selected, we might return null or empty to indicate "Select a user".
-    // Or we return the Admin's own data (if they want to do checks). 
-    // Let's default to Admin's own data if no filter, OR if admin wants to see "All" that's harder for a Detail view.
-    // For now, simple: returns record for targetUserId + targetDate
-
-    if (!targetUserId) return null;
-
-    return this.checklistRecords().find(r =>
-      r.moduleId === moduleId && r.userId === targetUserId && r.date === targetDate
-    )?.data || null;
+  getRecord(moduleId: string, date?: string) {
+    return this.getChecklistRecord(moduleId, date)?.data || null;
   }
 
   // --- Client/Company Management Methods ---
@@ -2245,8 +2310,25 @@ export class AppStateService {
 
   // --- Editing State Methods ---
   startEditingRecord(record: any) {
-    this.recordToEdit.set(record);
-    this.setModule(record.moduleId);
+    const normalized = { ...record };
+    if (normalized.moduleId === 'pre-operative') normalized.moduleId = 'pre-op-checklist';
+    if (normalized.moduleId === 'post-operative') normalized.moduleId = 'post-op-checklist';
+    if (normalized.moduleId === 'operative') normalized.moduleId = 'operative-checklist';
+
+    if (normalized.date && normalized.date !== 'GLOBAL') {
+      this.filterDate.set(normalized.date);
+    }
+    if (this.isAdmin()) {
+      if (normalized.userId) {
+        this.filterCollaboratorId.set(normalized.userId);
+      }
+      if (normalized.clientId) {
+        this.filterClientId.set(normalized.clientId);
+      }
+    }
+
+    this.recordToEdit.set(normalized);
+    this.setModule(normalized.moduleId);
     this.toastService.info('Caricamento...', 'Sto aprendo la registrazione selezionata.');
   }
 
