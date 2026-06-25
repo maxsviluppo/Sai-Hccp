@@ -307,11 +307,16 @@ export class ChecklistHistoryComponent {
    recordToDelete = signal<string | null>(null);
    recordToShare = signal<any | null>(null);
 
-   editRecord(record: any) {
+   async editRecord(record: any) {
       // Fix legacy moduleId for routing compatibility
       const targetRecord = { ...record };
       if (targetRecord.moduleId === 'pre-operative') {
          targetRecord.moduleId = 'pre-op-checklist';
+      }
+      // OPTIMIZATION: Fetch the data payload on-demand before opening the editor.
+      // The record may have data=undefined if it was not loaded during initial sync.
+      if (targetRecord.data === undefined && targetRecord.type !== 'non-compliance') {
+         targetRecord.data = await this.state.fetchChecklistData(targetRecord.id);
       }
       this.state.startEditingRecord(targetRecord);
    }

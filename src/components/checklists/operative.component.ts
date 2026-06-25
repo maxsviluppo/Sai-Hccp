@@ -917,7 +917,7 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
 
    loadByDate() {
       const rawRecord = this.state.getChecklistRecord('operative-checklist');
-      if (rawRecord) {
+      if (rawRecord && rawRecord.data) {
          this.loadRecord(rawRecord);
       } else {
          this.isSubmitted.set(false);

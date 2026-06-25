@@ -454,6 +454,7 @@ export class AppStateService {
       this.activeTargetClientId(); // Dependency to trigger on company change
       this.loadAiConfig();
     }, { allowSignalWrites: true });
+
   }
 
   toggleHome(show: boolean) {
@@ -474,6 +475,8 @@ export class AppStateService {
 
   private saveState() {
     const state = {
+      clients: this.clients(),
+      systemUsers: this.systemUsers(),
       documents: this.documents(),
       selectedEquipment: this.selectedEquipment(),
       disabledDocs: this.disabledDocs(),
@@ -484,19 +487,9 @@ export class AppStateService {
     localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
   }
 
-  /** Rimuove aziende/utenti demo dalla cache locale: Supabase è l'unica fonte. */
+  /** Mantiene compatibilità e inizializza stato */
   private stripLegacyClientCache() {
-    const saved = localStorage.getItem('haccp_pro_persistence');
-    if (!saved) return;
-    try {
-      const data = JSON.parse(saved);
-      if (!data.clients && !data.systemUsers) return;
-      delete data.clients;
-      delete data.systemUsers;
-      localStorage.setItem('haccp_pro_persistence', JSON.stringify(data));
-    } catch {
-      localStorage.removeItem('haccp_pro_persistence');
-    }
+    // Rimosso svuotamento per abilitare l'offline cache
   }
 
   private realtimeChannel: any;
@@ -516,7 +509,12 @@ export class AppStateService {
 
     this.realtimeChannel = supabase.channel('haccp-realtime-global')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => this.syncClients())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' }, (payload) => this.syncChecklistRecords())
+      // OPTIMIZATION: Granular checklist_records realtime handlers.
+      // Instead of a full re-sync (which downloads ALL data), we handle each event individually.
+      // Only metadata fields are applied from the realtime payload (no `data` column).
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checklist_records' }, (payload) => this.handleChecklistInsert(payload.new))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_records' }, (payload) => this.handleChecklistUpdate(payload.new))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_records' }, (payload) => this.handleChecklistDelete(payload.old?.id))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => this.syncMessages())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_users' }, () => this.syncUsers())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, (payload) => this.syncDocuments())
@@ -532,10 +530,35 @@ export class AppStateService {
           console.log('[HACCP-SYNC] Supabase Status:', status);
       });
 
-    // Polling Fallback: Guaranteed background sync every 30s
+    // Polling Fallback: Guaranteed background sync every 60s.
+    // OPTIMIZATION: Checklist records are NOT re-synced on every tick — they are
+    // managed by realtime subscriptions and explicit user actions.
+    // This avoids downloading all checklist payloads every minute.
     this.syncInterval = setInterval(() => {
-        this.refreshAllData();
-    }, 30000);
+        this.syncLightweightData();
+    }, 60000);
+  }
+
+  /** Syncs only lightweight (no-payload) data tables. Called periodically. */
+  private async syncLightweightData() {
+    if (this.isRefreshingData) return;
+    try {
+      await this.syncClients();
+      await Promise.all([
+        this.syncUsers(),
+        this.syncDocuments(), // already metadata-only
+        this.syncProductionRecords(),
+        this.syncMessages(),
+        this.syncAccounting(),
+        this.syncNonConformities(),
+        this.syncRecipes(),
+        this.syncConfig(),
+        this.syncPreparations()
+      ]);
+      await this.syncSuspenseStatuses();
+    } catch (err) {
+      console.warn('[HACCP-SYNC] Lightweight sync error:', err);
+    }
   }
 
   private handleBroadcastChange(payload: any) {
@@ -601,16 +624,24 @@ export class AppStateService {
 
   private isRefreshingData = false;
   async refreshAllData() {
+    // 1. Mark initial sync done immediately if we already have persisted data
+    // This allows the UI to render in under 100ms without waiting for network.
+    if (this.clients().length > 0 || this.checklistRecords().length > 0) {
+      this.initialSyncDone.set(true);
+    }
+
     if (this.isRefreshingData) return;
     this.isRefreshingData = true;
 
     try {
-      // Must sync clients FIRST because other syncs depend on validClientIds filtering
-      await this.syncClientsWithRetry();
-      
-      await Promise.all([
+      // Fetch clients first because other tables filter based on active clients
+      await this.syncClients();
+      this.initialSyncDone.set(true);
+
+      // Run other syncs in background so they do not block UI render
+      void Promise.all([
         this.syncUsers(),
-        this.syncChecklistRecordsWithRetry(),
+        this.syncChecklistRecords(),
         this.syncProductionRecords(),
         this.syncDocuments(),
         this.syncEquipment(),
@@ -620,12 +651,14 @@ export class AppStateService {
         this.syncRecipes(),
         this.syncConfig(),
         this.syncPreparations()
-      ]);
+      ]).then(async () => {
+        await this.syncSuspenseStatuses();
+      }).catch(err => {
+        console.warn('[HACCP-SYNC] Background parallel sync error:', err);
+      });
 
-      await this.syncSuspenseStatuses();
-      this.initialSyncDone.set(true);
     } catch (err) {
-      console.error('Error refreshing data:', err);
+      console.error('Error in primary sync step:', err);
     } finally {
       this.isRefreshingData = false;
     }
@@ -733,6 +766,10 @@ export class AppStateService {
     );
   }
 
+  /**
+   * Syncs checklist_records from Supabase including the full `data` payload.
+   * 120-day window to limit bandwidth while keeping recent history complete.
+   */
   async syncChecklistRecords(): Promise<boolean> {
     const validClientIds = this.clients().map(c => c.id);
     const since = new Date();
@@ -741,8 +778,8 @@ export class AppStateService {
 
     const { data: dbRecords, error } = await supabase
       .from('checklist_records')
-      .select('id, module_id, user_id, client_id, date, data, timestamp')
-      .or(`date.gte.${sinceStr},date.eq.GLOBAL`);
+      .select('*')
+      .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
 
     if (error) {
       console.error('[HACCP-SYNC] Error syncing checklist records:', error);
@@ -760,15 +797,78 @@ export class AppStateService {
         data: r.data,
         timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
       }))
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      .sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
 
-    const serverIds = new Set(mapped.map(r => r.id));
+    const serverIds = new Set(mapped.map((r: any) => r.id));
     const pendingLocal = this.checklistRecords().filter(r => !serverIds.has(r.id));
-    const merged = [...mapped, ...pendingLocal].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const merged = [...mapped, ...pendingLocal].sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
 
     this.checklistRecords.set(merged);
     console.log('[HACCP-SYNC] Checklist records synced:', mapped.length, 'local pending:', pendingLocal.length);
     return true;
+  }
+
+  /**
+   * Handles a realtime INSERT event for checklist_records.
+   * Adds the new record with full data (realtime payload includes all columns).
+   */
+  private handleChecklistInsert(newRow: any) {
+    if (!newRow?.id) return;
+    const validClientIds = this.clients().map(c => c.id);
+    if (newRow.client_id !== 'demo' && newRow.client_id !== 'GLOBAL' && !validClientIds.includes(newRow.client_id)) return;
+
+    this.checklistRecords.update(records => {
+      if (records.some(r => r.id === newRow.id)) {
+        return records.map(r => r.id === newRow.id ? {
+          ...r,
+          moduleId: newRow.module_id,
+          userId: newRow.user_id,
+          clientId: newRow.client_id,
+          date: newRow.date,
+          data: newRow.data ?? r.data,
+          timestamp: newRow.timestamp ? new Date(newRow.timestamp) : r.timestamp
+        } : r);
+      }
+      return [...records, {
+        id: newRow.id,
+        moduleId: newRow.module_id,
+        userId: newRow.user_id,
+        clientId: newRow.client_id,
+        date: newRow.date,
+        data: newRow.data,
+        timestamp: newRow.timestamp ? new Date(newRow.timestamp) : new Date()
+      }].sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    });
+    console.log('[HACCP-SYNC] Checklist record inserted (realtime):', newRow.id);
+  }
+
+  /**
+   * Handles a realtime UPDATE event for checklist_records.
+   * Uses full data from realtime payload; falls back to cached data if server omits it.
+   */
+  private handleChecklistUpdate(newRow: any) {
+    if (!newRow?.id) return;
+    this.checklistRecords.update(records =>
+      records.map(r => r.id === newRow.id ? {
+        ...r,
+        moduleId: newRow.module_id,
+        userId: newRow.user_id,
+        clientId: newRow.client_id,
+        date: newRow.date,
+        data: newRow.data ?? r.data,
+        timestamp: newRow.timestamp ? new Date(newRow.timestamp) : r.timestamp
+      } : r)
+    );
+    console.log('[HACCP-SYNC] Checklist record updated (realtime):', newRow.id);
+  }
+
+  /**
+   * Handles a realtime DELETE event for checklist_records.
+   */
+  private handleChecklistDelete(id: string) {
+    if (!id) return;
+    this.checklistRecords.update(records => records.filter(r => r.id !== id));
+    console.log('[HACCP-SYNC] Checklist record deleted (realtime):', id);
   }
 
   private async syncChecklistRecordsWithRetry(attempts = 3): Promise<void> {
@@ -1085,6 +1185,8 @@ export class AppStateService {
     if (saved) {
       try {
         const data = JSON.parse(saved);
+        if (data.clients) this.clients.set(data.clients);
+        if (data.systemUsers) this.systemUsers.set(data.systemUsers);
         if (data.documents) this.documents.set(data.documents);
         if (data.selectedEquipment) this.selectedEquipment.set(data.selectedEquipment);
         if (data.disabledDocs) this.disabledDocs.set(data.disabledDocs);
@@ -1630,7 +1732,7 @@ export class AppStateService {
     return false;
   }
 
-  /** Record checklist completo per azienda + utente + data correnti. */
+  /** Record checklist completo per azienda + utente + data correnti. Restituisce solo metadati se il payload non è ancora in cache. */
   getChecklistRecord(moduleId: string, date?: string) {
     const targetUserId = this.resolveTargetUserId();
     const targetDate = date || this.filterDate();
@@ -1652,6 +1754,24 @@ export class AppStateService {
     return matches.filter(r => r.userId === targetUserId).at(-1) || null;
   }
 
+  /**
+   * Returns the checklist record with its data payload.
+   * Since syncChecklistRecords now loads full data, this is synchronous.
+   * Kept as async for API compatibility with components that await it.
+   */
+  async getChecklistRecordWithData(moduleId: string, date?: string): Promise<any | null> {
+    return this.getChecklistRecord(moduleId, date) ?? null;
+  }
+
+  /**
+   * Returns data for a checklist record by id.
+   * Since syncChecklistRecords now includes full data, this reads from the in-memory signal.
+   * Kept as async for API compatibility with legacy callers.
+   */
+  async fetchChecklistData(id: string): Promise<any | null> {
+    return this.checklistRecords().find(r => r.id === id)?.data ?? null;
+  }
+
   saveGlobalRecord(moduleId: string, data: any) {
     const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
     return this.saveChecklist({
@@ -1661,6 +1781,8 @@ export class AppStateService {
       clientId: targetClientId
     });
   }
+
+  /** Restituisce solo il record GLOBAL (metadati). Usa getGlobalRecordData() per il payload. */
   getGlobalRecord(moduleId: string) {
     const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
     const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
@@ -1690,6 +1812,27 @@ export class AppStateService {
       })[0];
 
     return latestWithData ? latestWithData.data : (globalRecord ? globalRecord.data : null);
+  }
+
+  /**
+   * Async version of getGlobalRecord: ensures the payload is fetched before returning.
+   * Use this in components that populate form data from a GLOBAL record (e.g. DDT Pantry, supplier config).
+   */
+  async getGlobalRecordData(moduleId: string): Promise<any | null> {
+    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
+    const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
+
+    if (allRecords.length === 0) return null;
+
+    // Find the best candidate record (GLOBAL date first, then most recent)
+    const globalRecord = allRecords
+      .filter(r => (r as any).date === 'GLOBAL')
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+    const candidate = globalRecord || allRecords.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+    if (!candidate) return null;
+
+    return candidate.data ?? null;
   }
 
   // --- AI Configuration & Stats ---

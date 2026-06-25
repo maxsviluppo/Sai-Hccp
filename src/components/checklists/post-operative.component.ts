@@ -647,7 +647,7 @@ export class PostOperationalChecklistComponent {
 
             this.areas.set(merged);
             this.currentRecordId.set(historyRecord.id);
-            this.isSubmitted.set(!!historyRecord.data?.status);
+            this.isSubmitted.set(this.hasSavedProgress(historyRecord.data));
             return;
         }
 
@@ -887,14 +887,26 @@ export class PostOperationalChecklistComponent {
         return new Date(this.state.filterDate()).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
+    private hasSavedProgress(data: any): boolean {
+        if (!data) return false;
+        if (data.status) return true;
+        if ((data.completedSteps ?? 0) > 0) return true;
+        return (data.areas || []).some((a: any) =>
+            (a.steps || []).some((s: any) => s.status && s.status !== 'pending')
+        );
+    }
+
     submitChecklist() {
         const date = this.state.filterDate() || new Date().toISOString().split('T')[0];
+        const targetUserId = this.state.resolveTargetUserId();
+        const targetClientId = this.state.activeTargetClientId();
 
         // Check if we already have a record for this date to avoid duplicates
         const existingRecord = this.state.checklistRecords().find(r =>
             r.moduleId === 'post-op-checklist' &&
             r.date === date &&
-            r.userId === this.state.currentUser()?.id
+            r.clientId === targetClientId &&
+            r.userId === targetUserId
         );
 
         const recordId = this.currentRecordId() || existingRecord?.id || Math.random().toString(36).substr(2, 9);

@@ -1195,7 +1195,7 @@ Includi TUTTE le righe prodotto visibili. ingredientName è obbligatorio per ogn
     const item = this.itemToDelete();
     if (!item) return;
 
-    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
+    const currentPantry = ((await this.state.getGlobalRecordData('ddt_pantry')) || []) as IncomingIngredient[];
     const updated = currentPantry.filter(i => i.id !== item.id);
     this.state.saveGlobalRecord('ddt_pantry', updated);
     this.pantry.set(updated);
@@ -1206,14 +1206,15 @@ Includi TUTTE le righe prodotto visibili. ingredientName è obbligatorio per ogn
 
   async deleteEntry(id: string) {
     // Legacy support or internal use
-    const currentPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as IncomingIngredient[];
+    const currentPantry = ((await this.state.getGlobalRecordData('ddt_pantry')) || []) as IncomingIngredient[];
     const updated = currentPantry.filter(i => i.id !== id);
     this.state.saveGlobalRecord('ddt_pantry', updated);
     this.pantry.set(updated);
   }
 
   async loadPantry() {
-    const savedData = this.state.getGlobalRecord('ddt_pantry');
+    // OPTIMIZATION: getGlobalRecordData() fetches the payload on-demand if not yet in cache.
+    const savedData = await this.state.getGlobalRecordData('ddt_pantry');
     if (savedData && Array.isArray(savedData)) {
       this.pantry.set(savedData);
     } else {

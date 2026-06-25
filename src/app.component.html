@@ -5,13 +5,6 @@
 } @else if (!state.isLoggedIn()) {
 <!-- Login / Demo Selection Screen -->
 <div class="min-h-screen bg-slate-50 relative flex flex-col justify-center items-center p-4 md:p-12">
-  @if (state.supabaseSyncFailed()) {
-  <div class="fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white px-4 py-2.5 text-center text-xs font-bold shadow-lg">
-    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-    Supabase non raggiungibile (progetto in pausa o offline).
-    <button (click)="state.retrySync()" class="underline ml-2">Riprova</button>
-  </div>
-  }
   <!-- Background Decor -->
   <div
     class="absolute top-0 left-0 w-full h-96 bg-gradient-to-br from-emerald-600 to-teal-900 z-0 rounded-b-[50px] shadow-2xl">
@@ -154,14 +147,6 @@
 } @else {
 <!-- Main App Shell -->
 <div class="flex h-screen bg-slate-50 relative overflow-hidden">
-
-  @if (state.supabaseSyncFailed()) {
-  <div class="fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white px-4 py-2.5 text-center text-xs md:text-sm font-bold shadow-lg flex flex-wrap items-center justify-center gap-2">
-    <i class="fa-solid fa-triangle-exclamation"></i>
-    <span>Supabase non raggiungibile — dati da cache locale. Verifica che il progetto non sia in pausa.</span>
-    <button (click)="state.retrySync()" class="underline hover:text-red-100 ml-1">Riprova sync</button>
-  </div>
-  }
 
   <!-- Mobile Sidebar Backdrop -->
   @if (isMobileMenuOpen()) {
