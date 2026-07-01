@@ -1589,21 +1589,65 @@ export class AppStateService {
 
   setCollaboratorFilter(id: string) {
     this.filterCollaboratorId.set(id);
-    // Lazy sync: only fetch if the initial startup sync failed (records are empty).
-    // Avoids redundant queries on every collaborator change when data is already loaded.
-    if (this.checklistRecords().length === 0) {
-      void this.syncChecklistRecords();
-    }
   }
 
   setClientIdFilter(id: string | null) {
     this.filterClientId.set(id);
     this.filterCollaboratorId.set('');
-    // Lazy sync: only fetch if the initial startup sync failed (records are empty).
-    // Normal case: activeTargetClientId and filteredChecklistRecords react immediately
-    // from already-loaded in-memory data — no DB round-trip needed.
-    if (this.checklistRecords().length === 0) {
-      void this.syncChecklistRecords();
+    // When admin switches company, load records for THAT company only.
+    // Much smaller query than loading all companies at once — works without DB indexes.
+    if (id) {
+      void this.syncChecklistRecordsForClient(id);
+    }
+  }
+
+  /**
+   * Loads checklist records for a single company (targeted query).
+   * Used when admin selects a specific company to avoid loading ALL companies at once.
+   * Query is ~50x smaller than syncChecklistRecords() and works without DB indexes.
+   */
+  async syncChecklistRecordsForClient(clientId: string): Promise<boolean> {
+    const since = new Date();
+    since.setDate(since.getDate() - 90); // 90 days for single-client query (affordable)
+    const sinceStr = since.toISOString().split('T')[0];
+
+    try {
+      const { data: dbRecords, error } = await supabase
+        .from('checklist_records')
+        .select('*')
+        .in('client_id', [clientId, 'GLOBAL'])
+        .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
+
+      if (error) {
+        console.error(`[HACCP-SYNC] Error syncing records for client ${clientId}:`, error);
+        return false;
+      }
+
+      const mapped = (dbRecords ?? []).map((r: any) => ({
+        id: r.id,
+        moduleId: r.module_id,
+        userId: r.user_id,
+        clientId: r.client_id,
+        date: r.date,
+        data: r.data,
+        timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
+      }));
+
+      // Merge: keep other clients' records, replace this client's records with fresh data
+      const otherRecords = this.checklistRecords().filter(
+        r => r.clientId !== clientId && r.clientId !== 'GLOBAL'
+      );
+      this.checklistRecords.set(
+        [...otherRecords, ...mapped].sort((a: any, b: any) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+      );
+
+      console.log(`[HACCP-SYNC] Client ${clientId}: ${mapped.length} records loaded.`);
+      return true;
+    } catch (err) {
+      console.error(`[HACCP-SYNC] Exception syncing records for client ${clientId}:`, err);
+      return false;
     }
   }
 
