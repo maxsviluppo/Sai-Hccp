@@ -389,7 +389,9 @@ export class DashboardViewComponent {
     if (currentFilterId) {
       users = allUsers.filter(u => u.id === currentFilterId);
     } else if (currentCompanyId && currentCompanyId !== 'demo') {
-      users = allUsers.filter(u => u.clientId === currentCompanyId && u.role !== 'ADMIN');
+      const brandUnits = this.state.activeBrandUnits();
+      const allowedClientIds = brandUnits.length > 0 ? brandUnits.map(bu => bu.id) : [currentCompanyId];
+      users = allUsers.filter(u => allowedClientIds.includes(u.clientId || '') && u.role !== 'ADMIN');
     } else {
       // In Global Admin view (no filter or demo company), show all non-admin users
       users = allUsers.filter(u => u.role !== 'ADMIN');
@@ -542,12 +544,12 @@ export class DashboardViewComponent {
     const allRecords = this.state.checklistRecords();
     const currentDate = this.state.filterDate();
     
-    // Determine the relevant clients (base entities)
     const currentCompanyId = this.state.companyConfig()?.id;
     let targetClients = this.state.clients();
     
     if (currentCompanyId) {
-      targetClients = targetClients.filter(c => c.id === currentCompanyId);
+      const brandUnits = this.state.activeBrandUnits();
+      targetClients = brandUnits.length > 0 ? brandUnits : targetClients.filter(c => c.id === currentCompanyId);
     }
     
     const allEquipment = this.state.selectedEquipment();

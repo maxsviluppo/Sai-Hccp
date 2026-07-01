@@ -1756,8 +1756,8 @@ export class AppStateService {
       return matches.at(-1) || null;
     }
 
-    if (!targetUserId) return null;
-    return matches.filter(r => r.userId === targetUserId).at(-1) || null;
+    if (!targetUserId) return matches.at(-1) || null;
+    return matches.find(r => r.userId === targetUserId) || matches.at(-1) || null;
   }
 
   /**
