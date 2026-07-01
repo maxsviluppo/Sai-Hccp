@@ -776,10 +776,24 @@ export class AppStateService {
    * Syncs checklist_records from Supabase including the full `data` payload.
    * 120-day window to limit bandwidth while keeping recent history complete.
    */
+  private isSyncingChecklists = false;
+
   async syncChecklistRecords(): Promise<boolean> {
+    // Guard: prevent concurrent overlapping requests (major source of 57014 errors)
+    if (this.isSyncingChecklists) {
+      console.warn('[HACCP-SYNC] syncChecklistRecords already running — skipped.');
+      return true;
+    }
+    this.isSyncingChecklists = true;
+
     const validClientIds = this.clients().map(c => c.id);
+    if (validClientIds.length === 0) {
+      this.isSyncingChecklists = false;
+      return false;
+    }
+
     const since = new Date();
-    since.setDate(since.getDate() - 120);
+    since.setDate(since.getDate() - 60); // Reduced from 120 → 60 days to limit payload
     const sinceStr = since.toISOString().split('T')[0];
 
     const { data: dbRecords, error } = await supabase
@@ -790,6 +804,7 @@ export class AppStateService {
 
     if (error) {
       console.error('[HACCP-SYNC] Error syncing checklist records:', error);
+      this.isSyncingChecklists = false;
       return false;
     }
 
@@ -812,6 +827,7 @@ export class AppStateService {
 
     this.checklistRecords.set(merged);
     console.log('[HACCP-SYNC] Checklist records synced:', mapped.length, 'local pending:', pendingLocal.length);
+    this.isSyncingChecklists = false;
     return true;
   }
 
@@ -1529,12 +1545,8 @@ export class AppStateService {
         department: user.department
       });
 
-      // Determine company config (Admin -> First or demo, Collab -> Their Client)
-      // companyConfig is now computed and will follow automatically
-      // The computed signal `companyConfig` will automatically react to changes in `activeTargetClientId` and `clients`.
-      // No manual setting needed here.
-
       this.currentModuleId.set(user.role === 'ADMIN' ? 'dashboard' : 'operator-dashboard');
+      void this.refreshAllData();
     }
   }
 
@@ -1543,7 +1555,6 @@ export class AppStateService {
       const adminUser = this.systemUsers().find(u => u.role === 'ADMIN');
       if (adminUser) {
         this.currentUser.set({ id: adminUser.id, name: adminUser.name, role: 'ADMIN', avatar: adminUser.avatar, clientId: adminUser.clientId });
-        // companyConfig is now computed
       }
     } else {
       // Login as the first active collaborator found for demo
@@ -1557,10 +1568,10 @@ export class AppStateService {
           clientId: collabUser.clientId,
           department: collabUser.department
         });
-        // companyConfig is now computed
       }
     }
     this.currentModuleId.set(role === 'ADMIN' ? 'dashboard' : 'operator-dashboard');
+    void this.refreshAllData();
   }
 
   logout() {
@@ -1577,12 +1588,17 @@ export class AppStateService {
 
   setCollaboratorFilter(id: string) {
     this.filterCollaboratorId.set(id);
+    // No DB query needed — filteredChecklistRecords is a computed signal that
+    // reacts to filterCollaboratorId automatically from already-loaded data.
   }
 
   setClientIdFilter(id: string | null) {
     this.filterClientId.set(id);
     // When changing company, reset the collaborator/unit filter
     this.filterCollaboratorId.set('');
+    // No DB query needed — activeTargetClientId and filteredChecklistRecords
+    // are computed signals that react immediately to filterClientId changes.
+    // Data is already loaded via refreshAllData() on startup and realtime subscriptions.
   }
 
   setDateFilter(date: string) {
