@@ -786,49 +786,50 @@ export class AppStateService {
     }
     this.isSyncingChecklists = true;
 
-    const validClientIds = this.clients().map(c => c.id);
-    if (validClientIds.length === 0) {
+    try {
+      const validClientIds = this.clients().map(c => c.id);
+      if (validClientIds.length === 0) return false;
+
+      const since = new Date();
+      since.setDate(since.getDate() - 60); // 60 days to limit payload size
+      const sinceStr = since.toISOString().split('T')[0];
+
+      const { data: dbRecords, error } = await supabase
+        .from('checklist_records')
+        .select('*')
+        .in('client_id', [...validClientIds, 'GLOBAL'])
+        .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
+
+      if (error) {
+        console.error('[HACCP-SYNC] Error syncing checklist records:', error);
+        return false;
+      }
+
+      const mapped = (dbRecords ?? [])
+        .filter((r: any) => r.client_id === 'demo' || r.client_id === 'GLOBAL' || validClientIds.includes(r.client_id))
+        .map((r: any) => ({
+          id: r.id,
+          moduleId: r.module_id,
+          userId: r.user_id,
+          clientId: r.client_id,
+          date: r.date,
+          data: r.data,
+          timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
+        }))
+        .sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      const serverIds = new Set(mapped.map((r: any) => r.id));
+      const pendingLocal = this.checklistRecords().filter(r => !serverIds.has(r.id));
+      const merged = [...mapped, ...pendingLocal].sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      this.checklistRecords.set(merged);
+      console.log('[HACCP-SYNC] Checklist records synced:', mapped.length, 'local pending:', pendingLocal.length);
+      return true;
+
+    } finally {
+      // Always release the mutex — even if an exception was thrown
       this.isSyncingChecklists = false;
-      return false;
     }
-
-    const since = new Date();
-    since.setDate(since.getDate() - 60); // Reduced from 120 → 60 days to limit payload
-    const sinceStr = since.toISOString().split('T')[0];
-
-    const { data: dbRecords, error } = await supabase
-      .from('checklist_records')
-      .select('*')
-      .in('client_id', [...validClientIds, 'GLOBAL'])
-      .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
-
-    if (error) {
-      console.error('[HACCP-SYNC] Error syncing checklist records:', error);
-      this.isSyncingChecklists = false;
-      return false;
-    }
-
-    const mapped = (dbRecords ?? [])
-      .filter((r: any) => r.client_id === 'demo' || r.client_id === 'GLOBAL' || validClientIds.includes(r.client_id))
-      .map((r: any) => ({
-        id: r.id,
-        moduleId: r.module_id,
-        userId: r.user_id,
-        clientId: r.client_id,
-        date: r.date,
-        data: r.data,
-        timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
-      }))
-      .sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
-
-    const serverIds = new Set(mapped.map((r: any) => r.id));
-    const pendingLocal = this.checklistRecords().filter(r => !serverIds.has(r.id));
-    const merged = [...mapped, ...pendingLocal].sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
-
-    this.checklistRecords.set(merged);
-    console.log('[HACCP-SYNC] Checklist records synced:', mapped.length, 'local pending:', pendingLocal.length);
-    this.isSyncingChecklists = false;
-    return true;
   }
 
   /**
@@ -1588,17 +1589,22 @@ export class AppStateService {
 
   setCollaboratorFilter(id: string) {
     this.filterCollaboratorId.set(id);
-    // No DB query needed — filteredChecklistRecords is a computed signal that
-    // reacts to filterCollaboratorId automatically from already-loaded data.
+    // Lazy sync: only fetch if the initial startup sync failed (records are empty).
+    // Avoids redundant queries on every collaborator change when data is already loaded.
+    if (this.checklistRecords().length === 0) {
+      void this.syncChecklistRecords();
+    }
   }
 
   setClientIdFilter(id: string | null) {
     this.filterClientId.set(id);
-    // When changing company, reset the collaborator/unit filter
     this.filterCollaboratorId.set('');
-    // No DB query needed — activeTargetClientId and filteredChecklistRecords
-    // are computed signals that react immediately to filterClientId changes.
-    // Data is already loaded via refreshAllData() on startup and realtime subscriptions.
+    // Lazy sync: only fetch if the initial startup sync failed (records are empty).
+    // Normal case: activeTargetClientId and filteredChecklistRecords react immediately
+    // from already-loaded in-memory data — no DB round-trip needed.
+    if (this.checklistRecords().length === 0) {
+      void this.syncChecklistRecords();
+    }
   }
 
   setDateFilter(date: string) {
