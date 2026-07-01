@@ -1681,6 +1681,7 @@ export class AppStateService {
 
   setDateFilter(date: string) {
     this.filterDate.set(date);
+    void this.syncChecklistRecords();
   }
 
   async setReportRecipientEmail(email: string) {

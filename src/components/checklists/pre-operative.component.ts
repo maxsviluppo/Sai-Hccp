@@ -1049,16 +1049,29 @@ export class PreOperationalChecklistComponent {
         } else {
             this.isSubmitted.set(false);
             this.currentRecordId.set(null);
-            this.areas.update(areas => {
-                const staticAreas = areas.filter(a => !a.id.startsWith('eq-'));
-                const filteredStatic = staticAreas.filter(a => this.state.isActivityEnabled('pre-op-checklist', a.id));
-                const areasWithSteps = filteredStatic.map(a => ({ ...a, steps: this.getInitialSteps(a.id) }));
-                return [...areasWithSteps, ...equipmentAreas];
-            });
-            this.globalItems.update(items => items
-                .filter(i => this.state.isActivityEnabled('pre-op-checklist', i.id))
-                .map(i => ({ ...i, status: 'pending' as const }))
-            );
+            
+            const defaultStatic = [
+                { id: 'staff-hygiene', label: 'Igiene Personale', icon: 'fa-user-tie', steps: this.getStaffHygieneSteps(), expanded: false },
+                { id: 'cucina-sala', label: 'Cucina e Sala', icon: 'fa-utensils', steps: this.getInitialSteps('cucina-sala'), expanded: false },
+                { id: 'area-lavaggio', label: 'Area Lavaggio', icon: 'fa-sink', steps: this.getInitialSteps('area-lavaggio'), expanded: false },
+                { id: 'deposito', label: 'Deposito', icon: 'fa-boxes-stacked', steps: this.getInitialSteps('deposito'), expanded: false },
+                { id: 'spogliatoio', label: 'Spogliatoio', icon: 'fa-shirt', steps: this.getInitialSteps('spogliatoio'), expanded: false },
+                { id: 'antibagno-bagno-personale', label: 'Antibagno e Bagno Personale', icon: 'fa-restroom', steps: this.getInitialSteps('antibagno-bagno-personale'), expanded: false },
+                { id: 'bagno-clienti', label: 'Bagno Clienti', icon: 'fa-people-arrows', steps: this.getInitialSteps('bagno-clienti'), expanded: false },
+                { id: 'pavimenti', label: 'Pavimenti', icon: 'fa-table-cells', steps: this.getInitialSteps('pavimenti'), expanded: false },
+                { id: 'pareti', label: 'Pareti', icon: 'fa-border-all', steps: this.getInitialSteps('pareti'), expanded: false },
+                { id: 'soffitto', label: 'Soffitto', icon: 'fa-cloud', steps: this.getInitialSteps('soffitto'), expanded: false },
+                { id: 'infissi', label: 'Infissi', icon: 'fa-door-closed', steps: this.getInitialSteps('infissi'), expanded: false }
+            ].filter(a => this.state.isActivityEnabled('pre-op-checklist', a.id));
+
+            this.areas.set([...defaultStatic, ...equipmentAreas]);
+
+            const defaultGlobal = [
+                { id: 'g_cleaning_sanit', label: 'Prodotti pulizia e sanificazione', icon: 'fa-spray-can-sparkles', status: 'pending' as const },
+                { id: 'g_pest_control', label: 'Controllo Infestanti (Monitoraggio)', icon: 'fa-bug-slash', status: 'pending' as const }
+            ].filter(i => this.state.isActivityEnabled('pre-op-checklist', i.id));
+
+            this.globalItems.set(defaultGlobal);
         }
     }
 
