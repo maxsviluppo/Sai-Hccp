@@ -958,7 +958,7 @@ export class PreOperationalChecklistComponent {
             this.state.selectedEquipment();
             this.state.initialSyncDone();
             this.state.currentUser()?.id;
-            this.state.checklistRecords().length;
+            this.state.checklistRecords();
             untracked(() => this.loadData());
         }, { allowSignalWrites: true });
     }

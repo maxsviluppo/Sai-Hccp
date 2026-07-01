@@ -601,15 +601,15 @@ export class OperativeChecklistComponent {
          }
       }, { allowSignalWrites: true });
 
-      effect(() => {
-         this.state.filterDate();
-         this.state.filterCollaboratorId();
-         this.state.activeTargetClientId();
-         this.state.initialSyncDone();
-         this.state.currentUser()?.id;
-         this.state.checklistRecords().length;
-         untracked(() => this.loadByDate());
-      }, { allowSignalWrites: true });
+       effect(() => {
+          this.state.filterDate();
+          this.state.filterCollaboratorId();
+          this.state.activeTargetClientId();
+          this.state.initialSyncDone();
+          this.state.currentUser()?.id;
+          this.state.checklistRecords();
+          untracked(() => this.loadByDate());
+       }, { allowSignalWrites: true });
    }
 
    // GROUP 1: Ricezione Merci
