@@ -687,12 +687,15 @@ export class AppStateService {
 
   private notifyClientsSyncFailure() {
     this.supabaseSyncFailed.set(true);
+    // Disabilitato avviso a schermo per rimuovere la barra rossa/arancione di mancata connessione
+    /*
     if (this.syncWarningShown) return;
     this.syncWarningShown = true;
     this.toastService.warning(
       'Database non raggiungibile',
       'Impossibile caricare le aziende da Supabase. Controlla connessione e stato del progetto.'
     );
+    */
   }
 
   async syncClients(): Promise<boolean> {
@@ -758,12 +761,15 @@ export class AppStateService {
 
   private notifyChecklistSyncFailure() {
     this.supabaseSyncFailed.set(true);
+    // Disabilitato avviso a schermo per rimuovere la barra rossa/arancione di mancata connessione
+    /*
     if (this.syncWarningShown) return;
     this.syncWarningShown = true;
     this.toastService.warning(
       'Database non raggiungibile',
       'Supabase non risponde: mostro i dati in cache locale. Riapri il progetto dalla dashboard Supabase se è in pausa.'
     );
+    */
   }
 
   /**

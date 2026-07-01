@@ -203,3 +203,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE accounting_payments;
 ALTER PUBLICATION supabase_realtime ADD TABLE journal_entries;
 ALTER PUBLICATION supabase_realtime ADD TABLE accounting_reminders;
 ALTER PUBLICATION supabase_realtime ADD TABLE system_config;
+
+-- Performance Optimization Indexes (To resolve query_canceled/57014 statement timeouts)
+CREATE INDEX IF NOT EXISTS idx_system_users_client_id ON system_users(client_id);
+CREATE INDEX IF NOT EXISTS idx_checklist_records_client_id ON checklist_records(client_id);
+CREATE INDEX IF NOT EXISTS idx_checklist_records_user_id ON checklist_records(user_id);
+CREATE INDEX IF NOT EXISTS idx_checklist_records_date ON checklist_records(date);
+CREATE INDEX IF NOT EXISTS idx_documents_client_id ON documents(client_id);
+CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON messages("recipientId");
+CREATE INDEX IF NOT EXISTS idx_messages_recipient_user_id ON messages("recipientUserId");
+CREATE INDEX IF NOT EXISTS idx_message_replies_message_id ON message_replies(message_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_client_id ON equipment(client_id);
+CREATE INDEX IF NOT EXISTS idx_production_records_client_id ON production_records(client_id);
+CREATE INDEX IF NOT EXISTS idx_non_conformities_client_id ON non_conformities(client_id);
+CREATE INDEX IF NOT EXISTS idx_accounting_payments_client_id ON accounting_payments(client_id);
+CREATE INDEX IF NOT EXISTS idx_journal_entries_client_id ON journal_entries(client_id);
+CREATE INDEX IF NOT EXISTS idx_accounting_reminders_client_id ON accounting_reminders(client_id);
+
