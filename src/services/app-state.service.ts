@@ -455,6 +455,15 @@ export class AppStateService {
       this.loadAiConfig();
     }, { allowSignalWrites: true });
 
+    // Checklist sync: ONE company at a time — never bulk-download all clients
+    effect(() => {
+      const clientId = this.resolveChecklistSyncClientId();
+      this.initialSyncDone();
+      if (clientId) {
+        void this.syncChecklistRecordsForClient(clientId);
+      }
+    });
+
   }
 
   toggleHome(show: boolean) {
@@ -569,7 +578,9 @@ export class AppStateService {
     console.log(`[HACCP-SYNC] Syncing table due to broadcast: ${payload.table}`);
     switch (payload.table) {
       case 'clients': this.syncClients(); break;
-      case 'checklist_records': this.syncChecklistRecords(); break;
+      case 'checklist_records':
+        // Ignored to avoid redundant queries; managed by realtime postgres_changes channel.
+        break;
       case 'messages': this.syncMessages(); break;
       case 'system_users': this.syncUsers(); break;
       case 'documents': this.syncDocuments(); break;
@@ -638,10 +649,10 @@ export class AppStateService {
       await this.syncClients();
       this.initialSyncDone.set(true);
 
-      // Run other syncs in background so they do not block UI render
+      // Run other syncs in background so they do not block UI render.
+      // Checklist records are loaded per-company on demand (see resolveChecklistSyncClientId).
       void Promise.all([
         this.syncUsers(),
-        this.syncChecklistRecords(),
         this.syncProductionRecords(),
         this.syncDocuments(),
         this.syncEquipment(),
@@ -772,64 +783,68 @@ export class AppStateService {
     */
   }
 
+  /** Which company should have checklist data loaded right now. */
+  private resolveChecklistSyncClientId(): string | null {
+    const user = this.currentUser();
+    if (!user) return null;
+
+    if (user.role === 'ADMIN') {
+      const filterId = this.filterClientId();
+      if (!filterId || filterId === 'demo') return null;
+      return filterId;
+    }
+
+    return user.clientId || null;
+  }
+
+  /** Sync checklists for the currently active company only. */
+  async syncActiveClientChecklists(): Promise<boolean> {
+    const clientId = this.resolveChecklistSyncClientId();
+    if (!clientId) return false;
+    return this.syncChecklistRecordsForClient(clientId);
+  }
+
   /**
-   * Syncs checklist_records from Supabase including the full `data` payload.
-   * 120-day window to limit bandwidth while keeping recent history complete.
+   * Legacy entry point — never downloads all companies anymore.
+   * Delegates to per-client sync for the active context.
    */
-  private isSyncingChecklists = false;
-
   async syncChecklistRecords(): Promise<boolean> {
-    // Guard: prevent concurrent overlapping requests (major source of 57014 errors)
-    if (this.isSyncingChecklists) {
-      console.warn('[HACCP-SYNC] syncChecklistRecords already running — skipped.');
-      return true;
+    return this.syncActiveClientChecklists();
+  }
+
+  private checklistSyncGeneration = 0;
+
+  private recordTimestampMs(record: { timestamp?: any }): number {
+    if (!record.timestamp) return 0;
+    return new Date(record.timestamp).getTime();
+  }
+
+  private mapDbChecklistRecord(r: any, existing?: { id?: string; data?: any; timestamp?: any }) {
+    const serverTs = r.timestamp ? new Date(r.timestamp) : new Date();
+    const localTs = existing ? this.recordTimestampMs(existing) : 0;
+    const serverTsMs = serverTs.getTime();
+
+    if (existing && localTs > serverTsMs) {
+      return {
+        id: existing.id ?? r.id,
+        moduleId: r.module_id,
+        userId: r.user_id,
+        clientId: r.client_id,
+        date: r.date,
+        data: existing.data ?? r.data,
+        timestamp: existing.timestamp ? new Date(existing.timestamp) : serverTs
+      };
     }
-    this.isSyncingChecklists = true;
 
-    try {
-      const validClientIds = this.clients().map(c => c.id);
-      if (validClientIds.length === 0) return false;
-
-      const since = new Date();
-      since.setDate(since.getDate() - 60); // 60 days to limit payload size
-      const sinceStr = since.toISOString().split('T')[0];
-
-      const { data: dbRecords, error } = await supabase
-        .from('checklist_records')
-        .select('*')
-        .in('client_id', [...validClientIds, 'GLOBAL'])
-        .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
-
-      if (error) {
-        console.error('[HACCP-SYNC] Error syncing checklist records:', error);
-        return false;
-      }
-
-      const mapped = (dbRecords ?? [])
-        .filter((r: any) => r.client_id === 'demo' || r.client_id === 'GLOBAL' || validClientIds.includes(r.client_id))
-        .map((r: any) => ({
-          id: r.id,
-          moduleId: r.module_id,
-          userId: r.user_id,
-          clientId: r.client_id,
-          date: r.date,
-          data: r.data,
-          timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
-        }))
-        .sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
-
-      const serverIds = new Set(mapped.map((r: any) => r.id));
-      const pendingLocal = this.checklistRecords().filter(r => !serverIds.has(r.id));
-      const merged = [...mapped, ...pendingLocal].sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
-
-      this.checklistRecords.set(merged);
-      console.log('[HACCP-SYNC] Checklist records synced:', mapped.length, 'local pending:', pendingLocal.length);
-      return true;
-
-    } finally {
-      // Always release the mutex — even if an exception was thrown
-      this.isSyncingChecklists = false;
-    }
+    return {
+      id: r.id,
+      moduleId: r.module_id,
+      userId: r.user_id,
+      clientId: r.client_id,
+      date: r.date,
+      data: r.data ?? existing?.data,
+      timestamp: serverTs
+    };
   }
 
   /**
@@ -849,7 +864,7 @@ export class AppStateService {
           userId: newRow.user_id,
           clientId: newRow.client_id,
           date: newRow.date,
-          data: newRow.data ?? r.data,
+          data: (newRow.data !== undefined && newRow.data !== null) ? newRow.data : r.data,
           timestamp: newRow.timestamp ? new Date(newRow.timestamp) : r.timestamp
         } : r);
       }
@@ -879,7 +894,7 @@ export class AppStateService {
         userId: newRow.user_id,
         clientId: newRow.client_id,
         date: newRow.date,
-        data: newRow.data ?? r.data,
+        data: (newRow.data !== undefined && newRow.data !== null) ? newRow.data : r.data,
         timestamp: newRow.timestamp ? new Date(newRow.timestamp) : r.timestamp
       } : r)
     );
@@ -897,7 +912,7 @@ export class AppStateService {
 
   private async syncChecklistRecordsWithRetry(attempts = 3): Promise<void> {
     for (let attempt = 1; attempt <= attempts; attempt++) {
-      if (await this.syncChecklistRecords()) {
+      if (await this.syncActiveClientChecklists()) {
         return;
       }
       if (attempt < attempts) {
@@ -1594,21 +1609,18 @@ export class AppStateService {
   setClientIdFilter(id: string | null) {
     this.filterClientId.set(id);
     this.filterCollaboratorId.set('');
-    // When admin switches company, load records for THAT company only.
-    // Much smaller query than loading all companies at once — works without DB indexes.
-    if (id) {
-      void this.syncChecklistRecordsForClient(id);
-    }
+    // Checklist sync is triggered by the effect on resolveChecklistSyncClientId()
   }
 
   /**
    * Loads checklist records for a single company (targeted query).
-   * Used when admin selects a specific company to avoid loading ALL companies at once.
-   * Query is ~50x smaller than syncChecklistRecords() and works without DB indexes.
+   * Admin: called when a company is selected. Operator: called on login.
    */
   async syncChecklistRecordsForClient(clientId: string): Promise<boolean> {
+    const syncGen = ++this.checklistSyncGeneration;
+
     const since = new Date();
-    since.setDate(since.getDate() - 90); // 90 days for single-client query (affordable)
+    since.setDate(since.getDate() - 120);
     const sinceStr = since.toISOString().split('T')[0];
 
     try {
@@ -1623,27 +1635,43 @@ export class AppStateService {
         return false;
       }
 
-      const mapped = (dbRecords ?? []).map((r: any) => ({
-        id: r.id,
-        moduleId: r.module_id,
-        userId: r.user_id,
-        clientId: r.client_id,
-        date: r.date,
-        data: r.data,
-        timestamp: r.timestamp ? new Date(r.timestamp) : new Date()
-      }));
+      // Ignore stale responses if user switched company while query was in flight
+      if (syncGen !== this.checklistSyncGeneration) {
+        console.warn(`[HACCP-SYNC] Stale sync ignored for ${clientId}`);
+        return false;
+      }
+      const activeClient = this.resolveChecklistSyncClientId();
+      if (activeClient && activeClient !== clientId) {
+        console.warn(`[HACCP-SYNC] Client changed during sync — discarding ${clientId}`);
+        return false;
+      }
 
-      // Merge: keep other clients' records, replace this client's records with fresh data
+      const existingForClient = this.checklistRecords().filter(
+        r => r.clientId === clientId || r.clientId === 'GLOBAL'
+      );
+      const existingById = new Map(existingForClient.map(r => [r.id, r]));
+
+      const mapped = (dbRecords ?? []).map((r: any) =>
+        this.mapDbChecklistRecord(r, existingById.get(r.id))
+      );
+
+      const serverIds = new Set(mapped.map(r => r.id));
+      const pendingLocal = existingForClient.filter(r => !serverIds.has(r.id));
+      const mergedForClient = [...mapped, ...pendingLocal].sort(
+        (a, b) => this.recordTimestampMs(a) - this.recordTimestampMs(b)
+      );
+
       const otherRecords = this.checklistRecords().filter(
         r => r.clientId !== clientId && r.clientId !== 'GLOBAL'
       );
+
       this.checklistRecords.set(
-        [...otherRecords, ...mapped].sort((a: any, b: any) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        [...otherRecords, ...mergedForClient].sort(
+          (a, b) => this.recordTimestampMs(a) - this.recordTimestampMs(b)
         )
       );
 
-      console.log(`[HACCP-SYNC] Client ${clientId}: ${mapped.length} records loaded.`);
+      console.log(`[HACCP-SYNC] Client ${clientId}: ${mapped.length} from DB, ${pendingLocal.length} local pending.`);
       return true;
     } catch (err) {
       console.error(`[HACCP-SYNC] Exception syncing records for client ${clientId}:`, err);
@@ -1761,9 +1789,9 @@ export class AppStateService {
           if (!silent) {
             this.toastService.error('Errore salvataggio', 'Impossibile salvare la registrazione nel database.');
           }
-        } else {
-          this.broadcastChange('checklist_records');
         }
+        // No broadcastChange here — it triggered a full-table re-sync that wiped data.
+        // Realtime postgres_changes + local optimistic update handle sync.
     });
 
     if (!silent) {
@@ -2003,7 +2031,7 @@ export class AppStateService {
     } catch (e) {
       console.error('Error deleting checklist record:', e);
       this.toastService.error('Errore', 'Impossibile eliminare la registrazione dal database.');
-      await this.syncChecklistRecords();
+      await this.syncActiveClientChecklists();
     }
   }
 

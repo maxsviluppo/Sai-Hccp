@@ -646,7 +646,10 @@ export class DashboardViewComponent {
       let issueCount = 0;
 
       targetClients.forEach(client => {
-        const clientRec = moduleRecords.find(r => r.clientId === client.id);
+        const clientRecs = moduleRecords.filter(r => r.clientId === client.id);
+        const clientRec = clientRecs.length
+          ? clientRecs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).at(-1)
+          : undefined;
 
         let possibleForClient = 0;
         if (clientRec) {
