@@ -785,6 +785,7 @@ export class AppStateService {
     const { data: dbRecords, error } = await supabase
       .from('checklist_records')
       .select('*')
+      .in('client_id', [...validClientIds, 'GLOBAL'])
       .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
 
     if (error) {
