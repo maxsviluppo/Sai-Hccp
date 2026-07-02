@@ -754,6 +754,11 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
                isIssue = true;
                alertMsg = 'Macchina del Ghiaccio fuori parametro (deve essere esattamente -20°C)';
            }
+       } else if (nameLower.includes('granitore')) {
+           if (tempValue < -10 || tempValue > -2) {
+               isIssue = true;
+               alertMsg = 'Granitore fuori parametro (deve essere tra -2°C e -10°C)';
+           }
        } else if (nameLower.includes('congelatore')) {
            if (tempValue > -18) {
                isIssue = true;
@@ -764,7 +769,7 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
                isIssue = true;
                alertMsg = 'Catena del Caldo fuori parametro (deve essere ≥ 65°C)';
            }
-       } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella') || nameLower.includes('fredd') || nameLower.includes('vetrina')) {
+       } else if (nameLower.includes('frigo') || nameLower.includes('frigorifero') || nameLower.includes('cella') || nameLower.includes('fredd') || nameLower.includes('vetrina') || nameLower.includes('murale')) {
            if (tempValue < 4 || tempValue > 8) {
                isIssue = true;
                alertMsg = 'Prodotto Refrigerato fuori parametro (deve essere tra +4° e +8°C)';
