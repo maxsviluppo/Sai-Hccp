@@ -111,8 +111,15 @@ interface AreaChecklist {
                 </div>
             </div>
 
-            <div class="w-full md:w-auto relative z-10">
-                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex flex-col gap-2 min-w-[200px]">
+            <div class="w-full md:w-auto relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button (click)="setAllOk()" 
+                        [disabled]="isSubmitted() || !state.isContextEditable()"
+                        class="px-5 py-3 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-100 transition-colors border border-emerald-100 flex items-center justify-center gap-2 disabled:opacity-30 shadow-sm active:scale-95 shrink-0"
+                        title="Imposta tutto come Conforme">
+                   <i class="fa-solid fa-check-double text-base"></i><span>IMPOSTA TUTTI OK</span>
+                </button>
+
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex flex-col gap-2 min-w-[200px] flex-1 sm:flex-initial">
                     <div class="flex items-center justify-between mb-0.5">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Avanzamento</p>
                         <span class="text-sm font-black text-slate-700 leading-none">{{ completedStepsCount() }}/{{ totalStepsCount() }}</span>
@@ -1339,6 +1346,18 @@ export class PreOperationalChecklistComponent {
         this.resetForm();
         this.isResetModalOpen.set(false);
         this.toast.info('Scheda Resettata', 'I dati pre-operativi sono stati azzerati.');
+    }
+
+    setAllOk() {
+        this.areas.update(areas => areas.map(area => ({
+            ...area,
+            steps: area.steps.map(step => ({ ...step, status: 'ok' as const }))
+        })));
+        this.globalItems.update(items => items.map(item => ({
+            ...item,
+            status: 'ok' as const
+        })));
+        this.toast.info('Tutto Conforme', 'Tutte le operazioni pre-operative sono state impostate come conformi.');
     }
 
     startNewChecklist() {

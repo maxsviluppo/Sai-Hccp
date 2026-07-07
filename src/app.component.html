@@ -232,11 +232,19 @@
       class="print:hidden h-16 bg-white border-b border-slate-200 flex md:hidden items-center justify-between px-4 z-40 flex-shrink-0">
       <div class="flex items-center gap-3">
         <img [src]="state.currentLogo()" class="w-8 h-8 object-contain">
-        <span class="font-bold text-slate-900 tracking-tight">SAI FAST HACCP</span>
+        <span class="font-bold text-slate-900 tracking-tight text-sm sm:text-base">SAI FAST HACCP</span>
       </div>
-      <button (click)="toggleMobileMenu()" class="text-slate-500 p-2 hover:bg-slate-100 rounded-lg transition-colors">
-        <i class="fa-solid fa-bars-staggered text-xl"></i>
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- Mobile Date Filter -->
+        <div class="flex items-center bg-slate-50 rounded-xl border border-slate-200 px-2 py-1.5 hover:border-slate-300 transition-colors cursor-pointer group">
+          <i class="fa-solid fa-calendar-alt text-slate-400 text-xs mr-2 group-hover:text-blue-500"></i>
+          <input type="date" [value]="state.filterDate()" (change)="state.setDateFilter($any($event.target).value)"
+            class="bg-transparent text-[11px] text-slate-700 font-semibold focus:outline-none cursor-pointer border-none p-0 outline-none w-24">
+        </div>
+        <button (click)="toggleMobileMenu()" class="text-slate-500 p-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-bars-staggered text-xl"></i>
+        </button>
+      </div>
     </header>
 
     <!-- Mobile Admin Context Switcher -->

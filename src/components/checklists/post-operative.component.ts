@@ -647,7 +647,7 @@ export class PostOperationalChecklistComponent {
 
             this.areas.set(merged);
             this.currentRecordId.set(historyRecord.id);
-            this.isSubmitted.set(this.hasSavedProgress(historyRecord.data));
+            this.isSubmitted.set(!!historyRecord.data.status);
             return;
         }
 
