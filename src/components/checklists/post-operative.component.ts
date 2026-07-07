@@ -959,6 +959,14 @@ export class PostOperationalChecklistComponent {
             ...area,
             steps: area.steps.map(step => ({ ...step, status: 'ok' }))
         })));
+
+        this.state.saveRecord('post-op-checklist', {
+            areas: this.areas(),
+            totalSteps: this.totalStepsCount(),
+            completedSteps: this.completedStepsCount(),
+            status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
+        });
+
         this.toast.info('Tutto Conforme', 'Tutte le operazioni di pulizia sono state impostate come conformi.');
     }
 
