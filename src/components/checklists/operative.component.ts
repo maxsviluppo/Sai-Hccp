@@ -702,7 +702,14 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
         const item = this.statusMap()[id];
         if (!item || item.temperature === undefined || item.temperature === null || String(item.temperature).trim() === '') return;
 
-        const cleanTemp = String(item.temperature).replace(',', '.');
+        // Strip degree symbols (°), unit letters (C, F), spaces and other non-numeric chars
+        // Keep only digits, decimal point/comma, and leading +/- sign
+        const rawTemp = String(item.temperature).trim();
+        const cleanTemp = rawTemp
+            .replace(',', '.')                      // normalise decimal separator
+            .replace(/°[CF]?/gi, '')               // remove °, °C, °F
+            .replace(/\s+/g, '')                    // remove whitespace
+            .replace(/[^0-9.\-+]/g, '');           // remove any remaining non-numeric chars
         const tempValue = parseFloat(cleanTemp);
         const nameLower = label.toLowerCase();
         

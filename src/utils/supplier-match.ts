@@ -34,8 +34,11 @@ DATA:
 PRODOTTI (PARTE PIÙ IMPORTANTE):
 - Estrai TUTTE le righe della tabella prodotti al centro del documento.
 - Ogni riga merce = un oggetto in "items".
-- ingredientName = colonna Descrizione / Prodotto / Articolo / Merce / Denominazione (testo principale della riga).
+- ingredientName = SOLO il nome del prodotto/merce, senza codici lotto.
 - lotto = Lotto / Lot / Batch / Codice lotto (stringa vuota se assente).
+  ATTENZIONE: In molti DDT italiani il lotto è scritto NELLA COLONNA DESCRIZIONE subito dopo il nome prodotto,
+  preceduto dalla lettera L o L. (es. "Pomodorini Datterini L.29000/TR01" oppure "Basilico L.F.1862-23062026-BASITA").
+  In questi casi: ingredientName = solo la parte prima di L. (es. "Pomodorini Datterini"), lotto = tutto ciò che segue L. (es. "29000/TR01").
 - quantity = Quantità / Q.tà / Qta / U.M. / Kg / Pezzi (es. "10 KG", "6 CT").
 - expiryDate = Scadenza / Data scadenza (YYYY-MM-DD o stringa vuota).
 - NON saltare righe: se vedi 5 prodotti, items deve avere 5 elementi.
@@ -218,23 +221,51 @@ function inferProductName(row: Record<string, unknown>): string {
   return stringValues.sort((a, b) => b.length - a.length)[0];
 }
 
+/**
+ * Many Italian DDT documents embed the lot number directly in the product description
+ * using the prefix "L." or "L " followed by the lot code.
+ * Examples:
+ *   "Basilico L.F.1862-23062026-BASITA"  -> name: "Basilico",          lot: "F.1862-23062026-BASITA"
+ *   "Pomodorini Datterini L.29000/TR01"  -> name: "Pomodorini Datterini", lot: "29000/TR01"
+ *   "Zucchine L.00042 26"               -> name: "Zucchine",            lot: "00042 26"
+ *   "Carote L.190-002155-0008587"        -> name: "Carote",             lot: "190-002155-0008587"
+ *
+ * This function splits out the lot from the description when this pattern is found.
+ */
+function extractLotFromDescription(rawName: string, existingLot: string): { name: string; lot: string } {
+  // Match " L." or " L " followed by a lot code (alphanumeric, hyphens, slashes, spaces)
+  // The lot code must start right after L. and contain at least one alphanumeric character
+  const lotPattern = /\bL\.([A-Z0-9][\w.\-/\s]*)$/i;
+  const match = rawName.match(lotPattern);
+  if (match) {
+    const name = rawName.slice(0, match.index).trim();
+    const lot = match[1].trim();
+    return { name: name || rawName, lot: existingLot || lot };
+  }
+  return { name: rawName, lot: existingLot };
+}
+
 function rowToItem(raw: any): DdtFormItem | null {
   if (typeof raw === 'string' && raw.trim()) {
-    const name = raw.trim();
-    if (HEADER_WORDS.test(name)) return null;
-    return { ingredientName: name, lotto: '', quantity: '', expiryDate: '' };
+    const rawName = raw.trim();
+    if (HEADER_WORDS.test(rawName)) return null;
+    const { name, lot } = extractLotFromDescription(rawName, '');
+    return { ingredientName: name, lotto: lot, quantity: '', expiryDate: '' };
   }
 
   if (!raw || typeof raw !== 'object') return null;
 
   const row = raw as Record<string, unknown>;
-  const ingredientName = inferProductName(row);
-  if (!ingredientName || ingredientName.length < 2) return null;
-  if (HEADER_WORDS.test(ingredientName)) return null;
+  const rawIngredientName = inferProductName(row);
+  if (!rawIngredientName || rawIngredientName.length < 2) return null;
+  if (HEADER_WORDS.test(rawIngredientName)) return null;
+
+  const existingLot = pickValue(row, LOTTO_KEYS);
+  const { name: ingredientName, lot: lotto } = extractLotFromDescription(rawIngredientName, existingLot);
 
   return {
     ingredientName,
-    lotto: pickValue(row, LOTTO_KEYS),
+    lotto,
     quantity: pickValue(row, QTY_KEYS),
     expiryDate: pickValue(row, EXPIRY_KEYS)
   };
