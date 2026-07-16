@@ -229,7 +229,7 @@ export class EquipmentCensusViewComponent {
     hotCount  = computed(() => this.state.groupedEquipment().filter((e: any) => e.type === 'Caldo').length);
 
  masterEquipmentList = [
-        { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Banchi lavori', 'Forno a legna', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante', 'Abbattitore', 'Granitore (-2°C / -10°C)', 'Macchina del Ghiaccio (-20°C)'] },
+        { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Banchi lavori', 'Forno a legna', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante', 'Abbattitore', 'Granitore (-2°C / -10°C)', 'Macchina del Ghiaccio (-20°C)', 'Piastra (180°C - 240°C)', 'Bollitore (55°C - 60°C)', 'Impastatrice'] },
         { area: 'Area Lavaggio', items: ['Lavello', 'Lavastoviglie', 'Mobile pensile', 'Tavolo da lavoro'] },
         { area: 'Deposito', items: ['Cella frigorifero', 'Pozzetto congelatore'] },
         { area: 'Sala', items: ['Vetrina espositiva caldo (≥65°C)', 'Vetrina espositiva freddo (+4°C/+8°C)', 'Banco frigo espositivo', 'Granitore (-2°C / -10°C)', 'Murale grande (+4°C / +8°C)'] },
@@ -245,7 +245,7 @@ export class EquipmentCensusViewComponent {
         const n = eq.name.toLowerCase();
         if (n.includes('congelatore') || n.includes('abbattitore') || n.includes('pozzetto') || n.includes('ghiaccio') || n.includes('granitore')) return 'fa-icicles';
         if (n.includes('frigo') || n.includes('cella') || n.includes('murale') || type === 'Freddo') return 'fa-snowflake';
-        if (n.includes('forno') || n.includes('cottura') || n.includes('griglie') || n.includes('friggitrice') || type === 'Caldo') return 'fa-fire';
+        if (n.includes('forno') || n.includes('cottura') || n.includes('griglie') || n.includes('friggitrice') || n.includes('piastra') || n.includes('bollitore') || type === 'Caldo') return 'fa-fire';
         if (n.includes('lavello') || n.includes('lavastoviglie')) return 'fa-sink';
         if (n.includes('cappa')) return 'fa-fan';
         if (n.includes('affettatrice')) return 'fa-circle-notch';
@@ -269,7 +269,7 @@ export class EquipmentCensusViewComponent {
         const nameLower = baseName.toLowerCase();
         let inferredType = 'Altro';
         
-        if (nameLower.includes('caldo')) {
+        if (nameLower.includes('caldo') || nameLower.includes('piastra') || nameLower.includes('bollitore')) {
             inferredType = 'Caldo';
         } else if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('congelatore') || 
             nameLower.includes('abbattitore') || nameLower.includes('pozzetto') || nameLower.includes('freddo') || nameLower.includes('ghiaccio') || nameLower.includes('granitore') || nameLower.includes('murale')) {

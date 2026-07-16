@@ -756,7 +756,17 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
             return;
         }
 
-       if (nameLower.includes('ghiaccio')) {
+        if (nameLower.includes('piastra')) {
+            if (tempValue < 180 || tempValue > 240) {
+                isIssue = true;
+                alertMsg = 'Piastra fuori parametro (deve essere tra 180°C e 240°C)';
+            }
+        } else if (nameLower.includes('bollitore')) {
+            if (tempValue < 55 || tempValue > 60) {
+                isIssue = true;
+                alertMsg = 'Bollitore fuori parametro (deve essere tra 55°C e 60°C)';
+            }
+        } else if (nameLower.includes('ghiaccio')) {
            if (tempValue !== -20) {
                isIssue = true;
                alertMsg = 'Macchina del Ghiaccio fuori parametro (deve essere esattamente -20°C)';
