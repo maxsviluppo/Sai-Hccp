@@ -37,6 +37,7 @@ import { PublicProductInfoComponent } from './components/public-product-info.com
 import { HomeViewComponent } from './components/home-view.component';
 import { DdtViewComponent } from './components/ddt-view.component';
 import { PreparationsViewComponent } from './components/preparations-view.component';
+import { AdminOperationalViewComponent } from './components/admin-operational-view.component';
 
 @Component({
   selector: 'app-root',
@@ -77,7 +78,8 @@ import { PreparationsViewComponent } from './components/preparations-view.compon
     PublicProductInfoComponent,
     HomeViewComponent,
     DdtViewComponent,
-    PreparationsViewComponent
+    PreparationsViewComponent,
+    AdminOperationalViewComponent
   ],
   templateUrl: './app.component.html'
 })

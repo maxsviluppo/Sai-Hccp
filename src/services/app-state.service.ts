@@ -17,6 +17,9 @@ export interface AdminCompany {
   licenseNumber: string;
   logo?: string;
   labelFormat?: '62mm' | '29mm' | '12mm';
+  iban?: string;
+  paypalUrl?: string;
+  stripeUrl?: string;
 }
 
 export interface ClientEntity {
@@ -415,7 +418,10 @@ export class AppStateService {
     pec: 'haccppro@legalmail.it',
     sdi: 'M5UXCR1',
     licenseNumber: 'HQ-RE-2024-001',
-    logo: '/Logo_canva_SAI.png'
+    logo: '/Logo_canva_SAI.png',
+    iban: '',
+    paypalUrl: '',
+    stripeUrl: ''
   });
 
   // Editing Permission Logic
@@ -1479,6 +1485,7 @@ export class AppStateService {
     { id: 'micro-bio', label: 'Analisi Microbiologiche', icon: 'fa-vial-virus', category: 'documentation' },
 
     // --- REGISTRI E FASI OPERATIVE ---
+    { id: 'admin-operational-phases', label: 'Fasi Operative (Pre, Op, Post)', icon: 'fa-layer-group', category: 'monitoring', adminOnly: true },
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
     { id: 'preparations', label: 'Anagrafica Preparazioni', icon: 'fa-mortar-pestle', category: 'operations', operatorOnly: true },
@@ -1712,6 +1719,57 @@ export class AppStateService {
       console.error('Error syncing admin company:', error);
       this.toastService.error('Errore Sync', 'Impossibile salvare i dati aziendali nel database.');
     }
+  }
+
+  async sendPaymentNotification(method: string, notes: string) {
+    const clientName = this.companyConfig().name;
+    const recipientEmail = this.reportRecipientEmail() || 'amministrazione@haccppro.it';
+    const messageId = Math.random().toString(36).substring(2, 15);
+    const subject = `Notifica Pagamento: ${clientName}`;
+    const content = `Il cliente "${clientName}" ha inviato una conferma di pagamento.\nMetodo selezionato: ${method}\nNote: ${notes || 'Nessuna nota aggiuntiva.'}`;
+    
+    // Add to local signals
+    const newMessage = {
+        id: messageId,
+        senderId: this.currentUser()?.id || 'client',
+        senderName: clientName,
+        recipientType: 'ADMIN',
+        recipientId: 'ADMIN_OFFICE',
+        recipientUserId: 'dev-admin',
+        subject,
+        content,
+        timestamp: new Date(),
+        read: false
+    };
+    this.messages.update(msgs => [newMessage as any, ...msgs]);
+
+    // DB sync
+    const { error } = await supabase.from('messages').insert({
+        id: messageId,
+        sender_id: newMessage.senderId,
+        sender_name: newMessage.senderName,
+        recipient_type: 'ADMIN',
+        recipient_id: 'ADMIN_OFFICE',
+        recipient_user_id: 'dev-admin',
+        subject,
+        content,
+        timestamp: new Date().toISOString(),
+        read: false
+    });
+
+    if (error) {
+      console.error('[HACCP] Error sending payment notification:', error);
+      this.toastService.error('Errore Sync', 'Impossibile inviare la notifica al database.');
+      return false;
+    }
+    
+    this.toastService.success('Notifica Registrata', 'La notifica è stata registrata nel sistema.');
+    
+    // Open email client via mailto link
+    const mailtoSubject = encodeURIComponent(subject);
+    const mailtoBody = encodeURIComponent(`${content}\n\nCordiali saluti,\n${clientName}`);
+    window.location.href = `mailto:${recipientEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
+    return true;
   }
 
   // --- Data Access Methods ---

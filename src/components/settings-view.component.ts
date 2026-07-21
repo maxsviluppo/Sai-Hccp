@@ -187,6 +187,41 @@ import { ToastService } from '../services/toast.service';
                   <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded font-mono">{{ state.adminCompany().licenseNumber || '-' }}</p>
                 }
               </div>
+
+              <!-- Sezione Strumenti di Pagamento -->
+              <div class="lg:col-span-3 border-t border-slate-100 pt-6 mt-4">
+                <h4 class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-1 flex items-center gap-2">
+                  <i class="fa-solid fa-credit-card"></i> Canali di Pagamento (Configurazione Globale)
+                </h4>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Imposta le coordinate visibili a tutti gli utenti per i pagamenti.</p>
+              </div>
+
+              <div class="space-y-1.5 lg:col-span-1">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">IBAN per Bonifico Bancario</label>
+                @if (isEditingAdmin()) {
+                  <input type="text" formControlName="iban" placeholder="IT00..." class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors uppercase font-mono">
+                } @else {
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded font-mono">{{ state.adminCompany().iban || '-' }}</p>
+                }
+              </div>
+
+              <div class="space-y-1.5 lg:col-span-1">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Link Pagamento PayPal</label>
+                @if (isEditingAdmin()) {
+                  <input type="text" formControlName="paypalUrl" placeholder="https://paypal.me/..." class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                } @else {
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded truncate">{{ state.adminCompany().paypalUrl || '-' }}</p>
+                }
+              </div>
+
+              <div class="space-y-1.5 lg:col-span-1">
+                <label class="text-[9px] uppercase font-black text-slate-400 tracking-widest pl-1">Link Pagamento Stripe</label>
+                @if (isEditingAdmin()) {
+                  <input type="text" formControlName="stripeUrl" placeholder="https://buy.stripe.com/..." class="w-full px-3 py-2 bg-slate-50/50 border border-slate-200 rounded text-base focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-800 transition-colors">
+                } @else {
+                  <p class="text-sm font-bold text-slate-800 bg-slate-50 border border-transparent px-3 py-2 rounded truncate">{{ state.adminCompany().stripeUrl || '-' }}</p>
+                }
+              </div>
             </form>
           </div>
         </div>
@@ -599,7 +634,10 @@ export class SettingsViewComponent {
       sdi: ['', [Validators.required, Validators.minLength(7)]],
       licenseNumber: [''],
       logo: [''],
-      labelFormat: ['62mm']
+      labelFormat: ['62mm'],
+      iban: [''],
+      paypalUrl: [''],
+      stripeUrl: ['']
     });
 
     this.operatorForm = this.fb.group({
@@ -698,6 +736,15 @@ export class SettingsViewComponent {
     if (this.adminForm.valid) {
       this.state.updateAdminCompany(this.adminForm.value);
       this.isEditingAdmin.set(false);
+    } else {
+      console.warn('[HACCP] Admin Form is invalid:', this.adminForm.value);
+      Object.keys(this.adminForm.controls).forEach(key => {
+        const controlErrors = this.adminForm.get(key)?.errors;
+        if (controlErrors != null) {
+          console.warn(`[HACCP] Control "${key}" has errors:`, controlErrors);
+        }
+      });
+      this.toast.warning('Dati Non Validi', 'Verifica che i campi obbligatori (es. Ragione Sociale, Partita IVA, SDI min 7 caratteri, e-mail valide) siano corretti.');
     }
   }
 

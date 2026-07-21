@@ -1,12 +1,13 @@
 
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
 
 @Component({
   selector: 'app-operator-dashboard-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
       
@@ -85,7 +86,7 @@ import { AppStateService } from '../services/app-state.service';
                @if (theme === 'SUCCESS') {
                   <div class="px-6 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">Gestito</div>
                } @else {
-                  <button [class]="'px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95 ' + 
+                  <button (click)="showPaymentModal.set(true)" [class]="'px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95 ' + 
                       (theme === 'URGENT' ? 'bg-white text-red-700 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-black')">
                     {{ theme === 'URGENT' ? 'Paga Ora' : 'Dettagli Piano' }}
                   </button>
@@ -210,11 +211,138 @@ import { AppStateService } from '../services/app-state.service';
         </div>
       </div>
 
+      <!-- ===== PREMIUM PAYMENT MODAL ===== -->
+      @if (showPaymentModal()) {
+        <div class="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="showPaymentModal.set(false)"></div>
+            
+            <!-- Modal Card -->
+            <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+                <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                            <i class="fa-solid fa-credit-card text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black tracking-tight">Abbonamento e Pagamenti</h3>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scegli il metodo che preferisci</p>
+                        </div>
+                    </div>
+                    <button (click)="showPaymentModal.set(false)" class="text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                    <!-- IBAN Bank Transfer option (always available if configured) -->
+                    @if (state.adminCompany().iban) {
+                        <div class="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-indigo-700 uppercase tracking-widest flex items-center gap-1.5">
+                                    <i class="fa-solid fa-building-columns"></i> Bonifico Bancario
+                                </span>
+                                <span class="bg-indigo-100 text-indigo-800 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Nessuna commissione</span>
+                            </div>
+                            <div class="space-y-1.5 text-xs text-slate-700">
+                                <p class="font-medium"><b>Beneficiario:</b> {{ state.adminCompany().name }}</p>
+                                <p class="font-medium"><b>IBAN:</b> <span class="font-mono font-bold select-all bg-white border border-indigo-100 px-1.5 py-0.5 rounded text-indigo-800">{{ state.adminCompany().iban }}</span></p>
+                                <p class="font-medium"><b>Causale:</b> <span class="font-mono bg-white border border-indigo-100 px-1.5 py-0.5 rounded text-indigo-800">Abbonamento HACCP PRO - {{ state.companyConfig().name }}</span></p>
+                            </div>
+                        </div>
+                    } @else {
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3 text-slate-500">
+                            <i class="fa-solid fa-circle-info text-slate-400 text-lg"></i>
+                            <span class="text-xs font-medium">Nessuna coordinata bancaria configurata dall'amministrazione. Puoi utilizzare i canali digitali sottostanti.</span>
+                        </div>
+                    }
+
+                    <!-- Digital payment links -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @if (state.adminCompany().paypalUrl) {
+                            <a [href]="state.adminCompany().paypalUrl" target="_blank"
+                               class="flex items-center justify-between p-4 bg-blue-50/50 hover:bg-blue-50 border border-blue-100 hover:border-blue-300 rounded-2xl transition-all group shadow-sm">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                                        <i class="fa-brands fa-paypal text-lg"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <span class="block text-xs font-black text-slate-800 leading-tight">PayPal</span>
+                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Rapido e sicuro</span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400 group-hover:text-blue-600 transition-colors mr-1"></i>
+                            </a>
+                        }
+
+                        @if (state.adminCompany().stripeUrl) {
+                            <a [href]="state.adminCompany().stripeUrl" target="_blank"
+                               class="flex items-center justify-between p-4 bg-violet-50/50 hover:bg-violet-50 border border-violet-100 hover:border-violet-300 rounded-2xl transition-all group shadow-sm">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-10 rounded-xl bg-white border border-violet-100 flex items-center justify-center text-violet-600 shadow-sm shrink-0">
+                                        <i class="fa-brands fa-stripe-s text-lg"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <span class="block text-xs font-black text-slate-800 leading-tight">Stripe (Carta)</span>
+                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Attivazione immediata</span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400 group-hover:text-violet-600 transition-colors mr-1"></i>
+                            </a>
+                        }
+                    </div>
+
+                    <!-- Notifica di conferma all'amministratore -->
+                    <div class="border-t border-slate-100 pt-5 space-y-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-indigo-500 text-sm"></i>
+                            <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest">Invia Conferma Pagamento</h4>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-bold leading-normal uppercase">Compila questo modulo dopo aver effettuato il pagamento per notificare l'amministrazione ed accelerare l'elaborazione.</p>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 pl-1">Metodo Utilizzato</label>
+                                <select [(ngModel)]="paymentMethod" 
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none cursor-pointer">
+                                    <option value="Bonifico Bancario">Bonifico Bancario</option>
+                                    <option value="PayPal">PayPal</option>
+                                    <option value="Stripe">Stripe (Carta di Credito)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 pl-1">Note / Riferimento Transazione (Opzionale)</label>
+                                <textarea [(ngModel)]="paymentNotes" 
+                                          placeholder="Es. CRO bonifico, ID transazione o email utilizzata..." 
+                                          rows="2"
+                                          class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:font-normal"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 border-t border-slate-100 bg-slate-50 flex gap-3">
+                    <button (click)="showPaymentModal.set(false)" 
+                            class="flex-1 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors shadow-sm">
+                        Annulla
+                    </button>
+                    <button (click)="submitPaymentConfirmation()" 
+                            class="flex-[1.5] py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors shadow-md active:scale-95">
+                        Invia Notifica
+                    </button>
+                </div>
+            </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
-    .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
@@ -223,6 +351,16 @@ import { AppStateService } from '../services/app-state.service';
 })
 export class OperatorDashboardViewComponent {
   state = inject(AppStateService);
+  
+  showPaymentModal = signal(false);
+  paymentMethod = 'Bonifico Bancario';
+  paymentNotes = '';
+
+  submitPaymentConfirmation() {
+    this.state.sendPaymentNotification(this.paymentMethod, this.paymentNotes);
+    this.showPaymentModal.set(false);
+    this.paymentNotes = '';
+  }
 
   quickActions = [
     { id: 'ddt-carico', label: 'Carico Merci', sub: 'DDT / Ricezione', icon: 'fa-truck-ramp-box', color: 'text-emerald-600', bg: 'bg-emerald-50' },
