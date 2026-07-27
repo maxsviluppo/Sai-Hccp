@@ -1023,10 +1023,11 @@ export class PreOperationalChecklistComponent {
             const savedIds = new Set(relabeledAreas.map((a: any) => a.id));
             const missingStaticAreas = currentStaticAreas.filter(a => !savedIds.has(a.id));
             const newEquipAreas = equipmentAreas.filter(ea => !savedIds.has(ea.id));
-            
-            // Filter relabeled areas as well (in case they were saved but now disabled)
+            const censusEquipIds = new Set(equipmentAreas.map(ea => ea.id));
+
+            // Filter relabeled areas: drop equipment no longer in census
             const filteredRelabeled = relabeledAreas.filter((a: any) => {
-                if (a.id.startsWith('eq-')) return true;
+                if (a.id.startsWith('eq-')) return censusEquipIds.has(a.id);
                 return this.state.isActivityEnabled('pre-op-checklist', a.id);
             });
 
@@ -1357,6 +1358,7 @@ export class PreOperationalChecklistComponent {
             ...item,
             status: 'ok' as const
         })));
+        this.autoSave();
         this.toast.info('Tutto Conforme', 'Tutte le operazioni pre-operative sono state impostate come conformi.');
     }
 

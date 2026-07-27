@@ -29,6 +29,10 @@ import { ToastService } from '../services/toast.service';
                     <div class="text-2xl font-black text-indigo-600">{{ state.groupedEquipment().length }}</div>
                     <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Totale</div>
                 </div>
+                <div class="px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100 text-center min-w-[80px]">
+                    <div class="text-2xl font-black text-emerald-600">{{ simpleCount() }}</div>
+                    <div class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Semplice</div>
+                </div>
                 <div class="px-4 py-2 bg-sky-50 rounded-xl border border-sky-100 text-center min-w-[80px]">
                     <div class="text-2xl font-black text-sky-600">{{ coldCount() }}</div>
                     <div class="text-[9px] font-black text-sky-400 uppercase tracking-widest">Freddo</div>
@@ -64,19 +68,19 @@ import { ToastService } from '../services/toast.service';
                         }
 
 
-                        <!-- Selettore rapido -->
+                        <!-- Selettore rapido per tipologia -->
                         <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Selettore Rapido</label>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Selettore Rapido per Tipologia</label>
                             <div class="relative">
                                 <select #equipSelector
                                         (change)="onAddFromSelect(equipSelector.value); equipSelector.value = ''"
                                         [disabled]="state.isAdmin() && !state.filterClientId()"
                                         class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-bold text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none cursor-pointer hover:border-indigo-200 shadow-sm disabled:cursor-not-allowed">
                                     <option value="" disabled selected>Scegli dal catalogo...</option>
-                                    @for (group of masterEquipmentList; track group.area) {
-                                        <optgroup [label]="group.area">
+                                    @for (group of masterEquipmentList; track group.type) {
+                                        <optgroup [label]="group.label">
                                             @for (item of group.items; track item) {
-                                                <option [value]="item">{{ item }}</option>
+                                                <option [value]="group.type + '|' + item">{{ item }}</option>
                                             }
                                         </optgroup>
                                     }
@@ -118,8 +122,8 @@ import { ToastService } from '../services/toast.service';
                 </div>
             </div>
 
-            <!-- ===== EQUIPMENT LIST ===== -->
-            <div class="lg:col-span-2">
+            <!-- ===== EQUIPMENT LIST BY TIPOLOGY ===== -->
+            <div class="lg:col-span-2 space-y-5">
                 @if (state.groupedEquipment().length === 0) {
                     <div class="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed border-slate-200 shadow-sm text-center">
                         <div class="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-4 text-slate-300 shadow-sm">
@@ -129,46 +133,63 @@ import { ToastService } from '../services/toast.service';
                         <p class="text-xs text-slate-400 font-medium">Usa il pannello laterale per aggiungere le prime attrezzature.</p>
                     </div>
                 } @else {
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        @for (eq of state.groupedEquipment(); track eq.id) {
-                            @let eqType = getType(eq);
-                            <div class="group bg-white rounded-xl border p-4 shadow-sm flex items-center justify-between transition-all hover:shadow-md animate-slide-up"
-                                 [class.border-sky-200]="eqType === 'Freddo'" [class.hover:border-sky-300]="eqType === 'Freddo'"
-                                 [class.border-orange-200]="eqType === 'Caldo'" [class.hover:border-orange-300]="eqType === 'Caldo'"
-                                 [class.border-slate-200]="eqType === 'Altro'" [class.hover:border-indigo-200]="eqType === 'Altro'">
-
-                                <div class="flex items-center gap-3">
-                                    <!-- Icon -->
-                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-all group-hover:scale-105"
-                                         [class.bg-sky-50]="eqType === 'Freddo'" [class.border-sky-200]="eqType === 'Freddo'" [class.text-sky-500]="eqType === 'Freddo'"
-                                         [class.bg-orange-50]="eqType === 'Caldo'" [class.border-orange-200]="eqType === 'Caldo'" [class.text-orange-500]="eqType === 'Caldo'"
-                                         [class.bg-slate-50]="eqType === 'Altro'" [class.border-slate-200]="eqType === 'Altro'" [class.text-slate-400]="eqType === 'Altro'">
-                                        <i [class]="'fa-solid text-base ' + getIcon(eq, eqType)"></i>
+                    @for (section of equipmentByType(); track section.type) {
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="px-5 py-3 border-b flex items-center justify-between"
+                                 [class.bg-emerald-50]="section.type === 'Altro'" [class.border-emerald-100]="section.type === 'Altro'"
+                                 [class.bg-sky-50]="section.type === 'Freddo'" [class.border-sky-100]="section.type === 'Freddo'"
+                                 [class.bg-orange-50]="section.type === 'Caldo'" [class.border-orange-100]="section.type === 'Caldo'">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center border shadow-sm"
+                                         [class.bg-white]="true"
+                                         [class.border-emerald-200]="section.type === 'Altro'" [class.text-emerald-600]="section.type === 'Altro'"
+                                         [class.border-sky-200]="section.type === 'Freddo'" [class.text-sky-600]="section.type === 'Freddo'"
+                                         [class.border-orange-200]="section.type === 'Caldo'" [class.text-orange-500]="section.type === 'Caldo'">
+                                        <i [class]="'fa-solid text-sm ' + section.icon"></i>
                                     </div>
-                                    <!-- Info -->
                                     <div>
-                                        <span class="block font-bold text-slate-800 text-sm leading-tight">{{ eq.name }}</span>
-                                        <div class="flex items-center gap-1.5 mt-0.5">
-                                            <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                                  [class.bg-sky-50]="eqType === 'Freddo'" [class.border-sky-200]="eqType === 'Freddo'" [class.text-sky-600]="eqType === 'Freddo'"
-                                                  [class.bg-orange-50]="eqType === 'Caldo'" [class.border-orange-200]="eqType === 'Caldo'" [class.text-orange-600]="eqType === 'Caldo'"
-                                                  [class.bg-slate-50]="eqType === 'Altro'" [class.border-slate-200]="eqType === 'Altro'" [class.text-slate-500]="eqType === 'Altro'">
-                                                <i [class]="'fa-solid mr-1 ' + (eqType === 'Freddo' ? 'fa-snowflake' : eqType === 'Caldo' ? 'fa-fire' : 'fa-circle-check')"></i>
-                                                {{ eqType === 'Freddo' ? 'Catena Freddo' : eqType === 'Caldo' ? 'Catena Caldo' : 'Semplice' }}
-                                            </span>
-                                            <span class="text-[9px] text-slate-400 font-bold">{{ eq.area }}</span>
-                                        </div>
+                                        <h4 class="text-sm font-black text-slate-800 tracking-tight">{{ section.label }}</h4>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ section.items.length }} attrezzatur{{ section.items.length === 1 ? 'a' : 'e' }}</p>
                                     </div>
                                 </div>
-
-                                <!-- Delete -->
-                                <button (click)="onRemove(eq.id, eq.name)"
-                                        class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 active:scale-90">
-                                    <i class="fa-solid fa-trash-can text-xs"></i>
-                                </button>
                             </div>
-                        }
-                    </div>
+
+                            @if (section.items.length === 0) {
+                                <div class="px-5 py-6 text-center text-xs font-medium text-slate-400">
+                                    Nessuna attrezzatura in questa tipologia
+                                </div>
+                            } @else {
+                                <div class="p-3 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                    @for (eq of section.items; track eq.id) {
+                                        @let eqType = getType(eq);
+                                        <div class="group bg-slate-50/80 rounded-xl border p-3.5 flex items-center justify-between transition-all hover:shadow-md hover:bg-white animate-slide-up"
+                                             [class.border-sky-200]="eqType === 'Freddo'" [class.hover:border-sky-300]="eqType === 'Freddo'"
+                                             [class.border-orange-200]="eqType === 'Caldo'" [class.hover:border-orange-300]="eqType === 'Caldo'"
+                                             [class.border-emerald-100]="eqType === 'Altro'" [class.hover:border-emerald-200]="eqType === 'Altro'">
+
+                                            <div class="flex items-center gap-3 min-w-0">
+                                                <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm transition-all group-hover:scale-105"
+                                                     [class.bg-sky-50]="eqType === 'Freddo'" [class.border-sky-200]="eqType === 'Freddo'" [class.text-sky-500]="eqType === 'Freddo'"
+                                                     [class.bg-orange-50]="eqType === 'Caldo'" [class.border-orange-200]="eqType === 'Caldo'" [class.text-orange-500]="eqType === 'Caldo'"
+                                                     [class.bg-emerald-50]="eqType === 'Altro'" [class.border-emerald-200]="eqType === 'Altro'" [class.text-emerald-500]="eqType === 'Altro'">
+                                                    <i [class]="'fa-solid text-sm ' + getIcon(eq, eqType)"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <span class="block font-bold text-slate-800 text-sm leading-tight truncate">{{ eq.name }}</span>
+                                                    <span class="text-[9px] text-slate-400 font-bold">{{ eq.area }}</span>
+                                                </div>
+                                            </div>
+
+                                            <button (click)="onRemove(eq.id, eq.name)"
+                                                    class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 hover:border-red-300 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 active:scale-90 shrink-0">
+                                                <i class="fa-solid fa-trash-can text-xs"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 }
             </div>
         </div>
@@ -225,15 +246,55 @@ export class EquipmentCensusViewComponent {
     showDeleteModal = signal(false);
     itemToDelete = signal<{id: string, name: string} | null>(null);
 
-    coldCount = computed(() => this.state.groupedEquipment().filter((e: any) => e.type === 'Freddo').length);
-    hotCount  = computed(() => this.state.groupedEquipment().filter((e: any) => e.type === 'Caldo').length);
+    coldCount = computed(() => this.state.groupedEquipment().filter((e: any) => this.getType(e) === 'Freddo').length);
+    hotCount  = computed(() => this.state.groupedEquipment().filter((e: any) => this.getType(e) === 'Caldo').length);
+    simpleCount = computed(() => this.state.groupedEquipment().filter((e: any) => this.getType(e) === 'Altro').length);
 
- masterEquipmentList = [
-        { area: 'Cucina', items: ['Frigo', 'Congelatore', 'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Banchi lavori', 'Forno a legna', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto', 'Banco frigo', 'Cappa aspirante', 'Abbattitore', 'Granitore (-2°C / -10°C)', 'Macchina del Ghiaccio (-20°C)', 'Piastra (180°C - 240°C)', 'Bollitore (55°C - 60°C)', 'Impastatrice'] },
-        { area: 'Area Lavaggio', items: ['Lavello', 'Lavastoviglie', 'Mobile pensile', 'Tavolo da lavoro'] },
-        { area: 'Deposito', items: ['Cella frigorifero', 'Pozzetto congelatore'] },
-        { area: 'Sala', items: ['Vetrina espositiva caldo (≥65°C)', 'Vetrina espositiva freddo (+4°C/+8°C)', 'Banco frigo espositivo', 'Granitore (-2°C / -10°C)', 'Murale grande (+4°C / +8°C)'] },
-        { area: 'Spogliatoi', items: ['Microonde'] }
+    equipmentByType = computed(() => {
+        const all = this.state.groupedEquipment();
+        const sections = [
+            { type: 'Altro', label: 'Macchina Semplice', icon: 'fa-gears', items: [] as any[] },
+            { type: 'Freddo', label: 'Catena Freddo', icon: 'fa-snowflake', items: [] as any[] },
+            { type: 'Caldo', label: 'Catena Caldo', icon: 'fa-fire', items: [] as any[] },
+        ];
+        for (const eq of all) {
+            const t = this.getType(eq);
+            const section = sections.find(s => s.type === t) || sections[0];
+            section.items.push(eq);
+        }
+        return sections;
+    });
+
+    masterEquipmentList = [
+        {
+            type: 'Altro',
+            label: 'Macchina Semplice',
+            items: [
+                'Banchi lavori', 'Affettatrice', 'Taglia verdure', 'Campana sottovuoto',
+                'Cappa aspirante', 'Impastatrice', 'Lavello', 'Lavastoviglie',
+                'Mobile pensile', 'Tavolo da lavoro'
+            ]
+        },
+        {
+            type: 'Freddo',
+            label: 'Catena Freddo',
+            items: [
+                'Frigo', 'Congelatore', 'Banco frigo', 'Abbattitore',
+                'Granitore (-2°C / -10°C)', 'Macchina del Ghiaccio (-20°C)',
+                'Cella frigorifero', 'Pozzetto congelatore',
+                'Vetrina espositiva freddo (+4°C/+8°C)', 'Banco frigo espositivo',
+                'Murale grande (+4°C / +8°C)'
+            ]
+        },
+        {
+            type: 'Caldo',
+            label: 'Catena Caldo',
+            items: [
+                'Piano cottura', 'Forno', 'Griglie', 'Friggitrice', 'Forno a legna',
+                'Piastra (180°C - 240°C)', 'Bollitore (55°C - 60°C)',
+                'Vetrina espositiva caldo (≥65°C)', 'Microonde'
+            ]
+        }
     ];
 
 
@@ -250,12 +311,19 @@ export class EquipmentCensusViewComponent {
         if (n.includes('cappa')) return 'fa-fan';
         if (n.includes('affettatrice')) return 'fa-circle-notch';
         if (n.includes('bilancia')) return 'fa-weight-hanging';
-        return 'fa-microchip';
+        return 'fa-gears';
     }
 
-    onAddFromSelect(name: string) {
-        if (!name) return;
-        this.addEquipment(name);
+    onAddFromSelect(value: string) {
+        if (!value) return;
+        const sep = value.indexOf('|');
+        if (sep === -1) {
+            this.addEquipment(value);
+            return;
+        }
+        const type = value.slice(0, sep);
+        const name = value.slice(sep + 1);
+        this.addEquipment(name, type);
     }
 
     onAddCustom() {
@@ -265,27 +333,28 @@ export class EquipmentCensusViewComponent {
         this.customName = '';
     }
 
-    private addEquipment(baseName: string) {
+    private addEquipment(baseName: string, forcedType?: string) {
         const nameLower = baseName.toLowerCase();
-        let inferredType = 'Altro';
-        
-        if (nameLower.includes('caldo') || nameLower.includes('piastra') || nameLower.includes('bollitore')) {
-            inferredType = 'Caldo';
-        } else if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('congelatore') || 
-            nameLower.includes('abbattitore') || nameLower.includes('pozzetto') || nameLower.includes('freddo') || nameLower.includes('ghiaccio') || nameLower.includes('granitore') || nameLower.includes('murale')) {
-            inferredType = 'Freddo';
-        } else if (nameLower.includes('forno') || nameLower.includes('cottura') || nameLower.includes('griglie') || 
-                   nameLower.includes('friggitrice') || nameLower.includes('fuochi')) {
-            inferredType = 'Caldo';
+        let inferredType = forcedType || 'Altro';
+
+        if (!forcedType) {
+            if (nameLower.includes('caldo') || nameLower.includes('piastra') || nameLower.includes('bollitore')) {
+                inferredType = 'Caldo';
+            } else if (nameLower.includes('frigo') || nameLower.includes('cella') || nameLower.includes('congelatore') ||
+                nameLower.includes('abbattitore') || nameLower.includes('pozzetto') || nameLower.includes('freddo') || nameLower.includes('ghiaccio') || nameLower.includes('granitore') || nameLower.includes('murale')) {
+                inferredType = 'Freddo';
+            } else if (nameLower.includes('forno') || nameLower.includes('cottura') || nameLower.includes('griglie') ||
+                       nameLower.includes('friggitrice') || nameLower.includes('fuochi') || nameLower.includes('microonde')) {
+                inferredType = 'Caldo';
+            }
         }
 
         const existing = this.state.groupedEquipment();
         let finalName = baseName;
         let count = 1;
 
-        // Pattern logic: check if baseName already exists as-is, then append " 2", " 3", etc.
-        const matches = existing.filter(eq => 
-            eq.name === baseName || 
+        const matches = existing.filter(eq =>
+            eq.name === baseName ||
             eq.name.startsWith(baseName + ' ')
         );
 

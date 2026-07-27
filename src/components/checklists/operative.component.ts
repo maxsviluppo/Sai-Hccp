@@ -605,10 +605,14 @@ export class OperativeChecklistComponent {
           this.state.filterDate();
           this.state.filterCollaboratorId();
           this.state.activeTargetClientId();
+          this.state.selectedEquipment();
           this.state.initialSyncDone();
           this.state.currentUser()?.id;
           this.state.checklistRecords();
-          untracked(() => this.loadByDate());
+          untracked(() => {
+             this.loadByDate();
+             this.pruneRemovedEquipment();
+          });
        }, { allowSignalWrites: true });
    }
 
@@ -941,6 +945,7 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
       const rawRecord = this.state.getChecklistRecord('operative-checklist');
       if (rawRecord && rawRecord.data) {
          this.loadRecord(rawRecord);
+         this.pruneRemovedEquipment();
       } else {
          this.isSubmitted.set(false);
          this.statusMap.set({});
@@ -948,6 +953,23 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
          this.congelatoreCount.set(0);
          this.pozzettoCount.set(0);
       }
+   }
+
+   private pruneRemovedEquipment() {
+      const validIds = new Set(this.state.groupedEquipment().map(eq => `eq-${eq.id}`));
+      this.statusMap.update(map => {
+         const next: Record<string, any> = {};
+         let changed = false;
+         for (const [id, value] of Object.entries(map)) {
+            if (id.startsWith('eq-') && !validIds.has(id)) {
+               changed = true;
+               continue;
+            }
+            next[id] = value;
+         }
+         if (changed) this.autoSave();
+         return changed ? next : map;
+      });
    }
 
    loadRecord(record: any) {
