@@ -98,7 +98,7 @@ import { AppStateService } from '../services/app-state.service';
 
       <!-- OPERATIONAL GRID - EXTREMELY RESPONSIVE -->
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-        @for (action of quickActions; track action.id) {
+        @for (action of visibleQuickActions(); track action.id + action.label) {
             <button (click)="action.id === 'abbattimento-log' && !state.hasAbbattitore() ? null : state.setModule(action.id)"
                     [disabled]="action.id === 'abbattimento-log' && !state.hasAbbattitore()"
                     [class]="'group relative overflow-hidden bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 transition-all duration-300 text-center flex flex-col items-center justify-center gap-4 active:scale-95 h-full ' + (action.id === 'abbattimento-log' && !state.hasAbbattitore() ? 'opacity-40 cursor-not-allowed filter grayscale' : '')">
@@ -362,7 +362,13 @@ export class OperatorDashboardViewComponent {
     this.paymentNotes = '';
   }
 
-  quickActions = [
+  private readonly phaseQuickActions = [
+    { id: 'pre-op-checklist', label: 'Pre-Operativa', sub: 'Apertura', icon: 'fa-sun', color: 'text-sky-600', bg: 'bg-sky-50' },
+    { id: 'operative-checklist', label: 'Operativa', sub: 'Monitoraggio', icon: 'fa-briefcase', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { id: 'post-op-checklist', label: 'Post-Operativa', sub: 'Chiusura', icon: 'fa-moon', color: 'text-purple-600', bg: 'bg-purple-50' },
+  ];
+
+  private readonly otherQuickActions = [
     { id: 'ddt-carico', label: 'Carico Merci', sub: 'DDT / Ricezione', icon: 'fa-truck-ramp-box', color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { id: 'preparations', label: 'Preparazioni', sub: 'Anagrafica Prodotti', icon: 'fa-mortar-pestle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'ingredients-book', label: 'Libro Ingredienti', sub: 'Ricettario / Allergeni', icon: 'fa-book-open', color: 'text-orange-600', bg: 'bg-orange-50' },
@@ -373,6 +379,12 @@ export class OperatorDashboardViewComponent {
     { id: 'cleaning-maintenance', label: 'Sanificazione', sub: 'Registro Pulizie', icon: 'fa-broom', color: 'text-rose-600', bg: 'bg-rose-50' },
     { id: 'production-log', label: 'Prep. Etichette', sub: 'Stampa Etichette', icon: 'fa-tag', color: 'text-teal-600', bg: 'bg-teal-50' }
   ];
+
+  visibleQuickActions = computed(() => {
+    const config = this.state.operationalPhasesConfig();
+    const phases = this.phaseQuickActions.filter(p => config?.[p.id]?.enabled !== false);
+    return [...phases, ...this.otherQuickActions];
+  });
 
   openAnomalies = computed(() => {
     return this.state.filteredNonConformities().filter(nc => nc.status !== 'CLOSED');

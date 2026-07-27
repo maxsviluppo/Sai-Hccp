@@ -131,6 +131,11 @@ export class AppComponent {
     this.isMobileMenuOpen.set(false);
   }
 
+  goToHome() {
+    this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+    this.isMobileMenuOpen.set(false);
+  }
+
   toggleMobileMenu() {
     this.isMobileMenuOpen.update(v => !v);
   }

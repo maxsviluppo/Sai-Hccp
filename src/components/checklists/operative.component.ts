@@ -156,13 +156,19 @@ interface ChecklistItem {
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl p-5 border border-rose-100 shadow-sm relative overflow-hidden">
+                    <div class="bg-white rounded-xl border border-rose-100 shadow-sm relative overflow-hidden">
                         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-400 to-rose-200"></div>
-                        <h3 class="text-xs font-black text-rose-600 uppercase tracking-widest mb-3 flex items-center justify-between">
-                            <span>Allergeni (UE 1169)</span>
-                            <i class="fa-solid fa-circle-exclamation opacity-70"></i>
-                        </h3>
-                        <div class="grid grid-cols-1 gap-y-1.5">
+                        <button type="button"
+                                (click)="allergensExpanded.update(v => !v)"
+                                class="w-full p-5 flex items-center justify-between text-left md:pointer-events-none">
+                            <h3 class="text-xs font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                                <span>Allergeni (UE 1169)</span>
+                                <i class="fa-solid fa-circle-exclamation opacity-70"></i>
+                            </h3>
+                            <i class="fa-solid fa-chevron-down text-rose-400 text-sm transition-transform duration-300 md:hidden"
+                               [class.rotate-180]="allergensExpanded()"></i>
+                        </button>
+                        <div [class]="'px-5 pb-5 grid grid-cols-1 gap-y-1.5 ' + (allergensExpanded() ? '' : 'hidden md:grid')">
                             @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14]; track i) {
                                 <div class="flex items-start gap-2 group hover:opacity-100 transition-opacity">
                                     <span class="text-[11px] font-bold w-4 h-4 rounded bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
@@ -564,6 +570,7 @@ export class OperativeChecklistComponent {
 
    isModalOpen = signal(false);
    isResetModalOpen = signal(false);
+   allergensExpanded = signal(false);
    currentItem = signal<ChecklistItem | null>(null);
    anomalySubject = '';
    isSubmitted = signal(false);
