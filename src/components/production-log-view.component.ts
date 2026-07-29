@@ -68,7 +68,7 @@ import { FormsModule } from '@angular/forms';
                                         <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up sticky z-50">
                                             @if (preparationMatches().length > 0) {
                                                 <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
-                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Anagrafica Preparazioni</span>
+                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Scheda Prodotto</span>
                                                 </div>
                                                 @for (prep of preparationMatches(); track prep.id) {
                                                     <button type="button" (click)="selectPreparation(prep)"

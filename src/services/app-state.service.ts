@@ -99,6 +99,7 @@ export interface Preparation {
   name: string;
   category: string;
   expiryDays: number;
+  ingredients?: string[];
 }
 
 export interface MessageReply {
@@ -1488,7 +1489,7 @@ export class AppStateService {
     { id: 'admin-operational-phases', label: 'Fasi Operative (Pre, Op, Post)', icon: 'fa-layer-group', category: 'monitoring', adminOnly: true },
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
-    { id: 'preparations', label: 'Anagrafica Preparazioni', icon: 'fa-mortar-pestle', category: 'operations', operatorOnly: true },
+    { id: 'preparations', label: 'Scheda Prodotto', icon: 'fa-mortar-pestle', category: 'operations', operatorOnly: true },
     { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'operations' },
     { id: 'abbattimento-log', label: 'Registro Abbattimento', icon: 'fa-icicles', category: 'operations', operatorOnly: true },
     { id: 'ddt-carico', label: 'Carico Merci / DDT', icon: 'fa-truck-ramp-box', category: 'operations', operatorOnly: true },
@@ -3048,7 +3049,8 @@ export class AppStateService {
         clientId: p.client_id,
         name: p.name,
         category: p.category,
-        expiryDays: p.expiry_days
+        expiryDays: p.expiry_days,
+        ingredients: p.ingredients
       })));
     }
   }
@@ -3063,7 +3065,8 @@ export class AppStateService {
       clientId: clientId,
       name: prep.name || '',
       category: prep.category || '',
-      expiryDays: prep.expiryDays || 0
+      expiryDays: prep.expiryDays || 0,
+      ingredients: prep.ingredients || []
     };
 
     this.preparations.update(list => {
@@ -3076,7 +3079,8 @@ export class AppStateService {
       client_id: newPrep.clientId,
       name: newPrep.name,
       category: newPrep.category,
-      expiry_days: newPrep.expiryDays
+      expiry_days: newPrep.expiryDays,
+      ingredients: newPrep.ingredients
     });
 
     if (!error) {

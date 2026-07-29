@@ -19,7 +19,7 @@ import { ToastService } from '../services/toast.service';
             <i class="fa-solid fa-mortar-pestle text-3xl"></i>
           </div>
           <div>
-            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Anagrafica Preparazioni</h2>
+            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Scheda Prodotto</h2>
             <p class="text-slate-500 font-medium mt-1">Gestione dei prodotti preparati in cucina e relativa scadenza.</p>
           </div>
         </div>
@@ -95,6 +95,13 @@ import { ToastService } from '../services/toast.service';
                   <div class="pr-12">
                     <h4 class="font-black text-slate-800 text-xl leading-tight mb-1">{{ prep.name }}</h4>
                     <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-widest">{{ prep.category }}</span>
+                    @if (prep.ingredients && prep.ingredients.length > 0) {
+                      <div class="mt-2 flex flex-wrap gap-1">
+                        @for (ing of prep.ingredients; track ing) {
+                          <span class="px-2 py-0.5 bg-slate-50 text-slate-600 rounded text-[9px] font-bold border border-slate-200">{{ ing }}</span>
+                        }
+                      </div>
+                    }
                   </div>
                 </div>
 
@@ -197,6 +204,33 @@ import { ToastService } from '../services/toast.service';
                       <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase">Giorni</span>
                     </div>
                   </div>
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Ingredienti</label>
+                  <div class="flex gap-2 mb-3">
+                    <input type="text" [(ngModel)]="newIngredientName" (keyup.enter)="addIngredient()" placeholder="Es. Farina..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none">
+                    <button type="button" (click)="addIngredient()" class="px-6 bg-indigo-50 text-indigo-600 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
+                      <i class="fa-solid fa-plus"></i> Aggiungi
+                    </button>
+                  </div>
+                  
+                  @if (formPrep.ingredients && formPrep.ingredients.length > 0) {
+                    <div class="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      @for (ing of formPrep.ingredients; track ing) {
+                        <div class="flex justify-between items-center bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm">
+                          <span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-angle-right text-indigo-300 mr-2 text-[10px]"></i>{{ ing }}</span>
+                          <button type="button" (click)="removeIngredient(ing)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="text-center p-4 border border-dashed border-slate-300 rounded-xl text-slate-400 text-xs font-bold">
+                      Nessun ingrediente inserito.
+                    </div>
+                  }
                 </div>
               </div>
 
@@ -355,8 +389,25 @@ export class PreparationsViewComponent {
   formPrep: Partial<Preparation> = {
     name: '',
     category: '',
-    expiryDays: 2
+    expiryDays: 2,
+    ingredients: []
   };
+
+  newIngredientName = '';
+
+  addIngredient() {
+    const name = this.newIngredientName.trim();
+    if (name && (!this.formPrep.ingredients || !this.formPrep.ingredients.includes(name))) {
+      this.formPrep.ingredients = [...(this.formPrep.ingredients || []), name];
+    }
+    this.newIngredientName = '';
+  }
+
+  removeIngredient(ing: string) {
+    if (this.formPrep.ingredients) {
+      this.formPrep.ingredients = this.formPrep.ingredients.filter(i => i !== ing);
+    }
+  }
 
   filteredPreps = computed(() => {
     const all = this.state.preparations();
@@ -367,7 +418,8 @@ export class PreparationsViewComponent {
 
   openCreateForm() {
     this.editingId.set(null);
-    this.formPrep = { name: '', category: '', expiryDays: 2 };
+    this.formPrep = { name: '', category: '', expiryDays: 2, ingredients: [] };
+    this.newIngredientName = '';
     this.isAddingNewCategory.set(false);
     this.newCategoryName = '';
     this.isFormOpen.set(true);
@@ -381,7 +433,8 @@ export class PreparationsViewComponent {
 
   editPrep(prep: Preparation) {
     this.editingId.set(prep.id);
-    this.formPrep = { ...prep };
+    this.formPrep = { ...prep, ingredients: prep.ingredients ? [...prep.ingredients] : [] };
+    this.newIngredientName = '';
     this.isAddingNewCategory.set(false);
     this.isFormOpen.set(true);
   }
