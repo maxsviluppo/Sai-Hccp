@@ -159,7 +159,7 @@ interface ChecklistItem {
                     <div class="bg-white rounded-xl border border-rose-100 shadow-sm relative overflow-hidden">
                         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-400 to-rose-200"></div>
                         <button type="button"
-                                (click)="allergensExpanded.update(v => !v)"
+                                (click)="toggleAllergensExpanded()"
                                 class="w-full p-5 flex items-center justify-between text-left md:pointer-events-none">
                             <h3 class="text-xs font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
                                 <span>Allergeni (UE 1169)</span>
@@ -571,6 +571,11 @@ export class OperativeChecklistComponent {
    isModalOpen = signal(false);
    isResetModalOpen = signal(false);
    allergensExpanded = signal(false);
+
+   toggleAllergensExpanded() {
+      this.allergensExpanded.update(expanded => !expanded);
+   }
+
    currentItem = signal<ChecklistItem | null>(null);
    anomalySubject = '';
    isSubmitted = signal(false);
