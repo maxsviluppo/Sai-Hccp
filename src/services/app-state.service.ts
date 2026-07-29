@@ -135,6 +135,7 @@ export interface ProductionIngredient {
   supplierName?: string;
   photo?: string; // base64 jpg
   allergens?: string[];
+  requiresConfirmation?: boolean;
 }
 
 export interface ProductionRecord {

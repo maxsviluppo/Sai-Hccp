@@ -149,9 +149,13 @@ import { FormsModule } from '@angular/forms';
 
                             <div class="pt-5 border-t border-slate-100 flex gap-3">
                                 <button (click)="cancelEdit()" class="flex-1 py-3 bg-slate-50 text-slate-500 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">Annulla</button>
-                                <button (click)="saveRecord()" [disabled]="!currentRecord.mainProductName"
+                                <button (click)="saveRecord()" [disabled]="!currentRecord.mainProductName || hasSuspendedIngredients()"
                                         class="flex-[2] py-3 bg-teal-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-teal-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i> Salva Registro
+                                    @if (hasSuspendedIngredients()) {
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Conferma Ingr.
+                                    } @else {
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Salva Registro
+                                    }
                                 </button>
                             </div>
                         </div>
@@ -300,7 +304,7 @@ import { FormsModule } from '@angular/forms';
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @for (ing of ingredientsList(); track ing.id) {
-                                        <tr class="hover:bg-slate-50">
+                                        <tr [class]="ing.requiresConfirmation ? 'bg-amber-50/50 hover:bg-amber-50 border-l-4 border-amber-400' : 'hover:bg-slate-50'">
                                             <td class="px-4 py-3">
                                                 <div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden cursor-zoom-in group/img relative"
                                                      (click)="ing.photo ? zoomedPhoto.set(ing.photo) : null">
@@ -316,6 +320,9 @@ import { FormsModule } from '@angular/forms';
                                                 @let abbIng = findAbbattimentoRecord(ing);
                                                 <span class="flex items-center gap-1.5">
                                                     {{ ing.name }}
+                                                    @if (ing.requiresConfirmation) {
+                                                        <span class="text-[9px] font-black uppercase text-amber-600 bg-amber-100/50 border border-amber-200 px-1.5 py-0.5 rounded">Verifica Associazione</span>
+                                                    }
                                                     @if (abbIng) {
                                                         <i class="fa-solid fa-icicles text-indigo-400 text-[10px]" title="Abbattuto il {{ abbIng.recordedDate | date:'dd/MM/yy' }}"></i>
                                                     }
@@ -329,16 +336,29 @@ import { FormsModule } from '@angular/forms';
                                                             <i class="fa-solid fa-icicles text-[8px]"></i>
                                                             Scad. {{ abbIng.postExpiryDate | date:'dd/MM/yy' }}
                                                         </p>
-                                                    } @else if (ing.expiryDate) {
-                                                        <p class="text-[9px] text-slate-400 font-bold uppercase">Scad. {{ ing.expiryDate | date:'dd/MM/yy' }}</p>
+                                                    } @else {
+                                                        <input type="date" [value]="ing.expiryDate || ''" (input)="updateIngExpiry(ing.id, $any($event.target).value)" 
+                                                               [class]="'mt-1 w-full max-w-[120px] rounded px-1.5 py-0.5 text-[9px] font-bold text-slate-500 outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-100/30 border-amber-200' : 'bg-slate-50 border-slate-200')"
+                                                               title="Modifica Scadenza">
                                                     }
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3">
-                                                <span class="text-[10px] font-black text-slate-500 uppercase">{{ ing.supplierName || '—' }}</span>
+                                                <input type="text" [value]="ing.supplierName || ''" (input)="updateIngSupplier(ing.id, $any($event.target).value)" 
+                                                       placeholder="Fornitore" 
+                                                       [class]="'w-full rounded px-2 py-1 text-[10px] font-black text-slate-500 uppercase outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-100/30 border-amber-200' : 'bg-slate-50 border-slate-200')">
                                             </td>
-                                            <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">{{ ing.lotto || '—' }}</td>
+                                            <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">
+                                                <input type="text" [value]="ing.lotto || ''" (input)="updateIngLotto(ing.id, $any($event.target).value)" 
+                                                       placeholder="Lotto" 
+                                                       [class]="'w-full rounded px-2 py-1 text-xs font-mono font-bold text-slate-600 outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-100/30 border-amber-200' : 'bg-slate-50 border-slate-200')">
+                                            </td>
                                             <td class="px-4 py-3 text-right whitespace-nowrap">
+                                                @if (ing.requiresConfirmation) {
+                                                    <button type="button" (click)="confirmIngredient(ing.id)" class="text-amber-600 hover:text-amber-800 bg-amber-100/50 border border-amber-200 hover:bg-amber-200 rounded-lg px-2.5 py-1.5 mr-2 transition-all shadow-sm font-black text-[9px] uppercase tracking-widest">
+                                                        <i class="fa-solid fa-check"></i> Conferma
+                                                    </button>
+                                                }
                                                 @let ab = findAbbattimentoRecord(ing);
                                                 @if (ab) {
                                                     <button type="button" (click)="openAbbattimentoPrintModal(ab)" class="text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg p-2 mr-2 transition-all shadow-sm" title="Stampa Etichetta Abbattimento ({{ ab.recordedDate | date:'dd/MM' }})">
@@ -831,6 +851,65 @@ export class ProductionLogViewComponent {
             this.currentRecord.expiryDate = pkgDate.toISOString().split('T')[0];
             this.toast.success('Preparazione Selezionata', `${prep.name} - Scadenza automatica impostata (+${prep.expiryDays}gg)`);
         }
+
+        // Auto-fill ingredients from pantry
+        if (prep.ingredients && Array.isArray(prep.ingredients) && prep.ingredients.length > 0) {
+            const today = new Date().toISOString().split('T')[0];
+            const local = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
+            const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId;
+            
+            let foundCount = 0;
+
+            prep.ingredients.forEach((ingName: string) => {
+                const q = ingName.toLowerCase();
+                const matches = local
+                    .filter((i: any) => i.ingredientName?.toLowerCase() === q || i.ingredientName?.toLowerCase().includes(q))
+                    .filter((i: any) => !clientId || i.clientId === clientId)
+                    .filter((i: any) => !i.expiryDate || i.expiryDate >= today)
+                    .sort((a, b) => {
+                        // Prioritize exact matches first
+                        const aExact = a.ingredientName?.toLowerCase() === q;
+                        const bExact = b.ingredientName?.toLowerCase() === q;
+                        if (aExact && !bExact) return -1;
+                        if (!aExact && bExact) return 1;
+
+                        if (!a.expiryDate) return 1;
+                        if (!b.expiryDate) return -1;
+                        return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+                    });
+
+                const bestMatch = matches[0];
+                const isExactMatch = bestMatch && bestMatch.ingredientName?.toLowerCase() === q;
+
+                const newIng: any = {
+                    id: Math.random().toString(36).substring(2, 9),
+                    name: bestMatch ? bestMatch.ingredientName : ingName,
+                    packingDate: today,
+                    expiryDate: '',
+                    lotto: '',
+                    supplierName: '',
+                    allergens: [],
+                    requiresConfirmation: bestMatch && !isExactMatch
+                };
+
+                if (bestMatch) {
+                    foundCount++;
+                    newIng.lotto = bestMatch.lotto || '';
+                    newIng.supplierName = bestMatch.supplierName || '';
+                    
+                    const abb = this.findAbbattimentoRecord(bestMatch);
+                    if (abb && abb.postExpiryDate) {
+                        newIng.expiryDate = abb.postExpiryDate;
+                    } else {
+                        newIng.expiryDate = bestMatch.expiryDate || '';
+                    }
+                }
+
+                this.ingredientsList.update(list => [...list, newIng]);
+            });
+            
+            this.toast.success('Ingredienti Caricati', `Trovati in dispensa ${foundCount} su ${prep.ingredients.length} ingredienti (FIFO).`);
+        }
     }
 
     resetIngredientForm() {
@@ -919,6 +998,25 @@ export class ProductionLogViewComponent {
         reader.onload = (e) => this.tempPhoto = e.target?.result as string;
     }
 
+    updateIngLotto(id: string, val: string) {
+        this.ingredientsList.update(list => list.map(i => i.id === id ? { ...i, lotto: val } : i));
+    }
+    
+    updateIngExpiry(id: string, val: string) {
+        this.ingredientsList.update(list => list.map(i => i.id === id ? { ...i, expiryDate: val } : i));
+    }
+    
+    updateIngSupplier(id: string, val: string) {
+        this.ingredientsList.update(list => list.map(i => i.id === id ? { ...i, supplierName: val } : i));
+    }
+
+    confirmIngredient(id: string) {
+        this.ingredientsList.update(list => list.map(i => i.id === id ? { ...i, requiresConfirmation: false } : i));
+    }
+
+    hasSuspendedIngredients(): boolean {
+        return this.ingredientsList().some(i => i.requiresConfirmation);
+    }
     addIngredient() {
         if (!this.newIngredient.name) return;
 
