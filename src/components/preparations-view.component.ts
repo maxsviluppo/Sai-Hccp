@@ -19,7 +19,7 @@ import { ToastService } from '../services/toast.service';
             <i class="fa-solid fa-mortar-pestle text-3xl"></i>
           </div>
           <div>
-            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Scheda Prodotto</h2>
+            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Scheda Preparazione</h2>
             <p class="text-slate-500 font-medium mt-1">Gestione dei prodotti preparati in cucina e relativa scadenza.</p>
           </div>
         </div>

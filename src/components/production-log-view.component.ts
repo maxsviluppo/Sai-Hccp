@@ -51,7 +51,7 @@ import { FormsModule } from '@angular/forms';
                 <div class="lg:col-span-1 space-y-4">
                     <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-6">
                         <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800">Scheda Prodotto</h3>
+                            <h3 class="text-lg font-bold text-slate-800">Scheda Preparazione</h3>
                             <div class="px-2 py-0.5 bg-teal-50 border border-teal-100 text-teal-600 rounded text-[10px] font-black uppercase tracking-widest">Master</div>
                         </div>
 
@@ -68,7 +68,7 @@ import { FormsModule } from '@angular/forms';
                                         <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up sticky z-50">
                                             @if (preparationMatches().length > 0) {
                                                 <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
-                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Scheda Prodotto</span>
+                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Scheda Preparazione</span>
                                                 </div>
                                                 @for (prep of preparationMatches(); track prep.id) {
                                                     <button type="button" (click)="selectPreparation(prep)"

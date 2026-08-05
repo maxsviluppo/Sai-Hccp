@@ -1490,7 +1490,7 @@ export class AppStateService {
     { id: 'admin-operational-phases', label: 'Fasi Operative (Pre, Op, Post)', icon: 'fa-layer-group', category: 'monitoring', adminOnly: true },
     { id: 'pre-op-checklist', label: 'Fase Pre-operativa', icon: 'fa-clipboard-check', category: 'operations', operatorOnly: true },
     { id: 'operative-checklist', label: 'Fase Operativa', icon: 'fa-briefcase', category: 'operations', operatorOnly: true },
-    { id: 'preparations', label: 'Scheda Prodotto', icon: 'fa-mortar-pestle', category: 'operations', operatorOnly: true },
+    { id: 'preparations', label: 'Scheda Preparazione', icon: 'fa-mortar-pestle', category: 'operations', operatorOnly: true },
     { id: 'production-log', label: 'Rintracciabilità Prodotti', icon: 'fa-barcode', category: 'operations' },
     { id: 'abbattimento-log', label: 'Registro Abbattimento', icon: 'fa-icicles', category: 'operations', operatorOnly: true },
     { id: 'ddt-carico', label: 'Carico Merci / DDT', icon: 'fa-truck-ramp-box', category: 'operations', operatorOnly: true },
