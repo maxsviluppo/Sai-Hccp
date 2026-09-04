@@ -20,31 +20,38 @@ export interface PantryLoadRecord {
   items?: PantryLoadRecord[];
 }
 
-export const DDT_AI_PROMPT = `Sei un operatore HACCP che legge un DDT / Documento di Trasporto / Bolla di consegna italiana.
+export const DDT_AI_PROMPT = `Sei un operatore HACCP esperto che legge un DDT / Documento di Trasporto / Bolla di consegna italiana.
 
 FORNITORE (OBBLIGATORIO):
-- Il MITTENTE / FORNITORE è nel riquadro in ALTO A SINISTRA.
-- Il DESTINATARIO / CLIENTE è in ALTO A DESTRA: NON usarlo come fornitore.
-- supplierName = ragione sociale del mittente (sinistra).
+- Il MITTENTE / FORNITORE è nel riquadro o nell'area in ALTO A SINISTRA.
+- Se in alto a sinistra è presente un logo grafico con testo o marchio:
+  * Marchio "SAIMA" (es. "SAIMA S.p.a." - P.IVA 01992440618): supplierName = "SAIMA S.p.a.".
+  * Marchio con maialino e scritta "jamonita": supplierName = "jamonita".
+- Altrimenti supplierName = ragione sociale del mittente (sinistra).
+- Il DESTINATARIO / CLIENTE è in ALTO A DESTRA (es. "Hotel Forum", "PETRICELLI ANTONIO"): NON usarlo MAI come fornitore.
 - supplierPiva = Partita IVA del mittente se visibile.
 
 DATA:
-- entryDate = data del documento (preferibilmente YYYY-MM-DD).
+- entryDate = data del documento (formato YYYY-MM-DD).
 
-PRODOTTI (PARTE PIÙ IMPORTANTE):
-- Estrai TUTTE le righe della tabella prodotti al centro del documento.
-- Ogni riga merce = un oggetto in "items".
-- ingredientName = SOLO il nome del prodotto/merce, senza codici lotto.
-- lotto = Lotto / Lot / Batch / Codice lotto (stringa vuota se assente).
-  ATTENZIONE: In molti DDT italiani il lotto è scritto NELLA COLONNA DESCRIZIONE subito dopo il nome prodotto,
-  preceduto dalla lettera L o L. (es. "Pomodorini Datterini L.29000/TR01" oppure "Basilico L.F.1862-23062026-BASITA").
-  In questi casi: ingredientName = solo la parte prima di L. (es. "Pomodorini Datterini"), lotto = tutto ciò che segue L. (es. "29000/TR01").
-- quantity = Quantità / Q.tà / Qta / U.M. / Kg / Pezzi (es. "10 KG", "6 CT").
-- expiryDate = Scadenza / Data scadenza (YYYY-MM-DD o stringa vuota).
-- NON saltare righe: se vedi 5 prodotti, items deve avere 5 elementi.
-- Ignora righe di intestazione tabella, totali, IVA, trasporto.
+PRODOTTI E CRITERI DI RICONOSCIMENTO RIGHE MERCE:
+A) MODELLO SAIMA (presenza colonna "LOTTO E SCADENZA" come 2ª colonna):
+   - Prendi SOLO ed ESCLUSIVAMENTE le descrizioni/righe che hanno nella seconda colonna ("LOTTO E SCADENZA") espressamente sia il numero di lotto che la data di scadenza (es. "26166 - 11/04/27").
+   - Quando la seconda colonna è vuota o priva di lotto e scadenza (come ad esempio 'Omaggio con rivalsa iva', 'INFORMAZIONI PER IL CLIENTE', totali o note di consegna), NON DEVI assolutamente acquisire la descrizione!
+   - Per ogni riga valida estrai:
+     * ingredientName: descrizione articolo (dalla colonna DESCRIZIONE ARTICOLO).
+     * lotto: codice lotto (la parte prima del trattino nella colonna lotto e scadenza).
+     * expiryDate: data di scadenza (dopo il trattino, convertita in YYYY-MM-DD).
+     * quantity: quantità dalla colonna QUANTITA (es. "1x1 CT", "2x2,5 KG", "3x25 KG").
+   - Controlla tutte le righe della tabella una ad una senza saltarne nessuna valida (inclusi farine, semola, polpe, latticini, surgelati).
 
-Se un campo non è leggibile usa "" (stringa vuota) ma compila sempre ingredientName se la riga prodotto è visibile.`;
+B) MODELLO JAMONITA E ALTRI DDT A COLLI:
+   - Ti accorgi degli elementi da inserire dal NUMERO DEI COLLI che precede la descrizione (nella colonna COLLI a sinistra).
+   - Quando NON c'è il numero dei colli (la colonna COLLI è vuota o assente per quella riga), NON DEVI acquisire la descrizione (perché sono note come 'Ns.Confer', annotazioni o righe informative).
+   - Solo le righe con un numero valido di colli (es. 1, 2, 3, ecc.) vanno acquisite.
+
+Se un campo lotto o scadenza non è presente nei modelli generici usa "" (stringa vuota).`;
+
 
 export const DDT_AI_SCHEMA = {
   type: 'OBJECT',

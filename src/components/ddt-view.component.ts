@@ -595,10 +595,10 @@ export class DdtViewComponent {
   }
 
   private async retryExtractProductsOnly(base64: string, mimeType: string, key: string): Promise<any | null> {
-    const prompt = `Guarda questo DDT italiano. Estrai SOLO la tabella prodotti/merci (ogni riga del corpo documento).
+    const prompt = `Guarda questo DDT italiano. Estrai la tabella prodotti/merci.
+IMPORTANTE: Ti accorgi degli elementi da inserire dal numero dei colli che precede la descrizione (colonna COLLI). Quando non c'è il numero dei colli, NON devi acquisire la descrizione (ignora annotazioni o note come Ns.Confer). Acquisisci solo le righe merce con numero di colli valido.
 Rispondi in JSON con formato:
-{"items":[{"ingredientName":"nome prodotto","lotto":"","quantity":"","expiryDate":""}]}
-Includi TUTTE le righe prodotto visibili. ingredientName è obbligatorio per ogni riga.`;
+{"items":[{"ingredientName":"nome prodotto","lotto":"","quantity":"","expiryDate":""}]}`;
 
     const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
@@ -854,7 +854,7 @@ Includi TUTTE le righe prodotto visibili. ingredientName è obbligatorio per ogn
     const config = this.state.aiConfig();
     const key = config?.apiKey;
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-3-flash-preview';
+    const initialModel = config?.model || 'gemini-2.5-flash';
 
     if (!key) {
       this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
@@ -873,9 +873,7 @@ Includi TUTTE le righe prodotto visibili. ingredientName è obbligatorio per ogn
     sessionStorage.setItem('haccp_gemini_calls', String(current + 1));
 
     const modelsToTry = [
-      'gemini-2.5-flash-lite',
       'gemini-2.5-flash',
-      'gemini-3.5-flash',
       'gemini-2.0-flash',
       'gemini-1.5-flash'
     ];

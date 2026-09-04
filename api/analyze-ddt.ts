@@ -1,5 +1,39 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
+const DDT_AI_PROMPT = `Sei un operatore HACCP esperto che legge un DDT / Documento di Trasporto / Bolla di consegna italiana.
+
+FORNITORE (OBBLIGATORIO):
+- Il MITTENTE / FORNITORE è nel riquadro o nell'area in ALTO A SINISTRA.
+- Se in alto a sinistra è presente un logo grafico con testo o marchio:
+  * Marchio "SAIMA" (es. "SAIMA S.p.a." - P.IVA 01992440618): supplierName = "SAIMA S.p.a.".
+  * Marchio con maialino e scritta "jamonita": supplierName = "jamonita".
+- Altrimenti supplierName = ragione sociale del mittente (sinistra).
+- Il DESTINATARIO / CLIENTE è in ALTO A DESTRA (es. "Hotel Forum", "PETRICELLI ANTONIO"): NON usarlo MAI come fornitore.
+- supplierPiva = Partita IVA del mittente se visibile.
+
+DATA:
+- entryDate = data del documento (formato YYYY-MM-DD).
+
+PRODOTTI E CRITERI DI RICONOSCIMENTO RIGHE MERCE:
+A) MODELLO SAIMA (presenza colonna "LOTTO E SCADENZA" come 2ª colonna):
+   - Prendi SOLO ed ESCLUSIVAMENTE le descrizioni/righe che hanno nella seconda colonna ("LOTTO E SCADENZA") espressamente sia il numero di lotto che la data di scadenza (es. "26166 - 11/04/27").
+   - Quando la seconda colonna è vuota o priva di lotto e scadenza (come ad esempio 'Omaggio con rivalsa iva', 'INFORMAZIONI PER IL CLIENTE', totali o note di consegna), NON DEVI assolutamente acquisire la descrizione!
+   - Per ogni riga valida estrai:
+     * ingredientName: descrizione articolo (dalla colonna DESCRIZIONE ARTICOLO).
+     * lotto: codice lotto (la parte prima del trattino nella colonna lotto e scadenza).
+     * expiryDate: data di scadenza (dopo il trattino, convertita in YYYY-MM-DD).
+     * quantity: quantità dalla colonna QUANTITA (es. "1x1 CT", "2x2,5 KG", "3x25 KG").
+   - Controlla tutte le righe della tabella una ad una senza saltarne nessuna valida (inclusi farine, semola, polpe, latticini, surgelati).
+
+B) MODELLO JAMONITA E ALTRI DDT A COLLI:
+   - Ti accorgi degli elementi da inserire dal NUMERO DEI COLLI che precede la descrizione (nella colonna COLLI a sinistra).
+   - Quando NON c'è il numero dei colli (la colonna COLLI è vuota o assente per quella riga), NON DEVI acquisire la descrizione (perché sono note come 'Ns.Confer', annotazioni o righe informative).
+   - Solo le righe con un numero valido di colli (es. 1, 2, 3, ecc.) vanno acquisite.
+
+Se un campo lotto o scadenza non è presente nei modelli generici usa "" (stringa vuota).`;
+
+
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -17,17 +51,14 @@ export default async function handler(req: any, res: any) {
   }
 
   const modelsToTry = [
-    'gemini-2.5-flash-lite',
     'gemini-2.5-flash',
-    'gemini-3.5-flash',
+    'gemini-2.5-flash-lite',
     'gemini-2.0-flash',
     'gemini-1.5-flash'
   ];
 
   try {
     const ai = new GoogleGenAI({ apiKey: key });
-    const prompt = `Analyze this DDT (shipping document) and extract all products. Extract the supplier name, document date (entryDate), and the list of items with their name, lot number, quantity, and expiry date. If some fields are not readable, return them as empty strings. Response must be strictly in JSON.`;
-
     let lastError = '';
     let parsedData = null;
     let success = false;
@@ -39,7 +70,7 @@ export default async function handler(req: any, res: any) {
           model: modelName,
           contents: [
             { inlineData: { mimeType, data: base64 } },
-            { text: prompt }
+            { text: DDT_AI_PROMPT }
           ],
           config: {
             responseMimeType: 'application/json',
@@ -47,6 +78,7 @@ export default async function handler(req: any, res: any) {
               type: Type.OBJECT,
               properties: {
                 supplierName: { type: Type.STRING },
+                supplierPiva: { type: Type.STRING },
                 entryDate: { type: Type.STRING },
                 items: {
                   type: Type.ARRAY,
@@ -57,14 +89,13 @@ export default async function handler(req: any, res: any) {
                       lotto: { type: Type.STRING },
                       quantity: { type: Type.STRING },
                       expiryDate: { type: Type.STRING }
-                    },
-                    required: ['ingredientName', 'lotto', 'quantity', 'expiryDate']
+                    }
                   }
                 }
               },
               required: ['supplierName', 'entryDate', 'items']
             },
-            maxOutputTokens: 1500,
+            maxOutputTokens: 8192,
             temperature: 0.1
           }
         });
@@ -77,7 +108,7 @@ export default async function handler(req: any, res: any) {
         parsedData = JSON.parse(text);
         success = true;
         console.log(`[API analyze-ddt] Success with model: ${modelName}`);
-        break; // Success! Exit loop
+        break;
 
       } catch (err: any) {
         console.warn(`[API analyze-ddt] Model ${modelName} failed:`, err.message);
