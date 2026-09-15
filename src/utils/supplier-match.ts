@@ -134,10 +134,10 @@ export function groupPantryLoadsByDocument(
   const grouped = new Map<string, PantryLoadRecord>();
 
   for (const item of loads) {
-    const key = `${item.entryDate || ''}_${item.ddtImageUrl || 'no-img'}`;
+    const key = (item as any).loadGroupId || `${item.entryDate || ''}_${item.supplierId || item.supplierName || ''}`;
     if (!grouped.has(key)) {
       grouped.set(key, {
-        id: item.id,
+        id: (item as any).loadGroupId || item.id,
         entryDate: item.entryDate,
         ddtImageUrl: item.ddtImageUrl,
         supplierId: item.supplierId,
@@ -145,7 +145,11 @@ export function groupPantryLoadsByDocument(
         items: [item]
       });
     } else {
-      grouped.get(key)!.items!.push(item);
+      const g = grouped.get(key)!;
+      g.items!.push(item);
+      if (!g.ddtImageUrl && item.ddtImageUrl) {
+        g.ddtImageUrl = item.ddtImageUrl;
+      }
     }
   }
 

@@ -533,8 +533,12 @@ export class SuppliersViewComponent {
     if (!load) return;
 
     const ddtPantry = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
-    // Delete all items in the grouped load (if they have the same entryDate and image)
-    const updatedPantry = ddtPantry.filter(d => !(d.entryDate === load.entryDate && d.ddtImageUrl === load.ddtImageUrl));
+    const loadItemIds = new Set((load.items || []).map((i: any) => i.id));
+    const updatedPantry = ddtPantry.filter(d => {
+      if (loadItemIds.has(d.id)) return false;
+      if (load.id && (d as any).loadGroupId === load.id) return false;
+      return !(d.entryDate === load.entryDate && d.supplierId === load.supplierId);
+    });
     this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
     
     this.ddtToDelete.set(null);

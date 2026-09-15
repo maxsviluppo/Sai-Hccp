@@ -491,17 +491,21 @@ export class AppStateService {
   }
 
   private saveState() {
-    const state = {
-      clients: this.clients(),
-      systemUsers: this.systemUsers(),
-      documents: this.documents(),
-      selectedEquipment: this.selectedEquipment(),
-      disabledDocs: this.disabledDocs(),
-      checklistRecords: this.checklistRecords(),
-      productionRecords: this.productionRecords(),
-      messages: this.messages()
-    };
-    localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
+    try {
+      const state = {
+        clients: this.clients(),
+        systemUsers: this.systemUsers(),
+        documents: this.documents(),
+        selectedEquipment: this.selectedEquipment(),
+        disabledDocs: this.disabledDocs(),
+        checklistRecords: this.checklistRecords(),
+        productionRecords: this.productionRecords(),
+        messages: this.messages()
+      };
+      localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
+    } catch (e) {
+      console.warn('[HACCP-STATE] LocalStorage save skipped (quota or unavailable):', e);
+    }
   }
 
   /** Mantiene compatibilità e inizializza stato */
@@ -1664,6 +1668,19 @@ export class AppStateService {
         this.mapDbChecklistRecord(r, existingById.get(r.id))
       );
 
+      // Auto-purge expired products from ddt_pantry from database and memory
+      for (const rec of mapped) {
+        if (rec.moduleId === 'ddt_pantry' && Array.isArray(rec.data)) {
+          const rawItems = rec.data as any[];
+          const validItems = rawItems.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate));
+          if (validItems.length < rawItems.length) {
+            rec.data = validItems;
+            void supabase.from('checklist_records').update({ data: validItems }).eq('id', rec.id);
+            console.log(`[HACCP-PANTRY] Auto-purged ${rawItems.length - validItems.length} expired items from client ${rec.clientId}`);
+          }
+        }
+      }
+
       const serverIds = new Set(mapped.map(r => r.id));
       const pendingLocal = existingForClient.filter(r => !serverIds.has(r.id));
       const mergedForClient = [...mapped, ...pendingLocal].sort(
@@ -1830,8 +1847,23 @@ export class AppStateService {
       record.id = this.checklistRecords()[existingIndex].id;
     }
 
+    // When saving a GLOBAL record, clean up any older duplicate IDs for this module and client
+    if (record.date === 'GLOBAL') {
+      const duplicateIds = this.checklistRecords()
+        .filter(r => r.moduleId === moduleId && r.clientId === record.clientId && (r as any).date === 'GLOBAL' && r.id !== record.id)
+        .map(r => r.id);
+      if (duplicateIds.length > 0) {
+        void supabase.from('checklist_records').delete().in('id', duplicateIds);
+      }
+    }
+
     this.checklistRecords.update(records => {
-      const filtered = records.filter(r => r.id !== record.id);
+      const filtered = records.filter(r => {
+        if (record.date === 'GLOBAL') {
+          return !(r.moduleId === moduleId && r.clientId === record.clientId && (r as any).date === 'GLOBAL');
+        }
+        return r.id !== record.id;
+      });
       return [...filtered, record as any];
     });
 
@@ -1951,7 +1983,7 @@ export class AppStateService {
     
     if (allRecords.length === 0) return null;
 
-    // Priority 1: Record with date 'GLOBAL' (must have data)
+    // Priority 1: Record with date 'GLOBAL'
     const globalRecord = allRecords
       .filter(r => (r as any).date === 'GLOBAL')
       .sort((a, b) => {
@@ -1960,13 +1992,13 @@ export class AppStateService {
         return timeB - timeA;
       })[0];
 
-    if (globalRecord && globalRecord.data && (!Array.isArray(globalRecord.data) || globalRecord.data.length > 0)) {
+    if (globalRecord && globalRecord.data !== undefined && globalRecord.data !== null) {
       return globalRecord.data;
     }
 
-    // Priority 2: Most recent record regardless of date (must have data)
+    // Priority 2: Most recent record regardless of date
     const latestWithData = allRecords
-      .filter(r => r.data && (!Array.isArray(r.data) || r.data.length > 0))
+      .filter(r => r.data !== undefined && r.data !== null)
       .sort((a, b) => {
         const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
         const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
@@ -1982,19 +2014,93 @@ export class AppStateService {
    */
   async getGlobalRecordData(moduleId: string): Promise<any | null> {
     const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
-    const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
+    let allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
 
-    if (allRecords.length === 0) return null;
+    if (allRecords.length === 0) {
+      try {
+        const { data: dbRec, error } = await supabase
+          .from('checklist_records')
+          .select('*')
+          .eq('client_id', targetClientId)
+          .eq('module_id', moduleId)
+          .order('timestamp', { ascending: false })
+          .limit(1);
+        if (!error && dbRec && dbRec.length > 0) {
+          const rec = this.mapDbChecklistRecord(dbRec[0]);
+          this.checklistRecords.update(prev => [...prev.filter(r => r.id !== rec.id), rec]);
+          return rec.data ?? null;
+        }
+      } catch (e) {
+        console.warn('[HACCP-SYNC] direct fetch fallback error:', e);
+      }
+      return null;
+    }
 
     // Find the best candidate record (GLOBAL date first, then most recent)
     const globalRecord = allRecords
       .filter(r => (r as any).date === 'GLOBAL')
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
-    const candidate = globalRecord || allRecords.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-    if (!candidate) return null;
+    let resultData: any = null;
+    if (globalRecord && globalRecord.data !== undefined && globalRecord.data !== null) {
+      resultData = globalRecord.data;
+    } else {
+      const candidate = allRecords.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+      resultData = candidate ? candidate.data ?? null : null;
+    }
 
-    return candidate.data ?? null;
+    if (moduleId === 'ddt_pantry' && Array.isArray(resultData)) {
+      const valid = resultData.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate));
+      if (valid.length < resultData.length) {
+        this.saveGlobalRecord('ddt_pantry', valid);
+        return valid;
+      }
+    }
+
+    return resultData;
+  }
+
+  isExpiredPantryDate(expiryDate: any): boolean {
+    if (!expiryDate) return false;
+    const trimmed = String(expiryDate).trim();
+    if (!trimmed || trimmed.toUpperCase() === 'N/A') return false;
+
+    // Direct ISO format: YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const now = new Date();
+      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      return trimmed < todayIso;
+    }
+
+    // Italian format: DD/MM/YYYY or DD/MM/YY
+    const dmy = trimmed.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2}|\d{4})$/);
+    if (dmy) {
+      const day = dmy[1].padStart(2, '0');
+      const month = dmy[2].padStart(2, '0');
+      const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
+      const iso = `${year}-${month}-${day}`;
+      const now = new Date();
+      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      return iso < todayIso;
+    }
+
+    // Day/Month format: DD/MM (assume current year)
+    const dm = trimmed.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
+    if (dm) {
+      const day = dm[1].padStart(2, '0');
+      const month = dm[2].padStart(2, '0');
+      const year = new Date().getFullYear().toString();
+      const iso = `${year}-${month}-${day}`;
+      const now = new Date();
+      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      return iso < todayIso;
+    }
+
+    const exp = new Date(trimmed);
+    if (isNaN(exp.getTime())) return false;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return exp < now;
   }
 
   // --- AI Configuration & Stats ---
