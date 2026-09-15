@@ -680,9 +680,32 @@ export class DdtViewComponent {
     return this.pantry().filter(i => !clientId || !i.clientId || i.clientId === clientId);
   });
 
+  isItemInDailyLoad(item: IncomingIngredient, selectedDate: string): boolean {
+    if (!selectedDate) return true;
+    const targetIso = this.formatDateToISO(selectedDate) || selectedDate;
+
+    // 1. Direct match on entryDate
+    const entryIso = this.formatDateToISO(item.entryDate);
+    if (entryIso === targetIso || item.entryDate === targetIso) return true;
+
+    // 2. Creation timestamp: if the item was acquired/imported on this day
+    if (item.createdAt) {
+      const createdIso = item.createdAt.substring(0, 10);
+      if (createdIso === targetIso) return true;
+    }
+
+    // 3. Document date if present
+    if ((item as any).documentDate) {
+      const docIso = this.formatDateToISO((item as any).documentDate);
+      if (docIso === targetIso) return true;
+    }
+
+    return false;
+  }
+
   dailyCount = computed(() => {
     const selectedDate = this.state.filterDate();
-    return this.clientPantry().filter(i => i.entryDate === selectedDate).length;
+    return this.clientPantry().filter(i => this.isItemInDailyLoad(i, selectedDate)).length;
   });
 
   activeCount = computed(() => this.clientPantry().filter(i => !this.isExpired(i.expiryDate)).length);
@@ -702,7 +725,7 @@ export class DdtViewComponent {
     let items = this.clientPantry();
     
     if (this.viewMode() === 'daily') {
-      items = items.filter(i => i.entryDate === selectedDate);
+      items = items.filter(i => this.isItemInDailyLoad(i, selectedDate));
     } else if (this.viewMode() === 'activePantry') {
       items = items.filter(i => !this.isExpired(i.expiryDate));
     }
@@ -813,7 +836,7 @@ export class DdtViewComponent {
     this.rawAiPayload.set(parsed);
     const normalized = normalizeParsedDdt(parsed);
     this.importDraft.set(normalized);
-    const entryDate = this.ensureIsoDate(normalized.entryDate) || this.state.filterDate() || new Date().toISOString().split('T')[0];
+    const entryDate = this.state.filterDate() || this.ensureIsoDate(normalized.entryDate) || new Date().toISOString().split('T')[0];
 
     this.form.set({
       supplierId: undefined,
@@ -1039,6 +1062,7 @@ Rispondi in JSON con formato:
         ddtImageUrl: i === 0 ? thumbnail : undefined,
         createdAt: new Date().toISOString()
       };
+      (entry as any).documentDate = this.importDraft()?.entryDate || entryDate;
       (entry as any).loadGroupId = loadGroupId;
       (entry as any).supplierPiva = this.form().supplierPiva || this.importDraft()?.supplierPiva || '';
       newEntries.push(entry);
@@ -1048,8 +1072,8 @@ Rispondi in JSON con formato:
     const updatedPantry = [...newEntries, ...currentPantry];
     this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
     this.pantry.set(updatedPantry);
-    this.viewMode.set('all');
-    this.toast.success('Importazione completata', `${newEntries.length} prodotti importati nella Dispensa.`);
+    this.viewMode.set('daily');
+    this.toast.success('Importazione completata', `${newEntries.length} prodotti aggiunti ai Carichi del Giorno.`);
     this.cancelForm();
   }
 
