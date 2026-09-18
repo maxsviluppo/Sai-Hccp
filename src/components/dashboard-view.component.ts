@@ -41,6 +41,33 @@ interface SystemAlert {
              <i class="fa-solid fa-shapes text-2xl"></i>
           </div>
           <div>
+            <!-- LED STATO API KEY AI (Verde = Attiva / Rossa = Mancante) -->
+            @if (hasActiveApiKey()) {
+              <div (click)="goToAiSettings()" class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 cursor-pointer hover:bg-emerald-100/70 transition-all mb-1.5 shadow-xs group" title="API Key AI attiva e configurata. Clicca per visualizzare">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                </span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 group-hover:text-emerald-900 flex items-center gap-1.5">
+                  API Key AI Attiva
+                  <i class="fa-solid fa-circle-check text-[10px] text-emerald-600"></i>
+                </span>
+                <i class="fa-solid fa-chevron-right text-[8px] text-emerald-500 group-hover:translate-x-0.5 transition-transform"></i>
+              </div>
+            } @else {
+              <div (click)="goToAiSettings()" class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200/80 cursor-pointer hover:bg-rose-100/70 transition-all mb-1.5 shadow-xs group" title="API Key AI mancante o cancellata! Clicca per inserirla">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span>
+                </span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-rose-800 group-hover:text-rose-900 flex items-center gap-1.5">
+                  API Key AI Mancante
+                  <i class="fa-solid fa-triangle-exclamation text-[10px] text-rose-600"></i>
+                </span>
+                <i class="fa-solid fa-arrow-right text-[8px] text-rose-500 group-hover:translate-x-0.5 transition-transform"></i>
+              </div>
+            }
+
             <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Dashboard Amministrativa</h2>
             <p class="text-sm font-medium text-slate-500 mt-1">Sintesi direzionale e controllo stato conformità</p>
           </div>
@@ -720,6 +747,16 @@ export class DashboardViewComponent {
     } else {
       this.state.setModule('collaborators');
     }
+  }
+
+  hasActiveApiKey = computed(() => {
+    const config = this.state.aiConfig();
+    const key = config?.apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
+    return typeof key === 'string' && key.trim().length > 8;
+  });
+
+  goToAiSettings() {
+    this.state.setModule('settings');
   }
 
   scrollToAlerts() {

@@ -626,7 +626,11 @@ export class TraceabilityViewComponent implements OnInit {
       }
     } catch (e: any) {
       if (e.message === 'API_KEY_MISSING') {
-        this.toastService.error('Configurazione Mancante', 'Chiave API Gemini non trovata. Imposta GEMINI_API_KEY nel file .env.local');
+        if (this.state.isAdmin()) {
+          this.toastService.error('Configurazione AI Mancante', 'Chiave API Gemini non trovata. Inseriscila in Impostazioni → AI.');
+        } else {
+          this.toastService.warning('AI Non Attiva', 'Il modulo AI non è ancora configurato dall\'amministratore. Puoi inserire i dettagli del lotto manualmente.');
+        }
       } else if (e.message === 'JSON_PARSE_FAILED') {
         this.toastService.warning('Analisi Parziale', 'L\'AI ha risposto ma non è riuscita a formattare i dati. Prova con un\'altra foto.');
       } else {

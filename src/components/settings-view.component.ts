@@ -537,9 +537,9 @@ export class SettingsViewComponent {
 
   clearGeminiApiKey() {
     const current = this.state.aiConfig() || { model: 'gemini-2.0-flash', stats: {} };
-    this.state.saveAiConfig({ ...current, apiKey: '', model: 'gemini-2.0-flash' });
+    this.state.saveAiConfig({ ...current, apiKey: '', model: 'gemini-2.0-flash' }, true);
     this.geminiApiKeyInput = '';
-    this.toast.info('Configurazione Rimossa', 'La chiave API è stata rimossa dal database.');
+    this.toast.info('Configurazione Rimossa', 'La chiave API è stata rimossa.');
   }
 
   saveGeminiConfig() {
@@ -554,19 +554,19 @@ export class SettingsViewComponent {
       apiKey: key,
       model: 'gemini-2.0-flash'
     });
-    this.toast.success('Configurazione salvata', 'La chiave è stata cifrata e salvata nel database globale.');
+    this.toast.success('Configurazione salvata', 'La chiave è stata cifrata e salvata sia in locale che nel database cloud.');
   }
 
   setGeminiModel(model: string) {
-    const current = this.state.aiConfig() || { apiKey: '', stats: {} };
+    const current = this.state.aiConfig() || { stats: {} };
     this.state.saveAiConfig({ ...current, model: 'gemini-2.0-flash' });
     this.toast.success('Modello Impostato', `Modello forzato a gemini-2.0-flash`);
   }
 
   resetGeminiStats() {
-    const current = this.state.aiConfig() || { apiKey: '', model: 'gemini-2.0-flash' };
+    const current = this.state.aiConfig() || { model: 'gemini-2.0-flash' };
     this.state.saveAiConfig({ ...current, stats: {} });
-    this.toast.info('Statistiche Resettate', 'Le statistiche di utilizzo sono state azzerate nel database.');
+    this.toast.info('Statistiche Resettate', 'Le statistiche di utilizzo sono state azzerate.');
   }
   isTestingAi = signal(false);
 

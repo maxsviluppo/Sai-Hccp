@@ -449,6 +449,7 @@ export class AppStateService {
     this.checkPublicInfo();
     this.stripLegacyClientCache();
     this.loadState();
+    this.loadAiConfigFromLocalStorage();
     this.initSupabase();
     this.loadBaseIngredients();
 
@@ -500,7 +501,8 @@ export class AppStateService {
         disabledDocs: this.disabledDocs(),
         checklistRecords: this.checklistRecords(),
         productionRecords: this.productionRecords(),
-        messages: this.messages()
+        messages: this.messages(),
+        aiConfig: this.aiConfig()
       };
       localStorage.setItem('haccp_pro_persistence', JSON.stringify(state));
     } catch (e) {
@@ -1140,22 +1142,39 @@ export class AppStateService {
     }
 
     // Load AI Config from system_config (Shared between Admin & Operators)
-    const { data: aiSettings } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
-    if (aiSettings && aiSettings.master_data) {
-        const loadedModel = aiSettings.master_data.model || 'gemini-3.5-flash';
-        const migratedModel = (loadedModel !== 'gemini-3.5-flash')
-            ? 'gemini-3.5-flash'
+    try {
+      const { data: aiSettings, error: aiErr } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
+      if (aiSettings && aiSettings.master_data) {
+        const loadedModel = aiSettings.master_data.model || 'gemini-2.0-flash';
+        const migratedModel = (loadedModel === 'gemini-1.5-flash' || loadedModel === 'gemini-1.5-pro')
+            ? 'gemini-2.0-flash'
             : loadedModel;
-        this.aiConfig.set({
+        const dbKey = this.deobfuscate(aiSettings.master_data.apiKey);
+        const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || this.aiConfig()?.apiKey || '';
+        
+        // Antivirus contro svuotamento: se il DB non ha la chiave ma LocalStorage sì, preserviamo la chiave locale!
+        const resolvedKey = dbKey || localBackupKey;
+        
+        const mergedConfig = {
             ...aiSettings.master_data,
             model: migratedModel,
-            apiKey: this.deobfuscate(aiSettings.master_data.apiKey)
-        });
-        // Se il modello era deprecato, aggiorna il DB silenziosamente
-        if (migratedModel !== loadedModel) {
-            console.warn(`[HACCP AI] Modello non supportato/deprecato "${loadedModel}" → aggiornato a standard "${migratedModel}"`);
-            this.saveAiConfig({ ...aiSettings.master_data, model: migratedModel, apiKey: this.deobfuscate(aiSettings.master_data.apiKey) });
+            apiKey: resolvedKey
+        };
+
+        this.aiConfig.set(mergedConfig);
+        try {
+          localStorage.setItem('haccp_ai_config', JSON.stringify(mergedConfig));
+          if (resolvedKey) localStorage.setItem('haccp_gemini_api_key', resolvedKey);
+        } catch {}
+
+        // Se il DB era vuoto o modello deprecato, riallinea silenziosamente il cloud
+        if ((!dbKey && resolvedKey) || migratedModel !== loadedModel) {
+            console.info('[HACCP AI] Ripristino automatico chiave/modello su Supabase...');
+            void this.saveAiConfig(mergedConfig);
         }
+      }
+    } catch (e: any) {
+      console.warn('[HACCP AI] Errore sync AI da Supabase (mantenuta configurazione locale attiva):', e.message);
     }
   }
 
@@ -1255,9 +1274,49 @@ export class AppStateService {
             timestamp: new Date(m.timestamp)
           })));
         }
+        if (data.aiConfig && data.aiConfig.apiKey) {
+          this.aiConfig.set(data.aiConfig);
+        }
       } catch (e) {
         console.error('Failed to load local state', e);
       }
+    }
+  }
+
+  private loadAiConfigFromLocalStorage() {
+    try {
+      const stored = localStorage.getItem('haccp_ai_config');
+      const backupKey = localStorage.getItem('haccp_gemini_api_key');
+      const envKey = ((import.meta as any).env?.['VITE_GEMINI_API_KEY'] || (import.meta as any).env?.['GEMINI_API_KEY'] || '').trim();
+
+      let initialConfig: any = {
+        model: 'gemini-2.0-flash',
+        apiKey: '',
+        stats: {}
+      };
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          initialConfig = { ...initialConfig, ...parsed };
+        } catch {}
+      }
+
+      if (!initialConfig.apiKey && backupKey) {
+        initialConfig.apiKey = backupKey;
+      }
+      if (!initialConfig.apiKey && envKey && envKey !== 'PLACEHOLDER_API_KEY') {
+        initialConfig.apiKey = envKey;
+      }
+
+      if (initialConfig.apiKey) {
+        this.aiConfig.set(initialConfig);
+        try {
+          localStorage.setItem('haccp_gemini_api_key', initialConfig.apiKey);
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('[HACCP-AI] Errore caricamento config da localStorage:', e);
     }
   }
 
@@ -2121,24 +2180,60 @@ export class AppStateService {
     this.syncConfig();
   }
 
-  async saveAiConfig(config: any) {
-    const toSave = {
+  async saveAiConfig(config: any, forceClear: boolean = false) {
+    const current = this.aiConfig() || {};
+    const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
+
+    // Protezione anti-cancellazione: se la chiave non è specificata e non è forceClear, preserva quella precedente!
+    let keyToSave = typeof config.apiKey === 'string' ? config.apiKey.trim() : '';
+    if (!keyToSave && !forceClear) {
+      keyToSave = current.apiKey || localBackupKey || '';
+    }
+
+    const safeConfig = {
       ...config,
-      apiKey: this.obfuscate(config.apiKey),
+      apiKey: keyToSave,
+      model: config.model || current.model || 'gemini-2.0-flash',
+      stats: config.stats || current.stats || {},
       updatedAt: new Date().toISOString()
     };
-    
-    const { error } = await supabase.from('system_config').upsert({
+
+    // 1. Salva SUBITO in LocalStorage sincrono e persistente
+    try {
+      localStorage.setItem('haccp_ai_config', JSON.stringify(safeConfig));
+      if (keyToSave) {
+        localStorage.setItem('haccp_gemini_api_key', keyToSave);
+      } else if (forceClear) {
+        localStorage.removeItem('haccp_gemini_api_key');
+        localStorage.removeItem('haccp_ai_config');
+      }
+    } catch (e) {
+      console.warn('[HACCP-AI] Impossibile salvare su LocalStorage:', e);
+    }
+
+    this.aiConfig.set(safeConfig);
+
+    // 2. Persisti su Supabase system_config
+    try {
+      const toSave = {
+        ...safeConfig,
+        apiKey: this.obfuscate(safeConfig.apiKey)
+      };
+      
+      const { error } = await supabase.from('system_config').upsert({
         id: 'ai_settings',
         master_data: toSave
-    });
-    
-    if (error) console.error('Error saving AI config to system_config:', error);
-    this.aiConfig.set(config);
+      });
+      
+      if (error) console.error('[HACCP-AI] Errore salvataggio su Supabase system_config:', error);
+    } catch (err: any) {
+      console.warn('[HACCP-AI] Eccezione salvataggio Supabase (la chiave rimane al sicuro in locale):', err.message);
+    }
   }
 
   updateAiUsage(model: string, tokens: number = 1000) {
-    const config = this.aiConfig() || { apiKey: '', model: 'gemini-3.5-flash', stats: {} };
+    const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
+    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-2.0-flash', stats: {} };
     const stats = config.stats || {};
     const modelStats = stats[model] || { count: 0, estimatedCost: 0 };
     
@@ -2150,7 +2245,8 @@ export class AppStateService {
       estimatedCost: (modelStats.estimatedCost || 0) + costPerRequest
     };
     
-    this.saveAiConfig({ ...config, stats });
+    const safeKey = config.apiKey || localBackupKey;
+    this.saveAiConfig({ ...config, apiKey: safeKey, stats });
   }
 
   // --- New Historical Methods ---

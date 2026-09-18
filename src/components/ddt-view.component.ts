@@ -93,10 +93,16 @@ export interface IncomingIngredient {
                     }
                   </button>
                   @if (!state.aiConfig()?.apiKey) {
-                    <p class="text-[10px] text-amber-600 font-bold mt-2 flex items-center gap-1">
-                      <i class="fa-solid fa-triangle-exclamation"></i>
-                      Chiave API Gemini non configurata nel Cloud. Vai in Impostazioni → AI.
-                    </p>
+                    <div class="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-800 text-[11px] font-medium flex items-center gap-2">
+                      <i class="fa-solid fa-triangle-exclamation text-amber-600 shrink-0"></i>
+                      <span>
+                        @if (state.isAdmin()) {
+                          Chiave API Gemini non configurata. <a (click)="state.setModule('settings')" class="underline font-bold cursor-pointer hover:text-amber-900">Vai in Impostazioni → AI</a>.
+                        } @else {
+                          Modulo AI non ancora configurato dall'amministratore. Puoi comunque inserire i dati del carico manualmente nel modulo qui sotto.
+                        }
+                      </span>
+                    </div>
                   }
                 </div>
               </div>
@@ -1172,12 +1178,16 @@ Rispondi in JSON con formato:
 
   async analyzeWithAI() {
     const config = this.state.aiConfig();
-    const key = config?.apiKey;
+    const key = config?.apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-2.5-flash';
+    const initialModel = config?.model || 'gemini-2.0-flash';
 
     if (!key) {
-      this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
+      if (this.state.isAdmin()) {
+        this.toast.error('Manca API Key', 'Inserisci la chiave Gemini nelle impostazioni per usare l\'AI.');
+      } else {
+        this.toast.warning('AI Non Configurato', 'Il modulo AI non è ancora configurato. Puoi compilare i dati manualmente nel form.');
+      }
       return;
     }
     if (!img) {

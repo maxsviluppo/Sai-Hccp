@@ -27,7 +27,9 @@ export class GeminiService {
     }
 
     async analyzeImage(file: File): Promise<any> {
-        const activeKey = this.state.aiConfig()?.apiKey || this.apiKey;
+        const activeKey = this.state.aiConfig()?.apiKey ||
+            (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') ||
+            this.apiKey;
         if (!activeKey || activeKey === 'PLACEHOLDER_API_KEY') {
             throw new Error('API_KEY_MISSING');
         }
