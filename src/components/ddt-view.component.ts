@@ -877,7 +877,12 @@ IMPORTANTE: Ti accorgi degli elementi da inserire dal numero dei colli che prece
 Rispondi in JSON con formato:
 {"items":[{"ingredientName":"nome prodotto","lotto":"","quantity":"","expiryDate":""}]}`;
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const modelsToTry = [
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-3.1-flash-lite'
+    ];
 
     for (const modelName of modelsToTry) {
       try {
@@ -1180,7 +1185,7 @@ Rispondi in JSON con formato:
     const config = this.state.aiConfig();
     const key = config?.apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-2.0-flash';
+    const initialModel = config?.model || 'gemini-2.5-flash';
 
     if (!key) {
       if (this.state.isAdmin()) {
@@ -1204,8 +1209,9 @@ Rispondi in JSON con formato:
 
     const modelsToTry = [
       'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash'
+      'gemini-2.5-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-3.1-flash-lite'
     ];
 
     let currentModel = initialModel;
@@ -1224,8 +1230,9 @@ Rispondi in JSON con formato:
                            host.startsWith('10.');
 
       if (isLocalhost) {
-        let lastError = '';
+        const errors: string[] = [];
         let success = false;
+        let isRateLimited = false;
 
         for (const modelName of modelsToTry) {
           try {
@@ -1253,7 +1260,11 @@ Rispondi in JSON con formato:
 
             if (!res.ok) {
               const errorData = await res.json();
-              throw new Error(errorData.error?.message || `Status ${res.status}`);
+              const errMsg = errorData.error?.message || `Status ${res.status}`;
+              if (res.status === 429 || errMsg.includes('RESOURCE_EXHAUSTED')) {
+                isRateLimited = true;
+              }
+              throw new Error(errMsg);
             }
 
             const data = await res.json();
@@ -1269,12 +1280,16 @@ Rispondi in JSON con formato:
 
           } catch (modelErr: any) {
             console.warn(`[AI OCR] Fallito modello ${modelName}:`, modelErr.message);
-            lastError = modelErr.message;
+            errors.push(`${modelName}: ${modelErr.message}`);
           }
         }
 
         if (!success) {
-          this.toast.error('Errore AI', `Impossibile completare l'analisi. Errore: ${lastError}`);
+          if (isRateLimited) {
+            this.toast.error('Limite Superato', 'Troppe richieste a Google Gemini (429). Attendi 30-60 secondi o passa a una chiave a pagamento.');
+          } else {
+            this.toast.error('Errore AI', `Impossibile completare l'analisi con i modelli disponibili: ${errors.join(' | ')}`);
+          }
           this.isAnalyzing.set(false);
           return;
         }

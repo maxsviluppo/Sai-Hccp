@@ -371,7 +371,7 @@ import { ToastService } from '../services/toast.service';
                   <div class="h-px bg-slate-200 my-1"></div>
                   <div class="flex justify-between items-center text-[11px] font-bold">
                     <span class="text-slate-500">Modello consigliato</span>
-                    <span class="text-violet-600 font-mono">gemini-2.0-flash</span>
+                    <span class="text-violet-600 font-mono">gemini-2.5-flash</span>
                   </div>
                 </div>
                 <a href="https://ai.google.dev/pricing" target="_blank" rel="noopener noreferrer"
@@ -536,8 +536,8 @@ export class SettingsViewComponent {
   }
 
   clearGeminiApiKey() {
-    const current = this.state.aiConfig() || { model: 'gemini-2.0-flash', stats: {} };
-    this.state.saveAiConfig({ ...current, apiKey: '', model: 'gemini-2.0-flash' }, true);
+    const current = this.state.aiConfig() || { model: 'gemini-2.5-flash', stats: {} };
+    this.state.saveAiConfig({ ...current, apiKey: '', model: 'gemini-2.5-flash' }, true);
     this.geminiApiKeyInput = '';
     this.toast.info('Configurazione Rimossa', 'La chiave API è stata rimossa.');
   }
@@ -548,23 +548,23 @@ export class SettingsViewComponent {
       this.toast.error('Chiave non valida', 'La chiave API Gemini inserita sembra troppo corta.');
       return;
     }
-    const current = this.state.aiConfig() || { model: 'gemini-2.0-flash', stats: {} };
+    const current = this.state.aiConfig() || { model: 'gemini-2.5-flash', stats: {} };
     this.state.saveAiConfig({
       ...current,
       apiKey: key,
-      model: 'gemini-2.0-flash'
+      model: 'gemini-2.5-flash'
     });
     this.toast.success('Configurazione salvata', 'La chiave è stata cifrata e salvata sia in locale che nel database cloud.');
   }
 
   setGeminiModel(model: string) {
     const current = this.state.aiConfig() || { stats: {} };
-    this.state.saveAiConfig({ ...current, model: 'gemini-2.0-flash' });
-    this.toast.success('Modello Impostato', `Modello forzato a gemini-2.0-flash`);
+    this.state.saveAiConfig({ ...current, model: 'gemini-2.5-flash' });
+    this.toast.success('Modello Impostato', `Modello forzato a gemini-2.5-flash`);
   }
 
   resetGeminiStats() {
-    const current = this.state.aiConfig() || { model: 'gemini-2.0-flash' };
+    const current = this.state.aiConfig() || { model: 'gemini-2.5-flash' };
     this.state.saveAiConfig({ ...current, stats: {} });
     this.toast.info('Statistiche Resettate', 'Le statistiche di utilizzo sono state azzerate.');
   }
@@ -573,33 +573,56 @@ export class SettingsViewComponent {
   async testAiConnection() {
     const config = this.state.aiConfig();
     const key = config?.apiKey;
-    const model = config?.model || 'gemini-2.0-flash';
+    let model = config?.model || 'gemini-2.5-flash';
     if (!key) return;
 
-    this.isTestingAi.set(true);
-    try {
-      const body = {
-        contents: [{ parts: [{ text: 'Rispondi solo con la parola "OK" se mi ricevi.' }] }]
-      };
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+    if (model.startsWith('gemini-1.5') || model.startsWith('gemini-2.0')) {
+      model = 'gemini-2.5-flash';
+      this.state.saveAiConfig({ ...config, model });
+    }
 
-      if (res.ok) {
-        this.toast.success('Test Superato', 'La connessione con l\'AI è attiva e funzionante!');
-      } else {
-        const err = await res.json();
-        const msg = err.error?.message || 'Errore ignoto';
-        if (res.status === 429) {
-          this.toast.error('Limite Superato', 'Il tuo account Google ha raggiunto il limite di frequenza. Attendi o cambia chiave.');
-        } else {
-          this.toast.error('Test Fallito', msg);
+    this.isTestingAi.set(true);
+    const modelsToTry = [model, 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.5-flash'];
+    const uniqueModels = Array.from(new Set(modelsToTry));
+
+    let succeeded = false;
+    let lastError = '';
+
+    try {
+      for (const m of uniqueModels) {
+        try {
+          const body = {
+            contents: [{ parts: [{ text: 'Rispondi solo con la parola "OK" se mi ricevi.' }] }]
+          };
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          if (res.ok) {
+            succeeded = true;
+            if (m !== config?.model) {
+              this.state.saveAiConfig({ ...config, model: m });
+            }
+            this.toast.success('Test Superato', `Connessione attiva con il modello ${m}!`);
+            break;
+          } else {
+            const err = await res.json();
+            lastError = err.error?.message || `Status ${res.status}`;
+            if (res.status === 429) {
+              this.toast.error('Limite Superato', 'Il tuo account Google ha raggiunto il limite di frequenza (429). Attendi o usa una chiave a consumo.');
+              return;
+            }
+          }
+        } catch (e: any) {
+          lastError = e.message || 'Impossibile raggiungere Google.';
         }
       }
-    } catch (e) {
-      this.toast.error('Errore Connessione', 'Impossibile raggiungere i server Google.');
+
+      if (!succeeded) {
+        this.toast.error('Test Fallito', lastError || 'Nessun modello ha risposto.');
+      }
     } finally {
       this.isTestingAi.set(false);
     }

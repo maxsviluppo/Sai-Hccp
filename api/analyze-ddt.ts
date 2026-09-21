@@ -53,15 +53,18 @@ export default async function handler(req: any, res: any) {
   const modelsToTry = [
     'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash'
+    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite'
   ];
 
   try {
     const ai = new GoogleGenAI({ apiKey: key });
-    let lastError = '';
+    const errors: string[] = [];
     let parsedData = null;
     let success = false;
+    let succeededModel = '';
+    let isRateLimited = false;
+    let isAuthError = false;
 
     for (const modelName of modelsToTry) {
       try {
@@ -107,20 +110,43 @@ export default async function handler(req: any, res: any) {
 
         parsedData = JSON.parse(text);
         success = true;
+        succeededModel = modelName;
         console.log(`[API analyze-ddt] Success with model: ${modelName}`);
         break;
 
       } catch (err: any) {
-        console.warn(`[API analyze-ddt] Model ${modelName} failed:`, err.message);
-        lastError = err.message;
+        const msg = err.message || String(err);
+        console.warn(`[API analyze-ddt] Model ${modelName} failed:`, msg);
+        errors.push(`[${modelName}]: ${msg}`);
+        if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('429') || err.status === 429) {
+          isRateLimited = true;
+        }
+        if (msg.includes('API_KEY_INVALID') || msg.includes('reported as leaked') || msg.includes('400') || msg.includes('403')) {
+          isAuthError = true;
+        }
       }
     }
 
     if (!success) {
-      return res.status(500).json({ success: false, error: `Nessun modello AI disponibile: ${lastError}` });
+      if (isRateLimited) {
+        return res.status(429).json({
+          success: false,
+          error: 'Limite di richieste Gemini superato (429 Too Many Requests). Attendi 30-60 secondi o usa una chiave con piano a consumo.'
+        });
+      }
+      if (isAuthError) {
+        return res.status(401).json({
+          success: false,
+          error: 'Chiave API Gemini non valida o revocata. Aggiorna la chiave in Impostazioni → Configurazione AI.'
+        });
+      }
+      return res.status(500).json({ 
+        success: false, 
+        error: `Nessun modello AI ha risposto: ${errors.join(' | ')}` 
+      });
     }
 
-    return res.status(200).json({ success: true, data: parsedData });
+    return res.status(200).json({ success: true, data: parsedData, model: succeededModel });
 
   } catch (error: any) {
     console.error('[API analyze-ddt] Error:', error);

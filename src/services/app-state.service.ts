@@ -1145,9 +1145,9 @@ export class AppStateService {
     try {
       const { data: aiSettings, error: aiErr } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
       if (aiSettings && aiSettings.master_data) {
-        const loadedModel = aiSettings.master_data.model || 'gemini-2.0-flash';
-        const migratedModel = (loadedModel === 'gemini-1.5-flash' || loadedModel === 'gemini-1.5-pro')
-            ? 'gemini-2.0-flash'
+        const loadedModel = aiSettings.master_data.model || 'gemini-2.5-flash';
+        const migratedModel = (loadedModel.startsWith('gemini-1.5') || loadedModel.startsWith('gemini-2.0'))
+            ? 'gemini-2.5-flash'
             : loadedModel;
         const dbKey = this.deobfuscate(aiSettings.master_data.apiKey);
         const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || this.aiConfig()?.apiKey || '';
@@ -1290,7 +1290,7 @@ export class AppStateService {
       const envKey = ((import.meta as any).env?.['VITE_GEMINI_API_KEY'] || (import.meta as any).env?.['GEMINI_API_KEY'] || '').trim();
 
       let initialConfig: any = {
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         apiKey: '',
         stats: {}
       };
@@ -2193,7 +2193,7 @@ export class AppStateService {
     const safeConfig = {
       ...config,
       apiKey: keyToSave,
-      model: config.model || current.model || 'gemini-2.0-flash',
+      model: config.model || current.model || 'gemini-2.5-flash',
       stats: config.stats || current.stats || {},
       updatedAt: new Date().toISOString()
     };
@@ -2233,7 +2233,7 @@ export class AppStateService {
 
   updateAiUsage(model: string, tokens: number = 1000) {
     const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
-    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-2.0-flash', stats: {} };
+    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-2.5-flash', stats: {} };
     const stats = config.stats || {};
     const modelStats = stats[model] || { count: 0, estimatedCost: 0 };
     
