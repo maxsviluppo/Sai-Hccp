@@ -1145,9 +1145,9 @@ export class AppStateService {
     try {
       const { data: aiSettings, error: aiErr } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
       if (aiSettings && aiSettings.master_data) {
-        const loadedModel = aiSettings.master_data.model || 'gemini-2.5-flash';
-        const migratedModel = (loadedModel.startsWith('gemini-1.5') || loadedModel.startsWith('gemini-2.0'))
-            ? 'gemini-2.5-flash'
+        const loadedModel = aiSettings.master_data.model || 'gemini-3.6-flash';
+        const migratedModel = (loadedModel.startsWith('gemini-1.5') || loadedModel.startsWith('gemini-2.') || loadedModel.includes('3.5') || loadedModel.includes('3.1'))
+            ? 'gemini-3.6-flash'
             : loadedModel;
         const dbKey = this.deobfuscate(aiSettings.master_data.apiKey);
         const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || this.aiConfig()?.apiKey || '';
@@ -1727,15 +1727,15 @@ export class AppStateService {
         this.mapDbChecklistRecord(r, existingById.get(r.id))
       );
 
-      // Auto-purge expired products from ddt_pantry from database and memory
+      // Auto-purge expired products and products without expiry > 10 days from ddt_pantry from database and memory
       for (const rec of mapped) {
         if (rec.moduleId === 'ddt_pantry' && Array.isArray(rec.data)) {
           const rawItems = rec.data as any[];
-          const validItems = rawItems.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate));
+          const validItems = rawItems.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate) && !this.isStaleNoExpiryDate(i, 10));
           if (validItems.length < rawItems.length) {
             rec.data = validItems;
             void supabase.from('checklist_records').update({ data: validItems }).eq('id', rec.id);
-            console.log(`[HACCP-PANTRY] Auto-purged ${rawItems.length - validItems.length} expired items from client ${rec.clientId}`);
+            console.log(`[HACCP-PANTRY] Auto-purged ${rawItems.length - validItems.length} items (expired or >10d no expiry) from client ${rec.clientId}`);
           }
         }
       }
@@ -2109,7 +2109,7 @@ export class AppStateService {
     }
 
     if (moduleId === 'ddt_pantry' && Array.isArray(resultData)) {
-      const valid = resultData.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate));
+      const valid = resultData.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate) && !this.isStaleNoExpiryDate(i, 10));
       if (valid.length < resultData.length) {
         this.saveGlobalRecord('ddt_pantry', valid);
         return valid;
@@ -2117,6 +2117,40 @@ export class AppStateService {
     }
 
     return resultData;
+  }
+
+  isStaleNoExpiryDate(item: any, maxDays: number = 10): boolean {
+    if (!item) return false;
+    const exp = (item.expiryDate || '').toString().trim();
+    const hasNoExpiry = !exp || exp.toUpperCase() === 'N/A';
+    if (!hasNoExpiry) return false;
+
+    const dateStr = item.entryDate || item.createdAt;
+    if (!dateStr) return false;
+
+    let entryTime = 0;
+    const trimmed = String(dateStr).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, d] = trimmed.split('-').map(Number);
+      entryTime = new Date(y, m - 1, d).getTime();
+    } else {
+      const dmy = trimmed.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2}|\d{4})$/);
+      if (dmy) {
+        const day = Number(dmy[1]);
+        const month = Number(dmy[2]);
+        const year = Number(dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3]);
+        entryTime = new Date(year, month - 1, day).getTime();
+      } else {
+        const parsed = new Date(trimmed).getTime();
+        if (!isNaN(parsed)) entryTime = parsed;
+      }
+    }
+
+    if (!entryTime) return false;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((now.getTime() - entryTime) / (1000 * 60 * 60 * 24));
+    return diffDays > maxDays;
   }
 
   isExpiredPantryDate(expiryDate: any): boolean {
@@ -2193,7 +2227,7 @@ export class AppStateService {
     const safeConfig = {
       ...config,
       apiKey: keyToSave,
-      model: config.model || current.model || 'gemini-2.5-flash',
+      model: config.model || current.model || 'gemini-3.6-flash',
       stats: config.stats || current.stats || {},
       updatedAt: new Date().toISOString()
     };
@@ -2213,7 +2247,7 @@ export class AppStateService {
 
     this.aiConfig.set(safeConfig);
 
-    // 2. Persisti su Supabase system_config
+    // 2. Persisti su Supabase system_config solo se presente una chiave o se forceClear
     try {
       const toSave = {
         ...safeConfig,
@@ -2233,7 +2267,7 @@ export class AppStateService {
 
   updateAiUsage(model: string, tokens: number = 1000) {
     const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
-    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-2.5-flash', stats: {} };
+    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-3.6-flash', stats: {} };
     const stats = config.stats || {};
     const modelStats = stats[model] || { count: 0, estimatedCost: 0 };
     
@@ -2246,7 +2280,9 @@ export class AppStateService {
     };
     
     const safeKey = config.apiKey || localBackupKey;
-    this.saveAiConfig({ ...config, apiKey: safeKey, stats });
+    if (safeKey) {
+      this.saveAiConfig({ ...config, apiKey: safeKey, stats });
+    }
   }
 
   // --- New Historical Methods ---

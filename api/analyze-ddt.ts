@@ -51,10 +51,9 @@ export default async function handler(req: any, res: any) {
   }
 
   const modelsToTry = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.1-flash-lite'
+    'gemini-3.6-flash',
+    'gemini-3.8-flash',
+    'gemini-3-flash-preview'
   ];
 
   try {
@@ -116,7 +115,48 @@ export default async function handler(req: any, res: any) {
 
       } catch (err: any) {
         const msg = err.message || String(err);
-        console.warn(`[API analyze-ddt] Model ${modelName} failed:`, msg);
+        console.warn(`[API analyze-ddt] Model ${modelName} via SDK failed:`, msg);
+
+        // Direct REST fallback (handles AQ. keys and SDK nuances)
+        try {
+          console.log(`[API analyze-ddt] Trying direct REST fallback for ${modelName}`);
+          const restRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(key)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: DDT_AI_PROMPT },
+                  { inlineData: { mimeType, data: base64 } }
+                ]
+              }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                maxOutputTokens: 8192,
+                temperature: 0.1,
+                thinkingConfig: { thinkingBudget: 0 }
+              }
+            })
+          });
+
+          if (restRes.ok) {
+            const restData = await restRes.json();
+            const restText = restData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (restText) {
+              parsedData = JSON.parse(restText);
+              success = true;
+              succeededModel = modelName;
+              console.log(`[API analyze-ddt] Success via REST fallback with model: ${modelName}`);
+              break;
+            }
+          } else {
+            const errBody = await restRes.text();
+            console.warn(`[API analyze-ddt] REST fallback failed status ${restRes.status}:`, errBody);
+          }
+        } catch (restErr: any) {
+          console.warn(`[API analyze-ddt] REST fallback exception:`, restErr.message);
+        }
+
         errors.push(`[${modelName}]: ${msg}`);
         if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('429') || err.status === 429) {
           isRateLimited = true;

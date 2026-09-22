@@ -280,7 +280,7 @@ export interface IncomingIngredient {
                    class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-50 transition-all shadow-sm">
           </div>
 
-          <!-- Stale Products Alert Banner (>30 days no expiry) -->
+          <!-- Stale Products Alert Banner (>10 days no expiry) -->
           @if (staleCount() > 0) {
             <div class="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100/60 border-2 border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
               <div class="flex items-center gap-3">
@@ -289,10 +289,10 @@ export interface IncomingIngredient {
                 </div>
                 <div>
                   <h4 class="text-sm font-black text-amber-900">
-                    Controllo Giacenze: {{ staleCount() }} {{ staleCount() === 1 ? 'prodotto' : 'prodotti' }} senza scadenza da oltre 30 giorni
+                    Controllo Giacenze: {{ staleCount() }} {{ staleCount() === 1 ? 'prodotto' : 'prodotti' }} senza scadenza da oltre 10 giorni
                   </h4>
-                  <p class="text-xs text-amber-800 font-medium mt-0.5">
-                    Verifica i prodotti in dispensa senza data di scadenza per confermare l'eliminazione o inserire la data a mano.
+                  <p class="text-xs text-amber-800 font-bold mt-0.5">
+                    Nota: i prodotti senza data di scadenza verranno cancellati dalla dispensa definitivamente dopo 10 giorni se non verranno aggiornati con la data di scadenza.
                   </p>
                 </div>
               </div>
@@ -368,29 +368,32 @@ export interface IncomingIngredient {
                           {{ formatDisplayDate(item.expiryDate) }}
                         </span>
                       } @else {
-                        @if (editingExpiryId() === item.id) {
-                          <div class="flex items-center gap-1 animate-fade-in">
-                            <input type="date" #tableExpInput
-                                   (change)="saveItemExpiry(item.id, tableExpInput.value)"
-                                   class="text-xs font-bold px-2 py-1 bg-white border-2 border-amber-400 rounded-lg text-slate-800 outline-none shadow-sm">
-                            <button type="button" (click)="saveItemExpiry(item.id, tableExpInput.value)"
-                                    class="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-sm">
-                              Salva
-                            </button>
-                            <button type="button" (click)="editingExpiryId.set(null)"
-                                    class="text-slate-400 hover:text-slate-600 px-1 text-xs font-bold">
-                              <i class="fa-solid fa-xmark"></i>
-                            </button>
+                          <div class="flex flex-col items-start gap-1">
+                            @if (editingExpiryId() === item.id) {
+                              <div class="flex items-center gap-1 animate-fade-in">
+                                <input type="date" #tableExpInput
+                                       (change)="saveItemExpiry(item.id, tableExpInput.value)"
+                                       class="text-xs font-bold px-2 py-1 bg-white border-2 border-amber-400 rounded-lg text-slate-800 outline-none shadow-sm">
+                                <button type="button" (click)="saveItemExpiry(item.id, tableExpInput.value)"
+                                        class="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-sm">
+                                  Salva
+                                </button>
+                                <button type="button" (click)="editingExpiryId.set(null)"
+                                        class="text-slate-400 hover:text-slate-600 px-1 text-xs font-bold">
+                                  <i class="fa-solid fa-xmark"></i>
+                                </button>
+                              </div>
+                            } @else {
+                              <button type="button" (click)="editingExpiryId.set(item.id)"
+                                      class="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 rounded-lg text-xs font-bold shadow-sm transition-all"
+                                      title="Inserisci data di scadenza a mano">
+                                <i class="fa-solid fa-calendar-plus text-amber-500 group-hover:scale-110 transition-transform"></i>
+                                <span>+ Inserisci scadenza</span>
+                              </button>
+                              <span class="text-[8px] font-bold text-amber-600">Max 10gg se senza data</span>
+                            }
                           </div>
-                        } @else {
-                          <button type="button" (click)="editingExpiryId.set(item.id)"
-                                  class="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 rounded-lg text-xs font-bold shadow-sm transition-all"
-                                  title="Inserisci data di scadenza a mano">
-                            <i class="fa-solid fa-calendar-plus text-amber-500 group-hover:scale-110 transition-transform"></i>
-                            <span>+ Inserisci scadenza</span>
-                          </button>
                         }
-                      }
                     </td>
                     <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.quantity || '—' }}</td>
                     <td class="px-4 py-3 text-right">
@@ -507,7 +510,7 @@ export interface IncomingIngredient {
         </div>
       }
 
-      <!-- Stale No-Expiry Products Modal (> 30 Days) -->
+      <!-- Stale No-Expiry Products Modal (> 10 Days) -->
       @if (showStaleModal()) {
         <div class="fixed inset-0 z-[130] flex items-center justify-center p-4">
           <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="closeStaleModal()"></div>
@@ -520,7 +523,7 @@ export interface IncomingIngredient {
                   <i class="fa-solid fa-clock-rotate-left"></i>
                 </div>
                 <div>
-                  <h3 class="text-xl font-black tracking-tight">Prodotti Senza Scadenza (> 30 Giorni)</h3>
+                  <h3 class="text-xl font-black tracking-tight">Prodotti Senza Scadenza (> 10 Giorni)</h3>
                   <p class="text-xs text-amber-100 font-medium mt-0.5">Controllo igiene HACCP: verifica giacenze prolungate</p>
                 </div>
               </div>
@@ -531,9 +534,15 @@ export interface IncomingIngredient {
 
             <!-- Description & Controls -->
             <div class="p-6 pb-3 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
-              <p class="text-xs text-slate-600 leading-relaxed font-medium">
-                I seguenti <span class="font-bold text-slate-900">{{ staleItems().length }} prodotti</span> risultano caricati da più di 30 giorni senza data di scadenza. Seleziona quelli da eliminare o conferma per rimuoverli.
-              </p>
+              <div class="space-y-1">
+                <p class="text-xs text-slate-600 leading-relaxed font-medium">
+                  I seguenti <span class="font-bold text-slate-900">{{ staleItems().length }} prodotti</span> risultano caricati da più di 10 giorni senza data di scadenza.
+                </p>
+                <p class="text-[11px] text-amber-800 font-bold bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg">
+                  <i class="fa-solid fa-circle-exclamation text-amber-600 mr-1"></i>
+                  Nota: i prodotti senza data di scadenza verranno cancellati dalla dispensa definitivamente dopo 10 giorni se non verranno aggiornati con la data di scadenza.
+                </p>
+              </div>
               <div class="flex items-center gap-2 shrink-0">
                 <button type="button" (click)="toggleAllStale(selectedStaleIds().length < staleItems().length)" 
                         class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
@@ -608,7 +617,7 @@ export interface IncomingIngredient {
               } @empty {
                 <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100">
                   <i class="fa-solid fa-circle-check text-3xl text-emerald-500 mb-2"></i>
-                  <p class="font-bold text-slate-700 text-sm">Nessun prodotto senza scadenza oltre i 30 giorni</p>
+                  <p class="font-bold text-slate-700 text-sm">Nessun prodotto senza scadenza oltre i 10 giorni</p>
                   <p class="text-xs text-slate-400 mt-0.5">Tutti i prodotti hanno una data di scadenza o sono recenti.</p>
                 </div>
               }
@@ -722,7 +731,7 @@ export class DdtViewComponent {
     return this.clientPantry().filter(i => {
       const exp = (i.expiryDate || '').trim();
       const hasNoExpiry = !exp || exp.toUpperCase() === 'N/A';
-      return hasNoExpiry && this.getDaysSinceEntry(i) >= 30;
+      return hasNoExpiry && this.getDaysSinceEntry(i) >= 10;
     }).length;
   });
 
@@ -878,10 +887,9 @@ Rispondi in JSON con formato:
 {"items":[{"ingredientName":"nome prodotto","lotto":"","quantity":"","expiryDate":""}]}`;
 
     const modelsToTry = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-3.5-flash',
-      'gemini-3.1-flash-lite'
+      'gemini-3.6-flash',
+      'gemini-3.8-flash',
+      'gemini-3-flash-preview'
     ];
 
     for (const modelName of modelsToTry) {
@@ -1185,7 +1193,7 @@ Rispondi in JSON con formato:
     const config = this.state.aiConfig();
     const key = config?.apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-2.5-flash';
+    const initialModel = config?.model || 'gemini-3.6-flash';
 
     if (!key) {
       if (this.state.isAdmin()) {
@@ -1208,10 +1216,9 @@ Rispondi in JSON con formato:
     sessionStorage.setItem('haccp_gemini_calls', String(current + 1));
 
     const modelsToTry = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-3.5-flash',
-      'gemini-3.1-flash-lite'
+      'gemini-3.6-flash',
+      'gemini-3.8-flash',
+      'gemini-3-flash-preview'
     ];
 
     let currentModel = initialModel;
@@ -1248,7 +1255,8 @@ Rispondi in JSON con formato:
                 responseMimeType: 'application/json',
                 responseSchema: DDT_AI_SCHEMA,
                 maxOutputTokens: 8192,
-                temperature: 0.1
+                temperature: 0.1,
+                thinkingConfig: { thinkingBudget: 0 }
               }
             };
 
@@ -1586,16 +1594,22 @@ Rispondi in JSON con formato:
     // OPTIMIZATION: getGlobalRecordData() fetches the payload on-demand if not yet in cache.
     const savedData = await this.state.getGlobalRecordData('ddt_pantry');
     if (savedData && Array.isArray(savedData)) {
-      // 1. Elimina automaticamente dal database i prodotti scaduti
-      const validData = savedData.filter(i => !this.isExpired(i.expiryDate));
+      // 1. Elimina definitivamente dal database i prodotti scaduti E quelli senza data > 10 giorni
+      const validData = savedData.filter(i => {
+        if (this.isExpired(i.expiryDate)) return false;
+        const exp = (i.expiryDate || '').trim();
+        const hasNoExpiry = !exp || exp.toUpperCase() === 'N/A';
+        if (hasNoExpiry && this.getDaysSinceEntry(i) > 10) return false;
+        return true;
+      });
       if (validData.length < savedData.length) {
         const purgedCount = savedData.length - validData.length;
         this.state.saveGlobalRecord('ddt_pantry', validData);
-        this.toast.info('Dispensa Aggiornata', `${purgedCount} prodotti scaduti rimossi automaticamente dal database.`);
+        this.toast.info('Dispensa Aggiornata', `${purgedCount} prodotti (scaduti o senza data >10gg) eliminati definitivamente.`);
       }
       this.pantry.set(validData);
 
-      // 2. Controllo prodotti senza scadenza dopo 30 giorni
+      // 2. Controllo prodotti senza scadenza dopo 10 giorni
       this.checkStaleNoExpiryProducts(validData);
     } else {
       this.pantry.set([]);
@@ -1625,7 +1639,7 @@ Rispondi in JSON con formato:
     const stale = clientItems.filter(i => {
       const exp = (i.expiryDate || '').trim();
       const hasNoExpiry = !exp || exp.toUpperCase() === 'N/A';
-      return hasNoExpiry && this.getDaysSinceEntry(i) >= 30;
+      return hasNoExpiry && this.getDaysSinceEntry(i) >= 10;
     });
     if (stale.length > 0) {
       this.staleItems.set(stale);
@@ -1682,7 +1696,7 @@ Rispondi in JSON con formato:
     const stale = clientItems.filter(i => {
       const exp = (i.expiryDate || '').trim();
       const hasNoExpiry = !exp || exp.toUpperCase() === 'N/A';
-      return hasNoExpiry && this.getDaysSinceEntry(i) >= 30;
+      return hasNoExpiry && this.getDaysSinceEntry(i) >= 10;
     });
     this.staleItems.set(stale);
     this.selectedStaleIds.set(stale.map(s => s.id));
