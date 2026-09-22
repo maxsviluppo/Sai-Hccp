@@ -149,13 +149,9 @@ import { FormsModule } from '@angular/forms';
 
                             <div class="pt-5 border-t border-slate-100 flex gap-3">
                                 <button (click)="cancelEdit()" class="flex-1 py-3 bg-slate-50 text-slate-500 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">Annulla</button>
-                                <button (click)="saveRecord()" [disabled]="!currentRecord.mainProductName || hasSuspendedIngredients()"
+                                <button (click)="saveRecord()" [disabled]="!currentRecord.mainProductName"
                                         class="flex-[2] py-3 bg-teal-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-teal-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                    @if (hasSuspendedIngredients()) {
-                                        <i class="fa-solid fa-triangle-exclamation"></i> Conferma Ingr.
-                                    } @else {
-                                        <i class="fa-solid fa-cloud-arrow-up"></i> Salva Registro
-                                    }
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Salva Registro
                                 </button>
                             </div>
                         </div>
@@ -286,9 +282,16 @@ import { FormsModule } from '@angular/forms';
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[500px]">
                         <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest">Elenco Ingredienti Associati</h4>
-                            <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-black">
-                                {{ ingredientsList().length }} INGR.
-                            </span>
+                            <div class="flex items-center gap-2">
+                                @if (hasSuspendedIngredients()) {
+                                    <button type="button" (click)="confirmAllIngredients()" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1">
+                                        <i class="fa-solid fa-check-double"></i> Conferma Tutti
+                                    </button>
+                                }
+                                <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-black">
+                                    {{ ingredientsList().length }} INGR.
+                                </span>
+                            </div>
                         </div>
 
                         <div class="overflow-y-auto flex-1 h-full h-min-0">
@@ -879,8 +882,6 @@ export class ProductionLogViewComponent {
                     });
 
                 const bestMatch = matches[0];
-                const isExactMatch = bestMatch && bestMatch.ingredientName?.toLowerCase() === q;
-
                 const newIng: any = {
                     id: Math.random().toString(36).substring(2, 9),
                     name: bestMatch ? bestMatch.ingredientName : ingName,
@@ -889,7 +890,7 @@ export class ProductionLogViewComponent {
                     lotto: '',
                     supplierName: '',
                     allergens: [],
-                    requiresConfirmation: bestMatch && !isExactMatch
+                    requiresConfirmation: false
                 };
 
                 if (bestMatch) {
@@ -1014,6 +1015,10 @@ export class ProductionLogViewComponent {
         this.ingredientsList.update(list => list.map(i => i.id === id ? { ...i, requiresConfirmation: false } : i));
     }
 
+    confirmAllIngredients() {
+        this.ingredientsList.update(list => list.map(i => ({ ...i, requiresConfirmation: false })));
+    }
+
     hasSuspendedIngredients(): boolean {
         return this.ingredientsList().some(i => i.requiresConfirmation);
     }
@@ -1067,6 +1072,9 @@ export class ProductionLogViewComponent {
         try {
             this.currentRecord.mainProductName = this.currentRecord.mainProductName.charAt(0).toUpperCase() + this.currentRecord.mainProductName.slice(1);
             
+            // Auto-confirm all ingredients on save
+            this.confirmAllIngredients();
+
             const finalRecord: ProductionRecord = {
                 ...(this.currentRecord as ProductionRecord),
                 ingredients: this.ingredientsList()
