@@ -287,14 +287,10 @@ interface AreaChecklist {
         <div class="mt-8 mb-20 px-6 flex flex-col items-center gap-6">
             <div class="h-px w-24 bg-slate-200"></div>
             
-            <div class="flex items-center gap-4 w-full max-w-xs">
+            <div class="flex items-center justify-center w-full max-w-xs">
                 <button (click)="printReport()" 
-                        class="flex-1 h-12 rounded-2xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
+                        class="w-full h-12 rounded-2xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
                     <i class="fa-solid fa-print text-sm"></i> Stampa
-                </button>
-                <button (click)="isResetModalOpen.set(true)" 
-                        class="flex-1 h-12 rounded-2xl text-rose-500 bg-white border border-rose-100 hover:bg-rose-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
-                    <i class="fa-solid fa-rotate-left text-sm"></i> Reset
                 </button>
             </div>
             
@@ -303,34 +299,6 @@ interface AreaChecklist {
             </p>
         </div>
 
-        <!-- RESET CONFIRMATION MODAL -->
-        @if (isResetModalOpen()) {
-           <div class="fixed inset-0 z-[150] flex items-center justify-center p-4">
-              <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="isResetModalOpen.set(false)"></div>
-              <div class="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
-                 <div class="p-8 text-center">
-                    <div class="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-sm">
-                       <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
-                    </div>
-                    <h3 class="text-xl font-black text-slate-800 mb-2">Reset Post-Op?</h3>
-                    <p class="text-xs font-bold text-slate-500 leading-relaxed mb-8">
-                       Questa azione cancellerà tutti i dati inseriti nella fase post-operativa attuale. L'operazione non è reversibile.
-                    </p>
-                    
-                    <div class="flex flex-col gap-3">
-                       <button (click)="confirmReset()" 
-                               class="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-200 active:scale-95 transition-all">
-                          SÌ, RESETTA TUTTO
-                       </button>
-                       <button (click)="isResetModalOpen.set(false)" 
-                               class="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">
-                          ANNULLA
-                       </button>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        }
 
         <!-- ANOMALY REPORTING MODAL -->
         @if (isAnomalyModalOpen()) {
@@ -509,7 +477,6 @@ export class PostOperationalChecklistComponent {
 
     areas = signal<AreaChecklist[]>([]);
 
-    isResetModalOpen = signal(false);
     isSubmitted = signal(false);
     currentRecordId = signal<string | null>(null);
 
@@ -948,11 +915,6 @@ export class PostOperationalChecklistComponent {
         })));
     }
 
-    confirmReset() {
-        this.resetForm();
-        this.isResetModalOpen.set(false);
-        this.toast.info('Scheda Resettata', 'I dati post-operativi sono stati azzerati.');
-    }
 
     setAllOk() {
         this.areas.update(areas => areas.map(area => ({

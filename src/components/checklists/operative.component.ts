@@ -408,7 +408,7 @@ interface ChecklistItem {
                     </button>
                     <button (click)="isResetModalOpen.set(true)" 
                             class="flex-1 h-12 rounded-2xl text-rose-500 bg-white border border-rose-100 hover:bg-rose-50 flex items-center justify-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm">
-                        <i class="fa-solid fa-rotate-left text-sm"></i> Reset
+                        <i class="fa-solid fa-rotate-left text-sm"></i> Reset valori
                     </button>
                 </div>
                 
@@ -521,15 +521,15 @@ interface ChecklistItem {
                         <div class="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-sm">
                            <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
                         </div>
-                        <h3 class="text-xl font-black text-slate-800 mb-2">Reset Completo?</h3>
+                        <h3 class="text-xl font-black text-slate-800 mb-2">Reset valori?</h3>
                         <p class="text-xs font-bold text-slate-500 leading-relaxed mb-8">
-                           Questa azione cancellerà tutti i dati inseriti nella scheda attuale. L'operazione non è reversibile.
+                           Verranno azzerati solo temperature, conteggi e dati numerici del ciclo abbattimento. Le scelte Conforme / Anomalia restano invariate.
                         </p>
                         
                         <div class="flex flex-col gap-3">
                            <button (click)="confirmReset()" 
                                    class="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-200 active:scale-95 transition-all">
-                              SÌ, RESETTA TUTTO
+                              SÌ, RESET VALORI
                            </button>
                            <button (click)="isResetModalOpen.set(false)" 
                                    class="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">
@@ -935,18 +935,27 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
    }
 
    confirmReset() {
-      this.startNewChecklist();
+      this.resetValueInputsOnly();
       this.isResetModalOpen.set(false);
-      this.toast.info('Scheda Resettata', 'I dati sono stati azzerati correttamente.');
+      this.toast.info('Valori azzerati', 'Temperature e conteggi resettati. Conforme/Anomalia non modificati.');
    }
 
-   startNewChecklist() {
-      this.statusMap.set({});
+   /** Azzera solo campi numerici; non tocca Conforme/Anomalia già scelti. */
+   resetValueInputsOnly() {
       this.frigoCount.set(0);
       this.congelatoreCount.set(0);
       this.pozzettoCount.set(0);
-      this.isSubmitted.set(false);
-      this.currentRecordId.set(undefined);
+      this.statusMap.update(map => {
+         const next: Record<string, { status?: ChecklistItem['status']; note?: string }> = {};
+         for (const [id, entry] of Object.entries(map)) {
+            next[id] = {
+               status: entry?.status,
+               note: entry?.note,
+            };
+         }
+         return next;
+      });
+      this.autoSave();
    }
 
    onDateChange(value: string) {
