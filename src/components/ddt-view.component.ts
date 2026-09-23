@@ -887,9 +887,13 @@ Rispondi in JSON con formato:
 {"items":[{"ingredientName":"nome prodotto","lotto":"","quantity":"","expiryDate":""}]}`;
 
     const modelsToTry = [
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
       'gemini-3.6-flash',
-      'gemini-3.8-flash',
-      'gemini-3-flash-preview'
+      'gemini-3.8-flash'
     ];
 
     for (const modelName of modelsToTry) {
@@ -1193,7 +1197,7 @@ Rispondi in JSON con formato:
     const config = this.state.aiConfig();
     const key = config?.apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
     const img = this.ddtPreview();
-    const initialModel = config?.model || 'gemini-3.6-flash';
+    const initialModel = config?.model || 'gemini-2.5-flash';
 
     if (!key) {
       if (this.state.isAdmin()) {
@@ -1216,9 +1220,13 @@ Rispondi in JSON con formato:
     sessionStorage.setItem('haccp_gemini_calls', String(current + 1));
 
     const modelsToTry = [
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
       'gemini-3.6-flash',
-      'gemini-3.8-flash',
-      'gemini-3-flash-preview'
+      'gemini-3.8-flash'
     ];
 
     let currentModel = initialModel;
@@ -1607,10 +1615,14 @@ Rispondi in JSON con formato:
         this.state.saveGlobalRecord('ddt_pantry', validData);
         this.toast.info('Dispensa Aggiornata', `${purgedCount} prodotti (scaduti o senza data >10gg) eliminati definitivamente.`);
       }
-      this.pantry.set(validData);
+      const clientId = this.state.tenantClientId() || this.state.activeTargetClientId();
+      const tenantPantry = validData.filter(
+        i => !clientId || !i.clientId || i.clientId === clientId,
+      );
+      this.pantry.set(tenantPantry);
 
       // 2. Controllo prodotti senza scadenza dopo 10 giorni
-      this.checkStaleNoExpiryProducts(validData);
+      this.checkStaleNoExpiryProducts(tenantPantry);
     } else {
       this.pantry.set([]);
     }

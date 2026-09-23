@@ -870,7 +870,7 @@ export class IngredientsBookViewComponent {
     this.editingRecipe.set(false);
     this.currentRecipe = {
       id: Math.random().toString(36).substring(2, 9),
-      clientId: this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo',
+      clientId: this.state.tenantClientId() || this.state.currentUser()?.clientId || '',
       name: '',
       category: 'Primi',
       description: '',

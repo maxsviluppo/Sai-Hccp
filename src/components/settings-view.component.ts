@@ -536,8 +536,8 @@ export class SettingsViewComponent {
   }
 
   clearGeminiApiKey() {
-    const current = this.state.aiConfig() || { model: 'gemini-3.6-flash', stats: {} };
-    this.state.saveAiConfig({ ...current, apiKey: '', model: 'gemini-3.6-flash' }, true);
+    const current = this.state.aiConfig() || { model: 'gemini-2.5-flash', stats: {} };
+    this.state.saveAiConfig({ ...current, apiKey: '', model: 'gemini-2.5-flash' }, true);
     this.geminiApiKeyInput = '';
     this.toast.info('Configurazione Rimossa', 'La chiave API è stata rimossa.');
   }
@@ -548,23 +548,24 @@ export class SettingsViewComponent {
       this.toast.error('Chiave non valida', 'La chiave API Gemini inserita sembra troppo corta.');
       return;
     }
-    const current = this.state.aiConfig() || { model: 'gemini-3.6-flash', stats: {} };
+    const current = this.state.aiConfig() || { model: 'gemini-2.5-flash', stats: {} };
     this.state.saveAiConfig({
       ...current,
       apiKey: key,
-      model: 'gemini-3.6-flash'
+      model: 'gemini-2.5-flash'
     });
-    this.toast.success('Configurazione salvata', 'La chiave è stata cifrata e salvata sia in locale che nel database cloud.');
+    this.toast.success('Configurazione salvata', 'La chiave è stata salvata sia in locale che nel database cloud.');
   }
 
   setGeminiModel(model: string) {
     const current = this.state.aiConfig() || { stats: {} };
-    this.state.saveAiConfig({ ...current, model: 'gemini-3.6-flash' });
-    this.toast.success('Modello Impostato', `Modello forzato a gemini-3.6-flash`);
+    const targetModel = model || 'gemini-2.5-flash';
+    this.state.saveAiConfig({ ...current, model: targetModel });
+    this.toast.success('Modello Impostato', `Modello impostato a ${targetModel}`);
   }
 
   resetGeminiStats() {
-    const current = this.state.aiConfig() || { model: 'gemini-3.6-flash' };
+    const current = this.state.aiConfig() || { model: 'gemini-2.5-flash' };
     this.state.saveAiConfig({ ...current, stats: {} });
     this.toast.info('Statistiche Resettate', 'Le statistiche di utilizzo sono state azzerate.');
   }
@@ -573,16 +574,25 @@ export class SettingsViewComponent {
   async testAiConnection() {
     const config = this.state.aiConfig();
     const key = config?.apiKey;
-    let model = config?.model || 'gemini-3.6-flash';
+    let model = config?.model || 'gemini-2.5-flash';
     if (!key) return;
 
-    if (model.startsWith('gemini-1.5') || model.startsWith('gemini-2.') || model.includes('3.5') || model.includes('3.1')) {
-      model = 'gemini-3.6-flash';
+    if (model.startsWith('gemini-1.5') || model === 'gemini-3.6-flash' || model === 'gemini-3.8-flash') {
+      model = 'gemini-2.5-flash';
       this.state.saveAiConfig({ ...config, model });
     }
 
     this.isTestingAi.set(true);
-    const modelsToTry = [model, 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3-flash-preview'];
+    const modelsToTry = [
+      model,
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-3.5-flash-lite',
+      'gemini-flash-lite-latest',
+      'gemini-3.6-flash',
+      'gemini-3.8-flash'
+    ];
     const uniqueModels = Array.from(new Set(modelsToTry));
 
     let succeeded = false;

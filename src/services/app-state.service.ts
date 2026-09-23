@@ -347,6 +347,18 @@ export class AppStateService {
     return user?.clientId || 'demo';
   });
 
+  /** Azienda attiva per dati operativi (scheda prodotto, carico, ecc.) — senza fallback demo per operatori. */
+  readonly tenantClientId = computed((): string | null => {
+    const user = this.currentUser();
+    if (!user) return null;
+    if (user.role === 'COLLABORATOR') {
+      return user.clientId || null;
+    }
+    const filterId = this.filterClientId();
+    if (filterId) return filterId;
+    return null;
+  });
+
   // Returns list of unique brands for initial filtering
   readonly groupedViewClients = computed(() => {
     const all = this.clients();
@@ -472,6 +484,16 @@ export class AppStateService {
         void this.syncChecklistRecordsForClient(clientId);
       }
     });
+
+    effect(() => {
+      const tenantId = this.tenantClientId();
+      this.initialSyncDone();
+      if (!tenantId) return;
+      void this.syncRecipes();
+      void this.syncPreparations();
+      void this.syncProductionRecords();
+      void this.syncEquipment();
+    }, { allowSignalWrites: true });
 
   }
 
@@ -867,8 +889,10 @@ export class AppStateService {
    */
   private handleChecklistInsert(newRow: any) {
     if (!newRow?.id) return;
+    const tenantId = this.tenantClientId();
+    if (tenantId && String(newRow.client_id) !== String(tenantId)) return;
     const validClientIds = this.clients().map(c => c.id);
-    if (newRow.client_id !== 'demo' && newRow.client_id !== 'GLOBAL' && !validClientIds.includes(newRow.client_id)) return;
+    if (!tenantId && newRow.client_id !== 'demo' && newRow.client_id !== 'GLOBAL' && !validClientIds.includes(newRow.client_id)) return;
 
     this.checklistRecords.update(records => {
       if (records.some(r => r.id === newRow.id)) {
@@ -901,6 +925,8 @@ export class AppStateService {
    */
   private handleChecklistUpdate(newRow: any) {
     if (!newRow?.id) return;
+    const tenantId = this.tenantClientId();
+    if (tenantId && String(newRow.client_id) !== String(tenantId)) return;
     this.checklistRecords.update(records =>
       records.map(r => r.id === newRow.id ? {
         ...r,
@@ -992,40 +1018,58 @@ export class AppStateService {
   }
 
   async syncProductionRecords() {
-    const validClientIds = this.clients().map(c => c.id);
+    const clientId = this.tenantClientId();
+    if (!clientId) {
+      this.productionRecords.set([]);
+      return;
+    }
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateLimit = thirtyDaysAgo.toISOString().split('T')[0];
 
-    const { data: dbProdRecords } = await supabase.from('production_records').select('*');
-    if (dbProdRecords) {
-      this.productionRecords.set(dbProdRecords
-        .filter((r: any) => (r.client_id === 'demo' || validClientIds.includes(r.client_id)) && r.recorded_date >= dateLimit)
-        .map((r: any) => ({
-          id: r.id,
-          recordedDate: r.recorded_date,
-          mainProductName: r.main_product_name,
-          packagingDate: r.packaging_date,
-          expiryDate: r.expiry_date,
-          lotto: r.lotto,
-          ingredients: r.ingredients || [],
-          userId: r.user_id,
-          clientId: r.client_id
-        })));
-    }
+    const { data: dbProdRecords } = await supabase
+      .from('production_records')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('recorded_date', dateLimit);
+
+    const mapped = (dbProdRecords ?? []).map((r: any) => ({
+      id: r.id,
+      recordedDate: r.recorded_date,
+      mainProductName: r.main_product_name,
+      packagingDate: r.packaging_date,
+      expiryDate: r.expiry_date,
+      lotto: r.lotto,
+      ingredients: r.ingredients || [],
+      userId: r.user_id,
+      clientId: r.client_id,
+    }));
+
+    this.productionRecords.update(list => {
+      const rest = list.filter(r => String(r.clientId) !== String(clientId));
+      return [...rest, ...mapped];
+    });
   }
 
   async syncEquipment() {
-     const { data: equip } = await supabase.from('equipment').select('*');
-     if (equip) {
-       this.selectedEquipment.set(equip.map((e: any) => ({
-         id: e.id,
-         clientId: e.client_id,
-         name: e.name,
-         area: e.area,
-         type: e.type
-       })));
-     }
+    const clientId = this.tenantClientId();
+    if (!clientId) {
+      this.selectedEquipment.set([]);
+      return;
+    }
+    const { data: equip } = await supabase.from('equipment').select('*').eq('client_id', clientId);
+    const mapped = (equip ?? []).map((e: any) => ({
+      id: e.id,
+      clientId: e.client_id,
+      name: e.name,
+      area: e.area,
+      type: e.type,
+    }));
+    this.selectedEquipment.update(list => {
+      const rest = list.filter(e => String((e as any).clientId) !== String(clientId));
+      return [...rest, ...mapped];
+    });
   }
 
   async syncMessages() {
@@ -1145,9 +1189,9 @@ export class AppStateService {
     try {
       const { data: aiSettings, error: aiErr } = await supabase.from('system_config').select('*').eq('id', 'ai_settings').single();
       if (aiSettings && aiSettings.master_data) {
-        const loadedModel = aiSettings.master_data.model || 'gemini-3.6-flash';
-        const migratedModel = (loadedModel.startsWith('gemini-1.5') || loadedModel.startsWith('gemini-2.') || loadedModel.includes('3.5') || loadedModel.includes('3.1'))
-            ? 'gemini-3.6-flash'
+        const loadedModel = aiSettings.master_data.model || 'gemini-2.5-flash';
+        const migratedModel = (loadedModel.startsWith('gemini-1.5') || loadedModel === 'gemini-3.6-flash' || loadedModel === 'gemini-3.8-flash')
+            ? 'gemini-2.5-flash'
             : loadedModel;
         const dbKey = this.deobfuscate(aiSettings.master_data.apiKey);
         const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || this.aiConfig()?.apiKey || '';
@@ -1197,19 +1241,29 @@ export class AppStateService {
   }
 
   async syncRecipes() {
-    const { data: recipeData } = await supabase.from('ingredients_book').select('*');
-    if (recipeData) {
-      this.recipes.set(recipeData.map((r: any) => ({
-        id: r.id,
-        clientId: r.client_id,
-        name: r.name,
-        category: r.category,
-        description: r.description,
-        ingredients: r.ingredients || [],
-        createdAt: new Date(r.created_at || r.updated_at),
-        updatedAt: new Date(r.updated_at)
-      })));
+    const clientId = this.tenantClientId();
+    if (!clientId) {
+      this.recipes.set([]);
+      return;
     }
+    const { data: recipeData } = await supabase
+      .from('ingredients_book')
+      .select('*')
+      .eq('client_id', clientId);
+    const mapped = (recipeData ?? []).map((r: any) => ({
+      id: r.id,
+      clientId: r.client_id,
+      name: r.name,
+      category: r.category,
+      description: r.description,
+      ingredients: r.ingredients || [],
+      createdAt: new Date(r.created_at || r.updated_at),
+      updatedAt: new Date(r.updated_at),
+    }));
+    this.recipes.update(list => {
+      const rest = list.filter(r => String(r.clientId) !== String(clientId));
+      return [...rest, ...mapped];
+    });
   }
 
   /**
@@ -1334,8 +1388,21 @@ export class AppStateService {
 
   readonly recipes = signal<Recipe[]>([]);
   readonly filteredRecipes = computed(() => {
-    const targetClientId = this.activeTargetClientId();
-    return this.recipes().filter(r => r.clientId === targetClientId);
+    const targetClientId = this.tenantClientId();
+    if (!targetClientId) return [];
+    return this.recipes().filter(r => String(r.clientId) === String(targetClientId));
+  });
+
+  readonly filteredPreparations = computed(() => {
+    const targetClientId = this.tenantClientId();
+    if (!targetClientId) return [];
+    return this.preparations().filter(p => String(p.clientId) === String(targetClientId));
+  });
+
+  readonly filteredProductionRecords = computed(() => {
+    const targetClientId = this.tenantClientId();
+    if (!targetClientId) return [];
+    return this.productionRecords().filter(r => String(r.clientId) === String(targetClientId));
   });
 
   readonly documents = signal<AppDocument[]>([]);
@@ -1666,7 +1733,12 @@ export class AppStateService {
     this.currentUser.set(null);
     this.currentModuleId.set('dashboard');
     this.filterCollaboratorId.set('');
+    this.filterClientId.set(null);
     this.filterDate.set(new Date().toISOString().split('T')[0]);
+    this.recipes.set([]);
+    this.preparations.set([]);
+    this.productionRecords.set([]);
+    this.checklistRecords.set([]);
     void this.refreshAllData();
   }
 
@@ -1699,7 +1771,7 @@ export class AppStateService {
       const { data: dbRecords, error } = await supabase
         .from('checklist_records')
         .select('*')
-        .in('client_id', [clientId, 'GLOBAL'])
+        .eq('client_id', clientId)
         .or(`date.gte.${sinceStr},date.eq.GLOBAL,module_id.eq.operative-phases-config`);
 
       if (error) {
@@ -1719,7 +1791,7 @@ export class AppStateService {
       }
 
       const existingForClient = this.checklistRecords().filter(
-        r => r.clientId === clientId || r.clientId === 'GLOBAL'
+        r => r.clientId === clientId
       );
       const existingById = new Map(existingForClient.map(r => [r.id, r]));
 
@@ -1747,7 +1819,7 @@ export class AppStateService {
       );
 
       const otherRecords = this.checklistRecords().filter(
-        r => r.clientId !== clientId && r.clientId !== 'GLOBAL'
+        r => r.clientId !== clientId
       );
 
       this.checklistRecords.set(
@@ -2026,19 +2098,32 @@ export class AppStateService {
   }
 
   saveGlobalRecord(moduleId: string, data: any) {
-    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
+    const targetClientId = this.tenantClientId() || this.currentUser()?.clientId;
+    if (!targetClientId) {
+      this.toastService.error('Azienda non selezionata', 'Seleziona l\'azienda prima di salvare.');
+      return;
+    }
+    let payload = data;
+    if (Array.isArray(data) && (moduleId === 'ddt_pantry' || moduleId === 'suppliers' || moduleId === 'abbattimento_log')) {
+      payload = data
+        .filter((i: any) => !i?.clientId || String(i.clientId) === String(targetClientId))
+        .map((i: any) => ({ ...i, clientId: targetClientId }));
+    }
     return this.saveChecklist({
       moduleId,
-      data,
+      data: payload,
       date: 'GLOBAL',
-      clientId: targetClientId
+      clientId: targetClientId,
     });
   }
 
   /** Restituisce solo il record GLOBAL (metadati). Usa getGlobalRecordData() per il payload. */
   getGlobalRecord(moduleId: string) {
-    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
-    const allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
+    const targetClientId = this.tenantClientId() || this.currentUser()?.clientId;
+    if (!targetClientId) return null;
+    const allRecords = this.checklistRecords().filter(
+      r => r.moduleId === moduleId && r.clientId === targetClientId,
+    );
     
     if (allRecords.length === 0) return null;
 
@@ -2072,8 +2157,11 @@ export class AppStateService {
    * Use this in components that populate form data from a GLOBAL record (e.g. DDT Pantry, supplier config).
    */
   async getGlobalRecordData(moduleId: string): Promise<any | null> {
-    const targetClientId = this.activeTargetClientId() || this.currentUser()?.clientId || 'demo';
-    let allRecords = this.checklistRecords().filter(r => r.moduleId === moduleId && (r.clientId === targetClientId || r.clientId === 'GLOBAL'));
+    const targetClientId = this.tenantClientId() || this.currentUser()?.clientId;
+    if (!targetClientId) return null;
+    let allRecords = this.checklistRecords().filter(
+      r => r.moduleId === moduleId && r.clientId === targetClientId,
+    );
 
     if (allRecords.length === 0) {
       try {
@@ -2109,11 +2197,23 @@ export class AppStateService {
     }
 
     if (moduleId === 'ddt_pantry' && Array.isArray(resultData)) {
-      const valid = resultData.filter((i: any) => !this.isExpiredPantryDate(i.expiryDate) && !this.isStaleNoExpiryDate(i, 10));
-      if (valid.length < resultData.length) {
+      const tenantOnly = resultData.filter(
+        (i: any) => !i?.clientId || String(i.clientId) === String(targetClientId),
+      );
+      const valid = tenantOnly.filter(
+        (i: any) => !this.isExpiredPantryDate(i.expiryDate) && !this.isStaleNoExpiryDate(i, 10),
+      );
+      if (valid.length < tenantOnly.length) {
         this.saveGlobalRecord('ddt_pantry', valid);
         return valid;
       }
+      return tenantOnly;
+    }
+
+    if (Array.isArray(resultData) && (moduleId === 'suppliers' || moduleId === 'abbattimento_log')) {
+      return resultData.filter(
+        (i: any) => !i?.clientId || String(i.clientId) === String(targetClientId),
+      );
     }
 
     return resultData;
@@ -2227,7 +2327,7 @@ export class AppStateService {
     const safeConfig = {
       ...config,
       apiKey: keyToSave,
-      model: config.model || current.model || 'gemini-3.6-flash',
+      model: config.model || current.model || 'gemini-2.5-flash',
       stats: config.stats || current.stats || {},
       updatedAt: new Date().toISOString()
     };
@@ -2267,7 +2367,7 @@ export class AppStateService {
 
   updateAiUsage(model: string, tokens: number = 1000) {
     const localBackupKey = (typeof localStorage !== 'undefined' ? localStorage.getItem('haccp_gemini_api_key') : '') || '';
-    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-3.6-flash', stats: {} };
+    const config = this.aiConfig() || { apiKey: localBackupKey, model: 'gemini-2.5-flash', stats: {} };
     const stats = config.stats || {};
     const modelStats = stats[model] || { count: 0, estimatedCost: 0 };
     
@@ -3135,23 +3235,28 @@ export class AppStateService {
 
   // --- Production Records Methods ---
   async saveProductionRecord(record: ProductionRecord) {
-    // Optimistic UI
+    const tenantId = this.tenantClientId() || record.clientId;
+    if (!tenantId) {
+      this.toastService.error('Azienda non selezionata', 'Impossibile salvare la scheda produzione.');
+      return;
+    }
+    const scoped = { ...record, clientId: tenantId, userId: record.userId || this.currentUser()?.id || '' };
+
     this.productionRecords.update(list => {
-      const others = list.filter(r => r.id !== record.id);
-      return [record, ...others];
+      const others = list.filter(r => r.id !== scoped.id);
+      return [scoped, ...others];
     });
 
-    // DB Sync
     const { error } = await supabase.from('production_records').upsert({
-      id: record.id,
-      recorded_date: record.recordedDate,
-      main_product_name: record.mainProductName,
-      packaging_date: record.packagingDate,
-      expiry_date: record.expiryDate,
-      lotto: record.lotto,
-      ingredients: record.ingredients,
-      user_id: record.userId,
-      client_id: record.clientId
+      id: scoped.id,
+      recorded_date: scoped.recordedDate,
+      main_product_name: scoped.mainProductName,
+      packaging_date: scoped.packagingDate,
+      expiry_date: scoped.expiryDate,
+      lotto: scoped.lotto,
+      ingredients: scoped.ingredients,
+      user_id: scoped.userId,
+      client_id: tenantId,
     });
 
     if (error) {
@@ -3163,11 +3268,12 @@ export class AppStateService {
   }
 
   async deleteProductionRecord(id: string) {
-    // Optimistic UI
+    const clientId = this.tenantClientId();
     this.productionRecords.update(list => list.filter(r => r.id !== id));
 
-    // DB Sync
-    const { error } = await supabase.from('production_records').delete().eq('id', id);
+    let query = supabase.from('production_records').delete().eq('id', id);
+    if (clientId) query = query.eq('client_id', clientId);
+    const { error } = await query;
     if (error) {
         console.error('Error deleting production record:', error);
         this.toastService.error('Errore', 'Impossibile eliminare la scheda dal cloud.');
@@ -3281,24 +3387,35 @@ export class AppStateService {
   }
 
   async syncPreparations() {
-    const { data: dbPreps } = await supabase.from('preparations').select('*');
-    if (dbPreps) {
-      this.preparations.set(dbPreps.map((p: any) => ({
-        id: p.id,
-        clientId: p.client_id,
-        name: p.name,
-        category: p.category,
-        expiryDays: p.expiry_days,
-        ingredients: p.ingredients
-      })));
+    const clientId = this.tenantClientId();
+    if (!clientId) {
+      this.preparations.set([]);
+      return;
     }
+    const { data: dbPreps } = await supabase.from('preparations').select('*').eq('client_id', clientId);
+    const mapped = (dbPreps ?? []).map((p: any) => ({
+      id: p.id,
+      clientId: p.client_id,
+      name: p.name,
+      category: p.category,
+      expiryDays: p.expiry_days,
+      ingredients: p.ingredients,
+    }));
+    this.preparations.update(list => {
+      const rest = list.filter(p => String(p.clientId) !== String(clientId));
+      return [...rest, ...mapped];
+    });
   }
 
   async savePreparation(prep: Partial<Preparation>) {
     const user = this.currentUser();
     if (!user) return;
-    const clientId = this.activeTargetClientId() || user.clientId || 'demo';
-    
+    const clientId = this.tenantClientId() || user.clientId;
+    if (!clientId) {
+      this.toastService.error('Azienda non selezionata', 'Impossibile salvare senza azienda associata.');
+      return;
+    }
+
     const newPrep: Preparation = {
       id: prep.id || Math.random().toString(36).substring(2, 9),
       clientId: clientId,
@@ -3331,8 +3448,11 @@ export class AppStateService {
   }
 
   async deletePreparation(id: string) {
+    const clientId = this.tenantClientId();
     this.preparations.update(list => list.filter(p => p.id !== id));
-    const { error } = await supabase.from('preparations').delete().eq('id', id);
+    let query = supabase.from('preparations').delete().eq('id', id);
+    if (clientId) query = query.eq('client_id', clientId);
+    const { error } = await query;
     if (!error) {
       this.toastService.success('Eliminato', 'Preparazione rimossa.');
     } else {
@@ -3342,18 +3462,24 @@ export class AppStateService {
 
   // --- Recipe Management ---
   async syncRecipe(recipe: Recipe) {
+    const tenantId = this.tenantClientId() || recipe.clientId;
+    if (!tenantId) {
+      this.toastService.error('Azienda non selezionata', 'Impossibile salvare la scheda prodotto.');
+      return;
+    }
+    const scopedRecipe = { ...recipe, clientId: tenantId };
     this.recipes.update(list => {
-      const filtered = list.filter(r => r.id !== recipe.id);
-      return [recipe, ...filtered];
+      const filtered = list.filter(r => r.id !== scopedRecipe.id);
+      return [scopedRecipe, ...filtered];
     });
 
     const { error } = await supabase.from('ingredients_book').upsert({
-      id: recipe.id,
-      client_id: recipe.clientId,
-      name: recipe.name,
-      category: recipe.category,
-      description: recipe.description,
-      ingredients: recipe.ingredients,
+      id: scopedRecipe.id,
+      client_id: tenantId,
+      name: scopedRecipe.name,
+      category: scopedRecipe.category,
+      description: scopedRecipe.description,
+      ingredients: scopedRecipe.ingredients,
       updated_at: new Date().toISOString()
     });
 
@@ -3361,13 +3487,16 @@ export class AppStateService {
        console.error('Error syncing recipe:', error);
        this.toastService.error('Errore Sync', `Salvataggio fallito: ${error.message}`);
     } else {
-       this.toastService.success('Salvato', `Scheda "${recipe.name}" aggiornata.`);
+       this.toastService.success('Salvato', `Scheda "${scopedRecipe.name}" aggiornata.`);
     }
   }
 
   async deleteRecipe(id: string) {
+    const clientId = this.tenantClientId();
     this.recipes.update(list => list.filter(r => r.id !== id));
-    const { error } = await supabase.from('ingredients_book').delete().eq('id', id);
+    let query = supabase.from('ingredients_book').delete().eq('id', id);
+    if (clientId) query = query.eq('client_id', clientId);
+    const { error } = await query;
     if (!error) this.toastService.success('Eliminato', 'Ricetta rimossa.');
   }
 

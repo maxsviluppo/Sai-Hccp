@@ -757,11 +757,9 @@ export class ProductionLogViewComponent {
     newIngredient: Partial<ProductionIngredient> = {};
 
     filteredRecords = computed(() => {
-        const targetClientId = this.state.activeTargetClientId();
         const selectedDate = this.state.filterDate(); // Calendario globale
         
-        return this.state.productionRecords()
-            .filter(r => (targetClientId ? r.clientId === targetClientId : true))
+        return this.state.filteredProductionRecords()
             .filter(r => !selectedDate || r.recordedDate.startsWith(selectedDate)) // Sincronizzazione calendario
             .filter(r => {
                 const search = this.searchQuery().toLowerCase();
@@ -789,7 +787,7 @@ export class ProductionLogViewComponent {
             expiryDate: '',
             lotto: lotto,
             recordedDate: selDate + 'T' + new Date().toLocaleTimeString('it-IT', { hour12: false }),
-            clientId: this.state.activeTargetClientId() || 'demo',
+            clientId: this.state.tenantClientId() || this.state.currentUser()?.clientId || '',
             userId: this.state.currentUser()?.id || 'demo'
         };
         this.ingredientsList.set([]);
@@ -822,7 +820,7 @@ export class ProductionLogViewComponent {
         const q = val.toLowerCase();
         
         // Match from Preparazioni
-        const preps = this.state.preparations()
+        const preps = this.state.filteredPreparations()
             .filter(p => p.name.toLowerCase().includes(q))
             .slice(0, 5);
         this.preparationMatches.set(preps);
@@ -859,7 +857,7 @@ export class ProductionLogViewComponent {
         if (prep.ingredients && Array.isArray(prep.ingredients) && prep.ingredients.length > 0) {
             const today = new Date().toISOString().split('T')[0];
             const local = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
-            const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId;
+            const clientId = this.state.tenantClientId() || this.state.currentUser()?.clientId;
             
             let foundCount = 0;
 
@@ -938,7 +936,7 @@ export class ProductionLogViewComponent {
         const today = new Date().toISOString().split('T')[0];
         
         const local = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
-        const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId;
+        const clientId = this.state.tenantClientId() || this.state.currentUser()?.clientId;
         
         const matches = local
             .filter((i: any) => i.ingredientName?.toLowerCase().includes(q))

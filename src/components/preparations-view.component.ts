@@ -379,7 +379,7 @@ export class PreparationsViewComponent {
 
   // Dynamically compute all categories from existing preparations + base ones
   allAvailableCategories = computed(() => {
-    const fromPreps = this.state.preparations().map(p => p.category);
+    const fromPreps = this.state.filteredPreparations().map(p => p.category);
     const unique = [...new Set([...this.baseCategories, ...fromPreps])];
     return unique.sort((a, b) => a.localeCompare(b));
   });
@@ -410,7 +410,7 @@ export class PreparationsViewComponent {
   }
 
   filteredPreps = computed(() => {
-    const all = this.state.preparations();
+    const all = this.state.filteredPreparations();
     const cat = this.selectedCategory();
     if (cat === 'ALL') return all;
     return all.filter(p => p.category === cat);
@@ -474,7 +474,7 @@ export class PreparationsViewComponent {
   async doDeleteCategory() {
     const cat = this.categoryToDelete();
     if (cat) {
-        const toDelete = this.state.preparations().filter(p => p.category === cat);
+        const toDelete = this.state.filteredPreparations().filter(p => p.category === cat);
         for (const p of toDelete) {
             await this.state.deletePreparation(p.id);
         }
@@ -498,7 +498,7 @@ export class PreparationsViewComponent {
     const newName = this.newCategoryLabel.trim();
     
     if (oldName && newName && oldName !== newName) {
-        const toUpdate = this.state.preparations().filter(p => p.category === oldName);
+        const toUpdate = this.state.filteredPreparations().filter(p => p.category === oldName);
         for (const p of toUpdate) {
             await this.state.savePreparation({ ...p, category: newName });
         }
