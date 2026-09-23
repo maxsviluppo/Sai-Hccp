@@ -946,11 +946,12 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
       this.congelatoreCount.set(0);
       this.pozzettoCount.set(0);
       this.statusMap.update(map => {
-         const next: Record<string, { status?: ChecklistItem['status']; note?: string }> = {};
+         const next: typeof map = {};
          for (const [id, entry] of Object.entries(map)) {
+            if (!entry) continue;
             next[id] = {
-               status: entry?.status,
-               note: entry?.note,
+               status: entry.status ?? 'pending',
+               note: entry.note,
             };
          }
          return next;
