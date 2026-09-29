@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS documents (
   file_type TEXT,
   file_data TEXT,
   upload_date TIMESTAMPTZ DEFAULT NOW(),
-  expiry_date TEXT
+  expiry_date TEXT,
+  expiry_alert_enabled BOOLEAN DEFAULT FALSE
 );
 
 -- Messages Table

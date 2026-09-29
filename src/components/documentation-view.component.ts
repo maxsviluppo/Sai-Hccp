@@ -1,9 +1,14 @@
 
-import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AppStateService, AppDocument } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
+import {
+  DOCUMENT_EXPIRY_ALERT_DAYS_BEFORE,
+  daysUntilIsoDate,
+  isExpiryAlertActive
+} from '../utils/document-expiry-alerts';
 
 @Component({
     selector: 'app-documentation-view',
@@ -36,6 +41,26 @@ import { ToastService } from '../services/toast.service';
                </div>
             </div>
         </div>
+
+        @if (archiveDocExpiryAlerts().length > 0) {
+            <div class="rounded-[1.5rem] border-2 border-amber-300 bg-amber-50/90 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-start gap-4 min-w-0">
+                    <div class="h-12 w-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-amber-800">Scadenze archivio</p>
+                        <p class="text-sm font-black text-slate-800 mt-0.5">
+                            {{ archiveDocExpiryAlerts().length }} documento/i in scadenza (avviso entro {{ expiryAlertDaysBefore }} giorni)
+                        </p>
+                    </div>
+                </div>
+                <button type="button" (click)="focusFirstExpiryAlert()"
+                        class="shrink-0 px-6 py-3 rounded-xl bg-slate-900 hover:bg-black text-white text-[10px] font-black uppercase tracking-widest">
+                    Vai al documento
+                </button>
+            </div>
+        }
 
         <!-- MOBILE CATEGORY GRID (Visible only on mobile/tablet < LG) -->
         <div class="lg:hidden">
@@ -172,7 +197,13 @@ import { ToastService } from '../services/toast.service';
                         <div class="p-6 md:p-8">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 @for (doc of getDocsByType(selectedDocType() || ''); track doc.id) {
-                                    <div class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-300 transition-all shadow-sm group relative flex flex-col gap-4">
+                                    <div [id]="'arch-doc-' + doc.id"
+                                         class="bg-white p-5 rounded-2xl border transition-all shadow-sm group relative flex flex-col gap-4"
+                                         [class.border-indigo-300]="highlightDocId() === doc.id"
+                                         [class.ring-2]="highlightDocId() === doc.id"
+                                         [class.ring-violet-300]="highlightDocId() === doc.id"
+                                         [class.border-slate-200]="highlightDocId() !== doc.id"
+                                         [class.hover:border-indigo-300]="highlightDocId() !== doc.id">
                                         <div class="flex items-center gap-4 overflow-hidden">
                                             <div [class]="'w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border overflow-hidden shadow-sm bg-' + getDocColor(doc.type) + '-50 border-' + getDocColor(doc.type) + '-100 text-' + getDocColor(doc.type) + '-600'">
                                                 @if (isImage(doc.fileType) && doc.fileData) {
@@ -188,7 +219,33 @@ import { ToastService } from '../services/toast.service';
                                                     <span class="w-1 h-1 rounded-full bg-slate-200"></span>
                                                     <span>{{ getFileSize(doc.fileName) }}</span>
                                                 </div>
+                                                @if (doc.expiryDate) {
+                                                    @let expDays = expiryDaysFor(doc);
+                                                    <p class="text-[10px] font-black mt-1 uppercase tracking-tight"
+                                                       [class]="expDays < 0 ? 'text-rose-600' : (expDays <= expiryAlertDaysBefore ? 'text-amber-600' : 'text-violet-600')">
+                                                        Scadenza {{ doc.expiryDate | date:'dd/MM/yyyy' }}
+                                                        @if (expDays < 0) { · scaduto } @else if (expDays === 0) { · oggi } @else { · tra {{ expDays }} gg }
+                                                    </p>
+                                                }
                                             </div>
+                                        </div>
+
+                                        <div class="rounded-xl border border-violet-100 bg-violet-50/40 p-3 space-y-2">
+                                            <label class="text-[9px] font-black uppercase tracking-widest text-violet-800/70 block">
+                                                Data scadenza (opzionale)
+                                            </label>
+                                            <input type="date"
+                                                   class="w-full px-3 py-2 rounded-lg border border-violet-200 bg-white text-xs font-bold text-slate-800"
+                                                   [value]="doc.expiryDate || ''"
+                                                   (change)="updateDocExpiry(doc, $any($event.target).value)">
+                                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                                <input type="checkbox"
+                                                       class="w-3.5 h-3.5 rounded border-violet-300 text-violet-600"
+                                                       [disabled]="!doc.expiryDate"
+                                                       [checked]="isDocExpiryAlertOn(doc)"
+                                                       (change)="updateDocExpiryAlert(doc, $any($event.target).checked)">
+                                                <span class="text-[9px] font-black uppercase tracking-wide text-violet-900">Avviso dashboard ({{ expiryAlertDaysBefore }} gg prima)</span>
+                                            </label>
                                         </div>
                                         
                                         <!-- ACTIONS -->
@@ -297,6 +354,8 @@ export class DocumentationViewComponent implements OnInit {
     previewDoc = signal<AppDocument | null>(null);
     isDeleteModalOpen = signal(false);
     docToDelete = signal<any>(null);
+    highlightDocId = signal<string | null>(null);
+    readonly expiryAlertDaysBefore = DOCUMENT_EXPIRY_ALERT_DAYS_BEFORE;
 
     docDefinitions = [
         { id: 'scia', label: 'Scia e planimetria', icon: 'fa-map-location-dot', color: 'sky' },
@@ -338,11 +397,65 @@ export class DocumentationViewComponent implements OnInit {
         return def ? def.label : type.toUpperCase();
     }
 
+    archiveDocExpiryAlerts = computed(() =>
+        this.state.filteredDocuments()
+            .filter(d => isExpiryAlertActive(d))
+            .sort((a, b) => daysUntilIsoDate(a.expiryDate!) - daysUntilIsoDate(b.expiryDate!))
+    );
+
     constructor() {
         effect(() => {
             const docs = this.state.filteredDocuments();
             this.autoLoadImagePreviews(docs);
         }, { allowSignalWrites: true });
+
+        effect(() => {
+            const intent = this.state.documentationDocIntent();
+            if (!intent) return;
+            untracked(() => {
+                if (intent.docType) {
+                    this.selectedDocType.set(intent.docType);
+                } else {
+                    this.selectedDocType.set('all');
+                }
+                const docId = intent.docId;
+                if (docId) {
+                    this.highlightDocId.set(docId);
+                    setTimeout(() => {
+                        document.getElementById(`arch-doc-${docId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 150);
+                    setTimeout(() => this.highlightDocId.set(null), 4000);
+                }
+                this.state.documentationDocIntent.set(null);
+            });
+        }, { allowSignalWrites: true });
+    }
+
+    expiryDaysFor(doc: AppDocument): number {
+        return daysUntilIsoDate(doc.expiryDate || '');
+    }
+
+    isDocExpiryAlertOn(doc: AppDocument): boolean {
+        return doc.expiryAlertEnabled === true;
+    }
+
+    updateDocExpiry(doc: AppDocument, value: string) {
+        void this.state.updateDocumentExpirySettings(doc.id, { expiryDate: value || '' });
+    }
+
+    updateDocExpiryAlert(doc: AppDocument, enabled: boolean) {
+        void this.state.updateDocumentExpirySettings(doc.id, { expiryAlertEnabled: enabled });
+    }
+
+    focusFirstExpiryAlert() {
+        const first = this.archiveDocExpiryAlerts()[0];
+        if (!first) return;
+        this.selectedDocType.set(first.type || 'all');
+        this.highlightDocId.set(first.id);
+        setTimeout(() => {
+            document.getElementById(`arch-doc-${first.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 80);
+        setTimeout(() => this.highlightDocId.set(null), 4000);
     }
 
     private autoLoadImagePreviews(docs: AppDocument[]) {

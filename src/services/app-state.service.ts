@@ -122,7 +122,9 @@ export interface AppDocument {
   fileType: string;
   fileData?: string; // base64
   uploadDate: Date;
-  expiryDate?: string; // For PEE
+  expiryDate?: string;
+  /** Se false, nessun banner dashboard anche con data scadenza impostata */
+  expiryAlertEnabled?: boolean;
   userId?: string; // Specific unit/collaborator association
 }
 
@@ -319,6 +321,9 @@ export class AppStateService {
 
   // --- Navigation State ---
   readonly currentModuleId = signal<string>('dashboard');
+
+  /** Navigazione verso Archivio Documentale (opz. tipo / documento) */
+  readonly documentationDocIntent = signal<{ docId?: string; docType?: string } | null>(null);
 
   // --- Accounting / Payments State ---
   readonly payments = signal<Payment[]>([]);
@@ -969,14 +974,70 @@ export class AppStateService {
     void this.refreshAllData();
   }
 
+  /** Se la colonna è stata aggiunta su Supabase dopo l’avvio, rileva di nuovo la presenza. */
+  private async refreshDocumentsExpiryAlertColumnFlag(): Promise<boolean> {
+    if (this.documentsExpiryAlertColumnAvailable === true) {
+      return true;
+    }
+    const probe = await supabase.from('documents').select('expiry_alert_enabled').limit(1);
+    if (!probe.error) {
+      this.documentsExpiryAlertColumnAvailable = true;
+      return true;
+    }
+    if (this.isMissingDocumentsColumn(probe.error, 'expiry_alert_enabled')) {
+      this.documentsExpiryAlertColumnAvailable = false;
+      return false;
+    }
+    return this.documentsExpiryAlertColumnAvailable !== false;
+  }
+
+  private isMissingDocumentsColumn(error: { message?: string } | null, column: string): boolean {
+    if (!error?.message) return false;
+    const m = error.message.toLowerCase();
+    const col = column.toLowerCase();
+    if (!m.includes(col)) return false;
+    return (
+      m.includes('does not exist') ||
+      m.includes('could not find') ||
+      m.includes('schema cache')
+    );
+  }
+
   async syncDocuments() {
     const validClientIds = this.clients().map(c => c.id);
-    // OPTIMIZATION: We do NOT fetch file_data (Base64) here to avoid timeouts and high memory usage.
-    // file_data is fetched on-demand when previewing or downloading.
-    const { data: dbDocs } = await supabase
+    const selectWithAlert =
+      'id, client_id, category, type, file_name, file_type, upload_date, expiry_date, expiry_alert_enabled, user_id';
+    const selectBase =
+      'id, client_id, category, type, file_name, file_type, upload_date, expiry_date, user_id';
+
+    let dbDocs: any[] | null = null;
+    let error: { message?: string } | null = null;
+    let alertColumnPresent = true;
+
+    const first = await supabase
       .from('documents')
-      .select('id, client_id, category, type, file_name, file_type, upload_date, expiry_date, user_id')
+      .select(selectWithAlert)
       .order('upload_date', { ascending: false });
+    dbDocs = first.data;
+    error = first.error;
+
+    if (error && this.isMissingDocumentsColumn(error, 'expiry_alert_enabled')) {
+      alertColumnPresent = false;
+      this.documentsExpiryAlertColumnAvailable = false;
+      const second = await supabase
+        .from('documents')
+        .select(selectBase)
+        .order('upload_date', { ascending: false });
+      dbDocs = second.data;
+      error = second.error;
+    } else if (!error) {
+      this.documentsExpiryAlertColumnAvailable = true;
+    }
+
+    if (error) {
+      console.error('[HACCP-DOCS] syncDocuments failed:', error.message);
+      return;
+    }
 
     if (dbDocs) {
       this.documents.set(dbDocs
@@ -988,9 +1049,10 @@ export class AppStateService {
           type: d.type,
           fileName: d.file_name,
           fileType: d.file_type,
-          fileData: '', // Empty initially
+          fileData: '',
           uploadDate: new Date(d.upload_date),
           expiryDate: d.expiry_date,
+          expiryAlertEnabled: alertColumnPresent ? d.expiry_alert_enabled === true : false,
           userId: d.user_id
         })));
     }
@@ -1406,6 +1468,8 @@ export class AppStateService {
   });
 
   readonly documents = signal<AppDocument[]>([]);
+  /** null = non ancora verificato; false = colonna assente su Supabase */
+  private documentsExpiryAlertColumnAvailable: boolean | null = null;
   readonly disabledDocs = signal<Record<string, boolean>>({}); // Map doc ID to disabled boolean
   readonly selectedEquipment = signal<{ id: string; name: string; area: string; type?: string }[]>([]);
   readonly groupedEquipment = computed(() => {
@@ -1744,6 +1808,14 @@ export class AppStateService {
 
   setModule(id: string) {
     this.currentModuleId.set(id);
+  }
+
+  openDocumentationArchive(doc?: { id?: string; type?: string }) {
+    this.documentationDocIntent.set({
+      docId: doc?.id,
+      docType: doc?.type
+    });
+    this.setModule('documentation');
   }
 
   setCollaboratorFilter(id: string) {
@@ -2776,7 +2848,8 @@ export class AppStateService {
       fileData: doc.fileData || '',
       id: doc.id || Math.random().toString(36).substring(2, 9),
       uploadDate: doc.uploadDate || new Date(),
-      expiryDate: doc.expiryDate
+      expiryDate: doc.expiryDate,
+      expiryAlertEnabled: doc.expiryAlertEnabled === true
     };
 
     // Optimistic UI Update
@@ -2797,15 +2870,23 @@ export class AppStateService {
             file_data: newDoc.fileData,
             upload_date: newDoc.uploadDate instanceof Date ? newDoc.uploadDate.toISOString() : newDoc.uploadDate,
             expiry_date: newDoc.expiryDate,
+            expiry_alert_enabled: !!(newDoc.expiryDate && newDoc.expiryAlertEnabled === true),
             user_id: newDoc.userId
         };
 
         console.log('Sending document payload to Supabase:', { ...payload, file_data: '(base64...)' });
-        const { error } = await supabase.from('documents').upsert(payload);
+        let { error } = await supabase.from('documents').upsert(payload);
+
+        if (error && this.isMissingDocumentsColumn(error, 'expiry_alert_enabled')) {
+          this.documentsExpiryAlertColumnAvailable = false;
+          const { expiry_alert_enabled, ...withoutAlert } = payload;
+          ({ error } = await supabase.from('documents').upsert(withoutAlert));
+        } else if (!error) {
+          this.documentsExpiryAlertColumnAvailable = true;
+        }
 
         if (error) {
             console.error('Error syncing document:', error);
-            // Better error reporting
             const detail = error.message || error.details || 'Sincronizzazione fallita (CORS, RLS or Network)';
             this.toastService.error('Errore Cloud', `Dettaglio: ${detail}`);
         } else {
@@ -2870,7 +2951,7 @@ export class AppStateService {
     // Local Update
     this.documents.update(allDocs => allDocs.map(d => {
         if (d.type === type && d.clientId === clientId) {
-            return { ...d, expiryDate };
+            return { ...d, expiryDate, expiryAlertEnabled: expiryDate ? d.expiryAlertEnabled === true : false };
         }
         return d;
     }));
@@ -2884,6 +2965,78 @@ export class AppStateService {
     if (error) {
         console.error('Error updating expiry date:', error);
         this.toastService.error('Errore Sync', 'Impossibile aggiornare la scadenza nel cloud.');
+    }
+  }
+
+  async updateDocumentExpirySettings(
+    id: string,
+    settings: { expiryDate?: string; expiryAlertEnabled?: boolean }
+  ) {
+    await this.refreshDocumentsExpiryAlertColumnFlag();
+
+    const existing = this.documents().find(d => d.id === id);
+    if (!existing) return;
+
+    const expiryDate = settings.expiryDate !== undefined
+      ? (settings.expiryDate.trim() || undefined)
+      : existing.expiryDate;
+
+    let expiryAlertEnabled = settings.expiryAlertEnabled;
+    if (expiryAlertEnabled === undefined) {
+      expiryAlertEnabled = existing.expiryAlertEnabled;
+    }
+    if (!expiryDate) {
+      expiryAlertEnabled = false;
+    } else if (expiryAlertEnabled === undefined) {
+      expiryAlertEnabled = existing.expiryAlertEnabled === true;
+    }
+
+    this.documents.update(allDocs => allDocs.map(d => {
+      if (d.id !== id) return d;
+      return {
+        ...d,
+        expiryDate,
+        expiryAlertEnabled: expiryDate ? expiryAlertEnabled === true : false
+      };
+    }));
+
+    const datePayload = { expiry_date: expiryDate ?? null };
+    const alertEnabledDb = !!expiryDate && expiryAlertEnabled === true;
+    const includeAlertColumn = this.documentsExpiryAlertColumnAvailable !== false;
+    const fullPayload: Record<string, unknown> = includeAlertColumn
+      ? {
+          ...datePayload,
+          expiry_alert_enabled: alertEnabledDb
+        }
+      : datePayload;
+
+    let { error } = await supabase.from('documents').update(fullPayload).eq('id', id);
+
+    if (error && includeAlertColumn && this.isMissingDocumentsColumn(error, 'expiry_alert_enabled')) {
+      this.documentsExpiryAlertColumnAvailable = false;
+      ({ error } = await supabase.from('documents').update(datePayload).eq('id', id));
+      if (!error && settings.expiryAlertEnabled === false) {
+        this.toastService.warning(
+          'Avviso solo locale',
+          'Esegui sql/migrate_documents_expiry_columns.sql su Supabase per sincronizzare la disattivazione avviso.'
+        );
+      }
+    } else if (!error && includeAlertColumn) {
+      this.documentsExpiryAlertColumnAvailable = true;
+    }
+
+    if (error && this.isMissingDocumentsColumn(error, 'expiry_date')) {
+      console.error('Error updating document expiry settings:', error);
+      this.toastService.error(
+        'Errore Sync',
+        'Manca la colonna expiry_date su Supabase. Esegui sql/migrate_documents_expiry_columns.sql nel SQL Editor.'
+      );
+      return;
+    }
+
+    if (error) {
+      console.error('Error updating document expiry settings:', error);
+      this.toastService.error('Errore Sync', `Impossibile aggiornare scadenza nel cloud: ${error.message}`);
     }
   }
 

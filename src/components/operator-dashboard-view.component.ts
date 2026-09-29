@@ -2,7 +2,12 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppStateService } from '../services/app-state.service';
+import { AppStateService, AppDocument } from '../services/app-state.service';
+import {
+  daysUntilIsoDate,
+  expiryAlertSeverity,
+  isExpiryAlertActive
+} from '../utils/document-expiry-alerts';
 
 @Component({
   selector: 'app-operator-dashboard-view',
@@ -92,6 +97,49 @@ import { AppStateService } from '../services/app-state.service';
                   </button>
                }
             </div>
+          </div>
+        </div>
+      }
+
+      @if (archiveDocExpiryAlerts().length > 0) {
+        <div class="rounded-[2rem] p-6 border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-amber-50/80 shadow-lg shadow-violet-100/50 relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-violet-300/20 blur-3xl pointer-events-none"></div>
+          <div class="relative z-10 flex flex-col gap-4">
+            <div class="flex items-start gap-4">
+              <div class="h-14 w-14 rounded-2xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                <i class="fa-solid fa-file-circle-exclamation text-2xl"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-violet-700">Archivio documentale</span>
+                <h4 class="text-lg font-black text-slate-800 tracking-tight mt-1">Documenti in scadenza</h4>
+                <p class="text-xs font-medium text-slate-600 mt-0.5">Avviso attivo fino a 7 giorni prima della data impostata in archivio.</p>
+              </div>
+            </div>
+            <ul class="space-y-2">
+              @for (doc of archiveDocExpiryAlerts(); track doc.id) {
+                @let days = expiryDaysForDoc(doc);
+                @let sev = expirySeverityForDoc(doc);
+                <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 border border-violet-100 rounded-xl px-4 py-3">
+                  <div class="min-w-0">
+                    <p class="text-sm font-black text-slate-800 truncate">{{ getArchiveDocTitle(doc) }}</p>
+                    <p class="text-[10px] font-bold text-slate-500">
+                      {{ getArchiveDocCategory(doc) }} · Scadenza {{ doc.expiryDate | date:'dd/MM/yyyy' }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span [class]="'text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg ' +
+                        (sev === 'expired' ? 'bg-rose-100 text-rose-700' :
+                         sev === 'urgent' ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-800')">
+                      @if (days < 0) { Scaduto } @else if (days === 0) { Oggi } @else { Tra {{ days }} gg }
+                    </span>
+                    <button type="button" (click)="openArchiveDocument(doc)"
+                            class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-black uppercase tracking-widest">
+                      Apri
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
           </div>
         </div>
       }
@@ -351,7 +399,41 @@ import { AppStateService } from '../services/app-state.service';
 })
 export class OperatorDashboardViewComponent {
   state = inject(AppStateService);
-  
+
+  archiveDocExpiryAlerts = computed(() =>
+    this.state.filteredDocuments()
+      .filter(d => isExpiryAlertActive(d))
+      .sort((a, b) => daysUntilIsoDate(a.expiryDate!) - daysUntilIsoDate(b.expiryDate!))
+  );
+
+  expiryDaysForDoc(doc: AppDocument): number {
+    return daysUntilIsoDate(doc.expiryDate || '');
+  }
+
+  expirySeverityForDoc(doc: AppDocument) {
+    return expiryAlertSeverity(doc);
+  }
+
+  getArchiveDocTitle(doc: AppDocument): string {
+    const name = doc.fileName?.split('|')[0] || 'Documento';
+    return name;
+  }
+
+  getArchiveDocCategory(doc: AppDocument): string {
+    const labels: Record<string, string> = {
+      scia: 'Scia e planimetria',
+      camerale: 'Camerale',
+      haccp_plan: 'Manuale HACCP',
+      osa: 'Attestato OSA',
+      generale: 'Generico'
+    };
+    return labels[doc.type] || doc.type?.replace(/_/g, ' ') || 'Archivio';
+  }
+
+  openArchiveDocument(doc: AppDocument) {
+    this.state.openDocumentationArchive({ id: doc.id, type: doc.type });
+  }
+
   showPaymentModal = signal(false);
   paymentMethod = 'Bonifico Bancario';
   paymentNotes = '';
