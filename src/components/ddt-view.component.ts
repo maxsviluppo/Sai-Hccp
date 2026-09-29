@@ -1,9 +1,16 @@
-import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
 import { DDT_AI_PROMPT, DDT_AI_SCHEMA, DdtFormItem, findMatchingSupplier, normalizeParsedDdt, NormalizedDdtParse, SupplierRecord } from '../utils/supplier-match';
+import {
+  ddtDocumentStorageKey,
+  deleteDdtDocumentBlob,
+  getDdtDocumentBlob,
+  getDdtDocumentObjectUrl,
+  saveDdtDocumentBlob
+} from '../utils/ddt-document-store';
 
 export interface IncomingIngredient {
   id: string;
@@ -17,7 +24,26 @@ export interface IncomingIngredient {
   expiryDate: string;
   ddtImageUrl?: string;
   createdAt: string;
+  loadGroupId?: string;
 }
+
+/** DDT/fattura acquisita (foto o PDF) collegata a uno o più prodotti in dispensa */
+export interface AcquiredDdtDocument {
+  id: string;
+  clientId: string;
+  supplierId?: string;
+  supplierName: string;
+  entryDate: string;
+  imageUrl: string;
+  isPdf: boolean;
+  productIds: string[];
+  acquiredAt: string;
+  /** Chiave IndexedDB per il file a risoluzione piena (non inviato compresso al cloud) */
+  localBlobKey?: string;
+}
+
+const ACQUIRED_DOCS_RECORD = 'ddt_acquired_docs';
+const ACQUIRED_DOC_RETENTION_DAYS = 90;
 
 @Component({
   selector: 'app-ddt-view',
@@ -232,6 +258,149 @@ export interface IncomingIngredient {
         </div>
       }
 
+      <!-- Sezione principale: Dispensa | Documenti acquisiti -->
+      <div class="flex flex-wrap items-center gap-2 p-1.5 bg-slate-200/70 rounded-2xl border border-slate-200 shadow-inner w-full sm:w-auto">
+        <button type="button" (click)="mainSectionTab.set('pantry')"
+                class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                [class]="mainSectionTab() === 'pantry' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'">
+          <i class="fa-solid fa-boxes-stacked text-[11px]"></i>
+          <span>Dispensa prodotti</span>
+        </button>
+        <button type="button" (click)="mainSectionTab.set('documents')"
+                class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                [class]="mainSectionTab() === 'documents' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
+          <i class="fa-solid fa-file-invoice text-[11px]"></i>
+          <span>Documenti acquisiti ({{ clientAcquiredDocs().length }})</span>
+        </button>
+      </div>
+
+      @if (mainSectionTab() === 'documents') {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-indigo-50/80">
+            <h3 class="font-black text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-folder-open text-violet-600"></i>
+              Archivio foto DDT / fatture
+            </h3>
+            <p class="text-[11px] text-slate-500 font-medium mt-1">
+              Ogni documento raggruppa i prodotti importati dallo stesso carico. Conservazione automatica {{ docRetentionDays }} giorni.
+            </p>
+          </div>
+
+          @if (clientAcquiredDocs().length === 0) {
+            <div class="p-14 text-center">
+              <i class="fa-solid fa-camera text-4xl text-slate-200 mb-3 block"></i>
+              <p class="text-sm font-bold text-slate-500">Nessun documento acquisito</p>
+              <p class="text-xs text-slate-400 mt-1">Carica una foto o PDF durante « Nuovo Carico » per archiviarlo qui.</p>
+            </div>
+          } @else {
+            <div class="divide-y divide-slate-100">
+              @for (doc of clientAcquiredDocs(); track doc.id) {
+                @let expanded = expandedDocId() === doc.id;
+                @let products = getProductsForDocument(doc);
+                @let daysLeft = daysUntilDocExpiry(doc);
+                <div [id]="'acq-doc-' + doc.id"
+                     class="transition-all"
+                     [class]="highlightDocId() === doc.id ? 'bg-violet-50/80 ring-2 ring-inset ring-violet-300' : ''">
+                  <div class="w-full px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer hover:opacity-90"
+                         (click)="toggleDocumentExpand(doc.id)">
+                      <div class="w-16 h-16 rounded-xl border border-slate-200 bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                        @if (doc.isPdf) {
+                          <i class="fa-solid fa-file-pdf text-3xl text-rose-500"></i>
+                        } @else {
+                          <img [src]="doc.imageUrl" alt="" class="w-full h-full object-cover">
+                        }
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-black text-slate-800 truncate">{{ doc.supplierName || 'Fornitore n/d' }}</p>
+                        <p class="text-[11px] font-bold text-slate-500 mt-0.5">
+                          Doc. {{ formatDisplayDate(doc.entryDate) }} · {{ products.length }} prodotti
+                        </p>
+                        @if (doc.localBlobKey) {
+                          <span class="inline-flex items-center gap-1 text-emerald-600 font-black uppercase text-[9px] tracking-wider mt-1">
+                            <i class="fa-solid fa-circle-check"></i> HD locale
+                          </span>
+                        }
+                        <p class="text-[10px] font-bold mt-1"
+                           [class]="daysLeft <= 14 ? 'text-amber-600' : 'text-slate-400'">
+                          @if (daysLeft > 0) {
+                            Archivio: eliminazione tra {{ daysLeft }} giorni
+                          } @else {
+                            In scadenza eliminazione archivio
+                          }
+                        </p>
+                      </div>
+                      <i class="fa-solid fa-chevron-down text-slate-400 transition-transform shrink-0 hidden sm:block" [class.rotate-180]="expanded"></i>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+                      <button type="button" (click)="openDocumentPreview(doc)"
+                              class="flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-violet-600 hover:bg-violet-700 text-white shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                        Anteprima
+                      </button>
+                      <button type="button" (click)="downloadAcquiredDocument(doc)"
+                              class="flex-1 sm:flex-none px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i>
+                        Scarica
+                      </button>
+                      <button type="button" (click)="confirmDeleteDocument(doc)"
+                              class="px-3 py-3 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center"
+                              title="Elimina documento">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  @if (expanded) {
+                    <div class="px-4 sm:px-6 pb-4 animate-fade-in">
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/80 overflow-hidden">
+                        <div class="px-4 py-2 border-b border-slate-200 bg-white flex justify-between items-center">
+                          <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Prodotti del carico</span>
+                          <div class="flex items-center gap-3">
+                            <button type="button" (click)="openDocumentPreview(doc)"
+                                    class="text-[10px] font-black uppercase tracking-wider text-violet-600 hover:text-violet-800">
+                              Anteprima
+                            </button>
+                            <button type="button" (click)="downloadAcquiredDocument(doc)"
+                                    class="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 flex items-center gap-1">
+                              <i class="fa-solid fa-download text-[9px]"></i> Scarica
+                            </button>
+                          </div>
+                        </div>
+                        <ul class="divide-y divide-slate-100">
+                          @for (p of products; track p.id) {
+                            <li class="px-4 py-3 flex items-center justify-between gap-3 bg-white">
+                              <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-800 truncate">{{ p.ingredientName }}</p>
+                                <p class="text-[10px] text-slate-500 font-medium">
+                                  Lotto <span class="font-mono">{{ p.lotto || '—' }}</span>
+                                  @if (p.quantity) { · {{ p.quantity }} }
+                                </p>
+                              </div>
+                              @if (p.expiryDate) {
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg shrink-0">
+                                  Scad. {{ formatDisplayDate(p.expiryDate) }}
+                                </span>
+                              }
+                            </li>
+                          } @empty {
+                            <li class="px-4 py-6 text-center text-xs text-slate-400 font-medium">
+                              Nessun prodotto collegato (potrebbero essere stati rimossi dalla dispensa).
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (mainSectionTab() === 'pantry') {
       <!-- Pantry List -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-4">
@@ -397,9 +566,18 @@ export interface IncomingIngredient {
                     </td>
                     <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.quantity || '—' }}</td>
                     <td class="px-4 py-3 text-right">
-                      <button (click)="confirmDelete(item)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all ml-auto">
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                      </button>
+                      <div class="flex items-center justify-end gap-1">
+                        @if (hasLinkedDocument(item)) {
+                          <button type="button" (click)="navigateToDocumentFromProduct(item)"
+                                  class="w-8 h-8 flex items-center justify-center text-violet-500 hover:text-violet-700 hover:bg-violet-50 rounded-lg transition-all"
+                                  title="Vai al documento acquisito">
+                            <i class="fa-solid fa-file-invoice text-xs"></i>
+                          </button>
+                        }
+                        <button (click)="confirmDelete(item)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                          <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 }
@@ -424,9 +602,18 @@ export interface IncomingIngredient {
                       <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">{{ item.supplierName }}</p>
                     </div>
                   </div>
-                  <button (click)="confirmDelete(item)" class="w-9 h-9 flex items-center justify-center text-rose-500 bg-rose-50 border border-rose-100 rounded-lg shadow-sm">
-                    <i class="fa-solid fa-trash-can text-sm"></i>
-                  </button>
+                  <div class="flex gap-1">
+                    @if (hasLinkedDocument(item)) {
+                      <button type="button" (click)="navigateToDocumentFromProduct(item)"
+                              class="w-9 h-9 flex items-center justify-center text-violet-600 bg-violet-50 border border-violet-100 rounded-lg shadow-sm"
+                              title="Documento carico">
+                        <i class="fa-solid fa-file-invoice text-sm"></i>
+                      </button>
+                    }
+                    <button (click)="confirmDelete(item)" class="w-9 h-9 flex items-center justify-center text-rose-500 bg-rose-50 border border-rose-100 rounded-lg shadow-sm">
+                      <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
@@ -479,6 +666,79 @@ export interface IncomingIngredient {
           </div>
         }
       </div>
+      }
+
+      <!-- Anteprima documento acquisito (fullscreen, ancorata al viewport) -->
+      @if (viewingDoc()) {
+        <div #docPreviewOverlay class="doc-preview-overlay fixed inset-0 z-[99999] flex flex-col bg-slate-950/95">
+          <div class="shrink-0 px-4 py-3 sm:px-6 sm:py-4 bg-slate-900 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white shadow-lg">
+            <div class="min-w-0">
+              <h3 class="font-black text-base sm:text-lg truncate">{{ viewingDoc()?.supplierName }}</h3>
+              <p class="text-xs text-slate-300 font-medium mt-0.5">
+                Documento del {{ formatDisplayDate(viewingDoc()!.entryDate) }}
+                @if (viewingDocDimensions(); as dim) {
+                  · {{ dim.w }}×{{ dim.h }} px
+                }
+                · {{ viewingDoc()?.localBlobKey ? 'File originale (HD locale)' : 'Solo anteprima cloud (ricarica il DDT per HD)' }}
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              @if (!viewingDoc()!.isPdf) {
+                <button type="button" (click)="toggleDocPreviewOriginalSize()"
+                        class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border border-white/20 hover:bg-white/10 transition-all">
+                  {{ docPreviewOriginalSize() ? 'Adatta schermo' : 'Dimensione originale' }}
+                </button>
+              }
+              <button type="button" (click)="downloadAcquiredDocument(viewingDoc()!)"
+                      class="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-slate-900 flex items-center gap-2 shadow-lg">
+                <i class="fa-solid fa-download text-sm"></i>
+                Scarica file
+              </button>
+              <button type="button" (click)="closeDocumentPreview()"
+                      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-white/10 hover:bg-white/20 border border-white/20">
+                Chiudi
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 min-h-0 overflow-auto overscroll-contain p-2 sm:p-6 touch-pan-x touch-pan-y"
+               (click)="closeDocumentPreview()">
+            <div class="min-h-full min-w-full flex items-start justify-center" (click)="$event.stopPropagation()">
+              @if (viewingDoc()!.isPdf) {
+                <iframe [src]="viewingDocUrl() || viewingDoc()!.imageUrl"
+                        class="w-full max-w-[1400px] h-[calc(100vh-5.5rem)] min-h-[80vh] rounded-lg border border-white/20 bg-white shadow-2xl"
+                        title="Anteprima PDF"></iframe>
+              } @else {
+                <img [src]="viewingDocUrl() || viewingDoc()!.imageUrl"
+                     [alt]="'DDT ' + viewingDoc()!.supplierName"
+                     (load)="onPreviewImageLoad($event)"
+                     class="block w-auto h-auto max-w-none max-h-none rounded-lg shadow-2xl ring-1 ring-white/20 select-none"
+                     style="image-rendering: -webkit-optimize-contrast;">
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Delete document modal -->
+      @if (docToDelete()) {
+        <div class="fixed inset-0 z-[126] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" (click)="docToDelete.set(null)"></div>
+          <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 p-8 text-center">
+            <div class="h-16 w-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-2xl mx-auto mb-4 border border-rose-100">
+              <i class="fa-solid fa-file-circle-xmark"></i>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 mb-2">Elimina documento acquisito?</h3>
+            <p class="text-sm text-slate-500 leading-relaxed mb-6">
+              Verrà rimossa la foto/PDF del carico del <strong>{{ formatDisplayDate(docToDelete()!.entryDate) }}</strong>
+              ({{ docToDelete()!.supplierName }}). I prodotti in dispensa <strong>non</strong> verranno eliminati.
+            </p>
+            <div class="flex flex-col gap-2">
+              <button (click)="executeDeleteDocument()" class="py-3 bg-rose-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-rose-700">Elimina documento</button>
+              <button (click)="docToDelete.set(null)" class="py-3 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest">Annulla</button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Delete Confirmation Modal -->
       @if (itemToDelete()) {
@@ -643,15 +903,41 @@ export interface IncomingIngredient {
 
     </div>
   `,
-  styles: [`.animate-fade-in { animation: fadeIn 0.4s ease-out; } @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }`]
+  styles: [`
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    :host ::ng-deep .doc-preview-overlay,
+    .doc-preview-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 99999 !important;
+    }
+  `]
 })
-export class DdtViewComponent {
+export class DdtViewComponent implements AfterViewChecked {
   state = inject(AppStateService);
   toast = inject(ToastService);
 
+  @ViewChild('docPreviewOverlay') docPreviewOverlay?: ElementRef<HTMLElement>;
+
+  readonly docRetentionDays = ACQUIRED_DOC_RETENTION_DAYS;
+
   showForm = signal(false);
+  mainSectionTab = signal<'pantry' | 'documents'>('pantry');
+  acquiredDocs = signal<AcquiredDdtDocument[]>([]);
+  expandedDocId = signal<string | null>(null);
+  highlightDocId = signal<string | null>(null);
+  docToDelete = signal<AcquiredDdtDocument | null>(null);
+  viewingDoc = signal<AcquiredDdtDocument | null>(null);
+  /** URL effettivo in anteprima (blob locale full-res o fallback) */
+  viewingDocUrl = signal<string | null>(null);
+  viewingDocDimensions = signal<{ w: number; h: number } | null>(null);
+  private viewingDocObjectUrl: string | null = null;
+  docPreviewOriginalSize = signal(true);
   isAnalyzing = signal(false);
   ddtPreview = signal<string | null>(null);
+  /** Copia ad alta fedeltà del file caricato (archivio documenti / download) */
+  ddtOriginalArchive = signal<string | null>(null);
   isPdfPreview = signal(false);
   pantry = signal<IncomingIngredient[]>([]);
   viewMode = signal<'all' | 'daily' | 'activePantry'>('all');
@@ -693,6 +979,13 @@ export class DdtViewComponent {
   clientPantry = computed(() => {
     const clientId = this.state.activeTargetClientId();
     return this.pantry().filter(i => !clientId || !i.clientId || i.clientId === clientId);
+  });
+
+  clientAcquiredDocs = computed(() => {
+    const clientId = this.state.activeTargetClientId();
+    return this.acquiredDocs()
+      .filter(d => !clientId || !d.clientId || d.clientId === clientId)
+      .sort((a, b) => (b.acquiredAt || '').localeCompare(a.acquiredAt || ''));
   });
 
   isItemInDailyLoad(item: IncomingIngredient, selectedDate: string): boolean {
@@ -759,6 +1052,18 @@ export class DdtViewComponent {
 
   private lastCheckedClientId: string | null = null;
 
+  ngAfterViewChecked() {
+    this.mountPreviewOverlayOnBody();
+  }
+
+  private mountPreviewOverlayOnBody() {
+    if (!this.viewingDoc() || !this.docPreviewOverlay?.nativeElement) return;
+    const el = this.docPreviewOverlay.nativeElement;
+    if (el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    }
+  }
+
   constructor() {
     effect(() => {
       // Trigger on client change, date filter change, or when checklist records sync from Supabase
@@ -773,6 +1078,7 @@ export class DdtViewComponent {
           this.staleModalDismissed.set(false);
         }
         this.loadPantry();
+        void this.loadAcquiredDocuments();
         if (!this.showForm()) {
           this.resetForm();
         }
@@ -794,6 +1100,7 @@ export class DdtViewComponent {
       items: [{ ingredientName: '', lotto: '', quantity: '', expiryDate: '' }]
     });
     this.ddtPreview.set(null);
+    this.ddtOriginalArchive.set(null);
     this.formRevision.update(v => v + 1);
   }
 
@@ -1061,13 +1368,16 @@ Rispondi in JSON con formato:
     // Avoid saving large full-res images or PDFs on every item.
     let thumbnail: string | undefined = undefined;
     const rawPreview = this.ddtPreview();
-    if (rawPreview && !rawPreview.startsWith('data:application/pdf')) {
+    const thumbSource = this.ddtOriginalArchive() || rawPreview;
+    if (thumbSource && !thumbSource.startsWith('data:application/pdf')) {
       try {
-        thumbnail = await this.generateDdtThumbnail(rawPreview);
+        thumbnail = await this.generateDdtThumbnail(thumbSource);
       } catch (e) {
         console.warn('Thumbnail generation failed:', e);
       }
     }
+
+    const productIds: string[] = [];
 
     for (let i = 0; i < validItems.length; i++) {
       const item = validItems[i];
@@ -1081,15 +1391,41 @@ Rispondi in JSON con formato:
         quantity: item.quantity || '',
         entryDate,
         expiryDate: item.expiryDate || '',
-        // Store thumbnail only on the first item of the load to avoid data duplication
         ddtImageUrl: i === 0 ? thumbnail : undefined,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        loadGroupId
       };
       (entry as any).documentDate = this.importDraft()?.entryDate || entryDate;
-      (entry as any).loadGroupId = loadGroupId;
       (entry as any).supplierPiva = this.form().supplierPiva || this.importDraft()?.supplierPiva || '';
+      productIds.push(entry.id);
       newEntries.push(entry);
       this.state.addBaseIngredient(entry.ingredientName);
+    }
+
+    if (rawPreview) {
+      const archiveSource = this.ddtOriginalArchive() || rawPreview;
+      const blobKey = ddtDocumentStorageKey(clientId, loadGroupId);
+      try {
+        await saveDdtDocumentBlob(blobKey, archiveSource);
+      } catch (e) {
+        console.error('[DDT-DOC] IndexedDB save failed:', e);
+        this.toast.warning('Archivio locale', 'Impossibile salvare HD locale; verrà usata solo anteprima ridotta.');
+      }
+      const listThumb = archiveSource.startsWith('data:application/pdf')
+        ? undefined
+        : await this.generateDdtThumbnail(thumbSource, 220, 0.72);
+      await this.registerAcquiredDocument({
+        id: loadGroupId,
+        clientId,
+        supplierId,
+        supplierName,
+        entryDate,
+        imageUrl: listThumb,
+        localBlobKey: blobKey,
+        isPdf: archiveSource.startsWith('data:application/pdf'),
+        productIds,
+        acquiredAt: new Date().toISOString()
+      });
     }
 
     const updatedPantry = [...newEntries, ...currentPantry];
@@ -1137,6 +1473,7 @@ Rispondi in JSON con formato:
       const reader = new FileReader();
       reader.onload = (e) => {
         const fileUrl = e.target?.result as string;
+        this.ddtOriginalArchive.set(fileUrl);
         this.ddtPreview.set(fileUrl);
       };
       reader.readAsDataURL(file);
@@ -1148,8 +1485,9 @@ Rispondi in JSON con formato:
     const reader = new FileReader();
     reader.onload = (e) => {
       const imgUrl = e.target?.result as string;
-      
-      // Compress image to reduce API payload and avoid 429/413 errors
+      this.ddtOriginalArchive.set(imgUrl);
+
+      // Anteprima form / OCR: versione più leggera (l'archivio usa ddtOriginalArchive)
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -1797,5 +2135,368 @@ Rispondi in JSON con formato:
       ) &&
       !!r.postExpiryDate
     ) || null;
+  }
+
+  getDocumentIdForItem(item: IncomingIngredient): string | null {
+    return item.loadGroupId || (item as any).loadGroupId || null;
+  }
+
+  hasLinkedDocument(item: IncomingIngredient): boolean {
+    const docId = this.getDocumentIdForItem(item);
+    if (!docId) return false;
+    return this.acquiredDocs().some(d => d.id === docId);
+  }
+
+  getProductsForDocument(doc: AcquiredDdtDocument): IncomingIngredient[] {
+    const ids = new Set(doc.productIds || []);
+    const byGroup = this.clientPantry().filter(p => p.loadGroupId === doc.id || (p as any).loadGroupId === doc.id);
+    const merged = new Map<string, IncomingIngredient>();
+    for (const p of byGroup) merged.set(p.id, p);
+    for (const id of ids) {
+      const found = this.clientPantry().find(p => p.id === id);
+      if (found) merged.set(found.id, found);
+    }
+    return Array.from(merged.values());
+  }
+
+  daysUntilDocExpiry(doc: AcquiredDdtDocument): number {
+    const acquired = doc.acquiredAt ? new Date(doc.acquiredAt).getTime() : Date.now();
+    if (isNaN(acquired)) return ACQUIRED_DOC_RETENTION_DAYS;
+    const elapsed = Math.floor((Date.now() - acquired) / (1000 * 60 * 60 * 24));
+    return Math.max(0, ACQUIRED_DOC_RETENTION_DAYS - elapsed);
+  }
+
+  toggleDocumentExpand(docId: string) {
+    this.expandedDocId.update(cur => (cur === docId ? null : docId));
+  }
+
+  toggleDocPreviewOriginalSize() {
+    this.docPreviewOriginalSize.update(v => !v);
+  }
+
+  onPreviewImageLoad(ev: Event) {
+    const img = ev.target as HTMLImageElement;
+    if (img?.naturalWidth) {
+      this.viewingDocDimensions.set({ w: img.naturalWidth, h: img.naturalHeight });
+    }
+  }
+
+  private revokeViewingDocObjectUrl() {
+    if (this.viewingDocObjectUrl) {
+      URL.revokeObjectURL(this.viewingDocObjectUrl);
+      this.viewingDocObjectUrl = null;
+    }
+  }
+
+  async openDocumentPreview(doc: AcquiredDdtDocument) {
+    this.revokeViewingDocObjectUrl();
+    this.docPreviewOriginalSize.set(true);
+    this.viewingDocDimensions.set(null);
+
+    let url = doc.imageUrl || '';
+    if (doc.localBlobKey) {
+      const blobUrl = await getDdtDocumentObjectUrl(doc.localBlobKey);
+      if (blobUrl) {
+        this.viewingDocObjectUrl = blobUrl;
+        url = blobUrl;
+      }
+    }
+
+    if (!url) {
+      this.toast.error('Documento mancante', 'Nessun file trovato. Importa di nuovo il carico con foto/PDF.');
+      return;
+    }
+
+    this.viewingDocUrl.set(url);
+    this.viewingDoc.set(doc);
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => this.mountPreviewOverlayOnBody(), 0);
+  }
+
+  closeDocumentPreview() {
+    this.revokeViewingDocObjectUrl();
+    this.viewingDoc.set(null);
+    this.viewingDocUrl.set(null);
+    this.viewingDocDimensions.set(null);
+    this.docPreviewOriginalSize.set(true);
+    document.body.style.overflow = '';
+  }
+
+  downloadAcquiredDocument(doc: AcquiredDdtDocument) {
+    const ext = doc.isPdf ? 'pdf' : 'jpg';
+    const safeSupplier = (doc.supplierName || 'fornitore')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w\-]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .substring(0, 48) || 'fornitore';
+    const datePart = (doc.entryDate || doc.acquiredAt?.substring(0, 10) || 'data').replace(/\//g, '-');
+    const filename = `DDT_${safeSupplier}_${datePart}.${ext}`;
+
+    void this.downloadDocumentFile(doc, filename);
+  }
+
+  private async downloadDocumentFile(doc: AcquiredDdtDocument, filename: string) {
+    try {
+      if (doc.localBlobKey) {
+        const blob = await getDdtDocumentBlob(doc.localBlobKey);
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+          this.toast.success('Download avviato', filename);
+          return;
+        }
+      }
+      const fallback = doc.imageUrl;
+      if (!fallback) {
+        this.toast.error('Download non disponibile', 'File HD non trovato. Reimporta il carico con la foto del DDT.');
+        return;
+      }
+      await this.triggerDocumentDownload(fallback, filename, doc.isPdf);
+    } catch {
+      this.toast.error('Errore download', 'Impossibile scaricare il documento.');
+    }
+  }
+
+  private async triggerDocumentDownload(dataUrl: string, filename: string, isPdf: boolean) {
+    try {
+      const blob = await this.dataUrlToBlob(dataUrl);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      this.toast.success('Download avviato', filename);
+    } catch {
+      try {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        this.toast.success('Download avviato', filename);
+      } catch {
+        window.open(dataUrl, '_blank', 'noopener,noreferrer');
+        this.toast.info('Salva dal browser', isPdf ? 'Apri il PDF e usa Stampa → Salva come PDF.' : 'Tasto destro sull\'immagine → Salva immagine con nome.');
+      }
+    }
+  }
+
+  private async dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    if (dataUrl.startsWith('data:')) {
+      const res = await fetch(dataUrl);
+      return res.blob();
+    }
+    const res = await fetch(dataUrl);
+    return res.blob();
+  }
+
+  navigateToDocumentFromProduct(item: IncomingIngredient) {
+    const docId = this.getDocumentIdForItem(item);
+    if (!docId || !this.acquiredDocs().some(d => d.id === docId)) {
+      this.toast.warning('Documento non disponibile', 'Il file del carico non è più in archivio o non è stato acquisito.');
+      return;
+    }
+    this.mainSectionTab.set('documents');
+    this.expandedDocId.set(docId);
+    this.highlightDocId.set(docId);
+    setTimeout(() => {
+      const el = document.getElementById(`acq-doc-${docId}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+    setTimeout(() => this.highlightDocId.set(null), 3500);
+  }
+
+  confirmDeleteDocument(doc: AcquiredDdtDocument) {
+    this.docToDelete.set(doc);
+  }
+
+  async executeDeleteDocument() {
+    const doc = this.docToDelete();
+    if (!doc) return;
+    if (doc.localBlobKey) {
+      try {
+        await deleteDdtDocumentBlob(doc.localBlobKey);
+      } catch (e) {
+        console.warn('[DDT-DOC] delete blob failed', e);
+      }
+    }
+    const remaining = this.acquiredDocs().filter(d => d.id !== doc.id);
+    await this.persistAcquiredDocuments(remaining);
+    await this.clearPantryDocumentRefs(doc.id);
+    this.docToDelete.set(null);
+    if (this.expandedDocId() === doc.id) this.expandedDocId.set(null);
+    this.toast.success('Documento eliminato', 'La foto/PDF è stata rimossa dall\'archivio. I prodotti in dispensa restano.');
+  }
+
+  private async clearPantryDocumentRefs(docId: string) {
+    const all = ((await this.state.getGlobalRecordData('ddt_pantry')) || []) as IncomingIngredient[];
+    let changed = false;
+    const updated = all.map(i => {
+      const gid = i.loadGroupId || (i as any).loadGroupId;
+      if (gid !== docId) return i;
+      changed = true;
+      return { ...i, ddtImageUrl: undefined };
+    });
+    if (changed) {
+      await this.state.saveGlobalRecord('ddt_pantry', updated);
+      const clientId = this.state.tenantClientId() || this.state.activeTargetClientId();
+      this.pantry.set(updated.filter(i => !clientId || !i.clientId || i.clientId === clientId));
+    }
+  }
+
+  /**
+   * Archivio documenti: mantiene risoluzione originale quando possibile.
+   * Riduce solo file enormi (> ~3.5 MB base64) per limiti storage, con JPEG ad alta qualità.
+   */
+  private async prepareArchiveForStorage(dataUrl: string): Promise<string> {
+    if (!dataUrl || dataUrl.startsWith('data:application/pdf')) {
+      return dataUrl;
+    }
+    const approxKb = Math.round(dataUrl.length / 1024);
+    if (approxKb <= 3500) {
+      return dataUrl;
+    }
+    let encoded = await this.encodeArchiveImage(dataUrl, 4096, 0.94);
+    if (encoded.length / 1024 > 4500) {
+      encoded = await this.encodeArchiveImage(dataUrl, 3200, 0.92);
+    }
+    if (encoded.length / 1024 > 4500) {
+      encoded = await this.encodeArchiveImage(dataUrl, 2800, 0.9);
+    }
+    return encoded || dataUrl;
+  }
+
+  private encodeArchiveImage(dataUrl: string, maxDim: number, quality: number): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+        const longest = Math.max(w, h);
+        if (longest > maxDim) {
+          const scale = maxDim / longest;
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  private async registerAcquiredDocument(doc: AcquiredDdtDocument) {
+    const current = [...this.acquiredDocs().filter(d => d.id !== doc.id), doc];
+    await this.persistAcquiredDocuments(current);
+  }
+
+  private async persistAcquiredDocuments(docs: AcquiredDdtDocument[]) {
+    this.acquiredDocs.set(docs);
+    await this.state.saveGlobalRecord(ACQUIRED_DOCS_RECORD, docs);
+  }
+
+  private async loadAcquiredDocuments() {
+    const saved = await this.state.getGlobalRecordData(ACQUIRED_DOCS_RECORD);
+    let docs: AcquiredDdtDocument[] = Array.isArray(saved) ? saved : [];
+    docs = await this.migrateLegacyAcquiredDocuments(docs);
+    const { kept, purged } = this.purgeExpiredAcquiredDocuments(docs);
+    if (purged > 0) {
+      const removed = docs.filter(d => !kept.some(k => k.id === d.id));
+      for (const d of removed) {
+        if (d.localBlobKey) {
+          try { await deleteDdtDocumentBlob(d.localBlobKey); } catch { /* ignore */ }
+        }
+      }
+      await this.persistAcquiredDocuments(kept);
+      await this.purgePantryRefsForRemovedDocs(docs, kept);
+      this.toast.info('Archivio documenti', `${purged} documento/i oltre ${ACQUIRED_DOC_RETENTION_DAYS} giorni eliminati automaticamente.`);
+    } else {
+      this.acquiredDocs.set(kept);
+    }
+  }
+
+  private purgeExpiredAcquiredDocuments(docs: AcquiredDdtDocument[]): { kept: AcquiredDdtDocument[]; purged: number } {
+    const kept: AcquiredDdtDocument[] = [];
+    let purged = 0;
+    for (const d of docs) {
+      const t = d.acquiredAt ? new Date(d.acquiredAt).getTime() : 0;
+      if (!t || isNaN(t)) {
+        kept.push(d);
+        continue;
+      }
+      const ageDays = Math.floor((Date.now() - t) / (1000 * 60 * 60 * 24));
+      if (ageDays >= ACQUIRED_DOC_RETENTION_DAYS) purged++;
+      else kept.push(d);
+    }
+    return { kept, purged };
+  }
+
+  private async purgePantryRefsForRemovedDocs(before: AcquiredDdtDocument[], after: AcquiredDdtDocument[]) {
+    const afterIds = new Set(after.map(d => d.id));
+    const removedIds = before.filter(d => !afterIds.has(d.id)).map(d => d.id);
+    for (const id of removedIds) {
+      await this.clearPantryDocumentRefs(id);
+    }
+  }
+
+  private async migrateLegacyAcquiredDocuments(existing: AcquiredDdtDocument[]): Promise<AcquiredDdtDocument[]> {
+    const byId = new Map(existing.map(d => [d.id, d]));
+    const pantry = ((await this.state.getGlobalRecordData('ddt_pantry')) || []) as IncomingIngredient[];
+    const groups = new Map<string, IncomingIngredient[]>();
+    for (const item of pantry) {
+      const gid = item.loadGroupId || (item as any).loadGroupId;
+      if (!gid) continue;
+      if (!groups.has(gid)) groups.set(gid, []);
+      groups.get(gid)!.push(item);
+    }
+    let changed = false;
+    for (const [gid, items] of groups) {
+      if (byId.has(gid)) continue;
+      const withImg = items.find(i => i.ddtImageUrl);
+      if (!withImg?.ddtImageUrl) continue;
+      byId.set(gid, {
+        id: gid,
+        clientId: withImg.clientId,
+        supplierId: withImg.supplierId,
+        supplierName: withImg.supplierName,
+        entryDate: withImg.entryDate,
+        imageUrl: withImg.ddtImageUrl,
+        isPdf: withImg.ddtImageUrl.startsWith('data:application/pdf'),
+        productIds: items.map(i => i.id),
+        acquiredAt: withImg.createdAt || new Date().toISOString()
+      });
+      changed = true;
+    }
+    if (changed) {
+      const merged = Array.from(byId.values());
+      await this.persistAcquiredDocuments(merged);
+      return merged;
+    }
+    return existing;
   }
 }
