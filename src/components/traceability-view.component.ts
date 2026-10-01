@@ -205,14 +205,29 @@ interface ProductionBatch {
               <div class="lg:col-span-2 space-y-6">
                   
                   <!-- ADD INGREDIENT BOX -->
-                  <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-6 relative overflow-hidden">
-                      <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                      
-                      <div class="relative z-10">
-                          <h4 class="font-bold text-indigo-900 mb-4 flex items-center">
-                              <i class="fa-solid fa-robot mr-2 text-indigo-500"></i> Aggiungi Ingrediente (AI Scan)
-                          </h4>
+                  <div class="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
+                      <button type="button" (click)="toggleAddIngredientExpanded()"
+                              class="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left active:bg-indigo-50/50"
+                              [attr.aria-expanded]="addIngredientExpanded()">
+                          <div class="min-w-0 flex items-center gap-3">
+                              <span class="h-10 w-10 shrink-0 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+                                  <i class="fa-solid fa-robot"></i>
+                              </span>
+                              <div class="min-w-0">
+                                  <p class="text-[10px] font-black uppercase tracking-widest text-indigo-400">Aggiungi ingrediente</p>
+                                  <p class="text-sm font-black text-indigo-900 truncate mt-0.5">
+                                      {{ addIngredientExpanded() ? 'AI scan o inserimento manuale' : 'Tocca per aprire (AI scan)' }}
+                                  </p>
+                              </div>
+                          </div>
+                          <i class="fa-solid fa-chevron-down text-indigo-300 transition-transform shrink-0"
+                             [class.rotate-180]="addIngredientExpanded()"></i>
+                      </button>
 
+                      @if (addIngredientExpanded()) {
+                      <div class="px-4 pb-4 pt-1 border-t border-indigo-100 bg-indigo-50/30 relative overflow-hidden animate-slide-up">
+                      <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                      <div class="relative z-10 mt-3">
                           <div class="flex flex-col md:flex-row gap-6">
                               <!-- Image Upload -->
                               <div class="w-full md:w-1/3 shrink-0">
@@ -266,16 +281,17 @@ interface ProductionBatch {
                                       </div>
                                   </div>
                               </div>
+                          </div>
 
-                                  <div class="flex justify-end pt-2">
-                                      <button (click)="addIngredient()" [disabled]="!newIngredient.productName"
-                                          class="px-6 py-2 bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded-lg font-bold text-sm transition-all shadow-sm">
-                                          <i class="fa-solid fa-plus mr-2"></i> Aggiungi alla Lista
-                                      </button>
-                                  </div>
-                              </div>
+                          <div class="flex justify-end pt-4">
+                              <button type="button" (click)="addIngredient()" [disabled]="!newIngredient.productName"
+                                  class="px-6 py-2 bg-indigo-600 text-white border border-indigo-700 hover:bg-indigo-700 rounded-lg font-bold text-sm transition-all shadow-sm disabled:opacity-50">
+                                  <i class="fa-solid fa-plus mr-2"></i> Aggiungi alla lista
+                              </button>
                           </div>
                       </div>
+                      </div>
+                      }
                   </div>
 
                   <!-- INGREDIENTS LIST -->
@@ -379,6 +395,11 @@ export class TraceabilityViewComponent implements OnInit {
   confirmationState = signal<{ title: string; message: string; action: () => void } | null>(null);
 
   viewMode = signal<'list' | 'detail'>('list');
+  addIngredientExpanded = signal(false);
+
+  toggleAddIngredientExpanded() {
+    this.addIngredientExpanded.update(v => !v);
+  }
   allBatches = signal<ProductionBatch[]>([]);
   currentBatch = signal<ProductionBatch | null>(null);
 
@@ -586,6 +607,7 @@ export class TraceabilityViewComponent implements OnInit {
   resetIngredientForm() {
     this.newIngredient = { id: '', productName: '', lotNumber: '', expiryDate: '' };
     this.resetScan();
+    this.addIngredientExpanded.set(false);
   }
 
   onFileSelected(event: Event) {
@@ -660,6 +682,7 @@ export class TraceabilityViewComponent implements OnInit {
     });
 
     this.resetIngredientForm();
+    this.addIngredientExpanded.set(false);
     this.toastService.success('Ingrediente Aggiunto', `${ingredientToAdd.productName} aggiunto alla lista.`);
   }
 

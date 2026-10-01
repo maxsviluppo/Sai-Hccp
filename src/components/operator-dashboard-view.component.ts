@@ -17,130 +17,147 @@ import {
     <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
       
       <!-- SLEEK HEADER -->
-      <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+      <div class="bg-white rounded-[2rem] p-5 md:p-8 shadow-sm border border-slate-200 relative overflow-hidden">
         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
         
-        <div class="flex items-center gap-6 relative z-10 w-full md:w-auto">
-          <div class="relative shrink-0">
-             <img [src]="state.currentUser()?.avatar" class="h-16 w-16 md:h-20 md:w-20 rounded-3xl shadow-xl object-cover ring-4 ring-slate-50">
+        <div class="flex items-start gap-5 relative z-10 w-full">
+          <div class="relative shrink-0 hidden md:block">
+             <img [src]="state.currentUser()?.avatar" class="h-20 w-20 rounded-3xl shadow-xl object-cover ring-4 ring-slate-50">
              <div class="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-white bg-emerald-500 shadow-sm"></div>
           </div>
-          <div>
-            <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-none mb-2">Ciao, {{ state.currentUser()?.name?.split(' ')[0] }}!</h2>
-            <div class="flex items-center gap-2">
-               <span class="bg-indigo-50 text-indigo-600 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest border border-indigo-100">{{ state.currentUser()?.department || 'Staff Operativo' }}</span>
-               <span class="text-xs font-bold text-slate-400">Punto vendita: {{ state.companyConfig().name }}</span>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight">
+              Ciao, {{ state.currentUser()?.name?.split(' ')[0] }}!
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-1 truncate">{{ state.companyConfig().name }}</p>
+            <div class="flex flex-wrap items-center gap-2 mt-2">
+              <span class="bg-indigo-50 text-indigo-600 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest border border-indigo-100">
+                {{ state.currentUser()?.department || 'Staff Operativo' }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-black text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
+                <i class="fa-regular fa-calendar-check text-slate-500 text-xs"></i>
+                Turno odierno · {{ getCurrentDay() }} {{ getCurrentDayNumber() }} {{ getCurrentMonth() }}
+              </span>
             </div>
           </div>
         </div>
-
-        <!-- Quick Stats / Date -->
-        <div class="flex items-center gap-4 relative z-10 bg-slate-900 px-6 py-4 rounded-[1.5rem] shadow-xl shadow-slate-200">
-           <div class="h-10 w-10 flex items-center justify-center bg-white/10 rounded-xl text-white">
-             <i class="fa-regular fa-calendar-check text-xl"></i>
-           </div>
-           <div class="text-left">
-             <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5 leading-none">Turno Odierno</p>
-             <p class="text-sm font-black text-white leading-none">{{ getCurrentDay() }}, {{ getCurrentDayNumber() }} {{ getCurrentMonth() }}</p>
-           </div>
-        </div>
       </div>
 
-      <!-- PAYMENT BANNER -->
+      <!-- STATO ABBONAMENTO (barra compatta) -->
       @if (true) {
         @let isPaid = state.recentPaidPayment();
         @let activePay = state.latestActivePayment();
         @let urgency = activePay ? state.getDaysRemaining(activePay.dueDate) : 100;
         @let theme = (activePay && urgency <= 7) ? 'URGENT' : (isPaid ? 'SUCCESS' : 'NOTICE');
 
-        <div [class]="'rounded-[2rem] p-6 mb-2 relative overflow-hidden group border-2 transition-all duration-500 ' + 
-            (theme === 'SUCCESS' ? 'bg-emerald-50/30 border-emerald-500 text-slate-800' : 
-             theme === 'URGENT' ? 'bg-red-600 border-red-700 text-white shadow-xl shadow-red-500/30' : 
-             'bg-amber-50/30 border-amber-400 text-slate-800')">
-          
-          <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div [class]="'absolute -right-10 -top-10 w-64 h-64 rounded-full blur-[80px] opacity-20 ' + 
-                (theme === 'SUCCESS' ? 'bg-emerald-400' : theme === 'URGENT' ? 'bg-red-400' : 'bg-amber-400')"></div>
-          </div>
-          
-          <div class="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
-            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-              <div [class]="'h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-105 ' + 
-                  (theme === 'SUCCESS' ? 'bg-emerald-500 text-white' : 
-                   theme === 'URGENT' ? 'bg-white text-red-600 shadow-md' : 
-                   'bg-amber-500 text-white')">
-                <i [class]="'fa-solid text-2xl ' + (theme === 'SUCCESS' ? 'fa-circle-check' : (theme === 'URGENT' ? 'fa-triangle-exclamation' : 'fa-credit-card'))"></i>
-              </div>
-
-              <div class="space-y-1">
-                  <div class="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                    <span [class]="'px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ' + 
-                        (theme === 'SUCCESS' ? 'bg-white text-emerald-700 border border-emerald-200' : 
-                         theme === 'URGENT' ? 'bg-red-700 text-white border border-red-500' : 
-                         'bg-white text-amber-700 border border-amber-200')">
-                      {{ theme === 'SUCCESS' ? 'Transazione Registrata' : (activePay ? 'Riferimento: ' + (activePay.dueDate | date:'MMMM yyyy') : 'Pianificazione Pagamenti') }}
-                    </span>
-                  </div>
-                  <h4 class="text-xl font-black tracking-tight leading-tight">
-                    {{ theme === 'SUCCESS' ? 'Pagamento Ricevuto' : (theme === 'URGENT' ? 'Prossima Rata In Scadenza' : 'Servizio Attivo e Regolare') }}
-                  </h4>
-                  <p class="text-xs font-medium opacity-70">Il tuo account è in regola con i termini di servizio.</p>
+        @if (theme === 'URGENT') {
+          <button type="button" (click)="showPaymentModal.set(true)"
+                  class="w-full rounded-xl border-2 border-red-600 bg-red-600 text-white px-4 py-3.5 flex items-center justify-between gap-3 shadow-md active:scale-[0.99] transition-transform text-left">
+            <div class="flex items-center gap-3 min-w-0">
+              <i class="fa-solid fa-triangle-exclamation text-xl shrink-0"></i>
+              <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-90">Piano · Scadenza imminente</p>
+                <p class="text-sm font-black truncate">Rata entro {{ urgency }} gg · Tocca per pagare</p>
               </div>
             </div>
-            <div class="flex items-center gap-3">
-               @if (theme === 'SUCCESS') {
-                  <div class="px-6 py-2 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">Gestito</div>
-               } @else {
-                  <button (click)="showPaymentModal.set(true)" [class]="'px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95 ' + 
-                      (theme === 'URGENT' ? 'bg-white text-red-700 hover:bg-slate-50' : 'bg-slate-900 text-white hover:bg-black')">
-                    {{ theme === 'URGENT' ? 'Paga Ora' : 'Dettagli Piano' }}
-                  </button>
-               }
+            <i class="fa-solid fa-chevron-right text-sm opacity-80 shrink-0"></i>
+          </button>
+        } @else {
+          <div [class]="'w-full rounded-xl border-2 px-4 py-3.5 flex items-center gap-3 ' +
+              (theme === 'SUCCESS' ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-emerald-200 bg-white text-slate-800')">
+            <i [class]="'fa-solid text-lg shrink-0 ' + (theme === 'SUCCESS' ? 'fa-circle-check text-emerald-600' : 'fa-shield-check text-emerald-600')"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                {{ theme === 'SUCCESS' ? 'Pagamento registrato' : 'Piano attivo' }}
+              </p>
+              <p class="text-sm font-black leading-tight truncate">
+                {{ theme === 'SUCCESS' ? 'In regola · transazione confermata' : 'Servizio regolare · in regola' }}
+              </p>
             </div>
           </div>
-        </div>
+        }
       }
 
       @if (archiveDocExpiryAlerts().length > 0) {
-        <div class="rounded-[2rem] p-6 border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-amber-50/80 shadow-lg shadow-violet-100/50 relative overflow-hidden">
-          <div class="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-violet-300/20 blur-3xl pointer-events-none"></div>
-          <div class="relative z-10 flex flex-col gap-4">
-            <div class="flex items-start gap-4">
-              <div class="h-14 w-14 rounded-2xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                <i class="fa-solid fa-file-circle-exclamation text-2xl"></i>
+        <div class="w-full flex flex-col gap-2">
+          <button type="button" (click)="toggleDocAlertsExpanded()"
+                  class="w-full rounded-xl border-2 px-4 py-3.5 flex items-center justify-between gap-3 shadow-sm active:scale-[0.99] transition-all text-left"
+                  [class.border-rose-500]="expiredArchiveDocCount() > 0"
+                  [class.bg-rose-50]="expiredArchiveDocCount() > 0"
+                  [class.text-rose-900]="expiredArchiveDocCount() > 0"
+                  [class.border-violet-400]="expiredArchiveDocCount() === 0"
+                  [class.bg-violet-50]="expiredArchiveDocCount() === 0"
+                  [class.text-violet-900]="expiredArchiveDocCount() === 0"
+                  [attr.aria-expanded]="docAlertsExpanded()">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 border"
+                   [class]="expiredArchiveDocCount() > 0 ? 'bg-rose-600 text-white border-rose-700' : 'bg-violet-600 text-white border-violet-700'">
+                <i class="fa-solid fa-file-circle-exclamation text-lg"></i>
               </div>
-              <div>
-                <span class="text-[10px] font-black uppercase tracking-widest text-violet-700">Archivio documentale</span>
-                <h4 class="text-lg font-black text-slate-800 tracking-tight mt-1">Documenti in scadenza</h4>
-                <p class="text-xs font-medium text-slate-600 mt-0.5">Avviso attivo fino a 7 giorni prima della data impostata in archivio.</p>
+              <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-80">Archivio documentale</p>
+                <p class="text-sm font-black leading-tight truncate">
+                  @if (expiredArchiveDocCount() > 0) {
+                    {{ expiredArchiveDocCount() }} documenti scaduti · {{ archiveDocExpiryAlerts().length }} in avviso
+                  } @else {
+                    {{ archiveDocExpiryAlerts().length }} documenti in scadenza (entro 7 giorni)
+                  }
+                </p>
               </div>
             </div>
-            <ul class="space-y-2">
-              @for (doc of archiveDocExpiryAlerts(); track doc.id) {
-                @let days = expiryDaysForDoc(doc);
-                @let sev = expirySeverityForDoc(doc);
-                <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 border border-violet-100 rounded-xl px-4 py-3">
-                  <div class="min-w-0">
-                    <p class="text-sm font-black text-slate-800 truncate">{{ getArchiveDocTitle(doc) }}</p>
-                    <p class="text-[10px] font-bold text-slate-500">
-                      {{ getArchiveDocCategory(doc) }} · Scadenza {{ doc.expiryDate | date:'dd/MM/yyyy' }}
-                    </p>
-                  </div>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <span [class]="'text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg ' +
-                        (sev === 'expired' ? 'bg-rose-100 text-rose-700' :
-                         sev === 'urgent' ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-800')">
-                      @if (days < 0) { Scaduto } @else if (days === 0) { Oggi } @else { Tra {{ days }} gg }
-                    </span>
-                    <button type="button" (click)="openArchiveDocument(doc)"
-                            class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-black uppercase tracking-widest">
-                      Apri
-                    </button>
-                  </div>
-                </li>
-              }
-            </ul>
-          </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="min-w-[1.5rem] h-6 px-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-black flex items-center justify-center">
+                {{ archiveDocExpiryAlerts().length }}
+              </span>
+              <i class="fa-solid fa-chevron-down text-sm transition-transform"
+                 [class.rotate-180]="docAlertsExpanded()"></i>
+            </div>
+          </button>
+
+          @if (docAlertsExpanded()) {
+            <div class="w-full rounded-2xl border-2 border-violet-200 bg-white shadow-lg overflow-hidden animate-slide-up">
+              <div class="px-4 py-3 bg-violet-50 border-b border-violet-100 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-[10px] font-black uppercase tracking-widest text-violet-700">Archivio documentale</p>
+                  <p class="text-sm font-black text-slate-800 truncate">
+                    @if (expiredArchiveDocCount() > 0) {
+                      {{ expiredArchiveDocCount() }} scaduti · {{ archiveDocExpiryAlerts().length }} in avviso
+                    } @else {
+                      {{ archiveDocExpiryAlerts().length }} documenti in scadenza (7 gg)
+                    }
+                  </p>
+                </div>
+                <button type="button" (click)="docAlertsExpanded.set(false)" class="text-slate-400 hover:text-slate-600 p-2">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <ul class="divide-y divide-slate-100 max-h-[min(50vh,20rem)] overflow-y-auto custom-scrollbar">
+                @for (doc of archiveDocExpiryAlerts(); track doc.id) {
+                  @let days = expiryDaysForDoc(doc);
+                  @let sev = expirySeverityForDoc(doc);
+                  <li class="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50/80">
+                    <div class="min-w-0">
+                      <p class="text-sm font-bold text-slate-800 truncate">{{ getArchiveDocTitle(doc) }}</p>
+                      <p class="text-[10px] font-bold text-slate-500">
+                        {{ getArchiveDocCategory(doc) }} · Scadenza {{ doc.expiryDate | date:'dd/MM/yyyy' }}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span [class]="'text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg ' +
+                          (sev === 'expired' ? 'bg-rose-100 text-rose-700' :
+                           sev === 'urgent' ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-800')">
+                        @if (days < 0) { Scaduto } @else if (days === 0) { Oggi } @else { Tra {{ days }} gg }
+                      </span>
+                      <button type="button" (click)="openArchiveDocument(doc)"
+                              class="px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-black uppercase tracking-widest">
+                        Apri
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
         </div>
       }
 
@@ -400,11 +417,21 @@ import {
 export class OperatorDashboardViewComponent {
   state = inject(AppStateService);
 
+  docAlertsExpanded = signal(false);
+
   archiveDocExpiryAlerts = computed(() =>
     this.state.filteredDocuments()
       .filter(d => isExpiryAlertActive(d))
       .sort((a, b) => daysUntilIsoDate(a.expiryDate!) - daysUntilIsoDate(b.expiryDate!))
   );
+
+  expiredArchiveDocCount = computed(() =>
+    this.archiveDocExpiryAlerts().filter(d => daysUntilIsoDate(d.expiryDate || '') < 0).length
+  );
+
+  toggleDocAlertsExpanded() {
+    this.docAlertsExpanded.update(v => !v);
+  }
 
   expiryDaysForDoc(doc: AppDocument): number {
     return daysUntilIsoDate(doc.expiryDate || '');
@@ -453,9 +480,9 @@ export class OperatorDashboardViewComponent {
   private readonly otherQuickActions = [
     { id: 'ddt-carico', label: 'Carico Merci', sub: 'DDT / Ricezione', icon: 'fa-truck-ramp-box', color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { id: 'preparations', label: 'Preparazioni', sub: 'Scheda Preparazione', icon: 'fa-mortar-pestle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { id: 'production-log', label: 'Rintracciabilità', sub: 'Lotti / Produzione', icon: 'fa-barcode', color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'ingredients-book', label: 'Libro Ingredienti', sub: 'Ricettario / Allergeni', icon: 'fa-book-open', color: 'text-orange-600', bg: 'bg-orange-50' },
     { id: 'food-conservation', label: 'Controllo Scadenze', sub: 'Conservazione Alimenti', icon: 'fa-calendar-xmark', color: 'text-red-600', bg: 'bg-red-50' },
-    { id: 'production-log', label: 'Rintracciabilità', sub: 'Lotti / Produzione', icon: 'fa-barcode', color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'abbattimento-log', label: 'Abbattitore', sub: 'Registro Freddo', icon: 'fa-icicles', color: 'text-sky-600', bg: 'bg-sky-50' },
     { id: 'micro-bio', label: 'Monitoraggio Ambiente', sub: 'Analisi Biologiche', icon: 'fa-vial-virus', color: 'text-violet-600', bg: 'bg-violet-50' },
     { id: 'cleaning-maintenance', label: 'Sanificazione', sub: 'Registro Pulizie', icon: 'fa-broom', color: 'text-rose-600', bg: 'bg-rose-50' },

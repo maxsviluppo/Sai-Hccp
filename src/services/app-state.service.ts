@@ -1808,6 +1808,18 @@ export class AppStateService {
 
   setModule(id: string) {
     this.currentModuleId.set(id);
+    this.scrollMainContentToTop();
+  }
+
+  scrollMainContentToTop() {
+    if (typeof document === 'undefined') return;
+    requestAnimationFrame(() => {
+      const scrollHost = document.querySelector('main .flex-1.overflow-auto');
+      if (scrollHost instanceof HTMLElement) {
+        scrollHost.scrollTop = 0;
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
   }
 
   openDocumentationArchive(doc?: { id?: string; type?: string }) {
@@ -2169,14 +2181,30 @@ export class AppStateService {
     return this.checklistRecords().find(r => r.id === id)?.data ?? null;
   }
 
+  /** Cliente usato per record GLOBAL (dispensa, fornitori, documenti DDT). */
+  globalRecordClientId(): string | null {
+    return (
+      this.tenantClientId() ||
+      this.activeTargetClientId() ||
+      this.currentUser()?.clientId ||
+      null
+    );
+  }
+
   saveGlobalRecord(moduleId: string, data: any) {
-    const targetClientId = this.tenantClientId() || this.currentUser()?.clientId;
+    const targetClientId = this.globalRecordClientId();
     if (!targetClientId) {
       this.toastService.error('Azienda non selezionata', 'Seleziona l\'azienda prima di salvare.');
       return;
     }
     let payload = data;
-    if (Array.isArray(data) && (moduleId === 'ddt_pantry' || moduleId === 'suppliers' || moduleId === 'abbattimento_log')) {
+    if (
+      Array.isArray(data) &&
+      (moduleId === 'ddt_pantry' ||
+        moduleId === 'suppliers' ||
+        moduleId === 'abbattimento_log' ||
+        moduleId === 'ddt_acquired_docs')
+    ) {
       payload = data
         .filter((i: any) => !i?.clientId || String(i.clientId) === String(targetClientId))
         .map((i: any) => ({ ...i, clientId: targetClientId }));
@@ -2191,7 +2219,7 @@ export class AppStateService {
 
   /** Restituisce solo il record GLOBAL (metadati). Usa getGlobalRecordData() per il payload. */
   getGlobalRecord(moduleId: string) {
-    const targetClientId = this.tenantClientId() || this.currentUser()?.clientId;
+    const targetClientId = this.globalRecordClientId();
     if (!targetClientId) return null;
     const allRecords = this.checklistRecords().filter(
       r => r.moduleId === moduleId && r.clientId === targetClientId,
@@ -2229,7 +2257,7 @@ export class AppStateService {
    * Use this in components that populate form data from a GLOBAL record (e.g. DDT Pantry, supplier config).
    */
   async getGlobalRecordData(moduleId: string): Promise<any | null> {
-    const targetClientId = this.tenantClientId() || this.currentUser()?.clientId;
+    const targetClientId = this.globalRecordClientId();
     if (!targetClientId) return null;
     let allRecords = this.checklistRecords().filter(
       r => r.moduleId === moduleId && r.clientId === targetClientId,

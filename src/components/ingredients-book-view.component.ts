@@ -342,13 +342,39 @@ import { ToastService } from '../services/toast.service';
 
               <!-- Ingredients Section -->
               <div class="space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <h4 class="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-list-check"></i> Elenco Ingredienti & Allergeni
-                  </h4>
-                  <button (click)="addIngredientRow()" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-colors border border-indigo-100 flex items-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-plus-circle"></i> Aggiungi Ingrediente
+                <h4 class="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <i class="fa-solid fa-list-check"></i> Elenco ingredienti & allergeni
+                </h4>
+
+                <div class="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+                  <button type="button" (click)="toggleAddIngredientExpanded()"
+                          class="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left active:bg-slate-50"
+                          [attr.aria-expanded]="addIngredientExpanded()">
+                    <div class="min-w-0 flex items-center gap-3">
+                      <span class="h-10 w-10 shrink-0 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+                        <i class="fa-solid fa-plus-circle"></i>
+                      </span>
+                      <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Aggiungi ingrediente</p>
+                        <p class="text-sm font-black text-slate-800 truncate mt-0.5">
+                          {{ addIngredientExpanded() ? 'Nuova riga in elenco' : 'Tocca per aprire' }}
+                        </p>
+                      </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-slate-400 transition-transform shrink-0"
+                       [class.rotate-180]="addIngredientExpanded()"></i>
                   </button>
+                  @if (addIngredientExpanded()) {
+                    <div class="px-4 pb-4 pt-1 border-t border-slate-100 animate-slide-up">
+                      <p class="text-[10px] text-slate-500 font-bold mt-3 mb-3 leading-snug">
+                        Aggiunge una riga vuota in elenco: compila nome, quantità e allergeni sotto.
+                      </p>
+                      <button type="button" (click)="addIngredientRowFromPanel()"
+                              class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Inserisci nuova riga
+                      </button>
+                    </div>
+                  }
                 </div>
 
                 <div class="space-y-3">
@@ -426,6 +452,11 @@ export class IngredientsBookViewComponent {
   searchQuery = '';
   isModalOpen = signal(false);
   editingRecipe = signal(false);
+  addIngredientExpanded = signal(false);
+
+  toggleAddIngredientExpanded() {
+    this.addIngredientExpanded.update(v => !v);
+  }
   isGenerating = false;
 
   // --- PRESET RECIPES DATABASE (40+ PRÌMI + CATEGORIES) ---
@@ -878,6 +909,7 @@ export class IngredientsBookViewComponent {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    this.addIngredientExpanded.set(false);
     this.isModalOpen.set(true);
   }
 
@@ -898,18 +930,25 @@ export class IngredientsBookViewComponent {
   openEditModal(recipe: Recipe) {
     this.editingRecipe.set(true);
     this.currentRecipe = JSON.parse(JSON.stringify(recipe));
+    this.addIngredientExpanded.set(false);
     this.isModalOpen.set(true);
   }
 
   closeModal() {
     this.isModalOpen.set(false);
     this.editingRecipe.set(false);
+    this.addIngredientExpanded.set(false);
   }
 
   addIngredientRow() {
     const ings = [...(this.currentRecipe.ingredients || [])];
     ings.push({ name: '', percentage: 0, allergens: [] });
     this.currentRecipe = { ...this.currentRecipe, ingredients: ings };
+  }
+
+  addIngredientRowFromPanel() {
+    this.addIngredientRow();
+    this.addIngredientExpanded.set(false);
   }
 
   removeIngredientRow(index: number) {

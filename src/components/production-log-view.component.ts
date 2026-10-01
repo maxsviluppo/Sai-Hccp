@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService, ProductionRecord, ProductionIngredient } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
@@ -10,24 +10,31 @@ import { FormsModule } from '@angular/forms';
     imports: [CommonModule, FormsModule],
     template: `
     <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 relative px-2 space-y-6 overflow-x-hidden">
+    <div class="print:hidden pb-20 relative px-2 max-md:px-3 space-y-4 md:space-y-6 overflow-x-hidden">
         
-        <!-- Sleek Professional Dashboard Header -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <!-- Header -->
+        <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 relative overflow-hidden space-y-4">
             <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
-            <div class="flex items-center gap-5 relative z-10 w-full md:w-auto">
-                <div class="h-14 w-14 shrink-0 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+            <div class="flex items-start gap-3 relative z-10">
+                <button type="button"
+                        (click)="goQuickHome()"
+                        class="trace-touch md:hidden h-14 w-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-indigo-700 active:scale-95"
+                        style="touch-action: manipulation"
+                        aria-label="Torna al menu">
+                    <i class="fa-solid fa-house-chimney text-2xl"></i>
+                </button>
+                <div class="hidden md:flex h-14 w-14 shrink-0 bg-teal-600 text-white rounded-xl items-center justify-center shadow-md">
                     <i class="fa-solid fa-barcode text-2xl"></i>
                 </div>
-                <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Rintracciabilità Prodotti</h2>
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Gestione lotti di produzione e tracciabilità.</p>
+                <div class="flex-1 min-w-0 pt-0.5">
+                    <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Rintracciabilità</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-1 leading-snug">Lotti di produzione, etichette e tracciabilità ingredienti.</p>
                 </div>
             </div>
 
-            <!-- Search Filters Header -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto relative z-10">
+            <!-- Search Filters -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                     <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca lotto o nome..." 
@@ -46,18 +53,21 @@ import { FormsModule } from '@angular/forms';
 
         @if (isEditing()) {
             <!-- EDITING / CREATION VIEW -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Main Product Card -->
-                <div class="lg:col-span-1 space-y-4">
-                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-6">
-                        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800">Scheda Preparazione</h3>
-                            <div class="px-2 py-0.5 bg-teal-50 border border-teal-100 text-teal-600 rounded text-[10px] font-black uppercase tracking-widest">Master</div>
+            <div class="space-y-4">
+                <div class="bg-white rounded-2xl p-4 md:p-6 border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100">
+                            <button type="button" (click)="cancelEdit()"
+                                    class="trace-touch h-12 w-12 shrink-0 rounded-xl border-2 border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center active:scale-95 shadow-sm"
+                                    aria-label="Torna indietro senza salvare">
+                                <i class="fa-solid fa-arrow-left text-lg"></i>
+                            </button>
+                            <h3 class="text-base md:text-lg font-black text-slate-800 uppercase tracking-wide flex-1 min-w-0 truncate">Scheda Preparazione</h3>
+                            <div class="px-2 py-0.5 bg-teal-50 border border-teal-100 text-teal-600 rounded text-[10px] font-black uppercase tracking-widest shrink-0">Master</div>
                         </div>
 
-                        <div class="space-y-5">
+                        <div class="space-y-4">
                             <div class="space-y-1.5">
-                                <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Nome Alimento Principale</label>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nome alimento principale</label>
                                 <div class="relative">
                                     <input type="text" [(ngModel)]="currentRecord.mainProductName" 
                                            (ngModelChange)="onMainProductNameChange($event)"
@@ -96,92 +106,68 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </div>
 
-                            <div class="space-y-4 py-2">
-                                <!-- CONFEZIONAMENTO BLOCK -->
-                                <div class="bg-slate-50/50 border border-slate-200 rounded-[32px] p-6 flex flex-col items-center text-center space-y-3 shadow-sm">
-                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-teal-500 shadow-sm border border-slate-100">
-                                        <i class="fa-solid fa-calendar-check text-2xl"></i>
-                                    </div>
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Confezionamento</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Confezionamento</label>
                                     <input type="date" [(ngModel)]="currentRecord.packagingDate"
-                                           class="w-full max-w-[280px] bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 text-base font-bold text-slate-800 text-center focus:border-teal-500 outline-none transition-all shadow-sm">
+                                           class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 focus:border-teal-500 outline-none">
                                 </div>
-
-                                <!-- SCADENZA BLOCK -->
-                                <div class="bg-rose-50/30 border border-rose-100 rounded-[32px] p-6 flex flex-col items-center text-center space-y-3 shadow-sm">
-                                    <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-rose-400 shadow-sm border border-rose-50">
-                                        <i class="fa-solid fa-calendar-xmark text-2xl"></i>
-                                    </div>
-                                    <label class="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]">Data di Scadenza</label>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] font-black text-rose-500 uppercase tracking-widest pl-1">Scadenza</label>
                                     <input type="date" [(ngModel)]="currentRecord.expiryDate"
-                                           class="w-full max-w-[280px] bg-white border-2 border-rose-200 rounded-2xl px-4 py-3 text-base font-bold text-slate-800 text-center focus:border-rose-500 outline-none transition-all shadow-sm">
+                                           class="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 focus:border-rose-500 outline-none">
                                 </div>
                             </div>
 
                             <div class="space-y-1.5">
-                                <label class="text-[10px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Numero Lotto (Automatico)</label>
-                                <p class="text-[10px] text-slate-400 pl-1 leading-tight italic">Il numero del lotto di ogni preparato corrisponde alla data di produzione.</p>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Numero lotto</label>
+                                <p class="text-[10px] text-slate-400 pl-1 leading-tight italic">Corrisponde alla data di produzione.</p>
                                 <div class="relative">
                                     <input type="text" [(ngModel)]="currentRecord.lotto"
-                                           class="w-[98%] mx-auto block md:w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-base font-mono font-bold text-teal-700 text-center outline-none focus:border-teal-400 focus:bg-white"
-                                           placeholder="Lotto Generato...">
+                                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-base font-mono font-bold text-teal-700 outline-none focus:border-teal-400 focus:bg-white"
+                                           placeholder="Lotto generato…">
                                     <i class="fa-solid fa-barcode absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                                 </div>
                             </div>
-
-                            <!-- ALLERGENS REAL-TIME FEEDBACK -->
-                            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="fa-solid fa-triangle-exclamation text-indigo-500 text-xs"></i>
-                                    <span class="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Allergeni Rilevati</span>
-                                </div>
-                                <div class="flex flex-wrap gap-1">
-                                    @let currentAllergens = getUIAllergens();
-                                    @if (currentAllergens.length > 0) {
-                                        @for (alg of currentAllergens; track alg) {
-                                            <span class="px-2 py-0.5 bg-white border border-indigo-200 text-indigo-700 rounded text-[9px] font-bold uppercase">{{ alg }}</span>
-                                        }
-                                    } @else {
-                                        <span class="text-[9px] font-bold text-indigo-300 italic">Nessun allergene rilevato negli ingredienti elencati.</span>
-                                    }
-                                </div>
-                            </div>
-
-                            <div class="pt-5 border-t border-slate-100 flex gap-3">
-                                <button (click)="cancelEdit()" class="flex-1 py-3 bg-slate-50 text-slate-500 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all">Annulla</button>
-                                <button (click)="saveRecord()" [disabled]="!currentRecord.mainProductName"
-                                        class="flex-[2] py-3 bg-teal-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-teal-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i> Salva Registro
-                                </button>
-                            </div>
                         </div>
-                    </div>
                 </div>
 
-                <!-- Ingredients Section -->
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-slate-100 rounded-2xl p-6 border border-slate-200 shadow-sm relative">
-                        <h4 class="text-sm font-black uppercase tracking-widest mb-5 text-slate-700 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-teal-600"></i> Aggiungi Ingrediente
-                        </h4>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-6">
-                            <div class="sm:col-span-1">
-                                <div class="aspect-square rounded-xl bg-white border border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors relative shadow-sm" (click)="photoInput.click()">
-                                    @if (tempPhoto) {
-                                        <img [src]="tempPhoto" class="w-full h-full object-cover rounded-xl">
-                                    } @else {
-                                        <i class="fa-solid fa-camera text-2xl text-slate-300 mb-2"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Carica Foto</span>
-                                    }
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <button type="button" (click)="toggleAddIngredientExpanded()"
+                                class="trace-touch w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left active:bg-slate-50"
+                                [attr.aria-expanded]="addIngredientExpanded()">
+                            <div class="min-w-0 flex items-center gap-3">
+                                <span class="h-10 w-10 shrink-0 rounded-xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-plus-circle"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Aggiungi ingrediente</p>
+                                    <p class="text-sm font-black text-slate-800 truncate mt-0.5">
+                                        {{ addIngredientExpanded() ? 'Compila e aggiungi alla lista' : 'Tocca per aprire il modulo' }}
+                                    </p>
                                 </div>
-                                <input #photoInput type="file" accept="image/*" class="hidden" (change)="handleFile($event)">
                             </div>
+                            <i class="fa-solid fa-chevron-down text-slate-400 transition-transform shrink-0"
+                               [class.rotate-180]="addIngredientExpanded()"></i>
+                        </button>
 
-                            <div class="sm:col-span-3 space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div class="md:col-span-2">
-                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Nome Ingrediente *</label>
+                        @if (addIngredientExpanded()) {
+                        <div class="px-4 pb-4 pt-1 border-t border-slate-100 animate-slide-up">
+                        <div class="flex gap-3 items-start mt-3">
+                            <div class="h-[4.5rem] w-[4.5rem] shrink-0 rounded-xl bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-colors relative overflow-hidden"
+                                 (click)="photoInput.click()">
+                                @if (tempPhoto) {
+                                    <img [src]="tempPhoto" class="w-full h-full object-cover">
+                                } @else {
+                                    <i class="fa-solid fa-camera text-lg text-slate-400"></i>
+                                    <span class="text-[8px] font-black uppercase text-slate-400 mt-0.5">Foto</span>
+                                }
+                            </div>
+                            <input #photoInput type="file" accept="image/*" class="hidden" (change)="handleFile($event)">
+
+                            <div class="flex-1 min-w-0 space-y-3">
+                                <div>
+                                        <label class="text-[10px] font-black text-slate-500 uppercase mb-1 block">Nome ingrediente *</label>
                                         <div class="relative">
                                             <input type="text" [(ngModel)]="newIngredient.name"
                                                 (ngModelChange)="onIngredientNameChange($event)"
@@ -227,74 +213,147 @@ import { FormsModule } from '@angular/forms';
                                         </div>
                                     </div>
 
-                                    <div class="md:col-span-2">
-                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Lotto e Scadenza</label>
-                                        <div class="flex flex-col md:flex-row items-center gap-4 py-2">
-                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3 w-full md:w-1/2">
-                                                <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
-                                                    <i class="fa-solid fa-barcode text-xl"></i>
-                                                </div>
-                                                <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
-                                                       class="w-full max-w-[240px] bg-white border border-slate-200 rounded-xl py-3 text-base font-mono font-bold text-slate-600 text-center focus:border-teal-400 transition-all shadow-sm">
-                                            </div>
-                                            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col items-center text-center space-y-3 w-full md:w-1/2">
-                                                <div class="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-400 border border-rose-50">
-                                                    <i class="fa-solid fa-calendar-day text-xl"></i>
-                                                </div>
-                                                <input type="date" [(ngModel)]="newIngredient.expiryDate"
-                                                       class="w-full max-w-[240px] bg-white border border-rose-200 rounded-xl py-3 text-base font-bold text-slate-800 text-center outline-none focus:border-rose-400 transition-all shadow-sm">
-                                            </div>
-                                        </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] font-black text-slate-500 uppercase mb-1 block">Lotto</label>
+                                        <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
+                                               class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-slate-600 focus:border-teal-400 outline-none">
                                     </div>
-
-                                    <div class="md:col-span-2">
-                                        <label class="text-[11px] font-black text-slate-500 uppercase mb-1">Fornitore / Origine</label>
-                                        <input type="text" [(ngModel)]="newIngredient.supplierName" placeholder="es. Global Food Srl o Allevamento Italia"
-                                               class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-base font-bold text-slate-800 outline-none focus:border-teal-400 transition-all shadow-sm">
+                                    <div>
+                                        <label class="text-[10px] font-black text-rose-500 uppercase mb-1 block">Scadenza</label>
+                                        <input type="date" [(ngModel)]="newIngredient.expiryDate"
+                                               class="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 focus:border-rose-400 outline-none">
                                     </div>
+                                </div>
 
-                                    <div class="md:col-span-2">
-                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Associa Allergeni (Opzionale)</label>
-                                        <div class="flex flex-wrap gap-2">
+                                <div>
+                                        <label class="text-[10px] font-black text-slate-500 uppercase mb-1 block">Fornitore / origine</label>
+                                        <input type="text" [(ngModel)]="newIngredient.supplierName" placeholder="es. Global Food Srl"
+                                               class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-teal-400">
+                                </div>
+
+                                <div>
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Allergeni (opz.)</label>
+                                        <div class="flex flex-wrap gap-1.5">
                                             @for (alg of state.ALLERGEN_LIST; track alg.id) {
-                                                <button (click)="toggleNewIngredientAllergen(alg.id)"
-                                                        [class]="'px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-tight transition-all duration-300 ' + 
-                                                                 (newIngredient.allergens?.includes(alg.id) ? alg.active : 'bg-white border-slate-200 text-slate-300 hover:border-slate-300 hover:text-slate-400 opacity-60')">
-                                                    <i [class]="'fa-solid ' + alg.icon"></i>
-                                                    {{ alg.label }}
+                                                <button type="button" (click)="toggleNewIngredientAllergen(alg.id)"
+                                                        [class]="'px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-tight transition-all ' +
+                                                                 (newIngredient.allergens?.includes(alg.id) ? alg.active : 'bg-white border-slate-200 text-slate-300 opacity-60')">
+                                                    <i [class]="'fa-solid ' + alg.icon"></i> {{ alg.label }}
                                                 </button>
                                             }
                                         </div>
-                                    </div>
-
-                                    <div class="md:col-span-2 pt-2">
-                                        <button (click)="addIngredient()" [disabled]="!newIngredient.name"
-                                                class="w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-700 transition-all border border-slate-700 disabled:opacity-50 shadow-lg">
-                                            <i class="fa-solid fa-plus text-teal-400 mr-2"></i> Aggiungi Ingrediente alla Lista
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <button type="button" (click)="addIngredient()" [disabled]="!newIngredient.name"
+                                class="trace-touch w-full min-h-[3.75rem] py-4 px-4 mt-4 rounded-xl border-2 border-emerald-400 bg-emerald-100 text-emerald-900 hover:bg-emerald-200 font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-plus text-xl leading-none"></i>
+                            Aggiungi alla lista
+                        </button>
+                        </div>
+                        }
                     </div>
 
-                    <!-- Ingredients Table -->
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[500px]">
-                        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest">Elenco Ingredienti Associati</h4>
-                            <div class="flex items-center gap-2">
+                    <!-- Ingredients list -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-md:max-h-none md:h-[500px]">
+                        <div class="px-4 md:px-5 py-4 border-b border-slate-100 flex justify-between items-center gap-2 bg-slate-50/50">
+                            <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest">Ingredienti associati</h4>
+                            <div class="flex items-center gap-2 shrink-0">
                                 @if (hasSuspendedIngredients()) {
                                     <button type="button" (click)="confirmAllIngredients()" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-1">
                                         <i class="fa-solid fa-check-double"></i> Conferma Tutti
                                     </button>
                                 }
                                 <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-black">
-                                    {{ ingredientsList().length }} INGR.
+                                    {{ ingredientsList().length }}
                                 </span>
                             </div>
                         </div>
 
-                        <div class="overflow-y-auto flex-1 h-full h-min-0">
+                        <!-- Mobile cards -->
+                        <div class="md:hidden overflow-y-auto flex-1 p-3 space-y-4">
+                            @for (ing of ingredientsList(); track ing.id) {
+                                @let abbIngMobile = findAbbattimentoRecord(ing);
+                                <div [class]="'rounded-2xl border-2 p-4 space-y-3 shadow-sm ' + (ing.requiresConfirmation ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-200/80' : 'bg-white border-slate-200')">
+                                    <div class="flex gap-3 items-start">
+                                        <div class="w-14 h-14 shrink-0 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden"
+                                             (click)="ing.photo ? zoomedPhoto.set(ing.photo) : null">
+                                            @if (ing.photo) {
+                                                <img [src]="ing.photo" class="w-full h-full object-cover">
+                                            } @else {
+                                                <i class="fa-solid fa-image text-slate-300"></i>
+                                            }
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-base font-black text-slate-900 leading-tight">{{ ing.name }}</p>
+                                            <div class="flex flex-wrap gap-1.5 mt-1.5">
+                                                @if (ing.requiresConfirmation) {
+                                                    <span class="text-[9px] font-black uppercase text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded">Verifica</span>
+                                                }
+                                                @if (abbIngMobile) {
+                                                    <span class="text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                                                        <i class="fa-solid fa-icicles text-[8px]"></i> Abbattuto
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <div>
+                                            <label class="text-[9px] font-black uppercase text-slate-400 tracking-wider">Fornitore</label>
+                                            <input type="text" [value]="ing.supplierName || ''" (input)="updateIngSupplier(ing.id, $any($event.target).value)"
+                                                   placeholder="Fornitore / origine"
+                                                   [class]="'mt-0.5 w-full rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200')">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-[9px] font-black uppercase text-slate-400 tracking-wider">Lotto</label>
+                                                <input type="text" [value]="ing.lotto || ''" (input)="updateIngLotto(ing.id, $any($event.target).value)"
+                                                       placeholder="Lotto"
+                                                       [class]="'mt-0.5 w-full rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-slate-700 outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200')">
+                                            </div>
+                                            <div>
+                                                <label class="text-[9px] font-black uppercase text-rose-500 tracking-wider">Scadenza</label>
+                                                @if (abbIngMobile) {
+                                                    <p class="mt-0.5 px-3 py-2.5 text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-xl">
+                                                        {{ abbIngMobile.postExpiryDate | date:'dd/MM/yy' }}
+                                                    </p>
+                                                } @else {
+                                                    <input type="date" [value]="ing.expiryDate || ''" (input)="updateIngExpiry(ing.id, $any($event.target).value)"
+                                                           [class]="'mt-0.5 w-full rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200')">
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-2 pt-1">
+                                        @if (ing.requiresConfirmation) {
+                                            <button type="button" (click)="confirmIngredient(ing.id)"
+                                                    class="trace-touch flex-1 min-w-[8rem] py-2.5 rounded-xl bg-amber-500 text-white font-black text-[10px] uppercase">
+                                                <i class="fa-solid fa-check"></i> Conferma
+                                            </button>
+                                        }
+                                        @if (abbIngMobile) {
+                                            <button type="button" (click)="openAbbattimentoPrintModal(abbIngMobile)"
+                                                    class="trace-touch h-11 w-11 rounded-xl bg-indigo-50 border-2 border-indigo-200 text-indigo-600 flex items-center justify-center">
+                                                <i class="fa-solid fa-icicles"></i>
+                                            </button>
+                                        }
+                                        <button type="button" (click)="requestRemoveIngredient(ing.id)"
+                                                class="trace-touch h-11 w-11 rounded-xl bg-rose-50 border-2 border-rose-200 text-rose-600 flex items-center justify-center ml-auto">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            } @empty {
+                                <p class="p-6 text-center text-xs font-bold text-slate-400">Nessun ingrediente in elenco.</p>
+                            }
+                        </div>
+
+                        <div class="hidden md:block overflow-y-auto flex-1 h-full h-min-0">
                             <table class="w-full text-left">
                                 <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                                     <tr>
@@ -305,10 +364,10 @@ import { FormsModule } from '@angular/forms';
                                         <th class="px-4 py-3 text-[11px] font-black text-slate-400 uppercase text-right">Azioni</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100">
+                                <tbody class="divide-y-0">
                                     @for (ing of ingredientsList(); track ing.id) {
-                                        <tr [class]="ing.requiresConfirmation ? 'bg-amber-50/50 hover:bg-amber-50 border-l-4 border-amber-400' : 'hover:bg-slate-50'">
-                                            <td class="px-4 py-3">
+                                        <tr [class]="'border-b-[6px] border-slate-100 last:border-b-0 ' + (ing.requiresConfirmation ? 'bg-amber-50/50 hover:bg-amber-50 border-l-4 border-l-amber-400' : 'hover:bg-slate-50 bg-white')">
+                                            <td class="px-4 py-5 align-top">
                                                 <div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden cursor-zoom-in group/img relative"
                                                      (click)="ing.photo ? zoomedPhoto.set(ing.photo) : null">
                                                     @if (ing.photo) { 
@@ -319,7 +378,7 @@ import { FormsModule } from '@angular/forms';
                                                     }
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3 font-bold text-slate-800">
+                                            <td class="px-4 py-5 align-top font-bold text-slate-800">
                                                 @let abbIng = findAbbattimentoRecord(ing);
                                                 <span class="flex items-center gap-1.5">
                                                     {{ ing.name }}
@@ -346,17 +405,17 @@ import { FormsModule } from '@angular/forms';
                                                     }
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-4 py-5 align-top">
                                                 <input type="text" [value]="ing.supplierName || ''" (input)="updateIngSupplier(ing.id, $any($event.target).value)" 
                                                        placeholder="Fornitore" 
                                                        [class]="'w-full rounded px-2 py-1 text-[10px] font-black text-slate-500 uppercase outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-100/30 border-amber-200' : 'bg-slate-50 border-slate-200')">
                                             </td>
-                                            <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">
+                                            <td class="px-4 py-5 align-top font-mono text-xs text-slate-500 font-bold">
                                                 <input type="text" [value]="ing.lotto || ''" (input)="updateIngLotto(ing.id, $any($event.target).value)" 
                                                        placeholder="Lotto" 
                                                        [class]="'w-full rounded px-2 py-1 text-xs font-mono font-bold text-slate-600 outline-none focus:border-teal-400 border ' + (ing.requiresConfirmation ? 'bg-amber-100/30 border-amber-200' : 'bg-slate-50 border-slate-200')">
                                             </td>
-                                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                            <td class="px-4 py-5 align-top text-right whitespace-nowrap">
                                                 @if (ing.requiresConfirmation) {
                                                     <button type="button" (click)="confirmIngredient(ing.id)" class="text-amber-600 hover:text-amber-800 bg-amber-100/50 border border-amber-200 hover:bg-amber-200 rounded-lg px-2.5 py-1.5 mr-2 transition-all shadow-sm font-black text-[9px] uppercase tracking-widest">
                                                         <i class="fa-solid fa-check"></i> Conferma
@@ -368,7 +427,7 @@ import { FormsModule } from '@angular/forms';
                                                         <i class="fa-solid fa-icicles"></i>
                                                     </button>
                                                 }
-                                                <button type="button" (click)="removeIngredient(ing.id)" class="text-rose-500 hover:text-rose-700 p-2">
+                                                <button type="button" (click)="requestRemoveIngredient(ing.id)" class="text-rose-500 hover:text-rose-700 p-2">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </td>
@@ -378,6 +437,39 @@ import { FormsModule } from '@angular/forms';
                             </table>
                         </div>
                     </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 md:p-5">
+                        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid fa-triangle-exclamation text-indigo-500 text-xs"></i>
+                                <span class="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Allergeni rilevati</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                @let currentAllergens = getUIAllergens();
+                                @if (currentAllergens.length > 0) {
+                                    @for (alg of currentAllergens; track alg) {
+                                        <span class="px-2 py-0.5 bg-white border border-indigo-200 text-indigo-700 rounded text-[9px] font-bold uppercase">{{ alg }}</span>
+                                    }
+                                } @else {
+                                    <span class="text-[9px] font-bold text-indigo-300 italic">Nessun allergene rilevato negli ingredienti elencati.</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 pt-0 grid grid-cols-2 gap-3 w-full max-md:gap-4">
+                        <button type="button" (click)="cancelEdit()"
+                                class="trace-touch aspect-square max-md:aspect-square md:aspect-auto md:flex-1 md:h-16 w-full rounded-xl md:rounded-2xl border-2 border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 font-black uppercase tracking-wide flex flex-col items-center justify-center gap-1 md:flex-row md:gap-3 active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-xmark text-3xl md:text-2xl leading-none text-slate-500"></i>
+                            <span class="text-sm max-md:text-base md:text-xs md:tracking-widest leading-tight">Annulla</span>
+                        </button>
+                        <button type="button" (click)="saveRecord()" [disabled]="!currentRecord.mainProductName"
+                                class="trace-touch aspect-square max-md:aspect-square md:aspect-auto md:flex-1 md:h-16 w-full rounded-xl md:rounded-2xl border-2 border-teal-700 bg-teal-600 text-white hover:bg-teal-700 font-black uppercase tracking-wide flex flex-col items-center justify-center gap-1 md:flex-row md:gap-3 active:scale-95 shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl md:text-2xl leading-none"></i>
+                            <span class="text-sm max-md:text-base md:text-xs md:tracking-widest leading-tight">Salva</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -386,36 +478,58 @@ import { FormsModule } from '@angular/forms';
             <div class="space-y-6 animate-fade-in">
                 <div class="flex justify-between items-center bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <div class="text-sm font-bold text-slate-500"><i class="fa-solid fa-database text-teal-600 mr-2"></i> {{ filteredRecords().length }} Registrazioni in Archivio</div>
-                    <button (click)="startNew()" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-teal-700 transition-all shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Nuovo Registro
+                    <button type="button" (click)="startNew()"
+                            class="trace-touch h-16 min-w-[8.5rem] w-[8.5rem] sm:w-auto sm:min-w-[10rem] sm:px-5 rounded-xl border-2 border-teal-700 bg-teal-600 hover:bg-teal-700 text-white shadow-md flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 active:scale-95 shrink-0">
+                        <i class="fa-solid fa-plus text-xl leading-none"></i>
+                        <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-wide leading-tight text-center">Nuovo registro</span>
                     </button>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     @for (rec of filteredRecords(); track rec.id) {
-                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] font-mono font-bold border border-slate-200">{{ rec.lotto }}</span>
-                                <div class="flex flex-col items-end gap-1">
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase">{{ rec.recordedDate | date:'dd/MM HH:mm' }}</span>
-                                    <div class="w-16 h-16 bg-white border border-slate-100 p-1 rounded-xl shadow-md overflow-hidden flex items-center justify-center">
-                                        <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + getQRCodeUrl(rec)" 
-                                             class="w-full h-full opacity-70 group-hover:opacity-100 transition-opacity"
-                                             alt="QR Code">
-                                    </div>
+                        <div class="bg-white rounded-2xl p-4 md:p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
+                            <h3 class="text-lg md:text-xl font-black text-slate-900 leading-tight line-clamp-2 mb-3 group-hover:text-teal-700">
+                                {{ rec.mainProductName }}
+                            </h3>
+
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <div class="rounded-xl border-2 border-teal-200 bg-teal-50/80 px-3 py-2.5">
+                                    <p class="text-[9px] font-black uppercase tracking-wider text-teal-700 flex items-center gap-1">
+                                        <i class="fa-solid fa-calendar-check"></i> Preparazione
+                                    </p>
+                                    <p class="text-base font-black text-slate-900 mt-0.5">{{ rec.packagingDate | date:'dd/MM/yyyy' }}</p>
+                                </div>
+                                <div class="rounded-xl border-2 border-rose-200 bg-rose-50/80 px-3 py-2.5">
+                                    <p class="text-[9px] font-black uppercase tracking-wider text-rose-700 flex items-center gap-1">
+                                        <i class="fa-solid fa-calendar-xmark"></i> Scadenza
+                                    </p>
+                                    <p class="text-base font-black text-rose-800 mt-0.5">{{ rec.expiryDate | date:'dd/MM/yyyy' }}</p>
                                 </div>
                             </div>
-                            <h3 class="text-lg font-bold text-slate-800 mb-3 group-hover:text-teal-600 leading-tight line-clamp-2">{{ rec.mainProductName }}</h3>
-                            <div class="text-xs text-slate-500 font-bold mb-4 flex flex-col gap-1">
-                                <div><i class="fa-solid fa-box-archive mr-2"></i> {{ rec.packagingDate | date:'dd/MM/yy' }}</div>
-                                <div class="text-rose-600"><i class="fa-solid fa-calendar-xmark mr-2"></i> {{ rec.expiryDate | date:'dd/MM/yy' }}</div>
+
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <div class="flex items-center gap-2 min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                    <i class="fa-solid fa-barcode text-teal-600 shrink-0"></i>
+                                    <div class="min-w-0">
+                                        <p class="text-[8px] font-black uppercase text-slate-400">Lotto</p>
+                                        <p class="text-sm font-mono font-black text-slate-800 truncate">{{ rec.lotto }}</p>
+                                    </div>
+                                </div>
+                                <button type="button" (click)="openLabelPreview(rec)"
+                                        class="trace-touch shrink-0 w-14 h-14 rounded-xl border-2 border-slate-200 bg-white p-1 shadow-sm overflow-hidden flex items-center justify-center"
+                                        title="Anteprima etichetta">
+                                    <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + getQRCodeUrl(rec)"
+                                         class="w-full h-full object-contain"
+                                         alt="QR etichetta">
+                                </button>
                             </div>
 
-                            <!-- ALLERGENS LIST IN CARD -->
+                            <p class="text-[10px] text-slate-400 font-bold uppercase mb-2 md:mb-3 hidden md:block">{{ rec.recordedDate | date:'dd/MM/yyyy HH:mm' }}</p>
+
                             @let cardAllergens = getRecordAllergens(rec);
                             @if (cardAllergens.length > 0) {
-                                <div class="mb-4 pt-3 border-t border-slate-50">
-                                    <div class="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Allergeni:</div>
+                                <div class="mb-3 pt-2 border-t border-slate-100">
+                                    <div class="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Allergeni</div>
                                     <div class="flex flex-wrap gap-1">
                                         @for (alg of cardAllergens; track alg) {
                                             <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-bold uppercase border border-indigo-100">{{ alg }}</span>
@@ -423,18 +537,26 @@ import { FormsModule } from '@angular/forms';
                                     </div>
                                 </div>
                             }
-                            <div class="mt-auto flex gap-2">
-                                <button (click)="openDetail(rec)" class="flex-1 py-2 bg-slate-50 text-slate-600 rounded-lg font-bold text-[10px] uppercase hover:bg-slate-100">Apri</button>
-                                @let abbRecForCard = findAbbattimentoRecordByProductRecordIngredients(rec);
-                                @if (abbRecForCard) {
-                                    <button (click)="openAbbattimentoPrintModal(abbRecForCard)" class="w-10 py-2 bg-indigo-50 text-indigo-500 rounded-lg hover:bg-indigo-500 hover:text-white transition-all" title="Stampa Etichetta Abbattimento">
-                                        <i class="fa-solid fa-icicles"></i>
-                                    </button>
-                                }
-                                <button (click)="openLabelPreview(rec)" class="w-10 py-2 bg-teal-50 text-teal-600 rounded-lg hover:bg-teal-600 hover:text-white transition-all" title="Stampa Etichetta Prodotto">
-                                    <i class="fa-solid fa-print"></i>
+
+                            @let abbRecForCard = findAbbattimentoRecordByProductRecordIngredients(rec);
+
+                            <div class="mt-auto pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 md:flex md:gap-2">
+                                <button type="button" (click)="openDetail(rec)"
+                                        class="trace-touch aspect-square md:aspect-auto md:flex-1 md:py-2 rounded-xl bg-sky-100 border-2 border-sky-400 text-sky-800 hover:bg-sky-500 hover:text-white hover:border-sky-600 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 font-black text-[9px] md:text-[10px] uppercase active:scale-95 transition-colors">
+                                    <i class="fa-solid fa-folder-open text-lg md:text-sm"></i>
+                                    <span>Apri</span>
                                 </button>
-                                <button (click)="deleteRecord(rec.id)" class="w-10 py-2 text-rose-400 hover:text-rose-600"><i class="fa-solid fa-trash-can"></i></button>
+                                <button type="button" (click)="abbRecForCard ? openAbbattimentoPrintModal(abbRecForCard) : openLabelPreview(rec)"
+                                        class="trace-touch aspect-square md:aspect-auto md:w-auto md:px-4 md:py-2 rounded-xl bg-teal-50 border-2 border-teal-300 text-teal-700 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 font-black text-[9px] md:text-[10px] uppercase active:scale-95 hover:bg-teal-600 hover:text-white hover:border-teal-600 transition-colors"
+                                        [title]="abbRecForCard ? 'Stampa etichetta abbattimento' : 'Stampa etichetta prodotto'">
+                                    <i class="fa-solid fa-print text-lg md:text-sm"></i>
+                                    <span>Stampa</span>
+                                </button>
+                                <button type="button" (click)="deleteRecord(rec.id)"
+                                        class="trace-touch aspect-square md:aspect-auto md:w-10 md:py-2 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-600 flex flex-col md:flex-row items-center justify-center gap-1 font-black text-[9px] uppercase active:scale-95 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-colors">
+                                    <i class="fa-solid fa-trash-can text-lg md:text-sm"></i>
+                                    <span class="md:hidden">Elimina</span>
+                                </button>
                             </div>
                         </div>
                     }
@@ -701,6 +823,45 @@ import { FormsModule } from '@angular/forms';
         </div>
     }
 
+    @if (ingredientDeleteConfirm()) {
+        <div class="haccp-modal-overlay z-[140]">
+            <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-sm" (click)="closeIngredientDeleteConfirm()"></div>
+            <div class="haccp-modal-center">
+                <div class="haccp-modal-panel bg-white rounded-3xl shadow-2xl overflow-hidden border border-rose-100 max-w-md w-full mx-4">
+                    <div class="px-6 py-5 bg-gradient-to-r from-rose-600 to-red-600 text-white">
+                        <div class="flex items-center gap-3">
+                            <div class="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-trash-can text-xl"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-lg font-black leading-tight">Conferma eliminazione</h3>
+                                <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest mt-0.5">Scheda registro</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p class="text-sm font-bold text-slate-700 leading-relaxed">
+                            Rimuovere <strong class="text-slate-900">{{ ingredientDeleteConfirm()!.name }}</strong> dall'elenco ingredienti?
+                        </p>
+                        <p class="text-[11px] text-slate-500 font-medium leading-snug">
+                            La riga sparisce dalla scheda corrente. Per applicare le modifiche all'archivio premi <strong>Salva</strong>.
+                        </p>
+                        <div class="flex flex-col gap-2 pt-1">
+                            <button type="button" (click)="confirmRemoveIngredient()"
+                                    class="trace-touch w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md">
+                                Sì, elimina
+                            </button>
+                            <button type="button" (click)="closeIngredientDeleteConfirm()"
+                                    class="trace-touch w-full py-3.5 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200">
+                                Annulla
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- NO CLIENT SELECTED MODAL (FOR ADMINS) -->
     @if (showNoClientModal()) {
         <div class="fixed inset-0 z-[3000] flex items-center justify-center p-4">
@@ -726,14 +887,29 @@ import { FormsModule } from '@angular/forms';
     styles: [`
         .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .trace-touch { touch-action: manipulation; }
     `]
 })
-export class ProductionLogViewComponent {
+export class ProductionLogViewComponent implements OnInit {
     state = inject(AppStateService);
     toast = inject(ToastService);
 
+    ngOnInit() {
+        this.state.scrollMainContentToTop();
+    }
+
+    goQuickHome() {
+        this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+    }
+
     isEditing = signal(false);
+    addIngredientExpanded = signal(false);
+
+    toggleAddIngredientExpanded() {
+        this.addIngredientExpanded.update(v => !v);
+    }
     showNoClientModal = signal(false);
+    ingredientDeleteConfirm = signal<{ id: string; name: string } | null>(null);
     isLabelPreviewOpen = signal(false);
     selectedRecordForLabel = signal<ProductionRecord | null>(null);
     ingredientsList = signal<ProductionIngredient[]>([]);
@@ -792,6 +968,7 @@ export class ProductionLogViewComponent {
         };
         this.ingredientsList.set([]);
         this.isEditing.set(true);
+        this.addIngredientExpanded.set(false);
         this.resetIngredientForm();
     }
 
@@ -799,10 +976,13 @@ export class ProductionLogViewComponent {
         this.currentRecord = JSON.parse(JSON.stringify(rec));
         this.ingredientsList.set(rec.ingredients || []);
         this.isEditing.set(true);
+        this.addIngredientExpanded.set(false);
     }
 
     cancelEdit() {
         this.isEditing.set(false);
+        this.addIngredientExpanded.set(false);
+        this.ingredientDeleteConfirm.set(null);
     }
 
     formatName(val: string): string {
@@ -1048,6 +1228,7 @@ export class ProductionLogViewComponent {
         };
         this.ingredientsList.update(list => [ing, ...list]);
         this.resetIngredientForm();
+        this.addIngredientExpanded.set(false);
     }
 
     toggleNewIngredientAllergen(allergenId: string) {
@@ -1058,6 +1239,23 @@ export class ProductionLogViewComponent {
         } else {
             this.newIngredient.allergens.push(allergenId);
         }
+    }
+
+    requestRemoveIngredient(id: string) {
+        const ing = this.ingredientsList().find(i => i.id === id);
+        if (!ing) return;
+        this.ingredientDeleteConfirm.set({ id, name: ing.name });
+    }
+
+    closeIngredientDeleteConfirm() {
+        this.ingredientDeleteConfirm.set(null);
+    }
+
+    confirmRemoveIngredient() {
+        const pending = this.ingredientDeleteConfirm();
+        if (!pending) return;
+        this.removeIngredient(pending.id);
+        this.ingredientDeleteConfirm.set(null);
     }
 
     removeIngredient(id: string) {

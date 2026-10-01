@@ -1,7 +1,7 @@
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideInRight {
@@ -57,4 +57,67 @@
   textarea {
     font-size: 16px !important;
   }
+
+  select.mobile-admin-select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  input.mobile-header-date {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Modale sempre inquadrata nel viewport visibile (anche con pagina scrollata) */
+.haccp-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  z-index: 99990;
+}
+
+.haccp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+}
+
+.haccp-modal-center {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.haccp-modal-center > .haccp-modal-panel {
+  pointer-events: auto;
+}
+
+.haccp-modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  max-height: min(90dvh, calc(100dvh - 2rem));
+  overflow-y: auto;
+}
+
+.haccp-modal-panel-lg {
+  max-width: 32rem;
+}
+
+.haccp-modal-panel-xl {
+  max-width: 42rem;
 }

@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService, Preparation } from '../services/app-state.service';
@@ -10,69 +10,87 @@ import { ToastService } from '../services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
+    <div class="space-y-4 pb-16 animate-fade-in p-4 max-md:px-3 max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+      <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 relative overflow-hidden">
         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
-        <div class="flex items-center gap-6 relative z-10">
-          <div class="h-16 w-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
-            <i class="fa-solid fa-mortar-pestle text-3xl"></i>
+        <div class="flex items-start gap-3 relative z-10">
+          <button type="button"
+                  (click)="goQuickHome()"
+                  class="prep-touch md:hidden h-14 w-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-indigo-700 active:scale-95"
+                  style="touch-action: manipulation"
+                  aria-label="Torna al menu">
+            <i class="fa-solid fa-house-chimney text-2xl"></i>
+          </button>
+          <div class="hidden md:flex h-14 w-14 bg-indigo-600 text-white rounded-xl items-center justify-center shadow-md shrink-0">
+            <i class="fa-solid fa-mortar-pestle text-2xl"></i>
           </div>
-          <div>
-            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Scheda Preparazione</h2>
-            <p class="text-slate-500 font-medium mt-1">Gestione dei prodotti preparati in cucina e relativa scadenza.</p>
+          <div class="flex-1 min-w-0 pt-0.5">
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Scheda Preparazione</h2>
+            <p class="text-xs text-slate-500 font-medium mt-1 leading-snug">Prodotti preparati in cucina e giorni di scadenza.</p>
           </div>
+          <button type="button" (click)="openCreateForm()"
+                  class="hidden md:flex shrink-0 px-5 py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md items-center gap-2 active:scale-95">
+            <i class="fa-solid fa-plus"></i>
+            Nuova preparazione
+          </button>
         </div>
-        <button (click)="openCreateForm()" 
-                class="relative z-10 px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md flex items-center gap-2 group">
-          <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform"></i>
-          Nuova Preparazione
-        </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Sidebar Filters -->
-        <div class="space-y-6">
-          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Filtra per Categoria</h3>
-            <div class="flex flex-col gap-2">
-              <button (click)="selectedCategory.set('ALL')"
-                      [class]="'px-4 py-2 rounded-lg text-sm font-bold text-left transition-all ' + (selectedCategory() === 'ALL' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50')">
-                Tutte le categorie
-              </button>
-              
-              @for (cat of allAvailableCategories(); track cat) {
-                <div class="group/cat relative flex items-center">
-                    <button (click)="selectedCategory.set(cat)"
-                            [class]="'flex-1 px-4 py-2 rounded-lg text-sm font-bold text-left transition-all ' + (selectedCategory() === cat ? 'bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm pr-16' : 'text-slate-500 hover:bg-slate-50 pr-16')">
-                        {{ cat }}
-                    </button>
-                    
-                    @if (!isBaseCategory(cat)) {
-                      <div class="absolute right-2 opacity-0 group-hover/cat:opacity-100 flex items-center gap-1 transition-all">
-                        <button (click)="askRenameCategory(cat)" 
-                                class="w-7 h-7 flex items-center justify-center rounded-md bg-white text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-slate-100 shadow-sm"
-                                title="Rinomina Categoria">
-                          <i class="fa-solid fa-pen text-[10px]"></i>
-                        </button>
-                        <button (click)="askDeleteCategory(cat)" 
-                                class="w-7 h-7 flex items-center justify-center rounded-md bg-white text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all border border-slate-100 shadow-sm"
-                                title="Elimina Categoria">
-                          <i class="fa-solid fa-trash-can text-[10px]"></i>
-                        </button>
-                      </div>
-                    }
-                </div>
-              }
-            </div>
+      <!-- Filtro categoria (espandibile) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <button type="button" (click)="toggleCategoryFilter()"
+                class="prep-touch w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left active:bg-slate-50"
+                [attr.aria-expanded]="categoryFilterExpanded()">
+          <div class="min-w-0">
+            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Filtra per categoria</p>
+            <p class="text-sm font-black text-slate-800 truncate mt-0.5">
+              {{ selectedCategory() === 'ALL' ? 'Tutte le categorie' : selectedCategory() }}
+            </p>
           </div>
-        </div>
+          <i class="fa-solid fa-chevron-down text-slate-400 transition-transform shrink-0"
+             [class.rotate-180]="categoryFilterExpanded()"></i>
+        </button>
+        @if (categoryFilterExpanded()) {
+          <div class="px-3 pb-3 pt-1 border-t border-slate-100 flex flex-col gap-1.5 max-h-[min(45vh,16rem)] overflow-y-auto custom-scrollbar animate-slide-up">
+            <button type="button" (click)="selectedCategory.set('ALL')"
+                    [class]="'prep-touch w-full px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ' + (selectedCategory() === 'ALL' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 border border-slate-100')">
+              Tutte le categorie
+            </button>
+            @for (cat of allAvailableCategories(); track cat) {
+              <div class="group/cat relative flex items-center gap-1">
+                <button type="button" (click)="selectedCategory.set(cat)"
+                        [class]="'prep-touch flex-1 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ' + (selectedCategory() === cat ? 'bg-indigo-50 text-indigo-700 border-2 border-indigo-200' : 'text-slate-600 hover:bg-slate-50 border border-slate-100')">
+                  {{ cat }}
+                </button>
+                @if (!isBaseCategory(cat)) {
+                  <button type="button" (click)="askRenameCategory(cat)"
+                          class="prep-touch h-11 w-11 shrink-0 rounded-xl bg-white text-indigo-500 border border-slate-200 flex items-center justify-center"
+                          title="Rinomina">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <button type="button" (click)="askDeleteCategory(cat)"
+                          class="prep-touch h-11 w-11 shrink-0 rounded-xl bg-white text-rose-500 border border-slate-200 flex items-center justify-center"
+                          title="Elimina categoria">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
 
-        <!-- Main List -->
-        <div class="lg:col-span-2 space-y-4">
-          <div class="flex items-center justify-between px-2">
-            <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest">
-              Elenco Preparazioni ({{ filteredPreps().length }})
+      <button type="button" (click)="openCreateForm()"
+              class="prep-touch w-full rounded-xl border-2 border-indigo-700 bg-indigo-600 hover:bg-indigo-700 text-white py-4 px-5 flex items-center justify-center gap-3 shadow-lg active:scale-[0.99] transition-transform">
+        <i class="fa-solid fa-plus text-xl"></i>
+        <span class="text-sm font-black uppercase tracking-wide">Nuova preparazione</span>
+      </button>
+
+      <div class="space-y-4">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+              Elenco preparazioni ({{ filteredPreps().length }})
             </h3>
           </div>
 
@@ -130,7 +148,6 @@ import { ToastService } from '../services/toast.service';
               </div>
             }
           </div>
-        </div>
       </div>
 
       <!-- NEW/EDIT MODAL -->
@@ -206,15 +223,40 @@ import { ToastService } from '../services/toast.service';
                   </div>
                 </div>
 
-                <div class="md:col-span-2">
-                  <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Ingredienti</label>
-                  <div class="flex gap-2 mb-3">
-                    <input type="text" [(ngModel)]="newIngredientName" (keyup.enter)="addIngredient()" placeholder="Es. Farina..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none">
-                    <button type="button" (click)="addIngredient()" class="px-6 bg-indigo-50 text-indigo-600 rounded-xl font-bold hover:bg-indigo-100 transition-colors">
-                      <i class="fa-solid fa-plus"></i> Aggiungi
+                <div class="md:col-span-2 space-y-3">
+                  <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0 px-1">Ingredienti</label>
+
+                  <div class="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+                    <button type="button" (click)="toggleAddIngredientExpanded()"
+                            class="prep-touch w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left active:bg-slate-50"
+                            [attr.aria-expanded]="addIngredientExpanded()">
+                      <div class="min-w-0 flex items-center gap-3">
+                        <span class="h-10 w-10 shrink-0 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+                          <i class="fa-solid fa-plus-circle"></i>
+                        </span>
+                        <div class="min-w-0">
+                          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Aggiungi ingrediente</p>
+                          <p class="text-sm font-black text-slate-800 truncate mt-0.5">
+                            {{ addIngredientExpanded() ? 'Inserisci e conferma' : 'Tocca per aprire' }}
+                          </p>
+                        </div>
+                      </div>
+                      <i class="fa-solid fa-chevron-down text-slate-400 transition-transform shrink-0"
+                         [class.rotate-180]="addIngredientExpanded()"></i>
                     </button>
+                    @if (addIngredientExpanded()) {
+                      <div class="px-4 pb-4 pt-1 border-t border-slate-100 animate-slide-up">
+                        <div class="flex gap-2 mt-3">
+                          <input type="text" [(ngModel)]="newIngredientName" (keyup.enter)="addIngredient()" placeholder="Es. Farina..."
+                                 class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none">
+                          <button type="button" (click)="addIngredient()" class="px-5 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-colors shrink-0">
+                            <i class="fa-solid fa-plus"></i> Aggiungi
+                          </button>
+                        </div>
+                      </div>
+                    }
                   </div>
-                  
+
                   @if (formPrep.ingredients && formPrep.ingredients.length > 0) {
                     <div class="flex flex-col gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
                       @for (ing of formPrep.ingredients; track ing) {
@@ -340,12 +382,33 @@ import { ToastService } from '../services/toast.service';
     .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .prep-touch { touch-action: manipulation; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
   `]
 })
-export class PreparationsViewComponent {
+export class PreparationsViewComponent implements OnInit {
   state = inject(AppStateService);
   toast = inject(ToastService);
 
+  ngOnInit() {
+    this.state.scrollMainContentToTop();
+  }
+
+  goQuickHome() {
+    this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+  }
+
+  toggleCategoryFilter() {
+    this.categoryFilterExpanded.update(v => !v);
+  }
+
+  toggleAddIngredientExpanded() {
+    this.addIngredientExpanded.update(v => !v);
+  }
+
+  categoryFilterExpanded = signal(false);
+  addIngredientExpanded = signal(false);
   isFormOpen = signal(false);
   editingId = signal<string | null>(null);
   selectedCategory = signal('ALL');
@@ -401,6 +464,7 @@ export class PreparationsViewComponent {
       this.formPrep.ingredients = [...(this.formPrep.ingredients || []), name];
     }
     this.newIngredientName = '';
+    this.addIngredientExpanded.set(false);
   }
 
   removeIngredient(ing: string) {
@@ -420,6 +484,7 @@ export class PreparationsViewComponent {
     this.editingId.set(null);
     this.formPrep = { name: '', category: '', expiryDays: 2, ingredients: [] };
     this.newIngredientName = '';
+    this.addIngredientExpanded.set(false);
     this.isAddingNewCategory.set(false);
     this.newCategoryName = '';
     this.isFormOpen.set(true);
@@ -428,6 +493,7 @@ export class PreparationsViewComponent {
   closeForm() {
     this.isFormOpen.set(false);
     this.editingId.set(null);
+    this.addIngredientExpanded.set(false);
     this.isAddingNewCategory.set(false);
   }
 
@@ -435,6 +501,7 @@ export class PreparationsViewComponent {
     this.editingId.set(prep.id);
     this.formPrep = { ...prep, ingredients: prep.ingredients ? [...prep.ingredients] : [] };
     this.newIngredientName = '';
+    this.addIngredientExpanded.set(false);
     this.isAddingNewCategory.set(false);
     this.isFormOpen.set(true);
   }

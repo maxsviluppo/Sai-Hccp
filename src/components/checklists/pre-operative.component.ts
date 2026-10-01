@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, untracked } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/app-state.service';
 import { ToastService } from '../../services/toast.service';
@@ -86,24 +86,32 @@ interface AreaChecklist {
     </div>
 
     <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
+    <div class="print:hidden pb-20 animate-fade-in relative px-2 max-md:px-3 space-y-4 max-md:space-y-5 pre-op-mobile">
         
         <!-- Sleek Professional Dashboard Header -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+        <div class="bg-white rounded-2xl max-md:rounded-xl p-6 max-md:p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
             <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
             
             <div class="flex items-center gap-5 relative z-10">
-                <div class="h-14 w-14 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md">
+                <button type="button"
+                        (click)="goQuickHome()"
+                        class="md:hidden pre-op-touch h-14 w-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-indigo-700 active:scale-95"
+                        aria-label="Torna al menu">
+                    <i class="fa-solid fa-house-chimney text-2xl"></i>
+                </button>
+                <div class="hidden md:flex h-14 w-14 bg-slate-900 text-white rounded-xl items-center justify-center shadow-md">
                     <i class="fa-solid fa-eye text-2xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Fase Pre-Operativa</h2>
-                    <div class="flex items-center gap-3 mt-1">
-                        <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-widest leading-none">
-                            <i class="fa-solid fa-circle text-[8px]" [class.text-emerald-500]="isSubmitted()" [class.text-amber-500]="!isSubmitted()"></i>
-                            {{ isSubmitted() ? 'Registrato' : 'In Compilazione' }}
-                        </span>
-                        <span class="text-xs font-medium text-slate-400">|</span>
+                    <h2 class="text-2xl max-md:text-xl font-bold text-slate-800 tracking-tight">Fase Pre-Operativa</h2>
+                    <div class="flex items-center gap-3 mt-1 max-md:mt-0.5 flex-wrap">
+                        @if (isSubmitted()) {
+                            <span class="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[10px] font-bold uppercase tracking-widest leading-none border border-emerald-100">
+                                <i class="fa-solid fa-circle text-[8px] text-emerald-500"></i>
+                                Registrato
+                            </span>
+                            <span class="text-xs font-medium text-slate-400 max-md:hidden">|</span>
+                        }
                         <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-check text-[10px]"></i> {{ state.currentUser()?.name || 'Operatore' }}
                         </span>
@@ -114,7 +122,7 @@ interface AreaChecklist {
             <div class="w-full md:w-auto relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <button (click)="setAllOk()" 
                         [disabled]="isSubmitted() || !state.isContextEditable()"
-                        class="px-5 py-3 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-100 transition-colors border border-emerald-100 flex items-center justify-center gap-2 disabled:opacity-30 shadow-sm active:scale-95 shrink-0"
+                        class="hidden md:flex px-5 py-3 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-100 transition-colors border border-emerald-100 items-center justify-center gap-2 disabled:opacity-30 shadow-sm active:scale-95 shrink-0"
                         title="Imposta tutto come Conforme">
                    <i class="fa-solid fa-check-double text-base"></i><span>IMPOSTA TUTTI OK</span>
                 </button>
@@ -132,11 +140,23 @@ interface AreaChecklist {
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <!-- MOBILE: azione immediata — tutti conformi (quadrato, grande) -->
+        <div class="md:hidden">
+            <button type="button"
+                    (click)="setAllOk()"
+                    [disabled]="isSubmitted() || !state.isContextEditable()"
+                    class="pre-op-touch w-full aspect-[2.2/1] max-h-[5.5rem] rounded-xl border-[3px] border-emerald-700 bg-emerald-600 text-white flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-900/20 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none">
+                <i class="fa-solid fa-check-double text-4xl leading-none"></i>
+                <span class="text-lg font-black uppercase tracking-wide leading-tight">Tutti conformi</span>
+            </button>
+            <p class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Un tocco · tutte le aree</p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 max-md:gap-5">
             <!-- Left Col: Protocol & Global Items -->
-            <div class="xl:col-span-1 space-y-6">
-                <!-- Protocol Box - Refined -->
-                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
+            <div class="xl:col-span-1 space-y-6 max-md:order-2 max-md:space-y-4">
+                <!-- Protocol Box — desktop -->
+                <div class="hidden md:block bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
                     <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-500/5 blur-2xl transition-colors group-hover:bg-blue-500/10"></div>
                     
                     <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center justify-between uppercase tracking-tight">
@@ -164,6 +184,35 @@ interface AreaChecklist {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Protocol Box — mobile: icona espandibile -->
+                <div class="md:hidden bg-white rounded-xl border-2 border-slate-200 shadow-sm overflow-hidden">
+                    <button type="button"
+                            (click)="toggleMobileProtocolExpanded()"
+                            class="pre-op-touch w-full p-4 flex items-center gap-4 text-left active:bg-slate-50">
+                        <div class="h-14 w-14 shrink-0 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl shadow-md">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-black text-slate-800 uppercase tracking-tight">Info protocollo</p>
+                            <p class="text-xs font-medium text-slate-500 mt-0.5">Sanificazione e detergenza</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-lg transition-transform"
+                           [class.rotate-180]="mobileProtocolExpanded()"></i>
+                    </button>
+                    @if (mobileProtocolExpanded()) {
+                        <div class="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3 animate-fade-in">
+                            <div class="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                                <p class="text-[10px] font-black text-blue-800 uppercase tracking-widest mb-1"><i class="fa-solid fa-broom mr-1"></i> Sanificazione</p>
+                                <p class="text-sm text-slate-600 leading-snug">Pulizia meccanica/chimica e disinfezione delle aree.</p>
+                            </div>
+                            <div class="p-3 rounded-lg bg-indigo-50 border border-indigo-100">
+                                <p class="text-[10px] font-black text-indigo-800 uppercase tracking-widest mb-1"><i class="fa-solid fa-soap mr-1"></i> Detergenza</p>
+                                <p class="text-sm text-slate-600 leading-snug">Tensioattivi anionici e cationici in modo coordinato.</p>
+                            </div>
+                        </div>
+                    }
                 </div>
 
                     <!-- Global Checks List Style -->
@@ -196,16 +245,16 @@ interface AreaChecklist {
             </div>
 
             <!-- Right Col: Checklists Grid -->
-            <div class="xl:col-span-2 space-y-2">
-                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">Aree di Ispezione</h3>
-                <div class="grid grid-cols-1 gap-2">
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="divide-y divide-slate-100">
+            <div class="xl:col-span-2 space-y-2 max-md:order-1">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest px-2 max-md:text-xs max-md:mb-1">Aree di Ispezione</h3>
+                <div class="grid grid-cols-1 gap-2 max-md:gap-4">
+                    <div class="bg-transparent max-md:bg-transparent md:bg-white md:rounded-xl md:border md:border-slate-200 md:shadow-sm md:overflow-hidden">
+                        <div class="max-md:space-y-4 md:divide-y md:divide-slate-100">
                             @for (area of areas(); track area.id; let i = $index) {
-                                <div class="flex flex-col">
+                                <div class="flex flex-col max-md:rounded-2xl max-md:border-2 max-md:border-slate-200 max-md:bg-white max-md:shadow-md max-md:overflow-hidden">
                                     <!-- Area Header -->
                                     <div (click)="hasAreaIssues(area.id) ? openProcedureModal(area) : toggleArea(area.id)"
-                                         class="p-5 flex flex-col gap-4 transition-all cursor-pointer select-none border-b border-slate-100 group"
+                                         class="p-5 max-md:p-4 flex flex-col gap-4 transition-all cursor-pointer select-none md:border-b md:border-slate-100 group"
                                          [class.bg-slate-50]="area.expanded" 
                                          [class.bg-red-50/50]="hasAreaIssues(area.id)"
                                          [class.border-red-200]="hasAreaIssues(area.id)">
@@ -245,34 +294,24 @@ interface AreaChecklist {
                                             }
                                         </div>
 
-                                        <!-- Row 2: Large Touch-Friendly Buttons -->
-                                        <div class="flex items-center gap-3 w-full">
-                                            <!-- OK BUTTON -->
-                                            <button (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
+                                        <!-- Row 2: pulsanti area — quadrati su mobile -->
+                                        <div class="grid grid-cols-2 gap-3 w-full max-md:gap-4 md:flex md:items-center md:gap-3">
+                                            <button type="button"
+                                                    (click)="setAllStepsInArea(area.id, 'ok'); $event.stopPropagation()" 
                                                     [disabled]="isSubmitted() || !state.isContextEditable()"
-                                                    class="flex-1 h-16 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95 disabled:opacity-30"
-                                                    [class.border-emerald-500]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                    [class.bg-emerald-500]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                    [class.text-white]="isAreaComplete(area.id) && !hasAreaIssues(area.id)"
-                                                    [class.border-slate-200]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
-                                                    [class.bg-white]="!isAreaComplete(area.id) || hasAreaIssues(area.id)"
-                                                    [class.text-slate-400]="!isAreaComplete(area.id) || hasAreaIssues(area.id)">
-                                                <i class="fa-solid fa-circle-check text-2xl"></i>
-                                                <span class="text-xs font-black uppercase tracking-widest">CONFORME</span>
+                                                    class="pre-op-touch pre-op-btn-ok aspect-square max-md:aspect-square md:aspect-auto md:flex-1 md:h-16 rounded-xl md:rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 md:flex-row md:gap-3 shadow-sm active:scale-95 disabled:opacity-30 text-emerald-900"
+                                                    [class.pre-op-btn-ok-active]="isAreaComplete(area.id) && !hasAreaIssues(area.id)">
+                                                <i class="fa-solid fa-check text-3xl md:text-2xl leading-none text-emerald-600/90"></i>
+                                                <span class="text-sm max-md:text-base font-black uppercase tracking-wide md:text-xs md:tracking-widest">OK</span>
                                             </button>
 
-                                            <!-- NO BUTTON -->
-                                            <button (click)="setAreaIssue(area.id); $event.stopPropagation()" 
+                                            <button type="button"
+                                                    (click)="setAreaIssue(area.id); $event.stopPropagation()" 
                                                     [disabled]="isSubmitted() || !state.isContextEditable()"
-                                                    class="flex-1 h-16 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-md active:scale-95 disabled:opacity-30"
-                                                    [class.border-red-500]="hasAreaIssues(area.id)"
-                                                    [class.bg-red-500]="hasAreaIssues(area.id)"
-                                                    [class.text-white]="hasAreaIssues(area.id)"
-                                                    [class.border-slate-200]="!hasAreaIssues(area.id)"
-                                                    [class.bg-white]="!hasAreaIssues(area.id)"
-                                                    [class.text-slate-400]="!hasAreaIssues(area.id)">
-                                                <i class="fa-solid fa-circle-exclamation text-2xl"></i>
-                                                <span class="text-xs font-black uppercase tracking-widest">ANOMALIA</span>
+                                                    class="pre-op-touch pre-op-btn-no aspect-square max-md:aspect-square md:aspect-auto md:flex-1 md:h-16 rounded-xl md:rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 md:flex-row md:gap-3 shadow-sm active:scale-95 disabled:opacity-30 text-rose-900"
+                                                    [class.pre-op-btn-no-active]="hasAreaIssues(area.id)">
+                                                <i class="fa-solid fa-xmark text-3xl md:text-2xl leading-none text-rose-600/90"></i>
+                                                <span class="text-sm max-md:text-base font-black uppercase tracking-wide md:text-xs md:tracking-widest">No</span>
                                             </button>
                                         </div>
 
@@ -294,12 +333,60 @@ interface AreaChecklist {
 
                                     <!-- Area Steps (Expanded) -->
                                     @if (area.expanded) {
-                                        <div class="bg-slate-50 border-t border-slate-200/60 px-4 py-2 divide-y divide-slate-200/50 shadow-inner">
+                                        <div class="bg-slate-50 border-t border-slate-200/60 px-3 py-3 max-md:px-3 max-md:py-4 max-md:space-y-3 md:divide-y md:divide-slate-200/50 shadow-inner">
                                             @for (step of area.steps; track step.id; let j = $index) {
-                                                <div class="py-4 px-3 flex items-center justify-between gap-4 group/step cursor-pointer hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100"
+                                                <!-- Mobile: voce + 3 pulsanti quadrati -->
+                                                <div class="md:hidden p-3 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
+                                                    <div class="flex items-start gap-2 mb-3">
+                                                        <span class="text-xs font-black text-white w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">{{ j + 1 }}</span>
+                                                        <p class="text-base font-bold text-slate-800 leading-snug flex-1">{{ step.label }}</p>
+                                                    </div>
+                                                    <div class="grid grid-cols-3 gap-2">
+                                                        <button type="button"
+                                                                (click)="setStepStatus(area.id, step.id, 'pending'); $event.stopPropagation()"
+                                                                [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                                class="pre-op-touch aspect-square rounded-lg border-[3px] flex flex-col items-center justify-center gap-0.5 active:scale-95 disabled:opacity-40"
+                                                                [class.border-slate-400]="step.status === 'pending'"
+                                                                [class.bg-slate-100]="step.status === 'pending'"
+                                                                [class.border-slate-200]="step.status !== 'pending'"
+                                                                [class.bg-white]="step.status !== 'pending'">
+                                                            <span class="text-xl font-black text-slate-500">—</span>
+                                                            <span class="text-[9px] font-black uppercase text-slate-500">Attesa</span>
+                                                        </button>
+                                                        <button type="button"
+                                                                (click)="setStepStatus(area.id, step.id, 'ok'); $event.stopPropagation()"
+                                                                [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                                class="pre-op-touch aspect-square rounded-lg border-[3px] flex flex-col items-center justify-center gap-0.5 active:scale-95 disabled:opacity-40"
+                                                                [class.border-emerald-600]="step.status === 'ok'"
+                                                                [class.bg-emerald-600]="step.status === 'ok'"
+                                                                [class.text-white]="step.status === 'ok'"
+                                                                [class.border-slate-200]="step.status !== 'ok'"
+                                                                [class.bg-white]="step.status !== 'ok'"
+                                                                [class.text-emerald-700]="step.status !== 'ok'">
+                                                            <i class="fa-solid fa-check text-2xl"></i>
+                                                            <span class="text-[9px] font-black uppercase">OK</span>
+                                                        </button>
+                                                        <button type="button"
+                                                                (click)="setStepStatus(area.id, step.id, 'issue'); $event.stopPropagation()"
+                                                                [disabled]="isSubmitted() || !state.isContextEditable()"
+                                                                class="pre-op-touch aspect-square rounded-lg border-[3px] flex flex-col items-center justify-center gap-0.5 active:scale-95 disabled:opacity-40"
+                                                                [class.border-red-600]="step.status === 'issue'"
+                                                                [class.bg-red-600]="step.status === 'issue'"
+                                                                [class.text-white]="step.status === 'issue'"
+                                                                [class.border-slate-200]="step.status !== 'issue'"
+                                                                [class.bg-white]="step.status !== 'issue'"
+                                                                [class.text-red-700]="step.status !== 'issue'">
+                                                            <i class="fa-solid fa-xmark text-2xl"></i>
+                                                            <span class="text-[9px] font-black uppercase">No</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Desktop: riga compatta -->
+                                                <div class="hidden md:flex py-4 px-3 items-center justify-between gap-4 group/step cursor-pointer hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-100"
                                                      (click)="step.status === 'issue' ? openProcedureModal(area) : toggleStepStatus(area.id, step.id)">
                                                     <div class="flex items-center gap-3 flex-1">
-                                                        <span class="text-[11px] font-black text-slate-400 w-5 h-5 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 leading-none shadow-xs group-hover/step:border-indigo-200 group-hover/step:text-indigo-400 transition-colors">
+                                                        <span class="text-[11px] font-black text-slate-400 w-5 h-5 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 leading-none shadow-xs">
                                                             {{ j + 1 }}
                                                         </span>
                                                         <span class="text-lg font-bold text-slate-600 leading-tight"
@@ -308,8 +395,6 @@ interface AreaChecklist {
                                                             {{ step.label }}
                                                         </span>
                                                     </div>
-                                                    
-                                                    <!-- Simplified status for the new design -->
                                                     <div class="flex items-center gap-2">
                                                         <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white border border-slate-100 shadow-xs"
                                                               [class.text-emerald-600]="step.status === 'ok'"
@@ -317,11 +402,6 @@ interface AreaChecklist {
                                                               [class.text-slate-300]="step.status === 'pending'">
                                                             {{ step.status === 'ok' ? 'Conforme' : (step.status === 'issue' ? 'Anomalia' : 'In attesa') }}
                                                         </span>
-                                                        @if (step.status !== 'pending') {
-                                                            <i class="fa-solid" 
-                                                               [class.fa-circle-check]="step.status === 'ok'" [class.text-emerald-500]="step.status === 'ok'"
-                                                               [class.fa-circle-exclamation]="step.status === 'issue'" [class.text-red-500]="step.status === 'issue'"></i>
-                                                        }
                                                     </div>
                                                 </div>
                                             }
@@ -577,9 +657,10 @@ interface AreaChecklist {
 
         <!-- ANOMALY REPORTING MODAL -->
         @if (isAnomalyModalOpen()) {
-            <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeAnomalyModal()"></div>
-                <div class="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+            <div class="haccp-modal-overlay z-[120]">
+                <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeAnomalyModal()"></div>
+                <div class="haccp-modal-center">
+                <div class="haccp-modal-panel bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
                     
                     <!-- Header -->
                     <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between">
@@ -627,14 +708,16 @@ interface AreaChecklist {
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
         }
 
         <!-- PROCEDURE MODAL (Procedimento Correttivo) -->
         @if (isProcedureModalOpen()) {
-            <div class="fixed inset-0 z-[130] flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeProcedureModal()"></div>
-                <div class="relative bg-white w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
+            <div class="haccp-modal-overlay z-[130]">
+                <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeProcedureModal()"></div>
+                <div class="haccp-modal-center">
+                <div class="haccp-modal-panel haccp-modal-panel-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
                     
                     <!-- Header -->
                     <div class="p-8 bg-gradient-to-br from-red-600 to-rose-700 text-white flex-shrink-0">
@@ -709,6 +792,7 @@ interface AreaChecklist {
                         </button>
                     </div>
                 </div>
+                </div>
             </div>
         }
 
@@ -738,11 +822,40 @@ interface AreaChecklist {
     @keyframes bounceShort { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(-3px); } }
     .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-fade-in { animation: preOpFadeIn 0.25s ease-out; }
+    @keyframes preOpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .pre-op-btn-ok {
+      border-color: rgb(167 243 208 / 0.55);
+      background-color: rgb(236 253 245 / 0.45);
+    }
+    .pre-op-btn-ok-active {
+      border-color: rgb(110 231 183 / 0.75);
+      background-color: rgb(209 250 229 / 0.65);
+    }
+    .pre-op-btn-no {
+      border-color: rgb(254 202 202 / 0.55);
+      background-color: rgb(255 241 242 / 0.4);
+    }
+    .pre-op-btn-no-active {
+      border-color: rgb(252 165 165 / 0.75);
+      background-color: rgb(254 226 226 / 0.6);
+    }
+    @media (max-width: 767px) {
+      .pre-op-mobile .pre-op-touch {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 3rem;
+      }
+    }
     `]
 })
-export class PreOperationalChecklistComponent {
+export class PreOperationalChecklistComponent implements OnInit {
     state = inject(AppStateService);
     toast = inject(ToastService);
+
+    ngOnInit() {
+        this.state.scrollMainContentToTop();
+    }
 
     isSubmitted = signal(false);
     currentRecordId = signal<string | null>(null);
@@ -750,6 +863,15 @@ export class PreOperationalChecklistComponent {
     // Info modal state
     showCleaningInfo = signal(false);
     showPestInfo = signal(false);
+    mobileProtocolExpanded = signal(false);
+
+    toggleMobileProtocolExpanded() {
+        this.mobileProtocolExpanded.update(v => !v);
+    }
+
+    goQuickHome() {
+        this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+    }
 
     // Document Management state
     isDocModalOpen = signal(false);
@@ -1064,6 +1186,7 @@ export class PreOperationalChecklistComponent {
             this.currentAnomalyType.set('step');
             this.anomalySubject = `Anomalia riscontrata in: ${step.label}`;
             this.isAnomalyModalOpen.set(true);
+            this.state.scrollMainContentToTop();
             return;
         }
 
@@ -1084,6 +1207,7 @@ export class PreOperationalChecklistComponent {
             this.currentAnomalyType.set('global');
             this.anomalySubject = `Anomalia riscontrata in: ${item.label}`;
             this.isAnomalyModalOpen.set(true);
+            this.state.scrollMainContentToTop();
             return;
         }
 
@@ -1103,6 +1227,7 @@ export class PreOperationalChecklistComponent {
             this.currentAnomalyType.set('step');
             this.anomalySubject = `Anomalia riscontrata in: ${area.label}`;
             this.isAnomalyModalOpen.set(true);
+            this.state.scrollMainContentToTop();
         }
     }
 
@@ -1251,6 +1376,7 @@ export class PreOperationalChecklistComponent {
     openProcedureModal(area: AreaChecklist) {
         this.selectedProcedureArea.set(area);
         this.isProcedureModalOpen.set(true);
+        this.state.scrollMainContentToTop();
     }
 
     closeProcedureModal() {

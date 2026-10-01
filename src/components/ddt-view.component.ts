@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, untracked, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, computed, effect, untracked, ViewChild, ElementRef, AfterViewChecked, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
@@ -50,37 +50,106 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="space-y-6 pb-16 animate-fade-in">
+    <div class="space-y-4 pb-16 animate-fade-in max-md:px-0.5">
 
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-amber-600 to-orange-600 p-6 rounded-2xl shadow-lg text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image:radial-gradient(circle at 2px 2px,white 1px,transparent 0);background-size:20px 20px;"></div>
-        <div class="relative z-10">
-          <h2 class="text-2xl font-black tracking-tight flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><i class="fa-solid fa-truck-ramp-box"></i></span>
-            Carico Merci / DDT
-          </h2>
-          <p class="text-amber-100 text-sm mt-1">Registra arrivi merce e crea la Dispensa Digitale con OCR AI</p>
-        </div>
-        <button (click)="showForm.set(true)"
-                class="relative z-10 px-6 py-3 bg-white text-amber-700 font-black text-sm uppercase tracking-wider rounded-xl hover:bg-amber-50 transition-all shadow-lg flex items-center gap-2 shrink-0">
-          <i class="fa-solid fa-plus"></i> Nuovo Carico
-        </button>
-      </div>
-
-      <!-- AI OCR Upload Card -->
-      @if (showForm()) {
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-            <h3 class="font-black text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-robot text-violet-600"></i> Inserimento Carico
-            </h3>
-            <button (click)="cancelForm()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all">
-              <i class="fa-solid fa-times"></i>
+      @if (!showForm()) {
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-5">
+          <div class="flex items-start gap-3">
+            <button type="button"
+                    (click)="goQuickHome()"
+                    class="ddt-touch md:hidden h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md border-2 border-indigo-700 active:scale-95"
+                    style="touch-action: manipulation"
+                    aria-label="Torna al menu">
+              <i class="fa-solid fa-house-chimney text-2xl"></i>
             </button>
+            <div class="flex-1 min-w-0 pt-0.5">
+              <h2 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                Carico Merci
+              </h2>
+              <p class="text-xs text-slate-500 font-medium mt-1">
+                Data operativa <span class="font-bold text-slate-700">{{ formatDisplayDate(state.filterDate()) }}</span>
+              </p>
+            </div>
           </div>
 
-          <div class="p-6 space-y-6">
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" (click)="startNewLoad()"
+                    class="ddt-touch aspect-square w-full rounded-2xl bg-amber-600 hover:bg-amber-700 text-white shadow-lg border-2 border-amber-700 active:scale-95 flex flex-col items-center justify-center gap-2 p-3"
+                    style="touch-action: manipulation">
+              <i class="fa-solid fa-plus text-4xl leading-none"></i>
+              <span class="text-[11px] font-black uppercase tracking-wide text-center leading-tight px-1">Nuovo carico</span>
+            </button>
+            <button type="button" (click)="toggleDocumentsSection()"
+                    class="ddt-touch aspect-square w-full rounded-2xl shadow-lg border-2 active:scale-95 flex flex-col items-center justify-center gap-2 p-3 transition-all"
+                    [class]="mainSectionTab() === 'documents'
+                      ? 'bg-violet-600 border-violet-700 text-white ring-2 ring-violet-300 ring-offset-2'
+                      : 'bg-violet-50 border-violet-300 text-violet-800 hover:bg-violet-100'"
+                    style="touch-action: manipulation">
+              <i class="fa-solid fa-file-invoice text-4xl leading-none"
+                 [class.text-white]="mainSectionTab() === 'documents'"
+                 [class.text-violet-600]="mainSectionTab() !== 'documents'"></i>
+              <span class="text-[11px] font-black uppercase tracking-wide text-center leading-tight px-1">Documenti</span>
+              <span class="text-xs font-bold opacity-90">({{ clientAcquiredDocs().length }})</span>
+            </button>
+          </div>
+          @if (mainSectionTab() === 'pantry') {
+            <p class="text-xs text-slate-500 font-medium text-center leading-snug px-2">
+              Nuovo carico: scatta o carica il DDT. Filtri ed elenco sotto.
+            </p>
+          } @else {
+            <button type="button" (click)="mainSectionTab.set('pantry')"
+                    class="ddt-touch w-full py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2">
+              <i class="fa-solid fa-boxes-stacked"></i>
+              Torna all'elenco prodotti
+            </button>
+          }
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50/90 p-3 space-y-3"
+               [class.hidden]="mainSectionTab() === 'documents'">
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" (click)="viewMode.set('daily')"
+                      class="ddt-touch py-2.5 px-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all border"
+                      [class]="viewMode() === 'daily' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200'">
+                Oggi
+                <span class="block text-[10px] font-bold opacity-80 normal-case tracking-normal">({{ dailyCount() }})</span>
+              </button>
+              <button type="button" (click)="viewMode.set('activePantry')"
+                      class="ddt-touch py-2.5 px-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all border"
+                      [class]="viewMode() === 'activePantry' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200'">
+                Attivi
+                <span class="block text-[10px] font-bold opacity-80 normal-case tracking-normal">({{ activeCount() }})</span>
+              </button>
+              <button type="button" (click)="viewMode.set('all')"
+                      class="ddt-touch py-2.5 px-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all border"
+                      [class]="viewMode() === 'all' ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200'">
+                Tutti
+                <span class="block text-[10px] font-bold opacity-80 normal-case tracking-normal">({{ totalCount() }})</span>
+              </button>
+            </div>
+            <div class="relative">
+              <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+                     placeholder="Cerca prodotto, fornitore, lotto…"
+                     class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-50">
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (showForm()) {
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-4 md:px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+            <button type="button" (click)="cancelForm()"
+                    class="ddt-touch shrink-0 h-14 w-14 rounded-xl border-2 border-slate-200 bg-white text-slate-700 active:scale-95 flex items-center justify-center shadow-sm hover:bg-slate-50"
+                    aria-label="Annulla">
+              <i class="fa-solid fa-arrow-left text-2xl"></i>
+            </button>
+            <h3 class="flex-1 min-w-0 font-black text-slate-800 text-base md:text-lg leading-tight">
+              Acquisizione documento carico
+            </h3>
+          </div>
+
+          <div class="p-4 md:p-6 space-y-6">
 
             <!-- DDT Photo Upload + OCR -->
             <div class="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-100 p-5">
@@ -151,86 +220,225 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
                 </div>
               </div>
 
-              <!-- Supplier Register Checkbox (Step 2) -->
-              @if (form().supplierName && !linkedSupplier()) {
-                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div>
-                    <h4 class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
-                      <i class="fa-solid fa-circle-info text-indigo-600"></i> Nuovo Fornitore Rilevato
-                    </h4>
-                    <p class="text-[11px] text-indigo-700/80 font-bold mt-0.5">
-                      "{{ form().supplierName }}" non esiste in anagrafica. Vuoi registrarlo all'importazione?
+              @if (form().supplierName?.trim()) {
+                @if (linkedSupplier()) {
+                  <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex items-start gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                    <p class="text-[11px] text-emerald-900 font-bold leading-snug">
+                      Fornitore già in anagrafica: <span class="font-black">{{ linkedSupplier()!.ragioneSociale }}</span>
+                      — collegamento automatico all'importazione.
                     </p>
                   </div>
-                  <div class="flex gap-2">
-                    <button type="button" (click)="registerNewSupplier.set(false)" 
-                            class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border"
-                            [class]="!registerNewSupplier() ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
-                      No, solo DDT
-                    </button>
-                    <button type="button" (click)="registerNewSupplier.set(true)" 
-                            class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border"
-                            [class]="registerNewSupplier() ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
-                      Sì, Registra
-                    </button>
+                } @else {
+                  <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-start gap-2">
+                    <i class="fa-solid fa-user-plus text-slate-500 mt-0.5"></i>
+                    <p class="text-[11px] text-slate-700 font-bold leading-snug">
+                      «{{ form().supplierName }}» verrà registrato in anagrafica automaticamente con l'importazione.
+                    </p>
                   </div>
-                </div>
+                }
               }
 
               <!-- Products List -->
-              <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Prodotti nel Carico (Anteprima)</h4>
-                  <button (click)="addEmptyItem()" class="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-all">
-                    + Aggiungi Riga
-                  </button>
-                </div>
+              <div class="space-y-4">
+                <h4 class="text-xs font-black uppercase tracking-widest text-amber-800 flex items-center gap-2">
+                  <i class="fa-solid fa-boxes-stacked text-amber-600"></i>
+                  Prodotti acquisiti
+                </h4>
+                @if (formItemsMissingLottoCount() > 0) {
+                  <div class="p-3 rounded-xl bg-rose-50 border-2 border-rose-200 flex items-start gap-3">
+                    <i class="fa-solid fa-barcode text-rose-600 mt-0.5"></i>
+                    <p class="text-xs font-bold text-rose-800 leading-snug">
+                      <span class="font-black">{{ formItemsMissingLottoCount() }}</span>
+                      {{ formItemsMissingLottoCount() === 1 ? 'prodotto senza lotto' : 'prodotti senza lotto' }} —
+                      completa il <span class="uppercase">numero lotto</span> (campi evidenziati in rosso) prima dell'importazione.
+                    </p>
+                  </div>
+                }
+                @if (formDuplicatePantryCount() > 0) {
+                  <div class="p-3 rounded-xl bg-red-100 border-2 border-red-400 flex items-start gap-3">
+                    <i class="fa-solid fa-clone text-red-700 mt-0.5"></i>
+                    <p class="text-xs font-bold text-red-900 leading-snug">
+                      <span class="font-black">{{ formDuplicatePantryCount() }}</span>
+                      {{ formDuplicatePantryCount() === 1 ? 'prodotto risulta già presente' : 'prodotti risultano già presenti' }}
+                      in dispensa (nome, lotto e scadenza uguali). Le schede sono evidenziate in rosso.
+                    </p>
+                  </div>
+                }
                 
                 @for (item of form().items; track $index) {
-                  <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white border border-slate-200 p-3 rounded-xl relative group">
+                  @let pantryDup = findPantryDuplicateForFormItem(item);
+                  <div class="rounded-2xl border-2 p-4 shadow-md ring-1 space-y-3 transition-all"
+                       [class]="pantryDup
+                         ? 'border-red-500 bg-gradient-to-br from-red-100 via-red-50 to-white ring-red-200/90'
+                         : 'border-amber-300 bg-gradient-to-br from-amber-50/90 via-white to-white ring-amber-100/80'"
+                       [class.ring-2]="isItemSelected($index) && !pantryDup"
+                       [class.ring-violet-400]="isItemSelected($index) && !pantryDup"
+                       [class.border-violet-300]="isItemSelected($index) && !pantryDup"
+                       [class.ring-red-400]="!!pantryDup">
+                    @if (pantryDup) {
+                      <div class="flex items-start gap-2 rounded-xl bg-red-600 text-white px-3 py-2.5 shadow-sm">
+                        <i class="fa-solid fa-circle-exclamation mt-0.5 shrink-0"></i>
+                        <p class="text-[11px] font-bold leading-snug">
+                          <span class="font-black uppercase tracking-wide">Già presente in dispensa</span>
+                          — acquisito il <span class="font-black underline decoration-white/50">{{ formatPantryAcquisitionDate(pantryDup) }}</span>
+                          (stesso nome, lotto e scadenza).
+                        </p>
+                      </div>
+                    }
+                    <div class="flex items-center justify-between gap-3 pb-2 border-b"
+                         [class.border-red-200]="pantryDup"
+                         [class.border-amber-200/80]="!pantryDup">
+                      <span class="text-[11px] font-black uppercase tracking-widest flex items-center gap-2"
+                            [class.text-red-900]="pantryDup"
+                            [class.text-amber-900]="!pantryDup">
+                        <span class="h-7 w-7 rounded-lg text-white flex items-center justify-center text-xs"
+                              [class.bg-red-600]="pantryDup"
+                              [class.bg-amber-600]="!pantryDup">{{ $index + 1 }}</span>
+                        Prodotto
+                      </span>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <label class="ddt-touch h-11 w-11 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                               [class.border-violet-500]="isItemSelected($index)"
+                               [class.bg-violet-50]="isItemSelected($index)"
+                               [class.border-slate-200]="!isItemSelected($index)"
+                               [class.bg-white]="!isItemSelected($index)"
+                               title="Seleziona per import/eliminazione">
+                          <input type="checkbox" class="sr-only"
+                                 [checked]="isItemSelected($index)"
+                                 (change)="toggleItemSelection($index)">
+                          <i class="fa-solid fa-check text-lg text-violet-600 transition-opacity"
+                             [class.opacity-100]="isItemSelected($index)"
+                             [class.opacity-20]="!isItemSelected($index)"></i>
+                        </label>
+                        <button type="button" (click)="requestRemoveFormItem($index)"
+                                class="ddt-touch h-11 w-11 shrink-0 rounded-xl bg-rose-50 border-2 border-rose-400 text-rose-600 flex items-center justify-center active:scale-95 shadow-sm hover:bg-rose-100"
+                                title="Elimina prodotto">
+                          <i class="fa-solid fa-trash-can text-lg"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                     <div class="md:col-span-4 space-y-1">
-                      <label class="text-[9px] font-bold uppercase text-slate-400">Prodotto</label>
+                      <label class="text-[9px] font-black uppercase text-slate-500">Nome</label>
                       <input type="text" [(ngModel)]="item.ingredientName" (ngModelChange)="bumpFormRevision()"
-                         placeholder="es. Patate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
+                         placeholder="es. Patate" class="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl text-base font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none">
                     </div>
                     <div class="md:col-span-3 space-y-1">
-                      <label class="text-[9px] font-bold uppercase text-slate-400">Lotto</label>
+                      <div class="flex items-center justify-between gap-2">
+                        <label class="text-[9px] font-black uppercase text-slate-500">Lotto</label>
+                        @if (!item.lotto?.trim() && item.ingredientName?.trim()) {
+                          <span class="text-[8px] font-black text-rose-700 bg-rose-50 border border-rose-300 px-1.5 py-0.5 rounded uppercase animate-pulse">
+                            Da completare
+                          </span>
+                        }
+                      </div>
                       <input type="text" [(ngModel)]="item.lotto" (ngModelChange)="bumpFormRevision()"
-                         placeholder="Lotto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-mono font-bold focus:border-amber-400 outline-none">
+                         placeholder="Numero lotto"
+                         class="w-full px-3 py-3 bg-white border-2 rounded-xl text-base font-mono font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none"
+                         [class.border-rose-400]="!item.lotto?.trim() && item.ingredientName?.trim()"
+                         [class.bg-rose-50/40]="!item.lotto?.trim() && item.ingredientName?.trim()"
+                         [class.border-slate-200]="item.lotto?.trim() || !item.ingredientName?.trim()">
                     </div>
                     <div class="md:col-span-2 space-y-1">
-                      <label class="text-[9px] font-bold uppercase text-slate-400">Quantità</label>
+                      <label class="text-[9px] font-black uppercase text-slate-500">Quantità</label>
                       <input type="text" [(ngModel)]="item.quantity" (ngModelChange)="bumpFormRevision()"
-                         placeholder="es. 10 kg" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base font-bold focus:border-amber-400 outline-none">
+                         placeholder="es. 10 kg" class="w-full px-3 py-3 bg-white border-2 border-slate-200 rounded-xl text-base font-bold focus:border-amber-500 outline-none">
                     </div>
                     <div class="md:col-span-3 space-y-1">
                       <div class="flex items-center justify-between">
-                        <label class="text-[9px] font-bold uppercase text-slate-400">Scadenza</label>
+                        <label class="text-[9px] font-black uppercase text-slate-500">Scadenza</label>
                         @if (!item.expiryDate) {
-                          <span class="text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded uppercase">
-                            Manca (A mano)
+                          <span class="text-[8px] font-black text-amber-700 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded uppercase">
+                            Da completare
                           </span>
                         }
                       </div>
                       <input type="date" [(ngModel)]="item.expiryDate" (ngModelChange)="bumpFormRevision()" 
-                             class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-base font-bold focus:border-amber-400 outline-none text-slate-800"
-                             [class]="!item.expiryDate ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 text-slate-700'">
+                             class="w-full px-3 py-3 bg-white border-2 rounded-xl text-base font-bold focus:border-amber-500 outline-none text-slate-800"
+                             [class]="!item.expiryDate ? 'border-amber-400 bg-amber-50/50' : 'border-slate-200'">
                     </div>
-                    
-                    <button (click)="removeItem($index)" class="absolute -right-2 -top-2 w-6 h-6 bg-white border border-slate-200 rounded-full text-rose-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-rose-50 hover:border-rose-200">
-                      <i class="fa-solid fa-times text-[10px]"></i>
-                    </button>
+                    </div>
                   </div>
                 }
+
+                <button type="button" (click)="addEmptyItem()"
+                        class="ddt-touch w-full rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50/80 hover:bg-amber-100/90 active:scale-[0.99] transition-all p-5 min-h-[5rem] flex flex-col items-center justify-center gap-2 text-center shadow-sm">
+                  <span class="h-12 w-12 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-plus text-2xl"></i>
+                  </span>
+                  <span class="text-sm font-black uppercase tracking-wide text-amber-900">Aggiungi prodotto manuale</span>
+                  <span class="text-xs font-medium text-amber-800/80">Aggiungi altri prodotti al carico</span>
+                </button>
               </div>
             </div>
 
-            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
-              <button (click)="cancelForm()" class="px-5 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-100 transition-all">Annulla</button>
-              <button (click)="saveMultipleEntries()" [disabled]="!canImportForm()"
-                      class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-circle-check"></i> Importa Tutto ({{ validItemCount() }})
+            <div class="pt-4 border-t-2 border-slate-100 space-y-3 pb-2">
+              <p class="text-[10px] font-bold text-slate-500 text-center leading-snug px-2">
+                @if (selectedFormItemIndices().size === 0) {
+                  Nessuna spunta: <span class="text-slate-700">Importa</span> ed <span class="text-slate-700">Elimina</span> agiscono su tutti i prodotti del carico.
+                } @else {
+                  <span class="text-violet-700 font-black">{{ selectedFormItemIndices().size }} selezionati</span> su {{ form().items.length }} — import ed elimina solo quelli spuntati.
+                }
+              </p>
+              <div class="grid grid-cols-2 gap-3 max-md:gap-4 md:flex md:justify-end md:gap-3">
+                <button type="button" (click)="requestBulkDeleteFormItems()" [disabled]="deleteActionCount() === 0"
+                        class="ddt-touch ddt-form-action aspect-square max-md:aspect-square md:aspect-auto md:min-h-0 md:h-12 md:px-6 rounded-2xl border-2 border-rose-400 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-40 font-black uppercase tracking-wide text-sm flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 active:scale-95 shadow-sm">
+                  <i class="fa-solid fa-trash-can text-2xl md:text-base leading-none"></i>
+                  <span class="text-xs md:text-sm leading-tight text-center">Elimina ({{ deleteActionCount() }})</span>
+                </button>
+                <button type="button" (click)="saveMultipleEntries()" [disabled]="!canImportForm()"
+                        class="ddt-touch ddt-form-action aspect-square max-md:aspect-square md:aspect-auto md:min-h-0 md:h-12 md:px-6 rounded-2xl border-2 border-amber-700 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-black uppercase tracking-wide text-sm flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 active:scale-95 shadow-md">
+                  <i class="fa-solid fa-circle-check text-2xl md:text-base leading-none"></i>
+                  <span class="text-xs md:text-sm leading-tight text-center">Importa ({{ importActionCount() }})</span>
+                </button>
+              </div>
+              <button type="button" (click)="cancelForm()"
+                      class="ddt-touch w-full rounded-2xl border-2 border-slate-300 bg-white text-slate-700 font-black uppercase tracking-wide text-sm py-4 min-h-[3.25rem] flex items-center justify-center gap-2 active:scale-[0.99] shadow-sm hover:bg-slate-50">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+                Annulla acquisizione
               </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (formDeleteConfirm()) {
+        <div class="haccp-modal-overlay z-[140]">
+          <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-sm" (click)="closeFormDeleteConfirm()"></div>
+          <div class="haccp-modal-center">
+            <div class="haccp-modal-panel bg-white rounded-3xl shadow-2xl overflow-hidden border border-rose-100">
+              <div class="px-6 py-5 bg-gradient-to-r from-rose-600 to-red-600 text-white">
+                <div class="flex items-center gap-3">
+                  <div class="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center">
+                    <i class="fa-solid fa-trash-can text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-black leading-tight">Conferma eliminazione</h3>
+                    <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest mt-0.5">Anteprima carico</p>
+                  </div>
+                </div>
+              </div>
+              <div class="p-6 space-y-4">
+                <p class="text-sm font-bold text-slate-700 leading-relaxed">
+                  @if (formDeleteConfirm()!.indices.length === 1) {
+                    Rimuovere questo prodotto dall'anteprima del carico?
+                  } @else {
+                    Rimuovere <strong>{{ formDeleteConfirm()!.indices.length }}</strong> prodotti dall'anteprima del carico?
+                  }
+                </p>
+                <p class="text-[11px] text-slate-500 font-medium">L'operazione non importa in dispensa: elimina solo le righe dal modulo corrente.</p>
+                <div class="flex flex-col gap-2 pt-1">
+                  <button type="button" (click)="executeFormItemDelete()"
+                          class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md">
+                    Sì, elimina
+                  </button>
+                  <button type="button" (click)="closeFormDeleteConfirm()"
+                          class="w-full py-3.5 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200">
+                    No, torna indietro
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -238,8 +446,8 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
       
       <!-- Removed old blocking new supplier confirmation modal -->
       
-      @if (aiRawResponse()) {
-        <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-6 animate-fade-in mx-6">
+      @if (showForm() && aiRawResponse()) {
+        <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-2 animate-fade-in">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="h-8 w-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
@@ -258,23 +466,7 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
         </div>
       }
 
-      <!-- Sezione principale: Dispensa | Documenti acquisiti -->
-      <div class="flex flex-wrap items-center gap-2 p-1.5 bg-slate-200/70 rounded-2xl border border-slate-200 shadow-inner w-full sm:w-auto">
-        <button type="button" (click)="mainSectionTab.set('pantry')"
-                class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
-                [class]="mainSectionTab() === 'pantry' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'">
-          <i class="fa-solid fa-boxes-stacked text-[11px]"></i>
-          <span>Dispensa prodotti</span>
-        </button>
-        <button type="button" (click)="mainSectionTab.set('documents')"
-                class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
-                [class]="mainSectionTab() === 'documents' ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
-          <i class="fa-solid fa-file-invoice text-[11px]"></i>
-          <span>Documenti acquisiti ({{ clientAcquiredDocs().length }})</span>
-        </button>
-      </div>
-
-      @if (mainSectionTab() === 'documents') {
+      @if (!showForm() && mainSectionTab() === 'documents') {
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-indigo-50/80">
             <h3 class="font-black text-slate-800 flex items-center gap-2">
@@ -400,54 +592,14 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
         </div>
       }
 
-      @if (mainSectionTab() === 'pantry') {
-      <!-- Pantry List -->
+      @if (!showForm() && mainSectionTab() === 'pantry') {
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-4">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-amber-600">
-                <i class="fa-solid" [class]="viewMode() === 'daily' ? 'fa-calendar-day' : (viewMode() === 'activePantry' ? 'fa-circle-check' : 'fa-boxes-stacked')"></i>
-              </div>
-              <div>
-                <h3 class="font-bold text-slate-800">
-                  {{ viewMode() === 'daily' ? 'Carichi del Giorno (' + formatDisplayDate(state.filterDate()) + ')' : (viewMode() === 'activePantry' ? 'Dispensa Attiva (Prodotti Validi)' : 'Tutti i Prodotti in Dispensa') }}
-                </h3>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  {{ filteredPantry().length }} prodotti visualizzati
-                </p>
-              </div>
-            </div>
-            
-            <!-- View Tabs -->
-            <div class="flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-2xl border border-slate-200 shadow-inner shrink-0">
-              <button type="button" (click)="viewMode.set('all')" 
-                      class="px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-2"
-                      [class]="viewMode() === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'">
-                <i class="fa-solid fa-boxes-stacked text-[11px]"></i>
-                <span>Tutti ({{ totalCount() }})</span>
-              </button>
-              <button type="button" (click)="viewMode.set('daily')" 
-                      class="px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-2"
-                      [class]="viewMode() === 'daily' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
-                <i class="fa-solid fa-calendar-day text-[11px]"></i>
-                <span>Carichi Giorno ({{ dailyCount() }})</span>
-              </button>
-              <button type="button" (click)="viewMode.set('activePantry')" 
-                      class="px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-2"
-                      [class]="viewMode() === 'activePantry' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
-                <i class="fa-solid fa-circle-check text-[11px]"></i>
-                <span>Solo Attivi ({{ activeCount() }})</span>
-              </button>
-            </div>
-          </div>
-          
-          <!-- Row 2: Search (Full width on mobile) -->
-          <div class="relative w-full">
-            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Cerca per prodotto o fornitore..."
-                   class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-base font-bold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-50 transition-all shadow-sm">
-          </div>
+        <div class="px-4 md:px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+          <p class="text-[11px] font-black uppercase tracking-widest text-slate-500">
+            {{ filteredPantry().length }} prodotti
+            @if (viewMode() === 'daily') { · carichi di oggi }
+            @if (viewMode() === 'activePantry') { · solo validi }
+          </p>
 
           <!-- Stale Products Alert Banner (>10 days no expiry) -->
           @if (staleCount() > 0) {
@@ -522,7 +674,36 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
                       </div>
                     </td>
                     <td class="px-4 py-3 text-sm font-bold text-slate-600">{{ item.supplierName }}</td>
-                    <td class="px-4 py-3 font-mono text-xs text-slate-500 font-bold">{{ item.lotto || '—' }}</td>
+                    <td class="px-4 py-3">
+                      @if (editingLottoId() === item.id) {
+                        <div class="flex items-center gap-1 animate-fade-in min-w-[10rem]">
+                          <input type="text" #tableLottoInput [value]="item.lotto || ''"
+                                 placeholder="N. lotto"
+                                 class="flex-1 text-xs font-mono font-bold px-2 py-1.5 bg-white border-2 border-indigo-400 rounded-lg text-slate-800 outline-none shadow-sm">
+                          <button type="button" (click)="saveItemLotto(item.id, tableLottoInput.value)"
+                                  class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm shrink-0">
+                            Salva
+                          </button>
+                          <button type="button" (click)="editingLottoId.set(null)"
+                                  class="text-slate-400 hover:text-slate-600 px-1 text-xs font-bold">
+                            <i class="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                      } @else {
+                        <div class="flex flex-col items-start gap-1">
+                          @if (item.lotto?.trim()) {
+                            <span class="font-mono text-xs text-slate-600 font-bold">{{ item.lotto }}</span>
+                          } @else {
+                            <span class="text-[9px] font-black text-rose-600 uppercase bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">Lotto mancante</span>
+                            <button type="button" (click)="startEditLotto(item.id)"
+                                    class="group inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[10px] font-bold transition-all">
+                              <i class="fa-solid fa-pen text-[9px]"></i>
+                              + Inserisci lotto
+                            </button>
+                          }
+                        </div>
+                      }
+                    </td>
                     <td class="px-4 py-3 text-xs font-bold text-slate-500">{{ formatDisplayDate(item.entryDate) }}</td>
                     <td class="px-4 py-3">
                       @let abbForExpiry = findAbbattimentoRecord(item);
@@ -553,7 +734,7 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
                                 </button>
                               </div>
                             } @else {
-                              <button type="button" (click)="editingExpiryId.set(item.id)"
+                              <button type="button" (click)="editingExpiryId.set(item.id); editingLottoId.set(null)"
                                       class="group inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 hover:border-amber-300 rounded-lg text-xs font-bold shadow-sm transition-all"
                                       title="Inserisci data di scadenza a mano">
                                 <i class="fa-solid fa-calendar-plus text-amber-500 group-hover:scale-110 transition-transform"></i>
@@ -586,79 +767,142 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
           </div>
 
           <!-- Mobile Cards -->
-          <div class="md:hidden divide-y divide-slate-100">
+          <div class="md:hidden p-3 space-y-4 bg-slate-50/80">
             @for (item of filteredPantry(); track item.id) {
               @let expired = isExpired(item.expiryDate);
               @let abbItem = findAbbattimentoRecord(item);
-              <div class="p-4 space-y-3 bg-white">
-                <div class="flex justify-between items-start">
-                  <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-100"
+              <div class="rounded-2xl border-2 border-slate-200 bg-white p-4 space-y-4 shadow-sm">
+                <div class="flex justify-between items-start gap-3">
+                  <div class="flex items-start gap-3 min-w-0 flex-1">
+                    <div class="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-100 text-lg"
                          [class]="expired ? 'bg-red-50 text-red-500' : abbItem ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'">
                       <i [class]="'fa-solid ' + (abbItem ? 'fa-icicles' : 'fa-carrot')"></i>
                     </div>
-                    <div>
-                      <h4 class="text-sm font-black text-slate-800 leading-tight">{{ item.ingredientName }}</h4>
-                      <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">{{ item.supplierName }}</p>
+                    <div class="min-w-0">
+                      <h4 class="text-base font-black text-slate-900 leading-tight">{{ item.ingredientName }}</h4>
+                      <p class="text-xs font-bold text-indigo-600 mt-0.5 truncate">{{ item.supplierName }}</p>
+                      @if (item.quantity) {
+                        <p class="text-xs font-semibold text-slate-500 mt-1">Quantità: {{ item.quantity }}</p>
+                      }
                     </div>
                   </div>
-                  <div class="flex gap-1">
+                  <div class="flex gap-2 shrink-0">
                     @if (hasLinkedDocument(item)) {
                       <button type="button" (click)="navigateToDocumentFromProduct(item)"
-                              class="w-9 h-9 flex items-center justify-center text-violet-600 bg-violet-50 border border-violet-100 rounded-lg shadow-sm"
+                              class="ddt-touch h-12 w-12 flex items-center justify-center text-violet-600 bg-violet-50 border-2 border-violet-200 rounded-xl shadow-sm"
                               title="Documento carico">
-                        <i class="fa-solid fa-file-invoice text-sm"></i>
+                        <i class="fa-solid fa-file-invoice text-lg"></i>
                       </button>
                     }
-                    <button (click)="confirmDelete(item)" class="w-9 h-9 flex items-center justify-center text-rose-500 bg-rose-50 border border-rose-100 rounded-lg shadow-sm">
-                      <i class="fa-solid fa-trash-can text-sm"></i>
+                    <button type="button" (click)="confirmDelete(item)"
+                            class="ddt-touch h-12 w-12 flex items-center justify-center text-rose-600 bg-rose-50 border-2 border-rose-200 rounded-xl shadow-sm">
+                      <i class="fa-solid fa-trash-can text-lg"></i>
                     </button>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                  <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Lotto / Qta</p>
-                    <p class="text-[10px] font-bold text-slate-600 truncate">
-                      <span class="font-mono">{{ item.lotto || 'N/D' }}</span>
-                      @if (item.quantity) { <span class="mx-1 text-slate-300">•</span> {{ item.quantity }} }
+                <!-- Lotto — blocco touch -->
+                <div class="rounded-xl border-2 p-3 space-y-2"
+                     [class]="item.lotto?.trim() ? 'bg-slate-50 border-slate-200' : 'bg-rose-50 border-rose-300'">
+                  <p class="text-xs font-black uppercase tracking-wide"
+                     [class]="item.lotto?.trim() ? 'text-slate-600' : 'text-rose-700'">
+                    <i class="fa-solid fa-barcode mr-1"></i> Numero lotto
+                  </p>
+                  @if (editingLottoId() === item.id) {
+                    <input type="text" #mLottoInput [value]="item.lotto || ''"
+                           placeholder="Inserisci lotto"
+                           inputmode="text"
+                           class="ddt-touch w-full h-12 px-3 text-base font-mono font-bold bg-white border-2 border-indigo-400 rounded-xl text-slate-900 outline-none">
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                      <button type="button" (click)="saveItemLotto(item.id, mLottoInput.value)"
+                              class="ddt-touch h-12 rounded-xl bg-indigo-600 text-white font-black text-sm uppercase tracking-wide shadow-md active:scale-95">
+                        Salva lotto
+                      </button>
+                      <button type="button" (click)="editingLottoId.set(null)"
+                              class="ddt-touch h-12 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-black text-sm uppercase tracking-wide active:scale-95">
+                        Annulla
+                      </button>
+                    </div>
+                  } @else {
+                    <p class="text-lg font-mono font-black leading-tight break-all"
+                       [class]="item.lotto?.trim() ? 'text-slate-800' : 'text-rose-600'">
+                      {{ item.lotto?.trim() || 'Mancante — da completare' }}
                     </p>
-                  </div>
-                  <div class="p-2 rounded-lg border flex flex-col justify-center"
-                       [class]="expired ? 'bg-red-50 border-red-100' : item.expiryDate ? 'bg-slate-50 border-slate-100' : 'bg-amber-50/60 border-amber-200'">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Scadenza</p>
-                    @if (abbItem?.postExpiryDate || item.expiryDate) {
-                      <p class="text-[10px] font-black" 
-                         [class]="expired ? 'text-red-600' : daysToExpiry(item.expiryDate) <= 7 ? 'text-amber-600' : 'text-emerald-600'">
-                        {{ formatDisplayDate(abbItem?.postExpiryDate || item.expiryDate) }}
-                        @if (abbItem) { <i class="fa-solid fa-icicles text-[8px] ml-1"></i> }
-                      </p>
+                    @if (lottoNeedsManualEntry(item)) {
+                      <button type="button" (click)="startEditLotto(item.id)"
+                              class="ddt-touch w-full h-12 rounded-xl border-2 font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 active:scale-[0.99] shadow-sm bg-indigo-600 border-indigo-700 text-white">
+                        <i class="fa-solid fa-pen text-base"></i>
+                        Inserisci lotto
+                      </button>
+                    }
+                  }
+                </div>
+
+                <!-- Scadenza — blocco touch -->
+                <div class="rounded-xl border-2 p-3 space-y-2"
+                     [class]="expired ? 'bg-red-50 border-red-200' : (item.expiryDate || abbItem) ? 'bg-slate-50 border-slate-200' : 'bg-amber-50 border-amber-300'">
+                  <p class="text-xs font-black uppercase tracking-wide text-slate-600">
+                    <i class="fa-solid fa-calendar-day mr-1"></i> Scadenza
+                  </p>
+                  @if (abbItem?.postExpiryDate || item.expiryDate) {
+                    @if (editingExpiryId() === item.id && !abbItem) {
+                      <input type="date" #mExpInput [value]="item.expiryDate || ''"
+                             class="ddt-touch w-full h-12 px-3 text-base font-bold bg-white border-2 border-amber-400 rounded-xl text-slate-900 outline-none">
+                      <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button type="button" (click)="saveItemExpiry(item.id, mExpInput.value)"
+                                class="ddt-touch h-12 rounded-xl bg-amber-600 text-white font-black text-sm uppercase tracking-wide shadow-md active:scale-95">
+                          Salva data
+                        </button>
+                        <button type="button" (click)="editingExpiryId.set(null)"
+                                class="ddt-touch h-12 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-black text-sm uppercase tracking-wide active:scale-95">
+                          Annulla
+                        </button>
+                      </div>
                     } @else {
-                      @if (editingExpiryId() === item.id) {
-                        <div class="flex items-center gap-1 mt-1">
-                          <input type="date" #mExpInput
-                                 (change)="saveItemExpiry(item.id, mExpInput.value)"
-                                 class="text-[11px] font-bold px-1.5 py-0.5 bg-white border-2 border-amber-400 rounded-lg text-slate-800 outline-none w-full">
-                          <button type="button" (click)="saveItemExpiry(item.id, mExpInput.value)" class="text-[10px] bg-amber-600 text-white px-1.5 py-0.5 rounded font-bold">OK</button>
-                          <button type="button" (click)="editingExpiryId.set(null)" class="text-slate-400 text-xs px-1">✕</button>
-                        </div>
-                      } @else {
-                        <button type="button" (click)="editingExpiryId.set(item.id)"
-                                class="text-[10px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 mt-0.5">
-                          <i class="fa-solid fa-calendar-plus text-amber-500"></i>
-                          <span>+ Inserisci a mano</span>
+                      <p class="text-lg font-black"
+                         [class]="expired ? 'text-red-600' : daysToExpiry(item.expiryDate) <= 7 ? 'text-amber-700' : 'text-emerald-700'">
+                        {{ formatDisplayDate(abbItem?.postExpiryDate || item.expiryDate) }}
+                        @if (abbItem) { <i class="fa-solid fa-icicles text-sm ml-1"></i> }
+                      </p>
+                      @if (!abbItem) {
+                        <button type="button" (click)="startEditExpiry(item.id)"
+                                class="ddt-touch w-full h-12 rounded-xl bg-white border-2 border-amber-300 text-amber-800 font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 active:scale-[0.99]">
+                          <i class="fa-solid fa-pen-to-square text-base"></i>
+                          Modifica scadenza
                         </button>
                       }
                     }
-                  </div>
+                  } @else {
+                    @if (editingExpiryId() === item.id) {
+                      <input type="date" #mExpInputEmpty
+                             class="ddt-touch w-full h-12 px-3 text-base font-bold bg-white border-2 border-amber-400 rounded-xl text-slate-900 outline-none">
+                      <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button type="button" (click)="saveItemExpiry(item.id, mExpInputEmpty.value)"
+                                class="ddt-touch h-12 rounded-xl bg-amber-600 text-white font-black text-sm uppercase tracking-wide shadow-md active:scale-95">
+                          Salva data
+                        </button>
+                        <button type="button" (click)="editingExpiryId.set(null)"
+                                class="ddt-touch h-12 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-black text-sm uppercase tracking-wide active:scale-95">
+                          Annulla
+                        </button>
+                      </div>
+                    } @else {
+                      <p class="text-sm font-bold text-amber-800">Data scadenza non impostata</p>
+                      <button type="button" (click)="startEditExpiry(item.id)"
+                              class="ddt-touch w-full h-12 rounded-xl bg-amber-600 border-2 border-amber-700 text-white font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 shadow-md active:scale-[0.99]">
+                        <i class="fa-solid fa-calendar-plus text-lg"></i>
+                        Inserisci scadenza
+                      </button>
+                    }
+                  }
                 </div>
 
-                <div class="flex justify-between items-center pt-1">
-                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Caricato il {{ formatDisplayDate(item.entryDate) }}</span>
+                <div class="flex flex-wrap justify-between items-center gap-2 pt-1 border-t border-slate-100">
+                  <span class="text-xs font-bold text-slate-500">Caricato {{ formatDisplayDate(item.entryDate) }}</span>
                   @if (expired) {
-                    <span class="px-2 py-0.5 bg-rose-600 text-white rounded text-[8px] font-black uppercase tracking-widest animate-pulse">Prodotto Scaduto</span>
+                    <span class="px-2.5 py-1 bg-rose-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wide">Scaduto</span>
                   } @else if (abbItem) {
-                    <span class="px-2 py-0.5 bg-indigo-600 text-white rounded text-[8px] font-black uppercase tracking-widest">Post-Abbattimento</span>
+                    <span class="px-2.5 py-1 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wide">Abbattuto</span>
                   }
                 </div>
               </div>
@@ -702,16 +946,18 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
           </div>
           <div class="flex-1 min-h-0 overflow-auto overscroll-contain p-2 sm:p-6 touch-pan-x touch-pan-y"
                (click)="closeDocumentPreview()">
-            <div class="min-h-full min-w-full flex items-start justify-center" (click)="$event.stopPropagation()">
+            <div class="min-h-full min-w-full flex items-center justify-center p-1 sm:p-0" (click)="$event.stopPropagation()">
               @if (viewingDoc()!.isPdf) {
                 <iframe [src]="viewingDocUrl() || viewingDoc()!.imageUrl"
-                        class="w-full max-w-[1400px] h-[calc(100vh-5.5rem)] min-h-[80vh] rounded-lg border border-white/20 bg-white shadow-2xl"
+                        class="w-full max-w-[1400px] h-[calc(100dvh-5.5rem)] min-h-[70dvh] sm:min-h-[80vh] rounded-lg border border-white/20 bg-white shadow-2xl"
                         title="Anteprima PDF"></iframe>
               } @else {
                 <img [src]="viewingDocUrl() || viewingDoc()!.imageUrl"
                      [alt]="'DDT ' + viewingDoc()!.supplierName"
                      (load)="onPreviewImageLoad($event)"
-                     class="block w-auto h-auto max-w-none max-h-none rounded-lg shadow-2xl ring-1 ring-white/20 select-none"
+                     [class]="docPreviewOriginalSize()
+                       ? 'doc-preview-img block w-auto h-auto max-w-none max-h-none rounded-lg shadow-2xl ring-1 ring-white/20 select-none mx-auto'
+                       : 'doc-preview-img doc-preview-img--fit block w-auto h-auto max-w-full object-contain rounded-lg shadow-2xl ring-1 ring-white/20 select-none mx-auto'"
                      style="image-rendering: -webkit-optimize-contrast;">
               }
             </div>
@@ -840,26 +1086,27 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
                       </div>
 
                       <!-- Inserisci scadenza a mano per salvare/mantenere il prodotto -->
-                      <div class="mt-2.5 flex items-center gap-2" (click)="$event.stopPropagation()">
+                      <div class="mt-3 w-full" (click)="$event.stopPropagation()">
                         @if (editingExpiryId() === item.id) {
-                          <div class="flex flex-wrap items-center gap-1.5 animate-fade-in">
-                            <span class="text-[10px] font-bold text-slate-500">Imposta scadenza:</span>
+                          <div class="space-y-2 animate-fade-in max-md:space-y-3">
                             <input type="date" #staleInput
-                                   (change)="saveItemExpiry(item.id, staleInput.value)"
-                                   class="text-xs font-bold px-2 py-1 bg-white border-2 border-emerald-500 rounded-lg text-slate-800 outline-none shadow-sm">
-                            <button type="button" (click)="saveItemExpiry(item.id, staleInput.value)"
-                                    class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm">
-                              Salva e Mantieni
-                            </button>
-                            <button type="button" (click)="editingExpiryId.set(null)" class="text-slate-400 hover:text-slate-600 px-1 text-xs">
-                              Annulla
-                            </button>
+                                   class="ddt-touch w-full h-12 px-3 text-base font-bold bg-white border-2 border-emerald-500 rounded-xl text-slate-800 outline-none shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <button type="button" (click)="saveItemExpiry(item.id, staleInput.value)"
+                                      class="ddt-touch h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-black uppercase tracking-wide shadow-md">
+                                Salva e mantieni
+                              </button>
+                              <button type="button" (click)="editingExpiryId.set(null)"
+                                      class="ddt-touch h-12 bg-white border-2 border-slate-200 text-slate-600 rounded-xl text-sm font-black uppercase tracking-wide">
+                                Annulla
+                              </button>
+                            </div>
                           </div>
                         } @else {
-                          <button type="button" (click)="editingExpiryId.set(item.id)"
-                                  class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-xs">
-                            <i class="fa-solid fa-calendar-plus text-emerald-600"></i>
-                            <span>Inserisci scadenza a mano (per mantenerlo)</span>
+                          <button type="button" (click)="startEditExpiry(item.id)"
+                                  class="ddt-touch w-full h-12 font-black text-sm uppercase tracking-wide text-emerald-800 bg-emerald-50 border-2 border-emerald-300 rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-[0.99]">
+                            <i class="fa-solid fa-calendar-plus text-lg text-emerald-600"></i>
+                            Inserisci scadenza
                           </button>
                         }
                       </div>
@@ -912,11 +1159,48 @@ const ACQUIRED_DOC_RETENTION_DAYS = 90;
       inset: 0 !important;
       z-index: 99999 !important;
     }
+    .ddt-touch { touch-action: manipulation; }
+    .doc-preview-img--fit {
+      max-height: min(100%, calc(100dvh - 5.5rem));
+    }
+    @media (max-width: 767px) {
+      .doc-preview-img--fit {
+        max-height: calc(100dvh - 6.5rem);
+        max-width: 100%;
+      }
+      .ddt-form-action {
+        min-height: 5.25rem;
+      }
+    }
   `]
 })
-export class DdtViewComponent implements AfterViewChecked {
+export class DdtViewComponent implements OnInit, AfterViewChecked {
   state = inject(AppStateService);
   toast = inject(ToastService);
+
+  ngOnInit() {
+    this.state.scrollMainContentToTop();
+  }
+
+  goQuickHome() {
+    this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+  }
+
+  startNewLoad() {
+    this.mainSectionTab.set('pantry');
+    this.resetForm();
+    this.showForm.set(true);
+    this.state.scrollMainContentToTop();
+  }
+
+  toggleDocumentsSection() {
+    if (this.mainSectionTab() === 'documents') {
+      this.mainSectionTab.set('pantry');
+    } else {
+      this.mainSectionTab.set('documents');
+    }
+    this.state.scrollMainContentToTop();
+  }
 
   @ViewChild('docPreviewOverlay') docPreviewOverlay?: ElementRef<HTMLElement>;
 
@@ -933,14 +1217,15 @@ export class DdtViewComponent implements AfterViewChecked {
   viewingDocUrl = signal<string | null>(null);
   viewingDocDimensions = signal<{ w: number; h: number } | null>(null);
   private viewingDocObjectUrl: string | null = null;
-  docPreviewOriginalSize = signal(true);
+  /** false = adatta allo schermo (default); true = pixel originali */
+  docPreviewOriginalSize = signal(false);
   isAnalyzing = signal(false);
   ddtPreview = signal<string | null>(null);
   /** Copia ad alta fedeltà del file caricato (archivio documenti / download) */
   ddtOriginalArchive = signal<string | null>(null);
   isPdfPreview = signal(false);
   pantry = signal<IncomingIngredient[]>([]);
-  viewMode = signal<'all' | 'daily' | 'activePantry'>('all');
+  viewMode = signal<'all' | 'daily' | 'activePantry'>('daily');
   searchQuery = signal('');
   showNewSupplierModal = signal(false);
   aiRawResponse = signal<string | null>(null);
@@ -950,11 +1235,14 @@ export class DdtViewComponent implements AfterViewChecked {
   selectedStaleIds = signal<string[]>([]);
   staleModalDismissed = signal(false);
   editingExpiryId = signal<string | null>(null);
+  editingLottoId = signal<string | null>(null);
   formRevision = signal(0);
   linkedSupplier = signal<SupplierRecord | null>(null);
   importDraft = signal<NormalizedDdtParse | null>(null);
   rawAiPayload = signal<any | null>(null);
   registerNewSupplier = signal(true);
+  selectedFormItemIndices = signal<Set<number>>(new Set());
+  formDeleteConfirm = signal<{ indices: number[] } | null>(null);
 
   form = signal<{
     supplierId?: string;
@@ -973,18 +1261,33 @@ export class DdtViewComponent implements AfterViewChecked {
     this.formRevision();
     this.importDraft();
     this.rawAiPayload();
+    this.selectedFormItemIndices();
     return this.collectImportItems().length;
   });
 
+  importActionCount = computed(() => this.validItemCount());
+
+  deleteActionCount = computed(() => {
+    this.formRevision();
+    const sel = this.selectedFormItemIndices();
+    if (sel.size > 0) return sel.size;
+    return this.form().items.length;
+  });
+
+  formItemsMissingLottoCount = computed(() => {
+    this.formRevision();
+    return this.form().items.filter(i => i.ingredientName?.trim() && !i.lotto?.trim()).length;
+  });
+
   clientPantry = computed(() => {
-    const clientId = this.state.activeTargetClientId();
-    return this.pantry().filter(i => !clientId || !i.clientId || i.clientId === clientId);
+    const clientId = this.resolvePantryClientId();
+    return this.pantry().filter(i => !clientId || !i.clientId || String(i.clientId) === String(clientId));
   });
 
   clientAcquiredDocs = computed(() => {
-    const clientId = this.state.activeTargetClientId();
+    const clientId = this.resolvePantryClientId();
     return this.acquiredDocs()
-      .filter(d => !clientId || !d.clientId || d.clientId === clientId)
+      .filter(d => !clientId || !d.clientId || String(d.clientId) === String(clientId))
       .sort((a, b) => (b.acquiredAt || '').localeCompare(a.acquiredAt || ''));
   });
 
@@ -992,23 +1295,125 @@ export class DdtViewComponent implements AfterViewChecked {
     if (!selectedDate) return true;
     const targetIso = this.formatDateToISO(selectedDate) || selectedDate;
 
-    // 1. Direct match on entryDate
-    const entryIso = this.formatDateToISO(item.entryDate);
-    if (entryIso === targetIso || item.entryDate === targetIso) return true;
+    // 1. Giorno operativo scelto in app al momento del carico (multi-carico stesso giorno)
+    const operationalIso = this.formatDateToISO((item as any).operationalDate || '');
+    if (operationalIso && operationalIso === targetIso) return true;
 
-    // 2. Creation timestamp: if the item was acquired/imported on this day
+    // 2. Giorno reale di importazione (locale, non UTC)
     if (item.createdAt) {
-      const createdIso = item.createdAt.substring(0, 10);
-      if (createdIso === targetIso) return true;
+      const createdLocalIso = this.localDateIsoFromInstant(item.createdAt);
+      if (createdLocalIso === targetIso) return true;
     }
 
-    // 3. Document date if present
-    if ((item as any).documentDate) {
-      const docIso = this.formatDateToISO((item as any).documentDate);
-      if (docIso === targetIso) return true;
+    // 3. Fallback: data documento DDT (solo se mancano i campi sopra)
+    if (!(item as any).operationalDate && !item.createdAt) {
+      const entryIso = this.formatDateToISO(item.entryDate);
+      if (entryIso === targetIso || item.entryDate === targetIso) return true;
+      if ((item as any).documentDate) {
+        const docIso = this.formatDateToISO((item as any).documentDate);
+        if (docIso === targetIso) return true;
+      }
     }
 
     return false;
+  }
+
+  /** Data calendario locale (YYYY-MM-DD) da timestamp ISO — evita shift UTC su «Oggi». */
+  localDateIsoFromInstant(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  resolvePantryClientId(): string | null {
+    return (
+      this.state.globalRecordClientId() ||
+      this.state.tenantClientId() ||
+      this.state.activeTargetClientId() ||
+      this.state.currentUser()?.clientId ||
+      null
+    );
+  }
+
+  lottoNeedsManualEntry(item: IncomingIngredient): boolean {
+    return !(item.lotto || '').trim();
+  }
+
+  private normalizeFormProductName(name: string): string {
+    return (name || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  private normalizeFormProductLotto(lotto: string): string {
+    return (lotto || '').trim().toLowerCase();
+  }
+
+  private pantryDuplicateMatch(item: DdtFormItem): IncomingIngredient | null {
+    const name = this.normalizeFormProductName(item.ingredientName);
+    const lotto = this.normalizeFormProductLotto(item.lotto);
+    const expiry = this.ensureIsoDate(item.expiryDate);
+    if (!name || !lotto || !expiry) return null;
+
+    for (const p of this.clientPantry()) {
+      if (this.normalizeFormProductName(p.ingredientName) !== name) continue;
+      if (this.normalizeFormProductLotto(p.lotto || '') !== lotto) continue;
+      if (this.ensureIsoDate(p.expiryDate) !== expiry) continue;
+      return p;
+    }
+    return null;
+  }
+
+  findPantryDuplicateForFormItem(item: DdtFormItem): IncomingIngredient | null {
+    this.formRevision();
+    this.pantry();
+    return this.pantryDuplicateMatch(item);
+  }
+
+  formatPantryAcquisitionDate(existing: IncomingIngredient): string {
+    if (existing.createdAt) {
+      return this.formatDisplayDate(this.localDateIsoFromInstant(existing.createdAt));
+    }
+    const op = this.ensureIsoDate((existing as any).operationalDate || '');
+    if (op) return this.formatDisplayDate(op);
+    return this.formatDisplayDate(existing.entryDate);
+  }
+
+  formDuplicatePantryCount = computed(() => {
+    this.formRevision();
+    this.pantry();
+    return this.form().items.filter(i => this.pantryDuplicateMatch(i)).length;
+  });
+
+  private mergePantryById(...lists: IncomingIngredient[][]): IncomingIngredient[] {
+    const byId = new Map<string, IncomingIngredient>();
+    for (const list of lists) {
+      for (const item of list) {
+        if (!item?.id) continue;
+        const prev = byId.get(item.id);
+        if (!prev || (item.createdAt || '') >= (prev.createdAt || '')) {
+          byId.set(item.id, item);
+        }
+      }
+    }
+    return Array.from(byId.values());
+  }
+
+  private async readPantryBaseline(): Promise<IncomingIngredient[]> {
+    const fromServer = ((await this.state.getGlobalRecordData('ddt_pantry')) || []) as IncomingIngredient[];
+    const fromSync = (this.state.getGlobalRecord('ddt_pantry') as IncomingIngredient[] | null) || [];
+    return this.mergePantryById(fromServer, fromSync, this.pantry());
+  }
+
+  private filterPantryForClient(items: IncomingIngredient[]): IncomingIngredient[] {
+    const clientId = this.resolvePantryClientId();
+    return items.filter(i => !clientId || !i.clientId || String(i.clientId) === String(clientId));
   }
 
   dailyCount = computed(() => {
@@ -1101,6 +1506,8 @@ export class DdtViewComponent implements AfterViewChecked {
     });
     this.ddtPreview.set(null);
     this.ddtOriginalArchive.set(null);
+    this.selectedFormItemIndices.set(new Set());
+    this.formDeleteConfirm.set(null);
     this.formRevision.update(v => v + 1);
   }
 
@@ -1139,9 +1546,59 @@ export class DdtViewComponent implements AfterViewChecked {
     this.importDraft();
     this.rawAiPayload();
     this.linkedSupplier();
+    this.selectedFormItemIndices();
     const items = this.collectImportItems();
     const entryDate = this.getImportContext().entryDate;
     return items.length > 0 && !!entryDate;
+  }
+
+  isItemSelected(index: number): boolean {
+    return this.selectedFormItemIndices().has(index);
+  }
+
+  toggleItemSelection(index: number) {
+    this.selectedFormItemIndices.update(set => {
+      const next = new Set(set);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
+  requestRemoveFormItem(index: number) {
+    this.formDeleteConfirm.set({ indices: [index] });
+  }
+
+  requestBulkDeleteFormItems() {
+    const sel = this.selectedFormItemIndices();
+    const indices = sel.size > 0 ? [...sel] : this.form().items.map((_, i) => i);
+    if (indices.length === 0) return;
+    this.formDeleteConfirm.set({ indices });
+  }
+
+  closeFormDeleteConfirm() {
+    this.formDeleteConfirm.set(null);
+  }
+
+  executeFormItemDelete() {
+    const confirm = this.formDeleteConfirm();
+    if (!confirm?.indices.length) return;
+    this.removeItemsAtIndices(confirm.indices);
+    this.formDeleteConfirm.set(null);
+    this.toast.info('Righe rimosse', 'I prodotti sono stati eliminati dall\'anteprima del carico.');
+  }
+
+  private removeItemsAtIndices(indices: number[]) {
+    const toRemove = new Set(indices);
+    this.form.update(current => {
+      let items = current.items.filter((_, i) => !toRemove.has(i));
+      if (items.length === 0) {
+        items = [{ ingredientName: '', lotto: '', quantity: '', expiryDate: '' }];
+      }
+      return { ...current, items };
+    });
+    this.selectedFormItemIndices.set(new Set());
+    this.bumpFormRevision();
   }
 
   bumpFormRevision() {
@@ -1245,6 +1702,12 @@ Rispondi in JSON con formato:
   }
 
   private collectImportItems(): DdtFormItem[] {
+    const selection = this.selectedFormItemIndices();
+    if (selection.size > 0) {
+      const rows = [...selection].sort((a, b) => a - b).map(i => this.form().items[i]).filter(Boolean);
+      return this.normalizeItemRows(rows);
+    }
+
     const fromForm = this.normalizeItemRows(this.form().items);
     if (fromForm.length > 0) return fromForm;
 
@@ -1355,11 +1818,12 @@ Rispondi in JSON con formato:
     entryDate: string,
     validItems: DdtFormItem[]
   ) {
-    let currentPantry = this.pantry();
-    if (!currentPantry || currentPantry.length === 0) {
-      const saved = await this.state.getGlobalRecordData('ddt_pantry');
-      currentPantry = (saved && Array.isArray(saved)) ? saved : [];
-    }
+    const operationalDate =
+      this.ensureIsoDate(this.state.filterDate()) ||
+      this.ensureIsoDate(entryDate) ||
+      this.localDateIsoFromInstant(new Date().toISOString());
+
+    const currentPantry = await this.readPantryBaseline();
 
     const newEntries: IncomingIngredient[] = [];
     const loadGroupId = `load_${Date.now()}`;
@@ -1395,7 +1859,8 @@ Rispondi in JSON con formato:
         createdAt: new Date().toISOString(),
         loadGroupId
       };
-      (entry as any).documentDate = this.importDraft()?.entryDate || entryDate;
+      (entry as any).operationalDate = operationalDate;
+      (entry as any).documentDate = this.ensureIsoDate(entryDate) || this.importDraft()?.entryDate || entryDate;
       (entry as any).supplierPiva = this.form().supplierPiva || this.importDraft()?.supplierPiva || '';
       productIds.push(entry.id);
       newEntries.push(entry);
@@ -1428,9 +1893,10 @@ Rispondi in JSON con formato:
       });
     }
 
-    const updatedPantry = [...newEntries, ...currentPantry];
+    const updatedPantry = this.mergePantryById(newEntries, currentPantry);
     this.state.saveGlobalRecord('ddt_pantry', updatedPantry);
-    this.pantry.set(updatedPantry);
+    this.pantry.set(this.filterPantryForClient(updatedPantry));
+    this.mainSectionTab.set('pantry');
     this.viewMode.set('daily');
     this.toast.success('Importazione completata', `${newEntries.length} prodotti aggiunti ai Carichi del Giorno.`);
     this.cancelForm();
@@ -1444,17 +1910,10 @@ Rispondi in JSON con formato:
     this.bumpFormRevision();
   }
 
-  removeItem(index: number) {
-    this.form.update(current => ({
-      ...current,
-      items: current.items.filter((_, i) => i !== index)
-    }));
-    this.bumpFormRevision();
-  }
-
   cancelForm() {
     this.showForm.set(false);
     this.resetForm();
+    this.state.scrollMainContentToTop();
   }
 
   handleDdtPhoto(event: any) {
@@ -1716,9 +2175,9 @@ Rispondi in JSON con formato:
         this.syncLinkedSupplier(existing);
 
         if (existing) {
-          this.toast.info('Fornitore riconosciuto', `"${existing.ragioneSociale}" già in anagrafica. Clicca "Conferma Dati Importazione" per aggiungere i prodotti.`);
+          this.registerNewSupplier.set(false);
         } else if (ctx.supplierName) {
-          this.showNewSupplierModal.set(true);
+          this.registerNewSupplier.set(true);
         }
       } catch (parseError: any) {
         console.error('JSON Parse Error:', parseError.message, text);
@@ -1875,7 +2334,11 @@ Rispondi in JSON con formato:
 
   async saveMultipleEntries() {
     if (!this.showForm()) return;
-    const clientId = this.state.activeTargetClientId() || this.state.currentUser()?.clientId || 'demo';
+    const clientId = this.resolvePantryClientId();
+    if (!clientId) {
+      this.toast.error('Azienda non selezionata', 'Seleziona l\'azienda prima di importare il carico.');
+      return;
+    }
     const items = this.collectImportItems();
     const ctx = this.getImportContext();
 
@@ -1898,7 +2361,7 @@ Rispondi in JSON con formato:
     let supplierId = existingSupplier?.id;
     let supplierName = existingSupplier?.ragioneSociale || ctx.supplierName;
 
-    if (!existingSupplier && this.registerNewSupplier() && ctx.supplierName) {
+    if (!existingSupplier && ctx.supplierName) {
       supplierId = this.registerNewSupplierInAnagrafica(ctx.supplierName, ctx.supplierPiva);
     }
 
@@ -1953,10 +2416,8 @@ Rispondi in JSON con formato:
         this.state.saveGlobalRecord('ddt_pantry', validData);
         this.toast.info('Dispensa Aggiornata', `${purgedCount} prodotti (scaduti o senza data >10gg) eliminati definitivamente.`);
       }
-      const clientId = this.state.tenantClientId() || this.state.activeTargetClientId();
-      const tenantPantry = validData.filter(
-        i => !clientId || !i.clientId || i.clientId === clientId,
-      );
+      const merged = this.mergePantryById(validData, this.pantry());
+      const tenantPantry = this.filterPantryForClient(merged);
       this.pantry.set(tenantPantry);
 
       // 2. Controllo prodotti senza scadenza dopo 10 giorni
@@ -2038,6 +2499,7 @@ Rispondi in JSON con formato:
     this.showStaleModal.set(false);
     this.staleModalDismissed.set(true);
     this.editingExpiryId.set(null);
+    this.editingLottoId.set(null);
   }
 
   openStaleModalManually() {
@@ -2054,7 +2516,35 @@ Rispondi in JSON con formato:
     this.showStaleModal.set(true);
   }
 
+  startEditLotto(id: string) {
+    this.editingExpiryId.set(null);
+    this.editingLottoId.set(id);
+  }
+
+  startEditExpiry(id: string) {
+    this.editingLottoId.set(null);
+    this.editingExpiryId.set(id);
+  }
+
+  async saveItemLotto(id: string, lotto: string) {
+    const trimmed = lotto.trim();
+    if (!trimmed) {
+      this.toast.warning('Lotto mancante', 'Inserisci un numero di lotto valido.');
+      return;
+    }
+
+    const currentPantry = this.pantry();
+    const updated = currentPantry.map(i => (i.id === id ? { ...i, lotto: trimmed } : i));
+    this.pantry.set(updated);
+    await this.state.saveGlobalRecord('ddt_pantry', updated);
+    this.editingLottoId.set(null);
+
+    const updatedItem = updated.find(i => i.id === id);
+    this.toast.success('Lotto salvato', `${updatedItem?.ingredientName || 'Prodotto'}: lotto ${trimmed}.`);
+  }
+
   async saveItemExpiry(id: string, newExpiryDate: string) {
+    this.editingLottoId.set(null);
     if (!newExpiryDate) {
       this.editingExpiryId.set(null);
       return;
@@ -2190,7 +2680,7 @@ Rispondi in JSON con formato:
 
   async openDocumentPreview(doc: AcquiredDdtDocument) {
     this.revokeViewingDocObjectUrl();
-    this.docPreviewOriginalSize.set(true);
+    this.docPreviewOriginalSize.set(false);
     this.viewingDocDimensions.set(null);
 
     let url = doc.imageUrl || '';
@@ -2218,7 +2708,7 @@ Rispondi in JSON con formato:
     this.viewingDoc.set(null);
     this.viewingDocUrl.set(null);
     this.viewingDocDimensions.set(null);
-    this.docPreviewOriginalSize.set(true);
+    this.docPreviewOriginalSize.set(false);
     document.body.style.overflow = '';
   }
 
@@ -2411,8 +2901,20 @@ Rispondi in JSON con formato:
   }
 
   private async registerAcquiredDocument(doc: AcquiredDdtDocument) {
-    const current = [...this.acquiredDocs().filter(d => d.id !== doc.id), doc];
-    await this.persistAcquiredDocuments(current);
+    const clientId = doc.clientId || this.resolvePantryClientId() || undefined;
+    const normalized: AcquiredDdtDocument = { ...doc, clientId };
+
+    const fromServer = ((await this.state.getGlobalRecordData(ACQUIRED_DOCS_RECORD)) || []) as AcquiredDdtDocument[];
+    const mergedById = new Map<string, AcquiredDdtDocument>();
+    for (const d of fromServer) mergedById.set(d.id, d);
+    for (const d of this.acquiredDocs()) {
+      const prev = mergedById.get(d.id);
+      if (!prev || (d.acquiredAt || '') >= (prev.acquiredAt || '')) {
+        mergedById.set(d.id, d);
+      }
+    }
+    mergedById.set(normalized.id, normalized);
+    await this.persistAcquiredDocuments(Array.from(mergedById.values()));
   }
 
   private async persistAcquiredDocuments(docs: AcquiredDdtDocument[]) {
@@ -2420,11 +2922,25 @@ Rispondi in JSON con formato:
     await this.state.saveGlobalRecord(ACQUIRED_DOCS_RECORD, docs);
   }
 
+  private mergeAcquiredDocLists(...lists: AcquiredDdtDocument[][]): AcquiredDdtDocument[] {
+    const byId = new Map<string, AcquiredDdtDocument>();
+    for (const list of lists) {
+      for (const d of list) {
+        const prev = byId.get(d.id);
+        if (!prev || (d.acquiredAt || '') >= (prev.acquiredAt || '')) {
+          byId.set(d.id, d);
+        }
+      }
+    }
+    return Array.from(byId.values());
+  }
+
   private async loadAcquiredDocuments() {
     const saved = await this.state.getGlobalRecordData(ACQUIRED_DOCS_RECORD);
     let docs: AcquiredDdtDocument[] = Array.isArray(saved) ? saved : [];
     docs = await this.migrateLegacyAcquiredDocuments(docs);
     const { kept, purged } = this.purgeExpiredAcquiredDocuments(docs);
+    const merged = this.mergeAcquiredDocLists(kept, this.acquiredDocs());
     if (purged > 0) {
       const removed = docs.filter(d => !kept.some(k => k.id === d.id));
       for (const d of removed) {
@@ -2432,11 +2948,11 @@ Rispondi in JSON con formato:
           try { await deleteDdtDocumentBlob(d.localBlobKey); } catch { /* ignore */ }
         }
       }
-      await this.persistAcquiredDocuments(kept);
+      await this.persistAcquiredDocuments(merged.filter(d => kept.some(k => k.id === d.id)));
       await this.purgePantryRefsForRemovedDocs(docs, kept);
       this.toast.info('Archivio documenti', `${purged} documento/i oltre ${ACQUIRED_DOC_RETENTION_DAYS} giorni eliminati automaticamente.`);
     } else {
-      this.acquiredDocs.set(kept);
+      this.acquiredDocs.set(merged);
     }
   }
 
