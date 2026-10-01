@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService, Recipe, RecipeIngredient } from '../services/app-state.service';
@@ -9,49 +9,49 @@ import { ToastService } from '../services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="space-y-6 animate-fade-in p-2 pb-12 max-w-7xl mx-auto">
-      
-      <!-- Premium Hero Header -->
-      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center md:items-center justify-between gap-6 md:gap-8 relative overflow-hidden text-center md:text-left">
-        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-indigo-50/50 to-transparent pointer-events-none"></div>
-        <div class="absolute -left-10 -top-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
-        
-        <div class="flex flex-col md:flex-row items-center gap-4 md:gap-6 relative z-10">
-          <div class="h-16 w-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-slate-200 ring-4 ring-slate-50 shrink-0">
-            <i class="fa-solid fa-book-open"></i>
+    <div class="space-y-4 animate-fade-in px-2 max-md:px-3 pb-20 max-w-7xl mx-auto">
+
+      <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 relative overflow-hidden space-y-4">
+        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-orange-50/80 to-transparent pointer-events-none"></div>
+
+        <div class="flex items-start gap-3 relative z-10">
+          <button type="button" (click)="goQuickHome()"
+                  class="ib-touch md:hidden h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md border-2 border-indigo-700 active:scale-95"
+                  aria-label="Torna al menu">
+            <i class="fa-solid fa-house-chimney text-2xl"></i>
+          </button>
+          <div class="hidden md:flex h-14 w-14 shrink-0 bg-orange-600 text-white rounded-xl items-center justify-center shadow-md border-2 border-orange-700">
+            <i class="fa-solid fa-book-open text-2xl"></i>
           </div>
-          <div class="flex flex-col items-center md:items-start">
-            <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight mb-2">Libro Ingredienti</h2>
-            <div class="flex flex-wrap justify-center md:justify-start items-center gap-2 md:gap-3">
-              <span class="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-indigo-100">
-                <i class="fa-solid fa-utensils"></i> {{ state.filteredRecipes().length }} Ricette
-              </span>
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">UE 1169/2011</span>
-            </div>
+          <div class="flex-1 min-w-0 pt-0.5">
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Libro ingredienti</h2>
+            <p class="text-xs text-slate-500 font-medium mt-1 leading-snug">
+              Ricettario, allergeni UE 1169/2011 · <span class="font-bold text-orange-700">{{ state.filteredRecipes().length }} schede</span>
+            </p>
           </div>
         </div>
-        
-        <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto relative z-10">
-          <div class="relative w-full md:w-64">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-              <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca piatto o ingrediente..." 
-                     class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 md:py-2.5 text-base font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
-          </div>
-          <div class="flex gap-2 w-full md:w-auto">
-            <button (click)="printIngredientsBook()" 
-                    class="flex-1 md:flex-none h-12 md:h-11 px-4 md:px-6 bg-white border-2 border-slate-900 text-slate-900 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95">
-              <i class="fa-solid fa-print"></i> STAMPA
-            </button>
-            <button (click)="openAddModal()" 
-                    class="flex-1 md:flex-none h-12 md:h-11 px-4 md:px-6 bg-slate-900 text-white rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95">
-              <i class="fa-solid fa-plus-circle"></i> NUOVA
-            </button>
-          </div>
+
+        <div class="relative z-10">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" [(ngModel)]="searchQuery" placeholder="Cerca piatto o ingrediente..."
+                 class="ib-touch w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-base font-medium focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 relative z-10">
+          <button type="button" (click)="printIngredientsBook()"
+                  class="ib-touch aspect-square w-full rounded-2xl bg-white border-2 border-slate-800 text-slate-800 shadow-md hover:bg-slate-50 active:scale-95 flex flex-col items-center justify-center gap-2 p-3">
+            <i class="fa-solid fa-print text-3xl md:text-4xl leading-none"></i>
+            <span class="text-[11px] font-black uppercase tracking-wide text-center leading-tight">Stampa</span>
+          </button>
+          <button type="button" (click)="openAddModal()"
+                  class="ib-touch aspect-square w-full rounded-2xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg border-2 border-orange-700 active:scale-95 flex flex-col items-center justify-center gap-2 p-3">
+            <i class="fa-solid fa-plus text-3xl md:text-4xl leading-none"></i>
+            <span class="text-[11px] font-black uppercase tracking-wide text-center leading-tight">Nuova</span>
+          </button>
         </div>
       </div>
 
-      <!-- Main Content Area -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         
         <!-- Desktop Table -->
         <table class="w-full text-left border-collapse hidden md:table">
@@ -94,69 +94,70 @@ import { ToastService } from '../services/toast.service';
                     }
                   </div>
                 </td>
-                <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                  <button (click)="printSingleRecipe(recipe)" class="w-9 h-9 bg-white border border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 rounded-lg transition-all shadow-sm" title="Stampa singola scheda">
-                    <i class="fa-solid fa-print text-sm"></i>
-                  </button>
-                  <button (click)="openEditModal(recipe)" class="w-9 h-9 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 rounded-lg transition-all shadow-sm">
-                    <i class="fa-solid fa-pen-to-square text-sm"></i>
-                  </button>
-                  <button (click)="deleteRecipe(recipe)" class="w-9 h-9 bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 rounded-lg transition-all shadow-sm">
-                    <i class="fa-solid fa-trash-can text-sm"></i>
-                  </button>
+                <td class="px-6 py-4">
+                  <div class="flex justify-end gap-2">
+                    <button type="button" (click)="printSingleRecipe(recipe)" title="Stampa"
+                            class="ib-touch h-12 w-12 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 flex flex-col items-center justify-center active:scale-95 shadow-sm">
+                      <i class="fa-solid fa-print text-lg leading-none"></i>
+                    </button>
+                    <button type="button" (click)="openEditModal(recipe)" title="Modifica"
+                            class="ib-touch h-12 w-12 rounded-xl border-2 border-sky-400 bg-sky-50 text-sky-800 hover:bg-sky-100 flex flex-col items-center justify-center active:scale-95 shadow-sm">
+                      <i class="fa-solid fa-pen-to-square text-lg leading-none"></i>
+                    </button>
+                    <button type="button" (click)="requestDeleteRecipe(recipe)" title="Elimina"
+                            class="ib-touch h-12 w-12 rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100 flex flex-col items-center justify-center active:scale-95 shadow-sm">
+                      <i class="fa-solid fa-trash-can text-lg leading-none"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             }
           </tbody>
         </table>
 
-        <!-- Mobile Cards -->
-        <div class="md:hidden divide-y divide-slate-100">
+        <div class="md:hidden p-3 space-y-4">
           @for (recipe of filteredRecipes(); track recipe.id) {
-            <div class="p-6 space-y-4 bg-white animate-fade-in">
-              <div class="flex justify-between items-start">
-                <div class="flex items-center gap-4">
-                  <div class="h-12 w-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg ring-4 ring-slate-50">
-                    <i class="fa-solid fa-plate-wheat"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-base font-black text-slate-800 leading-tight">{{ recipe.name }}</h4>
-                    <span class="inline-block mt-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-widest border border-indigo-100">
-                      {{ recipe.category || 'Generale' }}
-                    </span>
-                  </div>
-                </div>
+            <div class="rounded-2xl border-2 border-slate-200 bg-white p-4 space-y-3 shadow-sm">
+              <div>
+                <h4 class="text-base font-black text-slate-900 leading-tight">{{ recipe.name }}</h4>
+                <span class="inline-block mt-1.5 px-2 py-0.5 bg-orange-50 text-orange-700 rounded-lg text-[9px] font-black uppercase tracking-widest border border-orange-100">
+                  {{ recipe.category || 'Generale' }}
+                </span>
               </div>
 
               @if (recipe.description) {
-                <p class="text-xs text-slate-500 italic leading-relaxed border-l-2 border-slate-100 pl-3">
-                  {{ recipe.description }}
-                </p>
+                <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">{{ recipe.description }}</p>
               }
 
-              <div class="space-y-2">
-                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allergeni Presenti</p>
+              <div>
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Allergeni</p>
                 <div class="flex flex-wrap gap-1.5">
                   @for (all of getAllergensForRecipe(recipe); track all.id) {
-                    <div class="px-2.5 py-1 rounded-lg border flex items-center gap-2 shadow-sm" [class]="all.bg + ' ' + all.active">
-                      <i [class]="'fa-solid ' + all.icon + ' text-[11px]'"></i>
-                      <span class="text-[10px] font-black uppercase">{{ all.code }}</span>
+                    <div class="px-2 py-0.5 rounded-md border flex items-center gap-1.5" [class]="all.bg + ' ' + all.active">
+                      <i [class]="'fa-solid ' + all.icon + ' text-[10px]'"></i>
+                      <span class="text-[9px] font-black uppercase">{{ all.code }}</span>
                     </div>
                   } @empty {
-                    <span class="text-xs font-bold text-slate-300 italic">Nessun allergene dichiarato</span>
+                    <span class="text-[10px] font-bold text-slate-300 italic">Nessuno</span>
                   }
                 </div>
               </div>
 
-              <div class="flex gap-2 pt-2">
-                <button (click)="printSingleRecipe(recipe)" class="flex-1 py-3 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-emerald-50 hover:text-emerald-600 transition-all">
-                  <i class="fa-solid fa-print"></i> Stampa
+              <div class="grid grid-cols-3 gap-2 pt-1">
+                <button type="button" (click)="printSingleRecipe(recipe)"
+                        class="ib-touch aspect-square w-full rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 flex flex-col items-center justify-center gap-1 active:scale-95">
+                  <i class="fa-solid fa-print text-xl leading-none"></i>
+                  <span class="text-[9px] font-black uppercase">Stampa</span>
                 </button>
-                <button (click)="openEditModal(recipe)" class="flex-1 py-3 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-indigo-50 hover:text-indigo-600 transition-all">
-                  <i class="fa-solid fa-pen-to-square"></i> Modifica
+                <button type="button" (click)="openEditModal(recipe)"
+                        class="ib-touch aspect-square w-full rounded-xl border-2 border-sky-400 bg-sky-50 text-sky-800 flex flex-col items-center justify-center gap-1 active:scale-95">
+                  <i class="fa-solid fa-pen-to-square text-xl leading-none"></i>
+                  <span class="text-[9px] font-black uppercase">Modifica</span>
                 </button>
-                <button (click)="deleteRecipe(recipe)" class="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center transition-all hover:bg-rose-100">
-                  <i class="fa-solid fa-trash-can"></i>
+                <button type="button" (click)="requestDeleteRecipe(recipe)"
+                        class="ib-touch aspect-square w-full rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-600 flex flex-col items-center justify-center gap-1 active:scale-95">
+                  <i class="fa-solid fa-trash-can text-xl leading-none"></i>
+                  <span class="text-[9px] font-black uppercase">Elimina</span>
                 </button>
               </div>
             </div>
@@ -175,48 +176,75 @@ import { ToastService } from '../services/toast.service';
         }
       </div>
 
-      <!-- Add/Edit Recipe Modal -->
-      @if (isModalOpen()) {
-        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeModal()"></div>
-          <div class="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col max-h-[90vh]">
-            
-            <!-- Modal Header -->
-            <div class="px-6 md:px-8 py-5 md:py-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
-              <div class="flex items-center gap-3 md:gap-4">
-                <div class="h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg md:text-xl shadow-xl shadow-indigo-100">
-                  <i class="fa-solid" [class.fa-plus]="!editingRecipe()" [class.fa-pen-to-square]="editingRecipe()"></i>
-                </div>
-                <div>
-                  <h3 class="text-lg md:text-xl font-black text-slate-800 tracking-tight leading-none">{{ editingRecipe() ? 'Modifica Scheda' : 'Nuova Scheda' }}</h3>
-                  <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ingredienti & Allergeni</p>
+      @if (recipeDeleteConfirm()) {
+        <div class="haccp-modal-overlay z-[140]">
+          <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-sm" (click)="closeDeleteConfirm()"></div>
+          <div class="haccp-modal-center">
+            <div class="haccp-modal-panel bg-white rounded-3xl shadow-2xl overflow-hidden border border-rose-100 max-w-md w-full mx-4">
+              <div class="px-6 py-5 bg-gradient-to-r from-rose-600 to-red-600 text-white">
+                <div class="flex items-center gap-3">
+                  <div class="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-trash-can text-xl"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="text-lg font-black leading-tight">Conferma eliminazione</h3>
+                    <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest mt-0.5">Libro ingredienti</p>
+                  </div>
                 </div>
               </div>
-              <button (click)="closeModal()" class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-100 transition-all flex items-center justify-center">
-                <i class="fa-solid fa-xmark text-lg"></i>
+              <div class="p-6 space-y-4">
+                <p class="text-sm font-bold text-slate-700 leading-relaxed">
+                  Eliminare la scheda <strong class="text-slate-900">{{ recipeDeleteConfirm()!.name }}</strong>?
+                </p>
+                <p class="text-[11px] text-slate-500 font-medium">L'operazione è definitiva dall'archivio ricette.</p>
+                <div class="flex flex-col gap-2 pt-1">
+                  <button type="button" (click)="confirmDeleteRecipe()"
+                          class="ib-touch w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md">
+                    Sì, elimina
+                  </button>
+                  <button type="button" (click)="closeDeleteConfirm()"
+                          class="ib-touch w-full py-3.5 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200">
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (isModalOpen()) {
+        <div class="haccp-modal-overlay z-[120] fixed inset-0 overscroll-none">
+          <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeModal()"></div>
+          <div class="haccp-modal-center items-end sm:items-center p-0 sm:p-4 max-h-full">
+          <div class="relative bg-white w-full max-w-4xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col max-h-[94vh] sm:max-h-[90vh]">
+            
+            <div class="px-4 md:px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-3 shrink-0">
+              <button type="button" (click)="closeModal()"
+                      class="ib-touch h-11 w-11 shrink-0 rounded-xl border-2 border-slate-200 bg-white text-slate-500 hover:text-rose-600 flex items-center justify-center">
+                <i class="fa-solid fa-arrow-left md:hidden"></i>
+                <i class="fa-solid fa-xmark hidden md:inline text-lg"></i>
               </button>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base md:text-lg font-black text-slate-800 tracking-tight truncate">{{ editingRecipe() ? 'Modifica scheda' : 'Nuova scheda' }}</h3>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ingredienti e allergeni</p>
+              </div>
             </div>
 
-            <!-- Modal Content -->
-            <div class="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
+            <div class="p-4 md:p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1 bg-white overscroll-contain">
               
               <!-- Searchable Select UI (Keyword + Dropdown) -->
               <!-- Searchable Select UI (Keyword + Dropdown) -->
-              <div class="p-8 bg-gradient-to-br from-indigo-50 to-slate-50 rounded-[2.5rem] border border-indigo-100/50 mb-8 shadow-inner relative overflow-hidden">
+              <div class="p-4 md:p-6 bg-gradient-to-br from-orange-50 to-slate-50 rounded-2xl border border-orange-100/80 shadow-inner relative overflow-hidden">
                 <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white rounded-full blur-3xl opacity-60"></div>
                 
-                <div class="relative z-10 space-y-6 flex flex-col items-center md:items-start text-center md:text-left">
-                  <div class="flex flex-col md:flex-row items-center gap-3 mb-2">
-                    <div class="h-10 w-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
-                      <i class="fa-solid fa-magnifying-glass"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-sm font-black text-slate-800 tracking-tight uppercase">Ricerca Rapida</h4>
-                      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Oltre 320 preset professionali</p>
-                    </div>
+                <div class="relative z-10 space-y-4">
+                  <div>
+                    <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide">Ricerca rapida preset</h4>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Oltre 320 piatti</p>
                   </div>
 
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <!-- Keyword Search -->
                     <div class="space-y-2">
                       <label class="text-[10px] font-black text-indigo-500 uppercase tracking-widest px-1 ml-1 flex items-center gap-1.5">
@@ -379,27 +407,31 @@ import { ToastService } from '../services/toast.service';
 
                 <div class="space-y-3">
                   @for (ing of currentRecipe.ingredients; track ing; let i = $index) {
-                    <div class="p-6 bg-slate-50/50 rounded-3xl border border-slate-100 transition-all hover:bg-white hover:shadow-xl animate-fade-in group">
-                      <div class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-4">
-                        <div class="h-8 w-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xs font-black text-slate-400 shrink-0">
-                          {{ i + 1 }}
+                    <div class="p-4 bg-slate-50/80 rounded-2xl border-2 border-slate-100 transition-all">
+                      <div class="space-y-3 mb-3">
+                        <div class="flex gap-2 items-center">
+                          <div class="h-9 w-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xs font-black text-slate-400 shrink-0">
+                            {{ i + 1 }}
+                          </div>
+                          <input type="text" [(ngModel)]="ing.name" placeholder="Nome ingrediente..." 
+                                 list="common-ingredients-book"
+                                 class="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-orange-400">
+                          <datalist id="common-ingredients-book">
+                            @for (base of state.baseIngredients(); track base) {
+                              <option [value]="base"></option>
+                            }
+                          </datalist>
                         </div>
-                        <input type="text" [(ngModel)]="ing.name" placeholder="Ingrediente (con percentuale)..." 
-                               list="common-ingredients-book"
-                               class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all">
-                        <datalist id="common-ingredients-book">
-                          @for (base of state.baseIngredients(); track base) {
-                            <option [value]="base"></option>
-                          }
-                        </datalist>
-                        <div class="relative w-28">
-                          <input type="number" [(ngModel)]="ing.percentage" (ngModelChange)="sortIngredients()"
-                                 placeholder="Q.tà" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold text-slate-700 outline-none focus:border-indigo-400 transition-all pr-8">
-                          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-300">%</span>
+                        <div class="flex gap-2 items-center pl-11">
+                          <div class="relative flex-1 max-w-[7rem]">
+                            <input type="number" [(ngModel)]="ing.percentage" (ngModelChange)="sortIngredients()"
+                                   placeholder="Q.tà" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-orange-400 pr-8">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-300">%</span>
+                          </div>
+                          <button type="button" (click)="removeIngredientRow(i)" class="ib-touch h-11 w-11 rounded-xl border-2 border-rose-200 bg-rose-50 text-rose-600 shrink-0">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
                         </div>
-                        <button (click)="removeIngredientRow(i)" class="w-10 h-10 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all shrink-0">
-                          <i class="fa-solid fa-trash-alt"></i>
-                        </button>
                       </div>
 
                       <!-- Lit-up Tags Area -->
@@ -425,10 +457,21 @@ import { ToastService } from '../services/toast.service';
               </div>
             </div>
 
-            <div class="p-6 md:p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row gap-3 md:gap-4 shrink-0 shadow-inner">
-              <button (click)="closeModal()" class="w-full md:flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-3xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all shadow-sm">Annulla</button>
-              <button (click)="saveRecipe()" class="w-full md:flex-[2] py-4 bg-slate-900 text-white rounded-3xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">CONFERMA E SALVA RICETTA</button>
+            <div class="p-4 bg-slate-50 border-t border-slate-100 shrink-0">
+              <div class="grid grid-cols-2 gap-3 w-full">
+                <button type="button" (click)="closeModal()"
+                        class="ib-touch aspect-square max-md:aspect-square md:aspect-auto md:h-14 w-full rounded-xl border-2 border-slate-300 bg-white text-slate-600 font-black uppercase flex flex-col md:flex-row items-center justify-center gap-1 active:scale-95 shadow-sm">
+                  <i class="fa-solid fa-xmark text-2xl md:text-lg leading-none"></i>
+                  <span class="text-[10px] md:text-xs tracking-widest">Annulla</span>
+                </button>
+                <button type="button" (click)="saveRecipe()"
+                        class="ib-touch aspect-square max-md:aspect-square md:aspect-auto md:h-14 w-full rounded-xl border-2 border-orange-700 bg-orange-600 text-white font-black uppercase flex flex-col md:flex-row items-center justify-center gap-1 active:scale-95 shadow-md">
+                  <i class="fa-solid fa-check text-2xl md:text-lg leading-none"></i>
+                  <span class="text-[10px] md:text-xs tracking-widest">Salva</span>
+                </button>
+              </div>
             </div>
+          </div>
           </div>
         </div>
       }
@@ -443,15 +486,29 @@ import { ToastService } from '../services/toast.service';
     .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    .ib-touch { touch-action: manipulation; }
   `]
 })
-export class IngredientsBookViewComponent {
+export class IngredientsBookViewComponent implements OnInit, OnDestroy {
   state = inject(AppStateService);
   toast = inject(ToastService);
+
+  ngOnInit() {
+    this.state.scrollMainContentToTop();
+  }
+
+  ngOnDestroy() {
+    this.unlockBodyScroll();
+  }
+
+  goQuickHome() {
+    this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+  }
 
   searchQuery = '';
   isModalOpen = signal(false);
   editingRecipe = signal(false);
+  recipeDeleteConfirm = signal<Recipe | null>(null);
   addIngredientExpanded = signal(false);
 
   toggleAddIngredientExpanded() {
@@ -911,6 +968,7 @@ export class IngredientsBookViewComponent {
     };
     this.addIngredientExpanded.set(false);
     this.isModalOpen.set(true);
+    this.updateBodyScrollLock();
   }
 
   loadPreset(recipeName: string) {
@@ -932,12 +990,46 @@ export class IngredientsBookViewComponent {
     this.currentRecipe = JSON.parse(JSON.stringify(recipe));
     this.addIngredientExpanded.set(false);
     this.isModalOpen.set(true);
+    this.updateBodyScrollLock();
   }
 
   closeModal() {
     this.isModalOpen.set(false);
     this.editingRecipe.set(false);
     this.addIngredientExpanded.set(false);
+    this.updateBodyScrollLock();
+  }
+
+  private updateBodyScrollLock() {
+    const lock = this.isModalOpen() || !!this.recipeDeleteConfirm();
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = lock ? 'hidden' : '';
+    }
+  }
+
+  private unlockBodyScroll() {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  }
+
+  requestDeleteRecipe(recipe: Recipe) {
+    this.recipeDeleteConfirm.set(recipe);
+    this.updateBodyScrollLock();
+  }
+
+  closeDeleteConfirm() {
+    this.recipeDeleteConfirm.set(null);
+    this.updateBodyScrollLock();
+  }
+
+  confirmDeleteRecipe() {
+    const recipe = this.recipeDeleteConfirm();
+    if (!recipe) return;
+    this.state.deleteRecipe(recipe.id);
+    this.toast.success('Eliminata', `Scheda "${recipe.name}" rimossa.`);
+    this.recipeDeleteConfirm.set(null);
+    this.updateBodyScrollLock();
   }
 
   addIngredientRow() {
@@ -1038,12 +1130,6 @@ export class IngredientsBookViewComponent {
     const recipe = { ...this.currentRecipe, updatedAt: new Date() } as Recipe;
     this.state.syncRecipe(recipe);
     this.closeModal();
-  }
-
-  deleteRecipe(recipe: Recipe) {
-    if (confirm(`Eliminare "${recipe.name}"?`)) {
-      this.state.deleteRecipe(recipe.id);
-    }
   }
 
   printSingleRecipe(recipe: Recipe) {

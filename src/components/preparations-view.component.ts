@@ -2,7 +2,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppStateService, Preparation } from '../services/app-state.service';
+import { AppStateService, Preparation, Recipe } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
 
 @Component({
@@ -34,6 +34,12 @@ import { ToastService } from '../services/toast.service';
             <i class="fa-solid fa-plus"></i>
             Nuova preparazione
           </button>
+        </div>
+        <div class="relative z-10 mt-4">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+                 placeholder="Cerca preparazione o scheda libro ingredienti..."
+                 class="prep-touch w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-base font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
         </div>
       </div>
 
@@ -87,10 +93,39 @@ import { ToastService } from '../services/toast.service';
         <span class="text-sm font-black uppercase tracking-wide">Nuova preparazione</span>
       </button>
 
+      @if (searchQuery().trim().length >= 2 && filteredRecipesForSearch().length > 0) {
+        <div class="bg-white rounded-2xl border border-orange-200 shadow-sm overflow-hidden">
+          <div class="px-4 py-3 bg-orange-50 border-b border-orange-100 flex items-center gap-2">
+            <i class="fa-solid fa-book-open text-orange-600"></i>
+            <h3 class="text-[11px] font-black text-orange-800 uppercase tracking-widest">Libro ingredienti ({{ filteredRecipesForSearch().length }})</h3>
+          </div>
+          <div class="p-3 space-y-3 max-h-64 overflow-y-auto">
+            @for (recipe of filteredRecipesForSearch(); track recipe.id) {
+              <div class="rounded-xl border border-orange-100 bg-orange-50/40 p-4 flex gap-3">
+                <span class="h-11 w-11 shrink-0 rounded-xl bg-orange-100 border border-orange-200 text-orange-700 flex items-center justify-center">
+                  <i class="fa-solid fa-book-open"></i>
+                </span>
+                <div class="flex-1 min-w-0">
+                  <p class="font-black text-slate-900 leading-tight">{{ recipe.name }}</p>
+                  <p class="text-[10px] font-bold text-orange-700 uppercase mt-0.5">{{ recipe.category || 'Scheda' }}</p>
+                  @if (recipe.ingredients?.length) {
+                    <p class="text-[10px] text-slate-500 mt-1 line-clamp-2">{{ previewRecipeIngredients(recipe) }}</p>
+                  }
+                </div>
+                <button type="button" (click)="openIngredientsBook()"
+                        class="prep-touch shrink-0 h-11 px-3 rounded-xl border-2 border-orange-300 bg-white text-orange-800 text-[9px] font-black uppercase">
+                  Apri libro
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <div class="space-y-4">
           <div class="flex items-center justify-between px-1">
             <h3 class="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-              Elenco preparazioni ({{ filteredPreps().length }})
+              Preparazioni prodotti ({{ filteredPreps().length }})
             </h3>
           </div>
 
@@ -409,6 +444,7 @@ export class PreparationsViewComponent implements OnInit {
 
   categoryFilterExpanded = signal(false);
   addIngredientExpanded = signal(false);
+  searchQuery = signal('');
   isFormOpen = signal(false);
   editingId = signal<string | null>(null);
   selectedCategory = signal('ALL');
@@ -474,11 +510,41 @@ export class PreparationsViewComponent implements OnInit {
   }
 
   filteredPreps = computed(() => {
-    const all = this.state.filteredPreparations();
+    let all = this.state.filteredPreparations();
     const cat = this.selectedCategory();
-    if (cat === 'ALL') return all;
-    return all.filter(p => p.category === cat);
+    if (cat !== 'ALL') {
+      all = all.filter(p => p.category === cat);
+    }
+    const q = this.searchQuery().trim().toLowerCase();
+    if (!q) return all;
+    return all.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.category?.toLowerCase().includes(q) ||
+      (p.ingredients || []).some(i => i.toLowerCase().includes(q))
+    );
   });
+
+  filteredRecipesForSearch = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    if (q.length < 2) return [] as Recipe[];
+    return this.state.filteredRecipes()
+      .filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.category?.toLowerCase().includes(q) ||
+        r.ingredients.some(i => i.name.toLowerCase().includes(q))
+      )
+      .slice(0, 8);
+  });
+
+  previewRecipeIngredients(recipe: Recipe): string {
+    const names = recipe.ingredients.map(i => i.name).filter(Boolean);
+    const head = names.slice(0, 4).join(', ');
+    return names.length > 4 ? `${head}…` : head;
+  }
+
+  openIngredientsBook() {
+    this.state.setModule('ingredients-book');
+  }
 
   openCreateForm() {
     this.editingId.set(null);

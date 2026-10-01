@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AppStateService, ProductionRecord, ProductionIngredient } from '../services/app-state.service';
+import { AppStateService, ProductionRecord, ProductionIngredient, Recipe, Preparation } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
 
@@ -74,30 +74,87 @@ import { FormsModule } from '@angular/forms';
                                            placeholder="es. Sugo alla Genovese"
                                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base font-bold text-slate-800 focus:border-teal-400 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-teal-100 first-letter:uppercase">
                                     
-                                    @if (preparationMatches().length > 0 || mainProductMatches().length > 0) {
-                                        <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-64 overflow-y-auto animate-slide-up sticky z-50">
+                                    @if (preparationMatches().length > 0 || recipeMatches().length > 0 || mainProductMatches().length > 0) {
+                                        <div class="mt-1 bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden max-h-72 overflow-y-auto animate-slide-up sticky z-50 custom-scrollbar">
                                             @if (preparationMatches().length > 0) {
-                                                <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between sticky top-0 z-10">
-                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Scheda Preparazione</span>
+                                                <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 sticky top-0 z-10">
+                                                    <span class="text-[9px] font-black uppercase text-indigo-600 tracking-widest">Preparazioni prodotti</span>
                                                 </div>
                                                 @for (prep of preparationMatches(); track prep.id) {
+                                                    @let prepNames = prep.ingredients || [];
+                                                    @let prepPantry = countPantryMatchesForNames(prepNames);
                                                     <button type="button" (click)="selectPreparation(prep)"
-                                                            class="w-full px-4 py-2.5 text-left hover:bg-indigo-50 text-sm font-bold text-slate-800 border-b border-slate-50 last:border-0 group">
-                                                        <div class="flex justify-between items-center">
-                                                            <span><i class="fa-solid fa-mortar-pestle text-indigo-400 mr-2 text-[10px]"></i> {{ prep.name }}</span>
-                                                            <span class="text-[9px] font-black text-indigo-500 bg-white px-1.5 py-0.5 rounded border border-indigo-100">+{{ prep.expiryDays }}gg</span>
+                                                            class="trace-touch w-full px-3 py-3 text-left hover:bg-indigo-50/80 border-b border-slate-100 last:border-0">
+                                                        <div class="flex gap-3 items-start">
+                                                            <span class="h-10 w-10 shrink-0 rounded-xl bg-indigo-100 border border-indigo-200 text-indigo-600 flex items-center justify-center">
+                                                                <i class="fa-solid fa-mortar-pestle"></i>
+                                                            </span>
+                                                            <div class="flex-1 min-w-0">
+                                                                <div class="flex justify-between gap-2 items-start">
+                                                                    <p class="text-sm font-black text-slate-900 leading-tight">{{ prep.name }}</p>
+                                                                    <span class="text-[9px] font-black text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-100 shrink-0">{{ getExpiryHintForProduct(prep.name, prep.expiryDays) }}</span>
+                                                                </div>
+                                                                @if (prepNames.length > 0) {
+                                                                    <p class="text-[10px] text-slate-500 font-medium mt-1 leading-snug line-clamp-2">{{ previewIngredientNames(prepNames) }}</p>
+                                                                    <p class="text-[9px] font-black uppercase mt-1" [class.text-teal-600]="prepPantry.found > 0" [class.text-slate-400]="prepPantry.found === 0">
+                                                                        {{ prepPantry.found }}/{{ prepPantry.total }} in dispensa
+                                                                    </p>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (recipeMatches().length > 0) {
+                                                <div class="px-3 py-1.5 bg-orange-50 border-b border-orange-100 sticky top-0 z-10">
+                                                    <span class="text-[9px] font-black uppercase text-orange-700 tracking-widest">Libro ingredienti</span>
+                                                </div>
+                                                @for (recipe of recipeMatches(); track recipe.id) {
+                                                    @let recipeNames = getRecipeIngredientNames(recipe);
+                                                    @let recipePantry = countPantryMatchesForNames(recipeNames);
+                                                    <button type="button" (click)="selectRecipe(recipe)"
+                                                            class="trace-touch w-full px-3 py-3 text-left hover:bg-orange-50/80 border-b border-slate-100 last:border-0">
+                                                        <div class="flex gap-3 items-start">
+                                                            <span class="h-10 w-10 shrink-0 rounded-xl bg-orange-100 border border-orange-200 text-orange-700 flex items-center justify-center">
+                                                                <i class="fa-solid fa-book-open"></i>
+                                                            </span>
+                                                            <div class="flex-1 min-w-0">
+                                                                <div class="flex justify-between gap-2 items-start">
+                                                                    <p class="text-sm font-black text-slate-900 leading-tight">{{ recipe.name }}</p>
+                                                                    <span class="text-[9px] font-black text-orange-800 bg-white px-1.5 py-0.5 rounded border border-orange-100 shrink-0">{{ getExpiryHintForProduct(recipe.name) }}</span>
+                                                                </div>
+                                                                <p class="text-[9px] font-bold text-orange-600/80 uppercase mt-0.5">{{ recipe.category || 'Scheda' }}</p>
+                                                                @if (recipeNames.length > 0) {
+                                                                    <p class="text-[10px] text-slate-500 font-medium mt-1 leading-snug line-clamp-2">{{ previewIngredientNames(recipeNames) }}</p>
+                                                                    <p class="text-[9px] font-black uppercase mt-1" [class.text-teal-600]="recipePantry.found > 0" [class.text-slate-400]="recipePantry.found === 0">
+                                                                        {{ recipePantry.found }}/{{ recipePantry.total }} in dispensa
+                                                                    </p>
+                                                                }
+                                                            </div>
                                                         </div>
                                                     </button>
                                                 }
                                             }
                                             @if (mainProductMatches().length > 0) {
                                                 <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
-                                                    <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Storico Produzioni</span>
+                                                    <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Storico rintracciabilità</span>
                                                 </div>
                                                 @for (match of mainProductMatches(); track match) {
-                                                    <button type="button" (click)="selectMainProduct(match)"
-                                                            class="w-full px-4 py-2.5 text-left hover:bg-slate-50 text-sm font-bold text-slate-800 border-b border-slate-50 last:border-0">
-                                                        <i class="fa-solid fa-history text-slate-300 mr-2 text-[10px]"></i> {{ match }}
+                                                    @let hist = findProductionRecordByName(match);
+                                                    <button type="button" (click)="selectMainProductFromHistory(match)"
+                                                            class="trace-touch w-full px-3 py-3 text-left hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                                                        <div class="flex gap-3 items-start">
+                                                            <span class="h-10 w-10 shrink-0 rounded-xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center">
+                                                                <i class="fa-solid fa-barcode"></i>
+                                                            </span>
+                                                            <div class="flex-1 min-w-0">
+                                                                <p class="text-sm font-black text-slate-900 leading-tight">{{ match }}</p>
+                                                                @if (hist) {
+                                                                    <p class="text-[10px] text-slate-500 mt-0.5">Scad. {{ hist.expiryDate | date:'dd/MM/yy' }} · Lotto {{ hist.lotto }}</p>
+                                                                    <p class="text-[9px] text-slate-400 font-bold mt-0.5">{{ hist.ingredients?.length || 0 }} ingredienti registrati</p>
+                                                                }
+                                                            </div>
+                                                        </div>
                                                     </button>
                                                 }
                                             }
@@ -890,6 +947,8 @@ import { FormsModule } from '@angular/forms';
         .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .trace-touch { touch-action: manipulation; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 8px; }
     `]
 })
 export class ProductionLogViewComponent implements OnInit {
@@ -924,7 +983,8 @@ export class ProductionLogViewComponent implements OnInit {
     dateTo = signal(new Date().toISOString().split('T')[0]);
 
     mainProductMatches = signal<string[]>([]);
-    preparationMatches = signal<any[]>([]);
+    preparationMatches = signal<Preparation[]>([]);
+    recipeMatches = signal<Recipe[]>([]);
     pantryMatches = signal<any[]>([]);
     baseMatches = signal<string[]>([]);
     
@@ -995,101 +1055,213 @@ export class ProductionLogViewComponent implements OnInit {
     onMainProductNameChange(val: string) {
         this.currentRecord.mainProductName = this.formatName(val);
         if (!val || val.length < 2) {
-            this.mainProductMatches.set([]);
-            this.preparationMatches.set([]);
+            this.clearMainProductSuggestions();
             return;
         }
         const q = val.toLowerCase();
-        
-        // Match from Preparazioni
+
         const preps = this.state.filteredPreparations()
             .filter(p => p.name.toLowerCase().includes(q))
             .slice(0, 5);
         this.preparationMatches.set(preps);
 
-        // Match from previous productions
+        const prepNames = new Set(preps.map(p => p.name.toLowerCase()));
+
+        const recipes = this.state.filteredRecipes()
+            .filter(r => r.name.toLowerCase().includes(q))
+            .slice(0, 5);
+        this.recipeMatches.set(recipes);
+
+        const recipeNames = new Set(recipes.map(r => r.name.toLowerCase()));
+
         const matches = this.state.productionRecords()
             .map(r => r.mainProductName)
             .filter((name, index, self) => self.indexOf(name) === index)
-            .filter(name => name.toLowerCase().includes(q) && !preps.some(p => p.name.toLowerCase() === name.toLowerCase()))
+            .filter(name => {
+                const n = name.toLowerCase();
+                return n.includes(q) && !prepNames.has(n) && !recipeNames.has(n);
+            })
             .slice(0, 5);
         this.mainProductMatches.set(matches);
     }
 
-    selectMainProduct(name: string) {
-        this.currentRecord.mainProductName = name;
+    clearMainProductSuggestions() {
         this.mainProductMatches.set([]);
         this.preparationMatches.set([]);
+        this.recipeMatches.set([]);
     }
 
-    selectPreparation(prep: any) {
-        this.currentRecord.mainProductName = prep.name;
-        this.mainProductMatches.set([]);
-        this.preparationMatches.set([]);
+    getRecipeIngredientNames(recipe: Recipe): string[] {
+        return (recipe.ingredients || []).map(i => i.name).filter(Boolean);
+    }
 
-        // Auto-calculate expiry date
-        if (prep.expiryDays > 0 && this.currentRecord.packagingDate) {
+    previewIngredientNames(names: string[], max = 4): string {
+        if (!names.length) return '';
+        const head = names.slice(0, max).join(', ');
+        return names.length > max ? `${head}…` : head;
+    }
+
+    findPreparationByProductName(name: string): Preparation | undefined {
+        const n = name.trim().toLowerCase();
+        return this.state.filteredPreparations().find(p => p.name.toLowerCase() === n);
+    }
+
+    getExpiryHintForProduct(productName: string, expiryDays?: number): string {
+        const days = expiryDays ?? this.findPreparationByProductName(productName)?.expiryDays;
+        if (days && days > 0 && this.currentRecord.packagingDate) {
             const pkgDate = new Date(this.currentRecord.packagingDate);
-            pkgDate.setDate(pkgDate.getDate() + prep.expiryDays);
+            pkgDate.setDate(pkgDate.getDate() + days);
+            const d = pkgDate.toISOString().split('T')[0];
+            const [y, m, day] = d.split('-');
+            return `Scad. ${day}/${m}/${y.slice(2)} (+${days}gg)`;
+        }
+        if (days && days > 0) return `+${days} gg`;
+        return 'Scadenza da impostare';
+    }
+
+    countPantryMatchesForNames(names: string[]): { found: number; total: number } {
+        const unique = names.filter(Boolean);
+        if (!unique.length) return { found: 0, total: 0 };
+        let found = 0;
+        for (const name of unique) {
+            if (this.findBestPantryMatch(name)) found++;
+        }
+        return { found, total: unique.length };
+    }
+
+    findBestPantryMatch(ingName: string): any | null {
+        const q = ingName.toLowerCase();
+        const today = new Date().toISOString().split('T')[0];
+        const local = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
+        const clientId = this.state.tenantClientId() || this.state.currentUser()?.clientId;
+        const matches = local
+            .filter((i: any) => i.ingredientName?.toLowerCase() === q || i.ingredientName?.toLowerCase().includes(q))
+            .filter((i: any) => !clientId || i.clientId === clientId)
+            .filter((i: any) => !i.expiryDate || i.expiryDate >= today)
+            .sort((a, b) => {
+                const aExact = a.ingredientName?.toLowerCase() === q;
+                const bExact = b.ingredientName?.toLowerCase() === q;
+                if (aExact && !bExact) return -1;
+                if (!aExact && bExact) return 1;
+                if (!a.expiryDate) return 1;
+                if (!b.expiryDate) return -1;
+                return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+            });
+        return matches[0] || null;
+    }
+
+    applyExpiryFromPreparation(productName: string, expiryDays?: number) {
+        const days = expiryDays ?? this.findPreparationByProductName(productName)?.expiryDays;
+        if (days && days > 0 && this.currentRecord.packagingDate) {
+            const pkgDate = new Date(this.currentRecord.packagingDate);
+            pkgDate.setDate(pkgDate.getDate() + days);
             this.currentRecord.expiryDate = pkgDate.toISOString().split('T')[0];
-            this.toast.success('Preparazione Selezionata', `${prep.name} - Scadenza automatica impostata (+${prep.expiryDays}gg)`);
+            return days;
+        }
+        return 0;
+    }
+
+    fillIngredientsFromNames(ingredientNames: string[], allergenByNormalizedName?: Record<string, string[]>) {
+        if (!ingredientNames.length) return 0;
+        const today = new Date().toISOString().split('T')[0];
+        let foundCount = 0;
+
+        ingredientNames.forEach((ingName: string) => {
+            const bestMatch = this.findBestPantryMatch(ingName);
+            const allergenKey = ingName.toLowerCase().trim();
+            const newIng: ProductionIngredient = {
+                id: Math.random().toString(36).substring(2, 9),
+                name: bestMatch ? bestMatch.ingredientName : ingName,
+                packingDate: today,
+                expiryDate: '',
+                lotto: '',
+                supplierName: '',
+                allergens: allergenByNormalizedName?.[allergenKey] ? [...allergenByNormalizedName[allergenKey]] : [],
+                requiresConfirmation: false
+            };
+
+            if (bestMatch) {
+                foundCount++;
+                newIng.lotto = bestMatch.lotto || '';
+                newIng.supplierName = bestMatch.supplierName || '';
+                const abb = this.findAbbattimentoRecord(bestMatch);
+                if (abb?.postExpiryDate) {
+                    newIng.expiryDate = abb.postExpiryDate;
+                } else {
+                    newIng.expiryDate = bestMatch.expiryDate || '';
+                }
+            }
+
+            this.ingredientsList.update(list => [...list, newIng]);
+        });
+
+        return foundCount;
+    }
+
+    selectMainProduct(name: string) {
+        this.currentRecord.mainProductName = name;
+        this.clearMainProductSuggestions();
+    }
+
+    findProductionRecordByName(name: string): ProductionRecord | undefined {
+        const n = name.toLowerCase();
+        return this.state.filteredProductionRecords()
+            .filter(r => r.mainProductName.toLowerCase() === n)
+            .sort((a, b) => b.recordedDate.localeCompare(a.recordedDate))[0];
+    }
+
+    selectMainProductFromHistory(name: string) {
+        this.currentRecord.mainProductName = name;
+        this.clearMainProductSuggestions();
+        const hist = this.findProductionRecordByName(name);
+        if (hist?.expiryDate) {
+            this.currentRecord.expiryDate = hist.expiryDate;
+        }
+        if (hist?.ingredients?.length) {
+            const cloned = hist.ingredients.map(i => ({ ...i, id: Math.random().toString(36).substring(2, 9), requiresConfirmation: false }));
+            this.ingredientsList.update(list => [...list, ...cloned]);
+            this.toast.info('Storico', `Caricati ${cloned.length} ingredienti dall'ultimo registro.`);
+        }
+    }
+
+    selectPreparation(prep: Preparation) {
+        this.currentRecord.mainProductName = prep.name;
+        this.clearMainProductSuggestions();
+
+        const days = this.applyExpiryFromPreparation(prep.name, prep.expiryDays);
+        if (days > 0) {
+            this.toast.success('Preparazione selezionata', `${prep.name} — scadenza +${days} gg`);
         }
 
-        // Auto-fill ingredients from pantry
-        if (prep.ingredients && Array.isArray(prep.ingredients) && prep.ingredients.length > 0) {
-            const today = new Date().toISOString().split('T')[0];
-            const local = (this.state.getGlobalRecord('ddt_pantry') || []) as any[];
-            const clientId = this.state.tenantClientId() || this.state.currentUser()?.clientId;
-            
-            let foundCount = 0;
+        const names = prep.ingredients || [];
+        if (names.length) {
+            const foundCount = this.fillIngredientsFromNames(names);
+            this.toast.success('Ingredienti caricati', `${foundCount}/${names.length} trovati in dispensa (FIFO).`);
+        }
+    }
 
-            prep.ingredients.forEach((ingName: string) => {
-                const q = ingName.toLowerCase();
-                const matches = local
-                    .filter((i: any) => i.ingredientName?.toLowerCase() === q || i.ingredientName?.toLowerCase().includes(q))
-                    .filter((i: any) => !clientId || i.clientId === clientId)
-                    .filter((i: any) => !i.expiryDate || i.expiryDate >= today)
-                    .sort((a, b) => {
-                        // Prioritize exact matches first
-                        const aExact = a.ingredientName?.toLowerCase() === q;
-                        const bExact = b.ingredientName?.toLowerCase() === q;
-                        if (aExact && !bExact) return -1;
-                        if (!aExact && bExact) return 1;
+    selectRecipe(recipe: Recipe) {
+        this.currentRecord.mainProductName = recipe.name;
+        this.clearMainProductSuggestions();
 
-                        if (!a.expiryDate) return 1;
-                        if (!b.expiryDate) return -1;
-                        return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
-                    });
+        const days = this.applyExpiryFromPreparation(recipe.name);
+        if (days > 0) {
+            this.toast.success('Scheda libro selezionata', `${recipe.name} — scadenza da preparazione (+${days} gg)`);
+        } else {
+            this.toast.success('Scheda libro selezionata', recipe.name);
+        }
 
-                const bestMatch = matches[0];
-                const newIng: any = {
-                    id: Math.random().toString(36).substring(2, 9),
-                    name: bestMatch ? bestMatch.ingredientName : ingName,
-                    packingDate: today,
-                    expiryDate: '',
-                    lotto: '',
-                    supplierName: '',
-                    allergens: [],
-                    requiresConfirmation: false
-                };
+        const allergenMap: Record<string, string[]> = {};
+        (recipe.ingredients || []).forEach(ing => {
+            if (ing.name) {
+                allergenMap[ing.name.toLowerCase().trim()] = [...(ing.allergens || [])];
+            }
+        });
 
-                if (bestMatch) {
-                    foundCount++;
-                    newIng.lotto = bestMatch.lotto || '';
-                    newIng.supplierName = bestMatch.supplierName || '';
-                    
-                    const abb = this.findAbbattimentoRecord(bestMatch);
-                    if (abb && abb.postExpiryDate) {
-                        newIng.expiryDate = abb.postExpiryDate;
-                    } else {
-                        newIng.expiryDate = bestMatch.expiryDate || '';
-                    }
-                }
-
-                this.ingredientsList.update(list => [...list, newIng]);
-            });
-            
-            this.toast.success('Ingredienti Caricati', `Trovati in dispensa ${foundCount} su ${prep.ingredients.length} ingredienti (FIFO).`);
+        const names = this.getRecipeIngredientNames(recipe);
+        if (names.length) {
+            const foundCount = this.fillIngredientsFromNames(names, allergenMap);
+            this.toast.success('Ingredienti caricati', `${foundCount}/${names.length} in dispensa · allergeni da scheda.`);
         }
     }
 
