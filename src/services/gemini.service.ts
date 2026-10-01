@@ -19,7 +19,7 @@ export class GeminiService {
             processEnv['GEMINI_API_KEY'];
 
         // Se non viene rilevata una chiave valida, usiamo quella fornita
-        return (key && key !== 'PLACEHOLDER_API_KEY') ? key : 'AIzaSyArBmcV0kZEwFbrlyXUlHrgSybMuQYurc0';
+        return (key && key !== 'PLACEHOLDER_API_KEY') ? key : 'AQ.Ab8RN6I0wYfXIpaumrEIYMDQBHBPcxH3a6n6sDvTW5PMoZYwhw';
     }
 
     constructor() {
@@ -36,9 +36,13 @@ export class GeminiService {
 
         const ai = new GoogleGenAI({ apiKey: activeKey });
         const modelsToTry = [
+            'gemini-2.5-flash',
+            'gemini-3.5-flash',
+            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
+            'gemini-flash-lite-latest',
             'gemini-3.6-flash',
-            'gemini-3.8-flash',
-            'gemini-3-flash-preview'
+            'gemini-3.8-flash'
         ];
         let lastError = null;
 

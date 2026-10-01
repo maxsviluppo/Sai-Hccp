@@ -106,16 +106,16 @@ import { FormsModule } from '@angular/forms';
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="space-y-1.5">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Confezionamento</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+                                <div class="min-w-0 rounded-2xl border-2 border-slate-200 bg-slate-50/80 p-3 flex flex-col gap-2 sm:aspect-square sm:max-h-[9rem]">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center sm:text-left shrink-0">Confezionamento</label>
                                     <input type="date" [(ngModel)]="currentRecord.packagingDate"
-                                           class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 focus:border-teal-500 outline-none">
+                                           class="trace-touch w-full min-w-0 max-w-full box-border bg-white border border-slate-200 rounded-xl px-2 py-3 text-base sm:text-sm font-bold text-slate-800 focus:border-teal-500 outline-none">
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="text-[10px] font-black text-rose-500 uppercase tracking-widest pl-1">Scadenza</label>
+                                <div class="min-w-0 rounded-2xl border-2 border-rose-200 bg-rose-50/50 p-3 flex flex-col gap-2 sm:aspect-square sm:max-h-[9rem]">
+                                    <label class="text-[10px] font-black text-rose-600 uppercase tracking-widest text-center sm:text-left shrink-0">Scadenza</label>
                                     <input type="date" [(ngModel)]="currentRecord.expiryDate"
-                                           class="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 focus:border-rose-500 outline-none">
+                                           class="trace-touch w-full min-w-0 max-w-full box-border bg-white border border-rose-200 rounded-xl px-2 py-3 text-base sm:text-sm font-bold text-slate-800 focus:border-rose-500 outline-none">
                                 </div>
                             </div>
 
@@ -213,16 +213,16 @@ import { FormsModule } from '@angular/forms';
                                         </div>
                                     </div>
 
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="text-[10px] font-black text-slate-500 uppercase mb-1 block">Lotto</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+                                    <div class="min-w-0 rounded-xl border-2 border-slate-200 bg-slate-50/80 p-2.5 flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-slate-500 uppercase text-center sm:text-left">Lotto</label>
                                         <input type="text" [(ngModel)]="newIngredient.lotto" placeholder="Lotto"
-                                               class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-slate-600 focus:border-teal-400 outline-none">
+                                               class="w-full min-w-0 bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono font-bold text-slate-600 focus:border-teal-400 outline-none">
                                     </div>
-                                    <div>
-                                        <label class="text-[10px] font-black text-rose-500 uppercase mb-1 block">Scadenza</label>
+                                    <div class="min-w-0 rounded-xl border-2 border-rose-200 bg-rose-50/50 p-2.5 flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-rose-600 uppercase text-center sm:text-left">Scadenza</label>
                                         <input type="date" [(ngModel)]="newIngredient.expiryDate"
-                                               class="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800 focus:border-rose-400 outline-none">
+                                               class="trace-touch w-full min-w-0 max-w-full box-border bg-white border border-rose-200 rounded-lg px-2 py-2.5 text-base sm:text-sm font-bold text-slate-800 focus:border-rose-400 outline-none">
                                     </div>
                                 </div>
 
@@ -476,12 +476,14 @@ import { FormsModule } from '@angular/forms';
         } @else {
             <!-- HISTORY / LIST VIEW -->
             <div class="space-y-6 animate-fade-in">
-                <div class="flex justify-between items-center bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                    <div class="text-sm font-bold text-slate-500"><i class="fa-solid fa-database text-teal-600 mr-2"></i> {{ filteredRecords().length }} Registrazioni in Archivio</div>
+                <div class="flex flex-col gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm md:flex-row md:items-center md:justify-between md:gap-4">
+                    <p class="text-sm font-bold text-slate-500 text-center md:text-left order-1">
+                        <i class="fa-solid fa-database text-teal-600 mr-2"></i>{{ filteredRecords().length }} registrazioni in archivio
+                    </p>
                     <button type="button" (click)="startNew()"
-                            class="trace-touch h-16 min-w-[8.5rem] w-[8.5rem] sm:w-auto sm:min-w-[10rem] sm:px-5 rounded-xl border-2 border-teal-700 bg-teal-600 hover:bg-teal-700 text-white shadow-md flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 active:scale-95 shrink-0">
+                            class="trace-touch order-2 w-full md:w-auto md:min-w-[14rem] h-14 px-6 rounded-xl border-2 border-teal-700 bg-teal-600 hover:bg-teal-700 text-white shadow-md flex flex-row items-center justify-center gap-3 active:scale-[0.98]">
                         <i class="fa-solid fa-plus text-xl leading-none"></i>
-                        <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-wide leading-tight text-center">Nuovo registro</span>
+                        <span class="text-xs font-black uppercase tracking-wide">Nuovo registro</span>
                     </button>
                 </div>
 
