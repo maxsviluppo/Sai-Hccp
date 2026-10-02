@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
+import { Component, inject, signal, effect, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
@@ -18,140 +18,154 @@ interface CheckItem {
     imports: [CommonModule, FormsModule],
     template: `
     <!-- UI CONTENT (Hidden on print) -->
-    <div class="print:hidden pb-20 animate-fade-in relative px-2 space-y-6">
-        
-        <!-- Minimal Hero Header -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 lg:p-8 flex flex-col md:flex-row justify-between md:items-center gap-6 relative overflow-hidden">
-            <!-- Subtle accent -->
-            <div class="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+    <div class="print:hidden pb-24 animate-fade-in relative px-2 max-md:px-3 space-y-4 max-md:space-y-5 clean-mobile">
 
-            <div class="relative z-10">
-                <div class="flex items-center gap-3 md:gap-4 mb-2 md:mb-1">
-                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center border border-violet-100 shadow-sm shrink-0">
-                        <i class="fa-solid fa-screwdriver-wrench text-lg md:text-xl"></i>
+        <div class="bg-white rounded-2xl max-md:rounded-xl p-6 max-md:p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-rose-50/80 to-transparent pointer-events-none"></div>
+
+            <div class="flex items-center gap-5 relative z-10 w-full md:w-auto">
+                <button type="button"
+                        (click)="goQuickHome()"
+                        class="md:hidden clean-touch h-14 w-14 bg-rose-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-rose-700 active:scale-95"
+                        aria-label="Torna al menu">
+                    <i class="fa-solid fa-house-chimney text-2xl"></i>
+                </button>
+                <div class="hidden md:flex h-14 w-14 bg-rose-600 text-white rounded-xl items-center justify-center shadow-md border-2 border-rose-700">
+                    <i class="fa-solid fa-broom text-2xl"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-2xl max-md:text-xl font-bold text-slate-800 tracking-tight">Sanificazione</h2>
+                    <div class="flex items-center gap-3 mt-1 max-md:mt-0.5 flex-wrap">
+                        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-check text-[10px]"></i> {{ getDisplayName() || 'Operatore' }}
+                        </span>
+                        <span class="text-xs font-medium text-slate-400 max-md:hidden">|</span>
+                        <span class="text-xs font-medium text-slate-500 max-md:hidden">{{ state.filterDate() | date:'dd/MM/yyyy' }}</span>
                     </div>
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight leading-tight">Manutenzione & Igiene</h2>
-                        <p class="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Vedi manuale d'uso e manutenzione</p>
-                        <div class="flex flex-wrap items-center gap-2 mt-2">
-                            <span class="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">
-                                <i class="fa-solid fa-circle text-[8px] animate-pulse text-violet-500"></i>
-                                Registro Attrezzature
+                </div>
+            </div>
+
+            <div class="w-full md:w-auto relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button type="button"
+                        (click)="setAllOk()"
+                        [disabled]="!canEdit()"
+                        class="hidden md:flex px-5 py-3 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-[11px] uppercase tracking-widest hover:bg-emerald-100 transition-colors border border-emerald-100 items-center justify-center gap-2 disabled:opacity-30 shadow-sm active:scale-95 shrink-0"
+                        title="Imposta tutto come Conforme">
+                    <i class="fa-solid fa-check-double text-base"></i><span>IMPOSTA TUTTI OK</span>
+                </button>
+
+                <div class="bg-slate-50 px-5 py-3 rounded-xl border border-slate-100 flex flex-col gap-2 min-w-[200px] flex-1 sm:flex-initial">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Avanzamento</p>
+                        <span class="text-sm font-black text-slate-700 leading-none">{{ completedCount() }}/{{ checks().length || 0 }}</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-rose-500 rounded-full transition-all duration-1000"
+                             [style.width.%]="progressPercent()"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button"
+                (click)="showStandardInfo.set(true)"
+                class="clean-touch w-full h-14 px-6 rounded-xl border-2 border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-800 shadow-sm flex flex-row items-center justify-center gap-3 active:scale-[0.98]">
+            <i class="fa-solid fa-circle-info text-xl leading-none"></i>
+            <span class="text-xs font-black uppercase tracking-wide">Info protocollo sanificazione</span>
+            <i class="fa-solid fa-chevron-right text-sm opacity-60 ml-auto md:ml-2"></i>
+        </button>
+
+        <div class="md:hidden">
+            <button type="button"
+                    (click)="setAllOk()"
+                    [disabled]="!canEdit()"
+                    class="clean-touch w-full aspect-[2.2/1] max-h-[5.5rem] rounded-xl border-[3px] border-emerald-700 bg-emerald-600 text-white flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-900/20 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none">
+                <i class="fa-solid fa-check-double text-4xl leading-none"></i>
+                <span class="text-lg font-black uppercase tracking-wide leading-tight">Tutti conformi</span>
+            </button>
+            <p class="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Un tocco · tutte le voci</p>
+        </div>
+
+        @if (checks().length > 0) {
+            <div class="space-y-3">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-rose-500"></i> Piano sanificazione
+                </h3>
+                <div class="grid grid-cols-1 gap-3 max-md:gap-4">
+                    @for (check of checks(); track check.id; let i = $index) {
+                        <ng-container *ngTemplateOutlet="checkCard; context: { $implicit: check, index: i }"></ng-container>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (checks().length === 0) {
+            <div class="bg-white rounded-xl border border-slate-200 p-12 text-center opacity-60">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                    <i class="fa-solid fa-broom text-2xl text-slate-300"></i>
+                </div>
+                <p class="font-black uppercase tracking-[0.2em] text-[10px] md:text-xs">Nessun elemento da verificare</p>
+            </div>
+        }
+
+        <ng-template #checkCard let-check let-index="index">
+            <div class="bg-white rounded-xl max-md:rounded-2xl border-2 border-slate-100 shadow-sm overflow-hidden"
+                 [class.border-emerald-200]="check.status === 'ok'"
+                 [class.border-rose-200]="check.status === 'issue'">
+                <div class="p-4 max-md:p-5 flex flex-col gap-4"
+                     [class.bg-emerald-50/30]="check.status === 'ok'"
+                     [class.bg-rose-50/30]="check.status === 'issue'">
+                    <div class="flex items-start gap-3">
+                        <span class="text-xs font-black text-white w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">{{ index + 1 }}</span>
+                        <div class="h-11 w-11 rounded-xl shrink-0 flex items-center justify-center border-2 shadow-sm"
+                             [class.bg-emerald-600]="check.status === 'ok'" [class.border-emerald-700]="check.status === 'ok'" [class.text-white]="check.status === 'ok'"
+                             [class.bg-rose-600]="check.status === 'issue'" [class.border-rose-700]="check.status === 'issue'"
+                             [class.bg-white]="check.status === 'pending'" [class.border-slate-200]="check.status === 'pending'" [class.text-slate-400]="check.status === 'pending'">
+                            <i [class]="'fa-solid text-lg ' + (check.status === 'ok' ? 'fa-check' : (check.status === 'issue' ? 'fa-triangle-exclamation' : check.icon))"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold text-slate-800 text-base max-md:text-lg leading-snug">{{ check.label }}</h3>
+                            <span class="inline-block mt-2 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                                  [class.bg-emerald-100]="check.status === 'ok'" [class.text-emerald-800]="check.status === 'ok'"
+                                  [class.bg-red-100]="check.status === 'issue'" [class.text-red-800]="check.status === 'issue'"
+                                  [class.bg-slate-100]="check.status === 'pending'" [class.text-slate-500]="check.status === 'pending'">
+                                {{ check.status === 'ok' ? 'Conforme' : (check.status === 'issue' ? 'Non conforme' : 'In attesa') }}
                             </span>
-                            <button (click)="showStandardInfo.set(true)" 
-                                    class="flex items-center gap-1.5 px-2 py-0.5 bg-violet-50 text-violet-600 hover:bg-violet-100 rounded border border-violet-100 text-[10px] md:text-xs font-black uppercase tracking-widest leading-none transition-colors">
-                                <i class="fa-solid fa-circle-info"></i> Info Protocollo
-                            </button>
+                            @if (check.status === 'issue' && check.note) {
+                                <p class="text-xs text-rose-700 mt-2 leading-snug font-medium border-l-2 border-rose-300 pl-2">{{ check.note }}</p>
+                            }
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 w-full max-md:gap-4">
+                        <button type="button"
+                                (click)="setStatus(check.id, 'ok')"
+                                [disabled]="!canEdit()"
+                                class="clean-touch clean-btn-ok aspect-square max-md:aspect-square md:aspect-auto md:h-16 rounded-xl md:rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 md:flex-row md:gap-3 shadow-sm active:scale-95 disabled:opacity-30 text-emerald-900"
+                                [class.clean-btn-ok-active]="check.status === 'ok'">
+                            <i class="fa-solid fa-check text-3xl md:text-2xl leading-none text-emerald-600/90"></i>
+                            <span class="text-sm max-md:text-base font-black uppercase tracking-wide md:text-xs md:tracking-widest">OK</span>
+                        </button>
+                        <button type="button"
+                                (click)="setStatus(check.id, 'issue')"
+                                [disabled]="!canEdit()"
+                                class="clean-touch clean-btn-no aspect-square max-md:aspect-square md:aspect-auto md:h-16 rounded-xl md:rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 md:flex-row md:gap-3 shadow-sm active:scale-95 disabled:opacity-30 text-rose-900"
+                                [class.clean-btn-no-active]="check.status === 'issue'">
+                            <i class="fa-solid fa-xmark text-3xl md:text-2xl leading-none text-rose-600/90"></i>
+                            <span class="text-sm max-md:text-base font-black uppercase tracking-wide md:text-xs md:tracking-widest">No</span>
+                        </button>
                     </div>
                 </div>
             </div>
+        </ng-template>
 
-            <!-- Stats -->
-            <div class="w-full md:w-auto relative z-10 flex gap-4 pr-1">
-                <div class="flex items-center gap-4 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 w-full justify-between">
-                    <div class="min-w-[120px]">
-                        <p class="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Avanzamento</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex-1">
-                                <div class="h-full bg-violet-500 rounded-full transition-all duration-1000" [style.width.%]="(completedCount() / checks().length) * 100"></div>
-                            </div>
-                            <span class="text-sm md:text-base font-bold text-slate-700 leading-none whitespace-nowrap">{{ completedCount() }}/{{ (checks().length || 1) }}</span>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-check-double text-slate-300 text-lg md:text-xl ml-2"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2 px-1">
-            <h3 class="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-clipboard-check text-violet-500"></i>
-                Verifiche
-            </h3>
-        </div>
-
-        <!-- Checklist List Layout -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="divide-y divide-slate-100">
-                @for (check of checks(); track check.id; let i = $index) {
-                    <div class="flex flex-col hover:bg-slate-50 transition-colors group">
-                        <div class="p-5 flex flex-col gap-4 relative overflow-hidden"
-                             [class.bg-emerald-50/40]="check.status === 'ok'"
-                             [class.bg-rose-50/40]="check.status === 'issue'">
-                             
-                            <!-- Row 1: Info & Label -->
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <span class="text-[10px] font-black w-6 h-6 rounded-lg bg-white flex items-center justify-center border border-slate-200 shrink-0 text-slate-400 shadow-sm">
-                                        {{ i + 1 }}
-                                    </span>
-                                    
-                                    <div class="h-10 w-10 rounded-xl shrink-0 flex items-center justify-center transition-all border shadow-sm"
-                                         [class.bg-emerald-500]="check.status === 'ok'" [class.border-emerald-600]="check.status === 'ok'" [class.text-white]="check.status === 'ok'"
-                                         [class.bg-rose-500]="check.status === 'issue'" [class.border-rose-600]="check.status === 'issue'" [class.text-white]="check.status === 'issue'"
-                                         [class.bg-white]="check.status === 'pending'" [class.border-slate-200]="check.status === 'pending'" [class.text-slate-400]="check.status === 'pending'">
-                                        <i [class]="'fa-solid text-lg ' + (check.status === 'ok' ? 'fa-check' : (check.status === 'issue' ? 'fa-triangle-exclamation' : check.icon))"></i>
-                                    </div>
-                                    
-                                    <div class="min-w-0 flex-1">
-                                        <h3 class="font-black text-slate-800 text-base leading-tight uppercase tracking-tight">{{ check.label }}</h3>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-                                                  [class.bg-emerald-100]="check.status === 'ok'" [class.text-emerald-700]="check.status === 'ok'"
-                                                  [class.bg-red-100]="check.status === 'issue'" [class.text-red-700]="check.status === 'issue'"
-                                                  [class.bg-slate-100]="check.status === 'pending'" [class.text-slate-500]="check.status === 'pending'">
-                                                {{ check.status === 'ok' ? 'CONFORME' : (check.status === 'issue' ? 'ANOMALIA' : 'IN ATTESA') }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Large Touch Buttons -->
-                            <div class="flex items-center gap-3 w-full">
-                                @if (check.status === 'pending') {
-                                    <button (click)="setStatus(check.id, 'ok')" 
-                                            [disabled]="!canEdit()"
-                                            class="flex-1 h-14 rounded-2xl border-2 border-emerald-500 bg-white text-emerald-600 flex items-center justify-center gap-2 shadow-md active:scale-95 disabled:opacity-50">
-                                        <i class="fa-solid fa-circle-check text-xl"></i>
-                                        <span class="text-xs font-black uppercase tracking-widest">OK</span>
-                                    </button>
-                                    <button (click)="setStatus(check.id, 'issue')" 
-                                            [disabled]="!canEdit()"
-                                            class="flex-1 h-14 rounded-2xl border-2 border-rose-500 bg-white text-rose-600 flex items-center justify-center gap-2 shadow-md active:scale-95 disabled:opacity-50">
-                                        <i class="fa-solid fa-circle-exclamation text-xl"></i>
-                                        <span class="text-xs font-black uppercase tracking-widest">NO</span>
-                                    </button>
-                                } @else {
-                                    <div class="flex-1 flex gap-3">
-                                        <div class="flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest"
-                                             [class.bg-emerald-500]="check.status === 'ok'" [class.text-white]="check.status === 'ok'"
-                                             [class.bg-rose-500]="check.status === 'issue'" [class.text-white]="check.status === 'issue'">
-                                            <i class="fa-solid" [class.fa-check-circle]="check.status === 'ok'" [class.fa-triangle-exclamation]="check.status === 'issue'"></i>
-                                            {{ check.status === 'ok' ? 'CONFORME' : 'ANOMALIA' }}
-                                        </div>
-                                        <button (click)="setStatus(check.id, 'pending')" 
-                                                [disabled]="!canEdit()"
-                                                class="h-14 w-14 rounded-2xl bg-white border-2 border-slate-200 text-slate-400 flex items-center justify-center shadow-md active:scale-95">
-                                            <i class="fa-solid fa-rotate-left"></i>
-                                        </button>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-
-                        </div>
-                } @empty {
-                    <div class="p-12 text-center opacity-60">
-                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200">
-                            <i class="fa-solid fa-microchip text-2xl text-slate-300"></i>
-                        </div>
-                        <p class="font-black uppercase tracking-[0.2em] text-[10px] md:text-xs">Nessun elemento da verificare</p>
-                    </div>
-                }
-            </div>
-        </div>
+        @if (completedCount() === checks().length && checks().length > 0 && canEdit()) {
+            <button type="button" (click)="onFinalSubmit()"
+                    class="clean-touch w-full h-14 rounded-xl border-2 border-emerald-700 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex flex-row items-center justify-center gap-3 active:scale-[0.98]">
+                <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                <span class="text-xs font-black uppercase tracking-wide">Registra sanificazione</span>
+            </button>
+        }
 
         @if (!canEdit()) {
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 md:p-4 flex items-start gap-3 shadow-sm">
@@ -163,41 +177,20 @@ interface CheckItem {
             </div>
         }
 
-        <!-- FIXED SUBMIT BUTTON (Right Bottom) -->
-        <div class="fixed bottom-6 right-6 z-50">
-            @if (completedCount() === checks().length && checks().length > 0 && canEdit()) {
-                <button (click)="onFinalSubmit()"
-                        class="px-5 py-3 md:px-6 py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-xs md:text-sm uppercase tracking-wider hover:bg-emerald-700 hover:-translate-y-0.5 transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2.5 md:gap-3 active:scale-95 animate-fade-in border border-emerald-500">
-                    <i class="fa-solid fa-cloud-arrow-up text-base md:text-lg"></i>
-                    <span>Registra Operazioni</span>
-                </button>
-            } @else if (canEdit()) {
-                <div class="px-4 py-2.5 md:px-5 md:py-3 bg-white text-slate-400 rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-wider border border-slate-200 shadow-lg shadow-slate-200/50 flex items-center gap-2 md:gap-3 cursor-not-allowed">
-                    <div class="relative flex items-center justify-center">
-                        <svg class="animate-spin -ml-1 mr-1.5 md:mr-2 h-4 w-4 md:h-5 md:w-5 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
-                    <span>In Completamento...</span>
-                </div>
-            }
-        </div>
-
         <!-- Informational Modal -->
         @if (showStandardInfo()) {
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="showStandardInfo.set(false)"></div>
                 <div class="relative bg-white w-full max-w-md max-h-[90vh] rounded-2xl shadow-xl overflow-hidden flex flex-col animate-slide-up border border-slate-200">
-                    <div class="bg-violet-600 px-6 py-5 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
-                        <div class="absolute inset-0 bg-gradient-to-r from-violet-700/50 to-transparent pointer-events-none"></div>
+                    <div class="bg-rose-600 px-6 py-5 text-white flex justify-between items-center relative overflow-hidden flex-shrink-0">
+                        <div class="absolute inset-0 bg-gradient-to-r from-rose-700/50 to-transparent pointer-events-none"></div>
                         <div class="flex items-center gap-4 relative z-10">
-                            <div class="w-10 h-10 rounded-lg bg-violet-500/30 flex items-center justify-center border border-violet-400/30">
-                                <i class="fa-solid fa-screwdriver-wrench text-lg text-violet-100"></i>
+                            <div class="w-10 h-10 rounded-lg bg-rose-500/30 flex items-center justify-center border border-rose-400/30">
+                                <i class="fa-solid fa-broom text-lg text-rose-100"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold">Manutenzione</h3>
-                                <p class="text-[10px] md:text-xs text-violet-200 uppercase tracking-widest">Protocollo Standard</p>
+                                <h3 class="text-lg font-bold">Sanificazione</h3>
+                                <p class="text-[10px] md:text-xs text-rose-200 uppercase tracking-widest">Protocollo Standard</p>
                             </div>
                         </div>
                         <button (click)="showStandardInfo.set(false)" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors relative z-10 text-white">
@@ -313,9 +306,31 @@ interface CheckItem {
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .clean-btn-ok {
+      border-color: rgb(167 243 208 / 0.55);
+      background-color: rgb(236 253 245 / 0.45);
+    }
+    .clean-btn-ok-active {
+      border-color: rgb(110 231 183 / 0.75);
+      background-color: rgb(209 250 229 / 0.65);
+    }
+    .clean-btn-no {
+      border-color: rgb(254 202 202 / 0.55);
+      background-color: rgb(255 241 242 / 0.4);
+    }
+    .clean-btn-no-active {
+      border-color: rgb(252 165 165 / 0.75);
+      background-color: rgb(254 226 226 / 0.6);
+    }
+    @media (max-width: 767px) {
+      .clean-mobile .clean-touch {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+    }
   `]
 })
-export class CleaningMaintenanceViewComponent {
+export class CleaningMaintenanceViewComponent implements OnInit {
     state = inject(AppStateService);
     toast = inject(ToastService);
     showStandardInfo = signal(false);
@@ -329,6 +344,29 @@ export class CleaningMaintenanceViewComponent {
     completedCount = computed<number>(() => {
         return this.checks().filter((c: CheckItem) => c.status !== 'pending').length;
     });
+
+    progressPercent = computed(() => {
+        const total = this.checks().length;
+        if (!total) return 0;
+        return (this.completedCount() / total) * 100;
+    });
+
+    ngOnInit() {
+        this.state.scrollMainContentToTop();
+    }
+
+    goQuickHome() {
+        this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+    }
+
+    setAllOk() {
+        if (!this.canEdit()) return;
+        this.checks.update(items =>
+            items.map(item => ({ ...item, status: 'ok' as const, note: undefined }))
+        );
+        this.save();
+        this.toast.success('Conforme', 'Tutte le voci impostate come OK.');
+    }
 
     constructor() {
         effect(() => {
@@ -441,7 +479,7 @@ export class CleaningMaintenanceViewComponent {
     onFinalSubmit() {
         if (!this.canEdit()) return;
         this.save();
-        this.toast.success('Successo', 'Registro Manutenzione archiviato con successo');
+        this.toast.success('Registrato', 'Sanificazione archiviata con successo.');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 

@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
+import { Component, inject, signal, effect, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppStateService } from '../services/app-state.service';
@@ -22,32 +22,41 @@ interface Supplier {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="space-y-6 animate-fade-in p-4 pb-12 max-w-7xl mx-auto">
+    <div class="space-y-4 animate-fade-in p-4 pb-12 max-w-7xl mx-auto max-md:px-3">
       
-      <!-- App-style Header -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-4">
-          <div class="h-12 w-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shadow-sm border border-indigo-100/50">
-            <i class="fa-solid fa-truck-field"></i>
+      <!-- App-style Header (allineato mobile alle altre sezioni operatore) -->
+      <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 relative overflow-hidden">
+        <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+        <div class="flex items-start gap-3 relative z-10">
+          <button type="button"
+                  (click)="goQuickHome()"
+                  class="sup-touch md:hidden h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md border-2 border-indigo-700 active:scale-95"
+                  style="touch-action: manipulation"
+                  aria-label="Torna al menu">
+            <i class="fa-solid fa-house-chimney text-2xl"></i>
+          </button>
+          <div class="hidden md:flex h-14 w-14 bg-indigo-600 text-white rounded-xl items-center justify-center shadow-md shrink-0">
+            <i class="fa-solid fa-truck-field text-2xl"></i>
           </div>
-          <div>
-            <h2 class="text-xl font-bold text-slate-800 tracking-tight">Anagrafica Fornitori</h2>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Gestione & Qualifica Aziendale</p>
+          <div class="flex-1 min-w-0 pt-0.5">
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Anagrafica Fornitori</h2>
+            <p class="text-xs text-slate-500 font-medium mt-1 leading-snug">Gestione fornitori, qualifica e collegamento ai carichi DDT.</p>
+            <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mt-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-users"></i> {{ suppliers().length }} aziende in archivio
+            </p>
           </div>
-        </div>
-        
-        <div class="flex items-center gap-4 w-full sm:w-auto">
-          <div class="bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 flex items-center gap-3 shrink-0">
-             <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
-                <i class="fa-solid fa-users"></i> {{ suppliers().length }} Aziende
-             </span>
-          </div>
-          <button (click)="isAddModalOpen.set(true)" 
-                  class="flex-1 sm:flex-none h-10 px-6 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95">
-            <i class="fa-solid fa-plus"></i> NUOVO
+          <button type="button" (click)="isAddModalOpen.set(true)"
+                  class="hidden md:flex shrink-0 h-10 px-6 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 items-center justify-center gap-2 active:scale-95">
+            <i class="fa-solid fa-plus"></i> Nuovo
           </button>
         </div>
       </div>
+
+      <button type="button" (click)="isAddModalOpen.set(true)"
+              class="sup-touch md:hidden w-full rounded-xl border-2 border-indigo-700 bg-indigo-600 hover:bg-indigo-700 text-white py-4 px-5 flex items-center justify-center gap-3 shadow-lg active:scale-[0.99] transition-transform">
+        <i class="fa-solid fa-plus text-xl"></i>
+        <span class="text-sm font-black uppercase tracking-wide">Nuovo fornitore</span>
+      </button>
 
       <!-- Compact App-style Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -227,18 +236,30 @@ interface Supplier {
           <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" (click)="editingSupplier.set(null)"></div>
           <div class="relative bg-slate-50 w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col">
             
-            <div class="p-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
-              <div class="flex items-center gap-4">
-                <div class="h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-md">
-                  <i class="fa-solid fa-building"></i>
-                </div>
-                <div>
-                  <h2 class="text-xl font-bold text-slate-800 tracking-tight">{{ editingSupplier()!.ragioneSociale }}</h2>
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Scheda Fornitore</p>
-                </div>
+            <div class="p-4 md:p-6 bg-white border-b border-slate-200 flex items-start gap-3 shrink-0">
+              <button type="button"
+                      (click)="closeSheetToHome()"
+                      class="sup-touch md:hidden h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md border-2 border-indigo-700 active:scale-95"
+                      style="touch-action: manipulation"
+                      aria-label="Torna al menu">
+                <i class="fa-solid fa-house-chimney text-2xl"></i>
+              </button>
+              <div class="hidden md:flex h-12 w-12 rounded-2xl bg-indigo-600 text-white items-center justify-center text-xl shadow-md shrink-0">
+                <i class="fa-solid fa-building"></i>
               </div>
-              <button (click)="editingSupplier.set(null)" class="h-10 w-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors bg-white border border-slate-200">
+              <div class="flex-1 min-w-0 pt-0.5">
+                <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Anagrafica Fornitori</h2>
+                <p class="text-xs text-slate-500 font-medium mt-1 truncate">{{ editingSupplier()!.ragioneSociale }}</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 hidden md:block">Scheda fornitore</p>
+              </div>
+              <button type="button" (click)="editingSupplier.set(null)"
+                      class="hidden md:flex h-10 w-10 rounded-full hover:bg-slate-100 items-center justify-center text-slate-400 transition-colors bg-white border border-slate-200 shrink-0">
                 <i class="fa-solid fa-xmark"></i>
+              </button>
+              <button type="button" (click)="editingSupplier.set(null)"
+                      class="sup-touch md:hidden h-11 w-11 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors bg-white border border-slate-200 shrink-0"
+                      aria-label="Chiudi scheda">
+                <i class="fa-solid fa-xmark text-lg"></i>
               </button>
             </div>
 
@@ -409,7 +430,7 @@ interface Supplier {
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; }
     `]
 })
-export class SuppliersViewComponent {
+export class SuppliersViewComponent implements OnInit {
   state = inject(AppStateService);
   toast = inject(ToastService);
   moduleId = 'suppliers';
@@ -430,6 +451,19 @@ export class SuppliersViewComponent {
     email: '',
     indirizzo: ''
   };
+
+  ngOnInit() {
+    this.state.scrollMainContentToTop();
+  }
+
+  goQuickHome() {
+    this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+  }
+
+  closeSheetToHome() {
+    this.editingSupplier.set(null);
+    this.goQuickHome();
+  }
 
   constructor() {
     effect(() => {

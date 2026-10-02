@@ -185,20 +185,6 @@ import { AppStateService } from '../services/app-state.service';
         </div>
       </section>
 
-      <!-- SAI Napoli Link Section -->
-      <section class="py-20 bg-slate-950 border-t border-white/5">
-        <div class="max-w-4xl mx-auto px-6 text-center space-y-6 animate-fade-in-up">
-          <h3 class="text-2xl font-black uppercase tracking-tight text-white">SALUTE, AMBIENTE E IGIENE</h3>
-          <p class="text-teal-400 font-black uppercase tracking-widest text-sm">Ti aiutiamo a rendere la tua azienda sicura</p>
-          <p class="text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto">
-            Attraverso la nostra opera di consulenza alle attività commerciali ci pregiamo di renderle edotte e autonome nella corretta applicazione dei dispositivi di Legge da rispettare, lasciando a noi solo la parte specifica professionale.
-          </p>
-          <a href="https://www.sainapoli.com" target="_blank" class="inline-flex items-center gap-3 px-8 py-4 bg-teal-500/10 border border-teal-500/30 rounded-2xl text-teal-400 font-black text-xs uppercase tracking-widest hover:bg-teal-500 hover:text-white transition-all group mt-4">
-            Scopri di più su sainapoli.com <i class="fa-solid fa-external-link group-hover:translate-x-1 transition-transform"></i>
-          </a>
-        </div>
-      </section>
-
       <!-- Mini Footer -->
       <footer class="py-10 border-t border-white/5 text-center text-slate-500 text-[10px] font-bold uppercase tracking-[0.4em]">
         © 2026 SAI FAST HACCP • Ecosystem SAI Napoli

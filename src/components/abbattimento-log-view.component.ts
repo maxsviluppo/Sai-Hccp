@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../services/app-state.service';
 import { ToastService } from '../services/toast.service';
@@ -34,34 +34,37 @@ interface AbbattimentoRecord {
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="pb-20 animate-fade-in relative px-2 space-y-6">
-        
-        <!-- Premium Header -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
-            
-            <div class="flex items-center gap-5 relative z-10 w-full md:w-auto">
-                <div class="h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md">
+    <div class="pb-20 animate-fade-in relative px-2 max-md:px-3 space-y-4 md:space-y-6">
+
+        <div class="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200 relative overflow-hidden space-y-3">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-indigo-50/80 to-transparent pointer-events-none"></div>
+
+            <div class="flex items-start gap-3 relative z-10">
+                <button type="button" (click)="goQuickHome()"
+                        class="abb-touch md:hidden h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md border-2 border-indigo-700 active:scale-95"
+                        aria-label="Torna al menu">
+                    <i class="fa-solid fa-house-chimney text-2xl"></i>
+                </button>
+                <div class="hidden md:flex h-14 w-14 shrink-0 bg-indigo-600 text-white rounded-xl items-center justify-center shadow-md border-2 border-indigo-700">
                     <i class="fa-solid fa-icicles text-2xl"></i>
                 </div>
-                <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Registro Processo Abbattimento</h2>
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Monitoraggio obbligatorio cicli di abbattimento rapido.</p>
+                <div class="flex-1 min-w-0 pt-0.5">
+                    <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Processo abbattimento</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-1 leading-snug">Registro cicli HACCP · data operativa {{ state.filterDate() | date:'dd/MM/yyyy' }}</p>
                 </div>
             </div>
 
             @if (!state.hasAbbattitore()) {
-                <div class="bg-amber-50 border border-amber-100 px-4 py-2 rounded-xl flex items-center gap-3 animate-pulse shadow-sm">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
-                    <span class="text-[10px] font-black text-amber-700 uppercase tracking-widest leading-tight">
-                        Nessun abbattitore censito per questa azienda.<br>
-                        <span class="opacity-70 text-[8px]">Abilitazione bloccata.</span>
+                <div class="relative z-10 bg-amber-50 border border-amber-200 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                    <span class="text-[10px] font-black text-amber-800 uppercase tracking-wide leading-snug">
+                        Nessun abbattitore censito — nuovo ciclo disabilitato fino al censimento attrezzature.
                     </span>
                 </div>
             } @else {
-                <div class="hidden md:flex items-center gap-3 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-600">
+                <div class="relative z-10 flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 w-fit">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span class="text-[10px] font-black uppercase tracking-widest">Macchina Censita ed Operativa</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Abbattitore operativo</span>
                 </div>
             }
         </div>
@@ -219,15 +222,16 @@ interface AbbattimentoRecord {
                         </div>
                     </div>
 
-                    <div class="pt-6 border-t border-slate-100 flex gap-4">
-                        <button (click)="isEditing.set(false)" 
-                                class="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
-                            Annulla
+                    <div class="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 w-full max-md:gap-4">
+                        <button type="button" (click)="isEditing.set(false)"
+                                class="abb-touch aspect-square max-md:aspect-square md:aspect-auto md:h-14 w-full rounded-xl md:rounded-2xl border-2 border-slate-300 bg-slate-50 text-slate-600 font-black uppercase flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 active:scale-95 shadow-sm hover:bg-slate-100">
+                            <i class="fa-solid fa-xmark text-3xl md:text-2xl leading-none"></i>
+                            <span class="text-sm max-md:text-base md:text-xs tracking-widest leading-tight">Annulla</span>
                         </button>
-                        <button (click)="saveRecord()" [disabled]="!currentRecord.productName"
-                                class="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-3 px-4">
-                            <i class="fa-solid fa-save text-lg hidden md:inline-block"></i>
-                            <span class="truncate">Conferma e Archivia Processo</span>
+                        <button type="button" (click)="saveRecord()" [disabled]="!currentRecord.productName"
+                                class="abb-touch aspect-square max-md:aspect-square md:aspect-auto md:h-14 w-full rounded-xl md:rounded-2xl border-2 border-indigo-700 bg-indigo-600 text-white font-black uppercase flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 active:scale-95 shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-check text-3xl md:text-2xl leading-none"></i>
+                            <span class="text-sm max-md:text-base md:text-xs tracking-widest leading-tight">Salva</span>
                         </button>
                     </div>
                 </div>
@@ -236,20 +240,14 @@ interface AbbattimentoRecord {
         } @else {
             <!-- HISTORY VIEW -->
             <div class="space-y-6 animate-fade-in">
-                <div class="flex flex-wrap justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm gap-4">
-                    <div class="flex items-center gap-4">
-                        <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100">
-                            <i class="fa-solid fa-history"></i>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Archivio Cicli - {{ state.filterDate() | date:'dd/MM/yyyy' }}</p>
-                            <h3 class="text-lg font-bold text-slate-800 tracking-tight">{{ filteredRecords().length }} Registrazioni</h3>
-                        </div>
-                    </div>
-                    
-                    <button (click)="startNew()" [disabled]="!state.hasAbbattitore()"
-                            class="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-3 disabled:opacity-50 active:scale-95">
-                        <i class="fa-solid fa-plus-circle text-lg"></i> Nuovo Ciclo Abbattimento
+                <div class="flex flex-col gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-bold text-slate-500 text-center md:text-left">
+                        <i class="fa-solid fa-history text-indigo-600 mr-2"></i>{{ filteredRecords().length }} cicli in archivio · {{ state.filterDate() | date:'dd/MM/yyyy' }}
+                    </p>
+                    <button type="button" (click)="startNew()" [disabled]="!state.hasAbbattitore()"
+                            class="abb-touch w-full h-14 px-6 rounded-xl border-2 border-indigo-700 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md flex flex-row items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-plus text-xl leading-none"></i>
+                        <span class="text-xs font-black uppercase tracking-wide">Nuovo ciclo abbattimento</span>
                     </button>
                 </div>
 
@@ -437,11 +435,20 @@ interface AbbattimentoRecord {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+        .abb-touch { touch-action: manipulation; }
     `]
 })
-export class AbbattimentoLogViewComponent {
+export class AbbattimentoLogViewComponent implements OnInit {
     state = inject(AppStateService);
     toast = inject(ToastService);
+
+    ngOnInit() {
+        this.state.scrollMainContentToTop();
+    }
+
+    goQuickHome() {
+        this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+    }
 
     isEditing = signal(false);
     searchQuery = '';

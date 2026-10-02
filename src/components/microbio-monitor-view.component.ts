@@ -11,23 +11,30 @@ import { FormsModule } from '@angular/forms';
     standalone: true,
     imports: [CommonModule, FormsModule],
     template: `
-    <div class="animate-fade-in px-2 relative space-y-6 pb-24 max-w-7xl mx-auto">
-        <!-- Premium Laboratory Header -->
-        <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-violet-50 to-transparent pointer-events-none"></div>
-            
-            <div class="flex items-center gap-6 relative z-10 w-full md:w-auto">
-                <div class="h-16 w-16 bg-violet-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
+    <div class="animate-fade-in px-2 max-md:px-3 relative space-y-4 md:space-y-6 pb-24 max-w-7xl mx-auto">
+        <div class="bg-white rounded-2xl max-md:rounded-xl p-6 max-md:p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-violet-50/80 to-transparent pointer-events-none"></div>
+
+            <div class="flex items-start gap-3 relative z-10 w-full md:w-auto">
+                <button type="button"
+                        (click)="goQuickHome()"
+                        class="md:hidden micro-touch h-14 w-14 bg-violet-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-violet-700 active:scale-95"
+                        aria-label="Torna al menu">
+                    <i class="fa-solid fa-house-chimney text-2xl"></i>
+                </button>
+                <div class="hidden md:flex h-14 w-14 bg-violet-600 text-white rounded-xl items-center justify-center shadow-md border-2 border-violet-700 shrink-0">
                     <i class="fa-solid fa-vial-virus text-2xl"></i>
                 </div>
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-none mb-2">Analisi Biologiche</h2>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Rapporti e Tamponi Lab</p>
+                <div class="flex-1 min-w-0 pt-0.5">
+                    <h2 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight leading-tight">Monitoraggio ambiente</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-1 leading-snug">Analisi biologiche · rapporti e tamponi di laboratorio</p>
                 </div>
             </div>
 
-            <button (click)="openUploadModal()" class="relative z-10 w-full md:w-auto px-8 py-4 bg-violet-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-violet-700 transition-all shadow-xl shadow-violet-100 flex items-center justify-center gap-3 active:scale-95">
-                <i class="fa-solid fa-cloud-arrow-up text-base"></i> NUOVO CARICAMENTO
+            <button type="button" (click)="openUploadModal()"
+                    class="micro-touch relative z-10 w-full md:w-auto h-14 md:h-auto px-6 md:px-8 md:py-4 bg-violet-600 text-white rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-wide md:tracking-widest hover:bg-violet-700 transition-all shadow-md md:shadow-xl shadow-violet-100 flex items-center justify-center gap-3 active:scale-[0.98] border-2 border-violet-700 md:border-0">
+                <i class="fa-solid fa-cloud-arrow-up text-lg md:text-base"></i>
+                <span>Nuovo caricamento</span>
             </button>
         </div>
 
@@ -362,6 +369,7 @@ import { FormsModule } from '@angular/forms';
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes slideUp { from { transform: translateY(15%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .micro-touch { touch-action: manipulation; }
     `]
 })
 export class MicrobioMonitorViewComponent implements OnInit {
@@ -370,7 +378,12 @@ export class MicrobioMonitorViewComponent implements OnInit {
     sanitizer = inject(DomSanitizer);
 
     ngOnInit() {
+        this.state.scrollMainContentToTop();
         this.state.refreshAllData();
+    }
+
+    goQuickHome() {
+        this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
     }
 
     searchQuery = '';

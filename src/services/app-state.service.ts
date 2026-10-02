@@ -1134,6 +1134,47 @@ export class AppStateService {
     });
   }
 
+  /** Durata conservazione messaggi (inviati e ricevuti) per admin e operatori. */
+  private static readonly MESSAGE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+  private messageRetentionCutoff(): Date {
+    return new Date(Date.now() - AppStateService.MESSAGE_RETENTION_MS);
+  }
+
+  private isMessageExpired(timestamp: Date | string): boolean {
+    return new Date(timestamp).getTime() < this.messageRetentionCutoff().getTime();
+  }
+
+  private applyLocalMessageRetention(): void {
+    const cutoff = this.messageRetentionCutoff();
+    this.messages.update(msgs => msgs.filter(m => new Date(m.timestamp) >= cutoff));
+  }
+
+  private async deleteMessagesFromDb(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const chunkSize = 80;
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize);
+      const { error } = await supabase.from('messages').delete().in('id', chunk);
+      if (error) throw error;
+    }
+  }
+
+  /** Elimina messaggi più vecchi di un mese da cloud e stato locale. */
+  async purgeExpiredMessages(): Promise<void> {
+    const expiredIds = this.messages()
+      .filter(m => this.isMessageExpired(m.timestamp))
+      .map(m => m.id);
+    if (expiredIds.length) {
+      try {
+        await this.deleteMessagesFromDb(expiredIds);
+      } catch (e) {
+        console.error('Error purging expired messages:', e);
+      }
+    }
+    this.applyLocalMessageRetention();
+  }
+
   async syncMessages() {
     try {
       const { data: dbMsgs, error: msgsError } = await supabase
@@ -1145,7 +1186,20 @@ export class AppStateService {
       if (msgsError) throw msgsError;
 
       if (dbMsgs) {
-        const mappedMsgs = dbMsgs.map((m: any) => ({
+        const expiredIds = dbMsgs
+          .filter((m: any) => this.isMessageExpired(m.timestamp))
+          .map((m: any) => m.id);
+        if (expiredIds.length) {
+          try {
+            await this.deleteMessagesFromDb(expiredIds);
+          } catch (purgeErr) {
+            console.error('Error purging expired messages during sync:', purgeErr);
+          }
+        }
+
+        const activeMsgs = dbMsgs.filter((m: any) => !this.isMessageExpired(m.timestamp));
+
+        const mappedMsgs = activeMsgs.map((m: any) => ({
           id: m.id,
           senderId: m.senderId || m.sender_id,
           senderName: m.senderName || m.sender_name,
@@ -1385,10 +1439,13 @@ export class AppStateService {
         }
         if (data.productionRecords) this.productionRecords.set(data.productionRecords);
         if (data.messages) {
-          this.messages.set(data.messages.map((m: any) => ({
-            ...m,
-            timestamp: new Date(m.timestamp)
-          })));
+          const cutoff = this.messageRetentionCutoff();
+          this.messages.set(data.messages
+            .map((m: any) => ({
+              ...m,
+              timestamp: new Date(m.timestamp)
+            }))
+            .filter((m: Message) => new Date(m.timestamp) >= cutoff));
         }
         if (data.aiConfig && data.aiConfig.apiKey) {
           this.aiConfig.set(data.aiConfig);

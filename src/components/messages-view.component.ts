@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -11,22 +11,27 @@ import { ToastService } from '../services/toast.service';
     imports: [CommonModule, FormsModule],
     template: `
     <div class="space-y-4 sm:space-y-6 max-w-7xl mx-auto p-3 sm:p-4 pb-12 overflow-x-hidden">
-        <!-- Sleek Professional Header -->
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden mb-4 sm:mb-6">
-          <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
-          
-          <div class="relative z-10 flex items-center gap-3 sm:gap-5">
-             <div class="h-10 w-10 sm:h-14 sm:w-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm text-blue-600 shrink-0 relative">
-                <i class="fa-solid fa-comments text-xl sm:text-2xl"></i>
+          <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-50/80 to-transparent pointer-events-none"></div>
+
+          <div class="relative z-10 flex items-center gap-3 sm:gap-5 w-full md:w-auto">
+             <button type="button"
+                     (click)="goQuickHome()"
+                     class="md:hidden msg-touch h-14 w-14 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0 border-2 border-blue-700 active:scale-95"
+                     aria-label="Torna al menu">
+                <i class="fa-solid fa-house-chimney text-2xl"></i>
+             </button>
+             <div class="hidden md:flex h-14 w-14 rounded-xl bg-blue-600 border-2 border-blue-700 flex items-center justify-center shadow-md text-white shrink-0 relative">
+                <i class="fa-solid fa-comments text-2xl"></i>
                 @if (state.unreadMessagesCount() > 0) {
-                    <div class="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
-                        <div class="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full animate-ping"></div>
+                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                        <div class="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
                     </div>
                 }
              </div>
-             <div>
+             <div class="flex-1 min-w-0">
                 <h2 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Messaggistica</h2>
-                <p class="text-[10px] sm:text-xs font-semibold text-slate-500 mt-0.5 sm:mt-1">Centro comunicazioni</p>
+                <p class="text-xs font-medium text-slate-500 mt-0.5 sm:mt-1 leading-snug">Centro comunicazioni</p>
              </div>
           </div>
 
@@ -309,12 +314,22 @@ import { ToastService } from '../services/toast.service';
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { transform: translateY(10%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .msg-touch { touch-action: manipulation; }
     `]
 })
-export class MessagesViewComponent {
+export class MessagesViewComponent implements OnInit {
     state = inject(AppStateService);
     sanitizer = inject(DomSanitizer);
     toast = inject(ToastService);
+
+    ngOnInit() {
+        this.state.scrollMainContentToTop();
+        void this.state.purgeExpiredMessages();
+    }
+
+    goQuickHome() {
+        this.state.setModule(this.state.isAdmin() ? 'dashboard' : 'operator-dashboard');
+    }
 
     previewDoc = signal<{url: string, name: string} | null>(null);
     messageToDelete = signal<string | null>(null);
