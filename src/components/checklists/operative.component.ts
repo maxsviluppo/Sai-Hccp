@@ -286,8 +286,8 @@ interface ChecklistItem {
                      [class.bg-red-50/40]="item.status === 'issue'">
                         <div class="flex flex-col gap-4">
                         <!-- Row 1: Label & Icon -->
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3 min-w-0">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
                                 <span class="text-[10px] font-black w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200 shrink-0 text-slate-400 shadow-sm">
                                     {{ $any(item).index + 1 }}
                                 </span>
@@ -317,6 +317,52 @@ interface ChecklistItem {
                                         }
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- Pulsanti Operativi OK / No (Anomalia) -->
+                            <div class="flex items-center gap-2 shrink-0">
+                                @if (!item.hasTemperature) {
+                                    <button type="button"
+                                            (click)="setStatus(item.id, 'ok'); $event.stopPropagation()"
+                                            [disabled]="isSubmitted() || !state.isContextEditable()"
+                                            class="op-touch px-3 py-2 rounded-xl border-2 flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40"
+                                            [class.border-emerald-600]="statusMap()[item.id]?.status === 'ok'"
+                                            [class.bg-emerald-600]="statusMap()[item.id]?.status === 'ok'"
+                                            [class.text-white]="statusMap()[item.id]?.status === 'ok'"
+                                            [class.border-slate-200]="statusMap()[item.id]?.status !== 'ok'"
+                                            [class.bg-white]="statusMap()[item.id]?.status !== 'ok'"
+                                            [class.text-emerald-700]="statusMap()[item.id]?.status !== 'ok'">
+                                        <i class="fa-solid fa-check"></i>
+                                        <span>OK</span>
+                                    </button>
+                                    <button type="button"
+                                            (click)="openIssueModal(item); $event.stopPropagation()"
+                                            [disabled]="isSubmitted() || !state.isContextEditable()"
+                                            class="op-touch px-3 py-2 rounded-xl border-2 flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40"
+                                            [class.border-red-600]="statusMap()[item.id]?.status === 'issue'"
+                                            [class.bg-red-600]="statusMap()[item.id]?.status === 'issue'"
+                                            [class.text-white]="statusMap()[item.id]?.status === 'issue'"
+                                            [class.border-slate-200]="statusMap()[item.id]?.status !== 'issue'"
+                                            [class.bg-white]="statusMap()[item.id]?.status !== 'issue'"
+                                            [class.text-red-700]="statusMap()[item.id]?.status !== 'issue'">
+                                        <i class="fa-solid fa-xmark"></i>
+                                        <span>No</span>
+                                    </button>
+                                } @else {
+                                    <button type="button"
+                                            (click)="openIssueModal(item); $event.stopPropagation()"
+                                            [disabled]="isSubmitted() || !state.isContextEditable()"
+                                            class="op-touch px-2.5 py-1.5 rounded-lg border flex items-center gap-1 text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-xs"
+                                            [class.border-red-500]="statusMap()[item.id]?.status === 'issue'"
+                                            [class.bg-red-50]="statusMap()[item.id]?.status === 'issue'"
+                                            [class.text-red-600]="statusMap()[item.id]?.status === 'issue'"
+                                            [class.border-slate-200]="statusMap()[item.id]?.status !== 'issue'"
+                                            [class.bg-white]="statusMap()[item.id]?.status !== 'issue'"
+                                            [class.text-slate-500]="statusMap()[item.id]?.status !== 'issue'">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        <span>Segnala</span>
+                                    </button>
+                                }
                             </div>
                         </div>
 
@@ -427,106 +473,153 @@ interface ChecklistItem {
                 </div>
             </div>
 
-            <!-- Issue Modal -->
-            @if (isModalOpen()) {
-               <div class="print:hidden haccp-modal-overlay z-[100]">
-                  <div class="haccp-modal-backdrop bg-slate-900/40 backdrop-blur-sm" (click)="closeModal()"></div>
-                  <div class="haccp-modal-center">
-                  <div class="haccp-modal-panel bg-white rounded-2xl shadow-xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
-                     <!-- Header -->
-                     <div class="p-6 bg-red-50 border-b border-red-100 text-center">
-                        <div class="w-12 h-12 rounded border border-red-200 bg-white text-red-500 flex items-center justify-center mx-auto mb-3 shadow-sm">
-                           <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+
+    <!-- MODALE SEGNALAZIONE NON CONFORMITÀ OPERATIVA (Sovraimpressione oscurante schermo intero, chiusura su OK) -->
+    @if (isModalOpen()) {
+        <div class="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <!-- Sfondo nero oscurante schermo intero -->
+            <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-fade-in"
+                 (click)="closeModal()"></div>
+
+            <!-- Pannello Modale -->
+            <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 z-10 animate-slide-up my-auto flex flex-col">
+                <!-- Header Rosso HACCP -->
+                <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between shrink-0 shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-triangle-exclamation text-xl"></i>
                         </div>
-                        <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-1">Anomalia Riscontrata</h3>
-                        <p class="text-base text-red-600 font-medium italic leading-snug">{{ currentItem()?.label }}</p>
-                     </div>
-                     <!-- Body -->
-                     <div class="p-6 space-y-4">
-                        <textarea #issueInput [value]="anomalySubject" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 placeholder:text-slate-400 focus:ring-1 focus:ring-red-400 focus:border-red-400 focus:outline-none h-32 transition-colors text-lg resize-none custom-scrollbar" placeholder="Descrivi brevemente l'anomalia..."></textarea>
-                        
-                        <div class="flex gap-3">
-                           <button class="flex-1 py-2 bg-slate-50 border border-slate-200 text-slate-600 font-bold uppercase tracking-widest rounded-lg text-xs hover:bg-slate-100 transition-colors" (click)="closeModal()">Annulla</button>
-                           <button class="flex-1 py-2 bg-red-600 border border-red-700 text-white font-bold uppercase tracking-widest rounded-lg text-xs shadow-sm hover:bg-red-700 transition-colors" (click)="confirmIssue(issueInput.value)">Salva Anomalia</button>
-                        </div>
-                     </div>
-                  </div>
-                  </div>
-               </div>
-            }
-
-            <!-- PROCEDURE MODAL (Procedimento Correttivo) -->
-            @if (isProcedureModalOpen()) {
-                <div class="haccp-modal-overlay z-[130]">
-                    <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeProcedureModal()"></div>
-                    <div class="haccp-modal-center">
-                    <div class="haccp-modal-panel haccp-modal-panel-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
-                        
-                        <!-- Header -->
-                        <div class="p-8 bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex-shrink-0">
-                            <div class="flex items-center gap-5">
-                                <div class="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-lg border border-white/30">
-                                    <i class="fa-solid fa-screwdriver-wrench"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-2xl font-black tracking-tight">Protocollo Tecnico</h3>
-                                    <p class="text-indigo-100 text-[10px] font-black uppercase tracking-widest opacity-80">Risoluzione Non Conformità Operativa</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-8 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
-                            <div class="p-5 bg-indigo-50 rounded-3xl border border-indigo-100">
-                                <h4 class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                    <i class="fa-solid fa-cube"></i> Attrezzatura / Elemento
-                                </h4>
-                                <p class="text-xl font-bold text-slate-800 leading-tight">
-                                    {{ selectedProcedureItem()?.label }}
-                                </p>
-                            </div>
-
-                            <div class="space-y-4">
-                                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Azioni Correttive Suggerite</h4>
-                                
-                                <div class="space-y-3">
-                                    @for (step of getItemProcedures(selectedProcedureItem()); track $index) {
-                                        <div class="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:border-indigo-200 group">
-                                            <div class="h-8 w-8 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 font-black text-xs shadow-sm group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
-                                                {{ $index + 1 }}
-                                            </div>
-                                            <p class="text-sm font-bold text-slate-600 leading-relaxed group-hover:text-slate-800 transition-colors">
-                                                {{ step }}
-                                            </p>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-
-                            <div class="p-5 bg-amber-50 rounded-3xl border border-amber-100">
-                                <div class="flex gap-3">
-                                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
-                                    <p class="text-xs text-amber-800 leading-relaxed">
-                                        <b>Importante:</b> Se la temperatura non rientra nei parametri dopo l'azione correttiva, isolare i prodotti e informare il responsabile qualità.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-8 pt-0 flex gap-4">
-                            <button (click)="closeProcedureModal()"
-                                    class="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200">
-                                Chiudi
-                            </button>
-                            <button (click)="resolveItemIssue(selectedProcedureItem()?.id || '')"
-                                    class="flex-[1.5] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95">
-                                Problema Risolto
-                            </button>
+                        <div>
+                            <h3 class="text-lg font-black uppercase tracking-tight leading-none mb-1">Segnalazione Anomalia</h3>
+                            <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest opacity-90">Documentazione Non Conformità</p>
                         </div>
                     </div>
+                    <button type="button"
+                            (click)="closeModal()"
+                            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95 text-white"
+                            aria-label="Chiudi">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6 bg-slate-50/60">
+                    <div class="p-4 bg-white rounded-2xl border border-red-100 shadow-sm">
+                        <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info"></i> Attrezzatura / Controllo
+                        </h4>
+                        <p class="text-base sm:text-lg font-bold text-slate-800 leading-tight">
+                            {{ currentItem()?.label }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                            Dettaglio Anomalia / Azione Correttiva
+                        </label>
+                        <textarea #issueInput
+                                  [value]="anomalySubject"
+                                  placeholder="Descrivi brevemente l'anomalia riscontrata e l'azione correttiva..."
+                                  class="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-base font-medium text-slate-700 transition-all shadow-sm bg-white resize-none"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button"
+                                (click)="closeModal()"
+                                class="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                            ANNULLA
+                        </button>
+                        <button type="button"
+                                (click)="confirmIssue(issueInput.value)"
+                                class="flex-[1.5] py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-600/25 active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check text-sm"></i>
+                            <span>OK · REGISTRA NON CONFORMITÀ</span>
+                        </button>
                     </div>
                 </div>
-            }
+            </div>
         </div>
+    }
+
+    <!-- MODALE PROCEDURA / PROTOCOLLO TECNICO (Sovraimpressione oscurante schermo intero) -->
+    @if (isProcedureModalOpen()) {
+        <div class="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <!-- Sfondo nero oscurante schermo intero -->
+            <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-fade-in"
+                 (click)="closeProcedureModal()"></div>
+
+            <div class="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 z-10 animate-slide-up my-auto flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="p-6 sm:p-8 bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-lg border border-white/30 shrink-0">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">Protocollo Tecnico</h3>
+                            <p class="text-indigo-100 text-[10px] font-black uppercase tracking-widest opacity-80 truncate">Risoluzione Non Conformità Operativa</p>
+                        </div>
+                        <button type="button"
+                                (click)="closeProcedureModal()"
+                                class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95 text-white"
+                                aria-label="Chiudi">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar bg-slate-50/50 flex-1">
+                    <div class="p-4 sm:p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
+                        <h4 class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                            <i class="fa-solid fa-cube"></i> Attrezzatura / Elemento
+                        </h4>
+                        <p class="text-lg sm:text-xl font-bold text-slate-800 leading-tight">
+                            {{ selectedProcedureItem()?.label }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Azioni Correttive Suggerite</h4>
+                        <div class="space-y-2.5">
+                            @for (step of getItemProcedures(selectedProcedureItem()); track $index) {
+                                <div class="flex gap-3.5 p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                                    <div class="h-7 w-7 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 font-black text-xs">
+                                        {{ $index + 1 }}
+                                    </div>
+                                    <p class="text-xs sm:text-sm font-bold text-slate-600 leading-relaxed">
+                                        {{ step }}
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                        <div class="flex gap-3">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+                            <p class="text-xs text-amber-800 leading-relaxed">
+                                <b>Importante:</b> Se il parametro non rientra nei limiti dopo l'azione correttiva, isolare i prodotti e informare il responsabile qualità.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 pt-0 flex gap-3 bg-slate-50/50 shrink-0">
+                    <button type="button"
+                            (click)="closeProcedureModal()"
+                            class="flex-1 py-4 bg-white text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200 active:scale-95">
+                        Chiudi
+                    </button>
+                    <button type="button"
+                            (click)="resolveItemIssue(selectedProcedureItem()?.id || '')"
+                            class="flex-[1.5] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check text-sm"></i>
+                        <span>OK · PROBLEMA RISOLTO</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
   `,
    styles: [`
     .op-touch { touch-action: manipulation; }
@@ -794,6 +887,25 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
 
             if (isIssue) {
                 this.toast.error('HACCP Warning', alertMsg);
+                
+                // Registra la non conformità persistente per l'amministrazione
+                this.state.saveNonConformity({
+                    id: `nc-op-${id}-${this.state.filterDate()}`,
+                    moduleId: 'operative-checklist',
+                    date: this.state.filterDate(),
+                    description: `[OPERATIVA] ${label}: ${alertMsg} (Rilevato: ${cleanTemp}°C)`,
+                    itemName: label,
+                    responsibleId: this.state.currentUser()?.id
+                });
+
+                // Notifica chat/messaggio all'amministrazione
+                const operatorName = this.state.currentUser()?.name || 'Operatore';
+                this.state.sendMessage(
+                    `🚨 ANOMALIA OPERATIVA: ${label}`,
+                    `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Operativa (Monitoraggio)\nELEMENTO: ${label}\nVALORE: ${cleanTemp}°C\nPARAMETRO: ${alertMsg}\nOPERATORE: ${operatorName}\nDATA: ${new Date().toLocaleDateString()}`,
+                    'SINGLE',
+                    'ADMIN_OFFICE'
+                );
             }
             
             this.autoSave();
@@ -849,6 +961,25 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
 
        if (isIssue) {
            this.toast.error('HACCP Warning', alertMsg);
+
+           // Registra la non conformità persistente per l'amministrazione
+           this.state.saveNonConformity({
+               id: `nc-op-${id}-${this.state.filterDate()}`,
+               moduleId: 'operative-checklist',
+               date: this.state.filterDate(),
+               description: `[OPERATIVA] ${label}: ${alertMsg} (Rilevato: ${cleanTemp}°C)`,
+               itemName: label,
+               responsibleId: this.state.currentUser()?.id
+           });
+
+           // Notifica chat/messaggio all'amministrazione
+           const operatorName = this.state.currentUser()?.name || 'Operatore';
+           this.state.sendMessage(
+               `🚨 ANOMALIA OPERATIVA: ${label}`,
+               `⚠ SEGNALAZIONE NON CONFORMITÀ ⚠\n\nFASE: Operativa (Monitoraggio)\nELEMENTO: ${label}\nVALORE: ${cleanTemp}°C\nPARAMETRO: ${alertMsg}\nOPERATORE: ${operatorName}\nDATA: ${new Date().toLocaleDateString()}`,
+               'SINGLE',
+               'ADMIN_OFFICE'
+           );
        }
        
        this.autoSave();
@@ -903,7 +1034,8 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
             moduleId: 'operative-checklist',
             date: this.state.filterDate(),
             description: `[OPERATIVA] ${this.currentItem()?.label}: ${note || 'Anomalia rilevata'}`,
-            itemName: this.currentItem()?.label
+            itemName: this.currentItem()?.label,
+            responsibleId: this.state.currentUser()?.id
          });
 
          // Notifica chat all'amministrazione con dettagli strutturati
@@ -935,7 +1067,7 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
                     pozzetto: this.pozzettoCount()
                 },
                 timestamp: new Date(),
-                status: this.isSubmitted() ? (this.hasIssues() ? 'Non Conforme' : 'Conforme') : undefined
+                status: this.hasIssues() ? 'Non Conforme' : (this.isSubmitted() ? 'Conforme' : undefined)
             });
         }, 2000); // 2 seconds debounce to let the operator click multiple items smoothly
     }
@@ -943,6 +1075,23 @@ completedCount = computed(() => this.items().filter(i => i.status !== 'pending')
    submitChecklist() {
       const recordId = this.currentRecordId() || Math.random().toString(36).substring(2, 11);
       this.currentRecordId.set(recordId);
+
+      // Assicura che tutte le voci con issue abbiano una non conformità registrata
+      if (this.hasIssues()) {
+         this.items().forEach(item => {
+            const entry = this.statusMap()[item.id];
+            if (entry?.status === 'issue') {
+               this.state.saveNonConformity({
+                  id: `nc-op-${item.id}-${this.state.filterDate()}`,
+                  moduleId: 'operative-checklist',
+                  date: this.state.filterDate(),
+                  description: `[OPERATIVA] ${item.label}: ${entry.note || 'Anomalia rilevata'}`,
+                  itemName: item.label,
+                  responsibleId: this.state.currentUser()?.id
+               });
+            }
+         });
+      }
 
       this.state.saveChecklist({
          id: recordId,

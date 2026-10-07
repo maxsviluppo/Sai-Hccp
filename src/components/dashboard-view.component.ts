@@ -22,8 +22,24 @@ interface SystemAlert {
   message: string;
   userId?: string;
   userName?: string;
+  clientId?: string;
+  companyName?: string;
   timestamp: string;
   actionable: boolean;
+  isNew?: boolean;
+  sortTimestamp?: number;
+}
+
+interface PaymentAlert {
+  id: string;
+  clientId: string;
+  companyName: string;
+  amount: number;
+  dueDate: string;
+  daysDiff: number;
+  severity: 'insolvent' | 'overdue' | 'impending';
+  statusLabel: string;
+  notes?: string;
 }
 
 @Component({
@@ -83,205 +99,427 @@ interface SystemAlert {
         </div>
       </div>
       
-      <!-- Compact KPI Summary Bar -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Compact KPI Summary Bar (Elevated Operator Style) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <!-- Aziende -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200/90 flex items-center justify-between transition-all hover:shadow-md active:scale-95">
            <div>
-             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Aziende Associate</p>
-             <p class="text-2xl font-bold text-slate-800">{{ getFilteredClientsCount() }}</p>
+             <p class="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Aziende Associate</p>
+             <p class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{{ getFilteredClientsCount() }}</p>
            </div>
-           <div class="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-             <i class="fa-solid fa-building"></i>
+           <div class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 shadow-sm shrink-0">
+             <i class="fa-solid fa-building text-base sm:text-lg"></i>
            </div>
         </div>
         <!-- Contabilità -->
-        <div (click)="state.setModule('accounting')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-slate-300 transition-colors">
+        <div (click)="state.setModule('accounting')" class="bg-white p-4 sm:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200/90 flex items-center justify-between cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all active:scale-95 group">
            <div>
-             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Status Contabile</p>
-             <p class="text-2xl font-bold text-emerald-600">{{ getFinancialStatus() }}</p>
+             <p class="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status Contabile</p>
+             <p class="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">{{ getFinancialStatus() }}</p>
            </div>
-           <div class="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-             <i class="fa-solid fa-file-invoice-dollar"></i>
+           <div class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
+             <i class="fa-solid fa-file-invoice-dollar text-base sm:text-lg"></i>
            </div>
         </div>
         <!-- Documenti -->
-        <div (click)="state.setModule('documentation')" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-slate-300 transition-colors">
+        <div (click)="state.setModule('documentation')" class="bg-white p-4 sm:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200/90 flex items-center justify-between cursor-pointer hover:border-indigo-200 hover:shadow-md transition-all active:scale-95 group">
            <div>
-             <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Documenti Validi</p>
-             <p class="text-2xl font-bold text-slate-800">{{ state.filteredDocuments().length }}</p>
+             <p class="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Documenti Validi</p>
+             <p class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{{ state.filteredDocuments().length }}</p>
            </div>
-           <div class="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-             <i class="fa-solid fa-folder-open"></i>
+           <div class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
+             <i class="fa-solid fa-folder-open text-base sm:text-lg"></i>
            </div>
         </div>
-      <!-- Alert Critici -->
-      <div (click)="scrollToAlerts()" class="bg-white p-5 rounded-2xl shadow-sm border border-red-100 flex items-center justify-between cursor-pointer hover:border-red-200 transition-colors">
-         <div>
-           <p class="text-[11px] font-bold text-red-500 uppercase tracking-wider mb-1">Alert Critici</p>
-           <p class="text-2xl font-bold" [class]="criticalAlerts().length > 0 ? 'text-red-600' : 'text-slate-800'">{{ criticalAlerts().length }}</p>
-         </div>
-         <div class="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 shrink-0">
-           <i class="fa-solid fa-triangle-exclamation"></i>
-         </div>
-      </div>
-    </div>
-
-    <!-- PERSISTENT CRITICAL ANOMALIES (Visible until resolved) -->
-    @if (criticalAlerts().length > 0) {
-    <div class="bg-red-50/50 border border-red-100 rounded-2xl p-5 mb-6 animate-fade-in">
-       <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-2 text-red-600">
-             <i class="fa-solid fa-circle-exclamation text-sm"></i>
-             <span class="text-xs font-bold uppercase tracking-widest">Anomalie Critiche in Sospeso</span>
-          </div>
-          <span class="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">{{ criticalAlerts().length }} pendenti</span>
-       </div>
-       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          @for (alert of criticalAlerts(); track alert.id) {
-             <div class="bg-white p-3 rounded-xl border border-red-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group" (click)="scrollToAlerts()">
-                <div class="flex items-start justify-between mb-1">
-                   <h4 class="text-xs font-bold text-slate-800 truncate pr-2">{{ alert.title }}</h4>
-                   <span class="text-[8px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-black uppercase">Critico</span>
-                </div>
-                <p class="text-[11px] text-slate-600 leading-tight mb-2 line-clamp-2 h-8 overflow-hidden">{{ alert.message }}</p>
-                <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-50">
-                   <span class="text-[9px] font-bold text-slate-400">{{ alert.userName }}</span>
-                   <span class="text-[9px] font-bold text-slate-400">{{ alert.timestamp }}</span>
-                </div>
+        <!-- Alert Notifiche -->
+        <div (click)="scrollToAlerts()" class="bg-white p-4 sm:p-5 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200/90 flex items-center justify-between cursor-pointer hover:border-rose-200 hover:shadow-md transition-all active:scale-95 group">
+           <div>
+             <p class="text-[10px] sm:text-[11px] font-black uppercase tracking-widest mb-0.5"
+                [class.text-rose-600]="systemAlerts().length > 0"
+                [class.text-slate-400]="systemAlerts().length === 0">
+               Notifiche Sistema
+             </p>
+             <p class="text-xl sm:text-2xl font-black tracking-tight"
+                [class.text-rose-600]="systemAlerts().length > 0"
+                [class.text-slate-800]="systemAlerts().length === 0">
+               {{ systemAlerts().length }}
+             </p>
+           </div>
+           <div class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl flex items-center justify-center shadow-sm shrink-0 transition-transform group-hover:scale-105"
+                [class.bg-rose-50]="systemAlerts().length > 0"
+                [class.text-rose-600]="systemAlerts().length > 0"
+                [class.bg-slate-100]="systemAlerts().length === 0"
+                [class.text-slate-500]="systemAlerts().length === 0">
+             <i class="fa-solid fa-bell text-base sm:text-lg"></i>
+           </div>
+        </div>
+      </div>      <!-- Core Dashboard Operations (Full Width) -->
+      <div class="space-y-6">
+        
+        <!-- Operations Overview (Timeline-lite) -->
+        <div class="bg-white rounded-2xl md:rounded-[2rem] p-6 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-6">
+             <h3 class="text-lg font-bold text-slate-800 tracking-tight">Avanzamento Operativo Odierno</h3>
+             <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+               <i class="fa-solid fa-chart-line text-blue-500"></i> Riepilogo Globale
              </div>
-          }
-       </div>
-    </div>
-    }
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Left Column -->
-        <div class="lg:col-span-2 space-y-6">
-          
-          <!-- Operations Overview (Timeline-lite) -->
-          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <div class="flex items-center justify-between mb-6">
-               <h3 class="text-lg font-bold text-slate-800 tracking-tight">Avanzamento Operativo Odierno</h3>
-               <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                 <i class="fa-solid fa-chart-line text-blue-500"></i> Riepilogo Globale
+          </div>
+          <div class="space-y-5">
+              @for (phase of [
+                 {id: 'pre', label: 'Apertura (Pre-Op)', data: phaseRecap().pre, color: 'text-sky-600', bgFill: 'bg-sky-500'},
+                 {id: 'op', label: 'Monitoraggio (Op)', data: phaseRecap().op, color: 'text-indigo-600', bgFill: 'bg-indigo-500'},
+                 {id: 'post', label: 'Chiusura (Post-Op)', data: phaseRecap().post, color: 'text-purple-600', bgFill: 'bg-purple-500'}
+               ]; track phase.id) {
+               <div class="flex items-center gap-4">
+                 <div class="w-40 flex-shrink-0">
+                   <p class="text-sm font-semibold text-slate-700">{{ phase.label }}</p>
+                   <p class="text-[10px] text-slate-500 uppercase tracking-wide">
+                      {{ phase.data.count }} su {{ phase.data.total }} operazioni
+                   </p>
+                 </div>
+                 <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-1000" [class]="phase.bgFill" [style.width.%]="phase.data.pct"></div>
+                 </div>
+                 <div class="w-12 text-right">
+                   <span class="text-sm font-bold text-slate-700 tabular-nums">{{ (phase.data.pct | number:'1.0-0') }}%</span>
+                 </div>
                </div>
-            </div>
-                        <div class="space-y-5">
-                @for (phase of [
-                   {id: 'pre', label: 'Apertura (Pre-Op)', data: phaseRecap().pre, color: 'text-sky-600', bgFill: 'bg-sky-500'},
-                   {id: 'op', label: 'Monitoraggio (Op)', data: phaseRecap().op, color: 'text-indigo-600', bgFill: 'bg-indigo-500'},
-                   {id: 'post', label: 'Chiusura (Post-Op)', data: phaseRecap().post, color: 'text-purple-600', bgFill: 'bg-purple-500'}
-                 ]; track phase.id) {
-                 <div class="flex items-center gap-4">
-                   <div class="w-40 flex-shrink-0">
-                     <p class="text-sm font-semibold text-slate-700">{{ phase.label }}</p>
-                     <p class="text-[10px] text-slate-500 uppercase tracking-wide">
-                        {{ phase.data.count }} su {{ phase.data.total }} operazioni
-                     </p>
-                   </div>
-                   <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div class="h-full rounded-full transition-all duration-1000" [class]="phase.bgFill" [style.width.%]="phase.data.pct"></div>
-                   </div>
-                   <div class="w-12 text-right">
-                     <span class="text-sm font-bold text-slate-700 tabular-nums">{{ (phase.data.pct | number:'1.0-0') }}%</span>
-                   </div>
-                 </div>
-                }
-             </div>
-          </div>
-
-          <!-- Quick Access Links -->
-          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-6">Moduli Gestionali</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              @for (action of [
-                {id: 'accounting', label: 'Contabilità', icon: 'fa-calculator'},
-                {id: 'collaborators', label: 'Collaboratori', icon: 'fa-users-gear'},
-                {id: 'documentation', label: 'Archivio', icon: 'fa-box-archive'},
-                {id: 'settings', label: 'Impostazioni', icon: 'fa-sliders'},
-                {id: 'general-checks', label: 'Check Generali', icon: 'fa-list-check'},
-                {id: 'phases', label: 'Fasi Operative', icon: 'fa-layer-group'},
-                {id: 'microbio-monitor', label: 'Analisi Microbio', icon: 'fa-microscope'},
-                {id: 'ingredients-book', label: 'Libro Ingredienti', icon: 'fa-book-open'}
-              ]; track action.id) {
-                <button (click)="state.setModule(action.id)" class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all text-center group">
-                   <i class="fa-solid {{ action.icon }} text-xl text-slate-400 group-hover:text-blue-600 mb-2 transition-colors"></i>
-                   <span class="text-xs font-semibold text-slate-700">{{ action.label }}</span>
-                </button>
               }
-            </div>
-          </div>
-
-          <!-- Recent Documents Snippet -->
-          @if (state.filterCollaboratorId() && recentDocuments().length > 0) {
-          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <div class="flex items-center justify-between mb-4">
-               <h3 class="text-lg font-bold text-slate-800 tracking-tight">Ultimi Documenti</h3>
-               <button (click)="state.setModule('documentation')" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Vedi tutti &rarr;</button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-               @for (doc of recentDocuments(); track doc.id) {
-                 <div (click)="state.setModule('documentation')" class="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3 cursor-pointer hover:bg-white hover:border-slate-300 transition-colors">
-                    <i class="fa-regular fa-file-pdf text-red-500 text-lg"></i>
-                    <div class="overflow-hidden">
-                      <p class="text-xs font-bold text-slate-700 truncate">{{ doc.fileName }}</p>
-                      <p class="text-[10px] text-slate-500">{{ doc.uploadDate | date:'dd MMM HH:mm' }}</p>
-                    </div>
-                 </div>
-               }
-            </div>
-          </div>
-          }
-
+           </div>
         </div>
 
-        <!-- Right Side Sidebar -->
-        <div class="space-y-6" id="alerts-section">
-          
-
-          <!-- Alerts Summary -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[400px]">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-               <h3 class="text-base font-bold text-slate-800 tracking-tight">Notifiche di Sistema</h3>
-               <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md">{{ systemAlerts().length }}</span>
+        <!-- Moduli Gestionali (Stile Dashboard Operatore) -->
+        <div class="bg-white rounded-2xl md:rounded-[2rem] p-5 md:p-6 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="text-base md:text-lg font-black text-slate-800 tracking-tight">Moduli Gestionali</h3>
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Accesso rapido alle aree operative</p>
             </div>
-            <div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-               @if (systemAlerts().length === 0) {
-                 <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
-                   <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                     <i class="fa-solid fa-check text-xl text-emerald-400"></i>
-                   </div>
-                   <p class="text-sm font-bold text-slate-600">Nessuna segnalazione</p>
-                   <p class="text-xs">Tutti i sistemi sono nella norma.</p>
-                 </div>
-               } @else {
-                 @for (alert of systemAlerts(); track alert.id) {
-                   <div class="p-3 rounded-xl border text-sm"
-                        [class.bg-red-50]="alert.type === 'error'" [class.border-red-100]="alert.type === 'error'"
-                        [class.bg-orange-50]="alert.type === 'warning'" [class.border-orange-100]="alert.type === 'warning'"
-                        [class.bg-blue-50]="alert.type === 'info'" [class.border-blue-100]="alert.type === 'info'">
-                      <div class="flex items-start gap-3">
-                        <i class="fa-solid mt-0.5" [class.fa-circle-xmark]="alert.type === 'error'" [class.text-red-500]="alert.type === 'error'"
-                           [class.fa-triangle-exclamation]="alert.type === 'warning'" [class.text-orange-500]="alert.type === 'warning'"
-                           [class.fa-info-circle]="alert.type === 'info'" [class.text-blue-500]="alert.type === 'info'"></i>
-                        <div class="flex-1">
-                          <h4 class="font-bold text-slate-800 text-xs mb-1">{{ alert.title }}</h4>
-                          <p class="text-[11px] text-slate-600 leading-snug">{{ alert.message }}</p>
-                          <div class="flex items-center justify-between mt-2 pt-2 border-t" [class.border-red-200]="alert.type === 'error'" [class.border-orange-200]="alert.type === 'warning'" [class.border-blue-200]="alert.type === 'info'">
-                            <span class="text-[9px] text-slate-500 font-semibold">{{ alert.userName || 'Sistema' }} • {{ alert.timestamp }}</span>
-                            @if (alert.actionable) {
-                              <button (click)="handleAlertAction(alert)" class="text-[10px] font-bold text-blue-600 hover:underline">Verifica</button>
-                            }
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+            @for (action of adminQuickActions; track action.id) {
+              <button (click)="state.setModule(action.id)"
+                      class="group relative overflow-hidden bg-white rounded-2xl md:rounded-3xl p-4 md:p-5 border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 transition-all duration-300 text-center flex flex-col items-center justify-center gap-3 active:scale-95 h-full">
+                <div class="h-12 w-12 md:h-14 md:w-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-md {{ action.bg }} {{ action.color }}">
+                  <i class="fa-solid {{ action.icon }} text-xl md:text-2xl"></i>
+                </div>
+                <div class="w-full">
+                  <h4 class="text-xs md:text-sm font-black text-slate-800 uppercase tracking-tight leading-tight truncate">{{ action.label }}</h4>
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 hidden sm:block truncate">{{ action.sub }}</p>
+                </div>
+                <!-- Mini status dot -->
+                <div class="absolute top-3 right-3 h-2 w-2 rounded-full bg-slate-200 group-hover:bg-indigo-500 transition-colors"></div>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Recent Documents Snippet -->
+        @if (state.filterCollaboratorId() && recentDocuments().length > 0) {
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-4">
+             <h3 class="text-lg font-bold text-slate-800 tracking-tight">Ultimi Documenti</h3>
+             <button (click)="state.setModule('documentation')" class="text-xs font-semibold text-blue-600 hover:text-blue-800">Vedi tutti &rarr;</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+             @for (doc of recentDocuments(); track doc.id) {
+               <div (click)="state.setModule('documentation')" class="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3 cursor-pointer hover:bg-white hover:border-slate-300 transition-colors">
+                  <i class="fa-regular fa-file-pdf text-red-500 text-lg"></i>
+                  <div class="overflow-hidden">
+                    <p class="text-xs font-bold text-slate-700 truncate">{{ doc.fileName }}</p>
+                    <p class="text-[10px] text-slate-500">{{ doc.uploadDate | date:'dd MMM HH:mm' }}</p>
+                  </div>
+               </div>
+             }
+          </div>
+        </div>
+        }
+
+      </div>
+
+      <!-- IN FONDO ALLA PAGINA: SEZIONI AD ESTENSIONE -->
+      <div class="space-y-5 pt-4 border-t border-slate-200" id="alerts-section">
+
+        <!-- ESTENSIONE 1: NOTIFICHE DI SISTEMA (Non Conformità) -->
+        <div class="bg-white rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+          <button type="button"
+                  (click)="toggleSystemAlerts()"
+                  class="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left hover:bg-slate-50/70 transition-colors cursor-pointer select-none">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shadow-xs shrink-0">
+                <i class="fa-solid fa-triangle-exclamation text-lg sm:text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base sm:text-lg font-black text-slate-800 tracking-tight">Notifiche di Sistema</h3>
+                  <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full tracking-wider"
+                        [class.bg-rose-600]="newAlertsCount() > 0"
+                        [class.text-white]="newAlertsCount() > 0"
+                        [class.animate-pulse]="newAlertsCount() > 0"
+                        [class.bg-slate-100]="newAlertsCount() === 0"
+                        [class.text-slate-600]="newAlertsCount() === 0">
+                    {{ systemAlerts().length }}
+                    @if (newAlertsCount() > 0) {
+                      <span class="ml-1 text-[9px] font-bold">({{ newAlertsCount() }} nuove)</span>
+                    }
+                  </span>
+                </div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">
+                  @if (selectedCompanyName()) {
+                    Filtro azienda: <span class="text-blue-600 font-black">{{ selectedCompanyName() }}</span>
+                  } @else {
+                    Tutte le non conformità e anomalie aziendali monitorate
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 shrink-0">
+              <span class="text-xs font-bold text-slate-400 hidden sm:inline">
+                {{ isSystemAlertsExpanded() ? 'Comprimi' : 'Espandi lista' }}
+              </span>
+              <div class="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 transition-transform duration-300"
+                   [class.rotate-180]="isSystemAlertsExpanded()">
+                <i class="fa-solid fa-chevron-down text-sm"></i>
+              </div>
+            </div>
+          </button>
+
+          @if (isSystemAlertsExpanded()) {
+            <div class="border-t border-slate-100 p-4 sm:p-6 bg-slate-50/40 space-y-4 animate-fade-in">
+              <!-- Filtro e strumenti interni -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
+                <p class="text-xs font-bold text-slate-600">
+                  @if (selectedCompanyName()) {
+                    Mostrando le non conformità di: <span class="font-black text-blue-600">{{ selectedCompanyName() }}</span>
+                  } @else {
+                    Visualizzazione completa di tutte le aziende
+                  }
+                </p>
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                  @if (state.filterClientId()) {
+                    <button (click)="state.setClientIdFilter(null)" 
+                            class="text-[10px] font-bold text-slate-500 hover:text-red-600 bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
+                            title="Mostra tutte le aziende">
+                      <i class="fa-solid fa-xmark"></i> Tutte le aziende
+                    </button>
+                  }
+                  <select [value]="state.filterClientId() || ''"
+                          (change)="state.setClientIdFilter($any($event.target).value || null)"
+                          class="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[200px] truncate cursor-pointer shadow-2xs">
+                    <option value="">Tutte le aziende ({{ state.clients().length }})</option>
+                    @for (client of state.clients(); track client.id) {
+                      <option [value]="client.id">{{ client.name }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <!-- Lista Notifiche -->
+              <div class="overflow-y-auto max-h-[460px] space-y-2.5 custom-scrollbar pr-1">
+                @if (systemAlerts().length === 0) {
+                  <div class="py-8 flex flex-col items-center justify-center text-center p-6 text-slate-400 bg-white rounded-2xl border border-slate-100">
+                    <div class="h-12 w-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3">
+                      <i class="fa-solid fa-check text-xl"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-700">Nessuna segnalazione</p>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                      @if (selectedCompanyName()) {
+                        Nessuna non conformità pendente per {{ selectedCompanyName() }}.
+                      } @else {
+                        Tutti i sistemi di tutte le aziende sono nella norma.
+                      }
+                    </p>
+                  </div>
+                } @else {
+                  @for (alert of systemAlerts(); track alert.id) {
+                    <div class="p-3.5 rounded-xl border text-sm transition-all duration-200 bg-white shadow-2xs"
+                         [class.bg-rose-50/70]="alert.isNew && alert.type === 'error'"
+                         [class.border-rose-300]="alert.isNew && alert.type === 'error'"
+                         [class.border-l-4]="alert.isNew"
+                         [class.border-l-rose-500]="alert.isNew && alert.type === 'error'"
+                         [class.border-l-amber-500]="alert.isNew && alert.type === 'warning'"
+                         [class.border-slate-200]="!alert.isNew">
+                       <div class="flex items-start gap-3">
+                         <i class="fa-solid mt-0.5 shrink-0" 
+                            [class.fa-circle-xmark]="alert.type === 'error'" 
+                            [class.text-red-500]="alert.type === 'error'"
+                            [class.fa-triangle-exclamation]="alert.type === 'warning'" 
+                            [class.text-orange-500]="alert.type === 'warning'"
+                            [class.fa-info-circle]="alert.type === 'info'" 
+                            [class.text-blue-500]="alert.type === 'info'"></i>
+                         <div class="flex-1 min-w-0">
+                           <div class="flex items-center justify-between gap-2 mb-1">
+                             <h4 class="font-bold text-slate-800 text-xs truncate">{{ alert.title }}</h4>
+                             @if (alert.isNew) {
+                               <span class="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs animate-pulse">
+                                 <i class="fa-solid fa-bolt text-[7px]"></i> Nuova
+                               </span>
+                             }
+                           </div>
+                           <p class="text-[11px] text-slate-600 leading-snug">{{ alert.message }}</p>
+                           <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 gap-2 flex-wrap">
+                             <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                               @if (alert.companyName) {
+                                 <button type="button"
+                                         (click)="state.setClientIdFilter(alert.clientId || null); $event.stopPropagation()"
+                                         class="inline-flex items-center gap-1 text-[9px] font-bold text-slate-700 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 px-1.5 py-0.5 rounded transition-colors shadow-2xs"
+                                         title="Filtra solo {{ alert.companyName }}">
+                                   <i class="fa-solid fa-hotel text-[8px] text-slate-400"></i>
+                                   <span class="truncate max-w-[120px]">{{ alert.companyName }}</span>
+                                 </button>
+                               }
+                               <span class="text-[9px] text-slate-500 font-semibold truncate">
+                                 {{ alert.userName || 'Sistema' }} • {{ alert.timestamp }}
+                               </span>
+                             </div>
+                             @if (alert.actionable) {
+                               <button (click)="handleAlertAction(alert)" class="text-[10px] font-bold text-blue-600 hover:text-blue-800 hover:underline shrink-0">
+                                 Verifica &rarr;
+                               </button>
+                             }
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ESTENSIONE 2: SCADENZE E RITARDI PAGAMENTI CLIENTI -->
+        <div class="bg-white rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+          <button type="button"
+                  (click)="togglePaymentAlerts()"
+                  class="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left hover:bg-slate-50/70 transition-colors cursor-pointer select-none">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shadow-xs shrink-0">
+                <i class="fa-solid fa-file-invoice-dollar text-lg sm:text-xl"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base sm:text-lg font-black text-slate-800 tracking-tight">Scadenze e Ritardi Pagamenti</h3>
+                  <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider"
+                        [class.bg-rose-600]="urgentPaymentAlertsCount() > 0"
+                        [class.text-white]="urgentPaymentAlertsCount() > 0"
+                        [class.animate-pulse]="urgentPaymentAlertsCount() > 0"
+                        [class.bg-slate-100]="urgentPaymentAlertsCount() === 0"
+                        [class.text-slate-600]="urgentPaymentAlertsCount() === 0">
+                    {{ paymentAlerts().length }}
+                    @if (urgentPaymentAlertsCount() > 0) {
+                      <span class="ml-1 text-[9px] font-bold">({{ urgentPaymentAlertsCount() }} critici)</span>
+                    }
+                  </span>
+                </div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">
+                  Monitoraggio canoni, quote e insoluti clienti
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 shrink-0">
+              <span class="text-xs font-bold text-slate-400 hidden sm:inline">
+                {{ isPaymentAlertsExpanded() ? 'Comprimi' : 'Espandi lista' }}
+              </span>
+              <div class="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 transition-transform duration-300"
+                   [class.rotate-180]="isPaymentAlertsExpanded()">
+                <i class="fa-solid fa-chevron-down text-sm"></i>
+              </div>
+            </div>
+          </button>
+
+          @if (isPaymentAlertsExpanded()) {
+            <div class="border-t border-slate-100 p-4 sm:p-6 bg-slate-50/40 space-y-4 animate-fade-in">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
+                <p class="text-xs font-bold text-slate-600">
+                  Elenco delle posizioni contabili scadute o in scadenza imminente
+                </p>
+                <button (click)="state.setModule('accounting')"
+                        class="self-start sm:self-auto text-xs font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-800 bg-white hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-2xs">
+                  <i class="fa-solid fa-calculator text-xs"></i>
+                  Apri Contabilità &rarr;
+                </button>
+              </div>
+
+              <!-- Lista Pagamenti -->
+              <div class="overflow-y-auto max-h-[460px] space-y-3 custom-scrollbar pr-1">
+                @if (paymentAlerts().length === 0) {
+                  <div class="py-6 px-4 bg-emerald-50/60 rounded-2xl border border-emerald-100 flex items-center gap-4">
+                    <div class="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <i class="fa-solid fa-circle-check text-lg"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-black text-emerald-900 leading-tight">Nessun ritardo o scadenza pendente</p>
+                      <p class="text-xs font-medium text-emerald-700 mt-0.5">Tutti i pagamenti e i canoni delle aziende monitorate risultano regolari.</p>
+                    </div>
+                  </div>
+                } @else {
+                  @for (item of paymentAlerts(); track item.id) {
+                    <div class="p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white shadow-2xs"
+                         [class.border-l-4]="true"
+                         [class.border-l-rose-600]="item.severity === 'insolvent'"
+                         [class.border-rose-200]="item.severity === 'insolvent'"
+                         [class.border-l-amber-500]="item.severity === 'overdue'"
+                         [class.border-amber-200]="item.severity === 'overdue'"
+                         [class.border-l-blue-500]="item.severity === 'impending'"
+                         [class.border-slate-200]="item.severity === 'impending'">
+                      
+                      <div class="flex items-start gap-3 min-w-0">
+                        <div class="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold shadow-2xs"
+                             [class.bg-rose-600]="item.severity === 'insolvent'"
+                             [class.text-white]="item.severity === 'insolvent'"
+                             [class.bg-amber-500]="item.severity === 'overdue'"
+                             [class.text-white]="item.severity === 'overdue'"
+                             [class.bg-blue-500]="item.severity === 'impending'"
+                             [class.text-white]="item.severity === 'impending'">
+                          <i class="fa-solid"
+                             [class.fa-triangle-exclamation]="item.severity !== 'impending'"
+                             [class.fa-clock]="item.severity === 'impending'"></i>
+                        </div>
+                        
+                        <div class="min-w-0">
+                          <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                            <h4 class="text-xs font-black text-slate-800 truncate">{{ item.companyName }}</h4>
+                            <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                                  [class.bg-rose-600]="item.severity === 'insolvent'"
+                                  [class.text-white]="item.severity === 'insolvent'"
+                                  [class.bg-amber-100]="item.severity === 'overdue'"
+                                  [class.text-amber-800]="item.severity === 'overdue'"
+                                  [class.bg-blue-100]="item.severity === 'impending'"
+                                  [class.text-blue-800]="item.severity === 'impending'">
+                              {{ item.statusLabel }}
+                            </span>
                           </div>
+                          <p class="text-[11px] text-slate-600">
+                            Scadenza: <span class="font-bold">{{ item.dueDate | date:'dd/MM/yyyy' }}</span>
+                            @if (item.notes) {
+                              <span class="text-slate-400"> · {{ item.notes }}</span>
+                            }
+                          </p>
                         </div>
                       </div>
-                   </div>
-                 }
-               }
-            </div>
-          </div>
 
+                      <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        @if (item.amount > 0) {
+                          <div class="text-right">
+                            <span class="text-slate-400 uppercase tracking-widest block text-[9px] font-bold">Importo</span>
+                            <span class="text-sm font-black text-slate-800">€{{ item.amount | number:'1.2-2' }}</span>
+                          </div>
+                        }
+                        <button (click)="openPaymentManagement(item.clientId)"
+                                class="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-700 hover:text-indigo-600 text-[10px] font-black uppercase tracking-wider shadow-2xs transition-all active:scale-95 flex items-center gap-1.5">
+                          <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                          Gestisci
+                        </button>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -301,7 +539,127 @@ export class DashboardViewComponent {
   state = inject(AppStateService);
   private toastService = inject(ToastService);
 
+  readonly adminQuickActions = [
+    { id: 'accounting', label: 'Contabilità', sub: 'Conti e pagamenti', icon: 'fa-calculator', color: 'text-emerald-600', bg: 'bg-emerald-50 border border-emerald-100' },
+    { id: 'collaborators', label: 'Collaboratori', sub: 'Personale e turni', icon: 'fa-users-gear', color: 'text-cyan-600', bg: 'bg-cyan-50 border border-cyan-100' },
+    { id: 'documentation', label: 'Archivio', sub: 'Archivio manuali', icon: 'fa-box-archive', color: 'text-indigo-600', bg: 'bg-indigo-50 border border-indigo-100' },
+    { id: 'settings', label: 'Impostazioni', sub: 'Configurazioni', icon: 'fa-sliders', color: 'text-slate-700', bg: 'bg-slate-100 border border-slate-200' },
+    { id: 'general-checks', label: 'Check Generali', sub: 'Ispezioni periodiche', icon: 'fa-list-check', color: 'text-amber-600', bg: 'bg-amber-50 border border-amber-100' },
+    { id: 'phases', label: 'Fasi Operative', sub: 'Pre / Op / Post', icon: 'fa-layer-group', color: 'text-blue-600', bg: 'bg-blue-50 border border-blue-100' },
+    { id: 'microbio-monitor', label: 'Analisi Microbio', sub: 'Tamponi e analisi', icon: 'fa-microscope', color: 'text-purple-600', bg: 'bg-purple-50 border border-purple-100' },
+    { id: 'ingredients-book', label: 'Libro Ingredienti', sub: 'Ricette e allergeni', icon: 'fa-book-open', color: 'text-rose-600', bg: 'bg-rose-50 border border-rose-100' }
+  ];
 
+  isPaymentAlertsExpanded = signal<boolean>(false);
+  isSystemAlertsExpanded = signal<boolean>(false);
+
+  togglePaymentAlerts() {
+    this.isPaymentAlertsExpanded.update(v => !v);
+  }
+
+  toggleSystemAlerts() {
+    this.isSystemAlertsExpanded.update(v => !v);
+  }
+
+  openPaymentManagement(clientId: string) {
+    if (clientId) {
+      this.state.setClientIdFilter(clientId);
+    }
+    this.state.setModule('accounting');
+  }
+
+  urgentPaymentAlertsCount = computed(() => {
+    return this.paymentAlerts().filter(a => a.severity === 'insolvent' || a.severity === 'overdue').length;
+  });
+
+  paymentAlerts = computed((): PaymentAlert[] => {
+    const payments = this.state.payments();
+    const clients = this.state.clients();
+    const selectedFilterClientId = this.state.filterClientId();
+    const activeBrandUnits = this.state.activeBrandUnits();
+    const allowedClientIds = (activeBrandUnits.length > 1)
+      ? activeBrandUnits.map(u => u.id)
+      : (selectedFilterClientId && selectedFilterClientId !== 'demo' ? [selectedFilterClientId] : []);
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const alerts: PaymentAlert[] = [];
+
+    // 1. Process explicit payments
+    payments.forEach(p => {
+      if (p.status === 'paid') return;
+      if (allowedClientIds.length > 0 && !allowedClientIds.includes(p.clientId)) return;
+
+      const dueDate = new Date(p.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      const diffMs = dueDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      const client = clients.find(c => c.id === p.clientId);
+      const companyName = client?.name || 'Azienda';
+
+      if (diffDays < -5) {
+        alerts.push({
+          id: `pay-${p.id}`,
+          clientId: p.clientId,
+          companyName,
+          amount: p.amount,
+          dueDate: p.dueDate,
+          daysDiff: diffDays,
+          severity: 'insolvent',
+          statusLabel: `Insoluto da ${Math.abs(diffDays)} gg`,
+          notes: p.notes
+        });
+      } else if (diffDays <= 0) {
+        alerts.push({
+          id: `pay-${p.id}`,
+          clientId: p.clientId,
+          companyName,
+          amount: p.amount,
+          dueDate: p.dueDate,
+          daysDiff: diffDays,
+          severity: 'overdue',
+          statusLabel: diffDays === 0 ? 'Scade Oggi' : `Scaduto da ${Math.abs(diffDays)} gg`,
+          notes: p.notes
+        });
+      } else if (diffDays <= 15) {
+        alerts.push({
+          id: `pay-${p.id}`,
+          clientId: p.clientId,
+          companyName,
+          amount: p.amount,
+          dueDate: p.dueDate,
+          daysDiff: diffDays,
+          severity: 'impending',
+          statusLabel: `Scade tra ${diffDays} gg`,
+          notes: p.notes
+        });
+      }
+    });
+
+    // 2. Also check clients flagged with paymentBalanceDue or suspended
+    clients.forEach(c => {
+      if (allowedClientIds.length > 0 && !allowedClientIds.includes(c.id)) return;
+      if (c.paymentBalanceDue && !alerts.some(a => a.clientId === c.id)) {
+        alerts.push({
+          id: `client-bal-${c.id}`,
+          clientId: c.id,
+          companyName: c.name,
+          amount: 0,
+          dueDate: new Date().toISOString().split('T')[0],
+          daysDiff: -1,
+          severity: 'overdue',
+          statusLabel: 'Saldo in Sospeso',
+          notes: 'Quota o canone arretrato'
+        });
+      }
+    });
+
+    // Sort: insolvent first, then overdue, then impending
+    const priority: Record<string, number> = { 'insolvent': 0, 'overdue': 1, 'impending': 2 };
+    return alerts.sort((a, b) => (priority[a.severity] ?? 9) - (priority[b.severity] ?? 9));
+  });
 
   // --- KPI Methods ---
   getFilteredClientsCount() {
@@ -470,79 +828,184 @@ export class DashboardViewComponent {
     };
   });
 
+  selectedCompanyName = computed(() => {
+    const filterId = this.state.filterClientId();
+    if (!filterId || filterId === 'demo') return null;
+    const client = this.state.clients().find(c => c.id === filterId);
+    return client?.name || null;
+  });
+
+  newAlertsCount = computed(() => {
+    return this.systemAlerts().filter(a => a.isNew).length;
+  });
+
   systemAlerts = computed((): SystemAlert[] => {
     const alerts: SystemAlert[] = [];
-    const allRecords = this.state.checklistRecords();
     const currentDate = this.state.filterDate();
-    const users = this.filteredUsers();
-    const userIds = users.map(u => u.id);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowTime = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
 
+    const allClients = this.state.clients();
+    const allUsers = this.state.systemUsers();
+
+    // Determine active company filter
+    const selectedFilterClientId = this.state.filterClientId();
+    const isCompanySelected = this.state.isAdmin()
+      ? !!(selectedFilterClientId && selectedFilterClientId !== 'demo')
+      : !!this.state.currentUser()?.clientId;
+
+    const targetClientId = this.state.isAdmin()
+      ? selectedFilterClientId
+      : this.state.currentUser()?.clientId;
+
+    const activeBrandUnits = this.state.activeBrandUnits();
+    const allowedClientIds = (activeBrandUnits.length > 1)
+      ? activeBrandUnits.map(u => u.id)
+      : (targetClientId ? [targetClientId] : []);
+
+    const getCompanyInfo = (clientId?: string, userId?: string) => {
+      let cId = clientId;
+      if (!cId && userId) {
+        const u = allUsers.find(user => user.id === userId);
+        cId = u?.clientId;
+      }
+      const client = allClients.find(c => c.id === cId);
+      return {
+        clientId: cId,
+        companyName: client?.name || (cId ? 'Azienda' : '')
+      };
+    };
+
+    const matchesCompanyFilter = (clientId?: string, userId?: string): boolean => {
+      if (!isCompanySelected) return true; // Show ALL companies when no company selected!
+      let cId = clientId;
+      if (!cId && userId) {
+        const u = allUsers.find(user => user.id === userId);
+        cId = u?.clientId;
+      }
+      if (allowedClientIds.length > 0) {
+        return allowedClientIds.includes(cId || '');
+      }
+      return cId === targetClientId;
+    };
+
+    // 1. Dedicated Non-Conformities (All companies if not filtered, filtered if company selected)
+    const allNCs = this.state.nonConformities();
+    const relevantNCs = allNCs.filter(nc => {
+      if (nc.status === 'CLOSED') return false;
+      return matchesCompanyFilter(nc.clientId, nc.responsibleId);
+    });
+
+    relevantNCs.forEach(nc => {
+      const compInfo = getCompanyInfo(nc.clientId, nc.responsibleId);
+      const user = allUsers.find(u => u.id === nc.responsibleId);
+
+      // Determine if it is newly arrived
+      let isNew = false;
+      let sortTime = 0;
+
+      if (nc.createdAt) {
+        const createdMs = new Date(nc.createdAt).getTime();
+        sortTime = createdMs;
+        if (!isNaN(createdMs) && (nowTime - createdMs <= oneDayMs)) {
+          isNew = true;
+        }
+      }
+
+      if (nc.date === currentDate || nc.date === todayStr) {
+        isNew = true;
+        if (!sortTime && nc.date) {
+          sortTime = new Date(nc.date).getTime();
+        }
+      }
+
+      if (!sortTime && nc.date) {
+        sortTime = new Date(nc.date).getTime();
+      }
+
+      const isToday = nc.date === currentDate || nc.date === todayStr;
+      const timeDisplay = isToday
+        ? (nc.createdAt ? new Date(nc.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'Oggi')
+        : (nc.date ? new Date(nc.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }) : 'Recente');
+
+      alerts.push({
+        id: `nc-table-${nc.id}`,
+        type: 'error',
+        title: `Non Conformità: ${nc.itemName || 'Anomalia'}`,
+        message: nc.description.length > 75 ? nc.description.substring(0, 72) + '...' : nc.description,
+        userId: nc.responsibleId,
+        userName: user?.name || 'Operatore',
+        clientId: compInfo.clientId,
+        companyName: compInfo.companyName,
+        timestamp: timeDisplay,
+        actionable: true,
+        isNew: isNew,
+        sortTimestamp: sortTime || 0
+      });
+    });
+
+    // 2. Anomalies from daily checklists
+    const allRecords = this.state.checklistRecords();
     const relevantRecords = allRecords.filter(r =>
-      userIds.includes(r.userId) &&
-      r.date === currentDate
+      (r.date === currentDate || r.date === todayStr) &&
+      matchesCompanyFilter(r.clientId, r.userId)
     );
 
-    // 1. Anomalies from daily checklists
     relevantRecords.forEach(record => {
-      if (record.data.status === 'Non Conforme') {
-        // CHECK if there is a CLOSED non-conformity for this module/date/client
-        const user = users.find(u => u.id === record.userId);
-        const isResolved = this.state.nonConformities().some(nc => 
-          nc.moduleId === record.moduleId && 
-          nc.date === record.date && 
-          nc.clientId === user?.clientId &&
+      if (record.data?.status === 'Non Conforme') {
+        const compInfo = getCompanyInfo(record.clientId, record.userId);
+        const user = allUsers.find(u => u.id === record.userId);
+
+        // Check if there is already a CLOSED non-conformity
+        const isResolved = allNCs.some(nc =>
+          nc.moduleId === record.moduleId &&
+          nc.date === record.date &&
+          (nc.clientId === compInfo.clientId || !nc.clientId) &&
           nc.status === 'CLOSED'
         );
+        if (isResolved) return;
 
-        if (isResolved) return; // Skip if resolved
+        // Skip if already in dedicated NC list
+        const alreadyInNCs = relevantNCs.some(nc =>
+          nc.moduleId === record.moduleId &&
+          nc.date === record.date &&
+          nc.clientId === compInfo.clientId
+        );
+        if (alreadyInNCs) return;
+
+        const recordMs = record.timestamp ? new Date(record.timestamp).getTime() : nowTime;
 
         alerts.push({
           id: `nc-rec-${record.id}`,
           type: 'error',
           title: `Anomalia in ${this.getModuleName(record.moduleId)}`,
-          message: record.data.summary || 'Rilevata non conformità durante l\'ispezione.',
+          message: record.data.summary || 'Rilevata non conformità durante l\'ispezione odierna.',
           userId: record.userId,
-          userName: user?.name,
-          timestamp: new Date(record.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-          actionable: true
+          userName: user?.name || 'Operatore',
+          clientId: compInfo.clientId,
+          companyName: compInfo.companyName,
+          timestamp: record.timestamp ? new Date(record.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'Oggi',
+          actionable: true,
+          isNew: true, // Daily checklist anomaly from today is newly arrived
+          sortTimestamp: recordMs
         });
       }
     });
 
-    // 2. Dedicated Non-Conformities (Show all OPEN/IN_PROGRESS regardless of date)
-    const allNCs = this.state.nonConformities();
-    const relevantNCs = allNCs.filter(nc => 
-      userIds.includes(nc.responsibleId || '') && 
-      nc.status !== 'CLOSED'
-    );
-    
-    relevantNCs.forEach(nc => {
-      const user = users.find(u => u.id === nc.responsibleId);
-      const isToday = nc.date === currentDate;
-      
-      alerts.push({
-        id: `nc-table-${nc.id}`,
-        type: 'error',
-        title: `Anomalia: ${nc.itemName || 'Generale'}`,
-        message: nc.description.length > 60 ? nc.description.substring(0, 57) + '...' : nc.description,
-        userId: nc.responsibleId,
-        userName: user?.name || 'Sistema',
-        timestamp: isToday ? 
-          (nc.createdAt ? nc.createdAt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : 'Oggi') : 
-          new Date(nc.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }),
-        actionable: true
-      });
-    });
-
-    users.forEach(user => {
+    // 3. Missing phases for active users
+    const usersToCheck = this.filteredUsers();
+    usersToCheck.forEach(user => {
+      if (!matchesCompanyFilter(user.clientId, user.id)) return;
       const userRecords = relevantRecords.filter(r => r.userId === user.id);
-      const phasesMissing = [];
+      const phasesMissing: string[] = [];
 
       if (!userRecords.some(r => r.moduleId === 'pre-op-checklist')) phasesMissing.push('Pre-operativa');
       if (!userRecords.some(r => r.moduleId === 'operative-checklist')) phasesMissing.push('Operativa');
       if (!userRecords.some(r => r.moduleId === 'post-op-checklist')) phasesMissing.push('Post-operativa');
 
-      if (phasesMissing.length > 0 && phasesMissing.length < 3) {
+      if (userRecords.length > 0 && phasesMissing.length > 0 && phasesMissing.length < 3) {
+        const compInfo = getCompanyInfo(user.clientId, user.id);
         alerts.push({
           id: `missing-${user.id}`,
           type: 'warning',
@@ -550,16 +1013,26 @@ export class DashboardViewComponent {
           message: `${user.name} deve completare: ${phasesMissing.join(', ')}`,
           userId: user.id,
           userName: user.name,
+          clientId: compInfo.clientId,
+          companyName: compInfo.companyName,
           timestamp: 'Oggi',
-          actionable: true
+          actionable: true,
+          isNew: false,
+          sortTimestamp: 0
         });
       }
     });
 
-    // Sort: Errors (Critical) first, then Warnings, then Info
+    // Sort: 1) isNew first, 2) errors (critical), 3) most recent timestamp
     return alerts.sort((a, b) => {
-      const priority = { 'error': 0, 'warning': 1, 'info': 2, 'success': 3 };
-      return priority[a.type] - priority[b.type];
+      if (a.isNew && !b.isNew) return -1;
+      if (!a.isNew && b.isNew) return 1;
+
+      const priority: Record<string, number> = { 'error': 0, 'warning': 1, 'info': 2, 'success': 3 };
+      const pDiff = (priority[a.type] ?? 9) - (priority[b.type] ?? 9);
+      if (pDiff !== 0) return pDiff;
+
+      return (b.sortTimestamp || 0) - (a.sortTimestamp || 0);
     });
   });
 
@@ -742,7 +1215,10 @@ export class DashboardViewComponent {
   }
 
   handleAlertAction(alert: SystemAlert) {
-    if (alert.type === 'error' || alert.title.toLowerCase().includes('anomalia')) {
+    if (alert.clientId) {
+      this.state.setClientIdFilter(alert.clientId);
+    }
+    if (alert.type === 'error' || alert.title.toLowerCase().includes('anomalia') || alert.title.toLowerCase().includes('non conformit')) {
       this.state.setModule('general-checks');
     } else {
       this.state.setModule('collaborators');

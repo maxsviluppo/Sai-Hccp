@@ -311,146 +311,163 @@ interface AreaChecklist {
         </div>
     </div>
 
-        <!-- ANOMALY REPORTING MODAL (fuori dal contenuto scrollabile / animate-fade-in) -->
-        @if (isAnomalyModalOpen()) {
-            <div class="haccp-modal-overlay z-[120]">
-                <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeAnomalyModal()"></div>
-                <div class="haccp-modal-center">
-                <div class="haccp-modal-panel bg-white rounded-3xl shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
-                    
-                    <!-- Header -->
-                    <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center">
-                                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-black uppercase tracking-tight leading-none mb-1">Segnalazione Anomalia</h3>
-                                <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest opacity-80">Documentazione Non Conformità</p>
-                            </div>
+    <!-- MODALE SEGNALAZIONE NON CONFORMITÀ (Sovraimpressione oscurante schermo intero, chiusura su OK) -->
+    @if (isAnomalyModalOpen()) {
+        <div class="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <!-- Sfondo nero oscurante schermo intero -->
+            <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-fade-in"
+                 (click)="closeAnomalyModal()"></div>
+
+            <!-- Pannello Modale -->
+            <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 z-10 animate-slide-up my-auto flex flex-col">
+                <!-- Header Rosso HACCP -->
+                <div class="px-6 py-5 bg-gradient-to-r from-red-600 to-rose-600 text-white flex items-center justify-between shrink-0 shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-triangle-exclamation text-xl"></i>
                         </div>
-                        <button (click)="closeAnomalyModal()" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
-                            <i class="fa-solid fa-xmark"></i>
+                        <div>
+                            <h3 class="text-lg font-black uppercase tracking-tight leading-none mb-1">Segnalazione Anomalia</h3>
+                            <p class="text-rose-100 text-[10px] font-bold uppercase tracking-widest opacity-90">Documentazione Non Conformità</p>
+                        </div>
+                    </div>
+                    <button type="button"
+                            (click)="closeAnomalyModal()"
+                            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95 text-white"
+                            aria-label="Chiudi">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6 bg-slate-50/60">
+                    <div class="p-4 bg-white rounded-2xl border border-red-100 shadow-sm">
+                        <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info"></i> Controllo Selezionato
+                        </h4>
+                        <p class="text-base sm:text-lg font-bold text-slate-800 leading-tight">
+                            {{ currentAnomalyStep()?.label }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                            Dettaglio Anomalia / Azione Correttiva
+                        </label>
+                        <textarea #anomalyText
+                                  [value]="anomalySubject"
+                                  placeholder="Descrivi l'anomalia riscontrata e l'eventuale azione correttiva immediata intrapresa..."
+                                  class="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-base font-medium text-slate-700 transition-all shadow-sm bg-white resize-none"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button"
+                                (click)="closeAnomalyModal()"
+                                class="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                            ANNULLA
+                        </button>
+                        <button type="button"
+                                (click)="confirmAnomaly(anomalyText.value)"
+                                class="flex-[1.5] py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-600/25 active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check text-sm"></i>
+                            <span>OK · REGISTRA NON CONFORMITÀ</span>
                         </button>
                     </div>
-
-                    <div class="p-8 space-y-6 bg-slate-50/50">
-                        <div class="p-4 bg-white rounded-2xl border border-red-100 shadow-sm">
-                            <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                                <i class="fa-solid fa-circle-info"></i> Controllo Selezionato
-                            </h4>
-                            <p class="text-lg font-bold text-slate-700 leading-tight">
-                                {{ currentAnomalyStep()?.label }}
-                            </p>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Dettaglio Anomalia / Azione Correttiva</label>
-                            <textarea #anomalyText
-                                      [value]="anomalySubject"
-                                      placeholder="Descrivi l'anomalia riscontrata e l'eventuale azione correttiva immediata intrapresa..."
-                                      class="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-base font-medium text-slate-700 transition-all shadow-sm bg-white resize-none"></textarea>
-                        </div>
-
-                        <div class="flex gap-4 pt-2">
-                            <button (click)="closeAnomalyModal()"
-                                    class="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
-                                ANNULLA
-                            </button>
-                            <button (click)="confirmAnomaly(anomalyText.value)"
-                                    class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 active:scale-95">
-                                REGISTRA NON CONFORMITÀ
-                            </button>
-                        </div>
-                    </div>
-                </div>
                 </div>
             </div>
-        }
+        </div>
+    }
 
-        <!-- PROCEDURE MODAL (Procedimento Correttivo) -->
-        @if (isProcedureModalOpen()) {
-            <div class="haccp-modal-overlay z-[130]">
-                <div class="haccp-modal-backdrop bg-slate-900/60 backdrop-blur-md animate-fade-in" (click)="closeProcedureModal()"></div>
-                <div class="haccp-modal-center">
-                <div class="haccp-modal-panel haccp-modal-panel-lg bg-white rounded-[40px] shadow-2xl overflow-hidden animate-slide-up border border-slate-200 flex flex-col">
-                    
-                    <!-- Header -->
-                    <div class="p-8 bg-gradient-to-br from-red-600 to-rose-700 text-white flex-shrink-0">
-                        <div class="flex items-center gap-5">
-                            <div class="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-lg border border-white/30">
-                                <i class="fa-solid fa-hand-holding-medical"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-black tracking-tight">Procedimento Correttivo</h3>
-                                <p class="text-rose-100 text-[10px] font-black uppercase tracking-widest opacity-80">Azione richiesta per ripristinare la conformità</p>
-                            </div>
+    <!-- MODALE PROCEDIMENTO CORRETTIVO (Sovraimpressione oscurante schermo intero) -->
+    @if (isProcedureModalOpen()) {
+        <div class="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            <!-- Sfondo nero oscurante schermo intero -->
+            <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity animate-fade-in"
+                 (click)="closeProcedureModal()"></div>
+
+            <div class="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 z-10 animate-slide-up my-auto flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="p-6 sm:p-8 bg-gradient-to-br from-red-600 to-rose-700 text-white flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-lg border border-white/30 shrink-0">
+                            <i class="fa-solid fa-hand-holding-medical"></i>
                         </div>
-                    </div>
-
-                    <div class="p-8 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
-                        <div class="p-5 bg-red-50 rounded-3xl border border-red-100">
-                            <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Area Interessata
-                            </h4>
-                            <p class="text-xl font-bold text-slate-800 leading-tight">
-                                {{ selectedProcedureArea()?.label }}
-                            </p>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                @for (step of getIssueSteps(selectedProcedureArea()?.id || ''); track step.id) {
-                                    <span class="px-2 py-1 bg-white border border-red-200 text-red-700 text-[10px] font-bold rounded-lg uppercase shadow-xs">
-                                        {{ step.label }}
-                                    </span>
-                                }
-                            </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">Procedimento Correttivo</h3>
+                            <p class="text-rose-100 text-[10px] font-black uppercase tracking-widest opacity-80 truncate">Azione richiesta per ripristinare la conformità</p>
                         </div>
-
-                        <div class="space-y-4">
-                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Protocollo di Intervanto</h4>
-                            
-                            <div class="space-y-3">
-                                @for (step of getAreaProcedures(selectedProcedureArea()?.id || ''); track $index) {
-                                    <div class="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:border-red-200 group">
-                                        <div class="h-8 w-8 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 font-black text-xs shadow-sm group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 transition-all">
-                                            {{ $index + 1 }}
-                                        </div>
-                                        <p class="text-sm font-bold text-slate-600 leading-relaxed group-hover:text-slate-800 transition-colors">
-                                            {{ step }}
-                                        </p>
-                                    </div>
-                                } @empty {
-                                    <div class="p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Procedura standard non definita</p>
-                                        <p class="text-[10px] text-slate-400 mt-1 italic">Contattare il responsabile HACCP per indicazioni specifiche.</p>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-
-                        <div class="p-5 bg-blue-50 rounded-3xl border border-blue-100">
-                            <div class="flex gap-3">
-                                <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
-                                <p class="text-xs text-blue-800 leading-relaxed">
-                                    <b>Nota:</b> Dopo aver eseguito le azioni sopra indicate, è obbligatorio verificare nuovamente l'area e, se conforme, aggiornare lo stato del registro.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-8 pt-0 flex gap-4">
-                        <button (click)="closeProcedureModal()"
-                                class="flex-1 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200">
-                            Chiudi
-                        </button>
-                        <button (click)="resolveAreaIssues(selectedProcedureArea()?.id || '')"
-                                class="flex-[1.5] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95">
-                            Risolto e Conforme
+                        <button type="button"
+                                (click)="closeProcedureModal()"
+                                class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95 text-white"
+                                aria-label="Chiudi">
+                            <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
                 </div>
+
+                <div class="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50">
+                    <div class="p-4 sm:p-5 bg-red-50 rounded-2xl border border-red-100">
+                        <h4 class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Area Interessata
+                        </h4>
+                        <p class="text-lg sm:text-xl font-bold text-slate-800 leading-tight">
+                            {{ selectedProcedureArea()?.label }}
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @for (step of getIssueSteps(selectedProcedureArea()?.id || ''); track step.id) {
+                                <span class="px-2 py-1 bg-white border border-red-200 text-red-700 text-[10px] font-bold rounded-lg uppercase shadow-xs">
+                                    {{ step.label }}
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Protocollo di Intervento</h4>
+                        <div class="space-y-2.5">
+                            @for (step of getAreaProcedures(selectedProcedureArea()?.id || ''); track $index) {
+                                <div class="flex gap-3.5 p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                                    <div class="h-7 w-7 rounded-lg bg-red-50 border border-red-100 text-red-600 flex items-center justify-center shrink-0 font-black text-xs">
+                                        {{ $index + 1 }}
+                                    </div>
+                                    <p class="text-xs sm:text-sm font-bold text-slate-600 leading-relaxed">
+                                        {{ step }}
+                                    </p>
+                                </div>
+                            } @empty {
+                                <div class="p-6 text-center bg-white rounded-xl border border-dashed border-slate-200">
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Procedura standard non definita</p>
+                                    <p class="text-[10px] text-slate-400 mt-1 italic">Contattare il responsabile HACCP per indicazioni specifiche.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                        <div class="flex gap-3">
+                            <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                            <p class="text-xs text-blue-800 leading-relaxed">
+                                <b>Nota:</b> Dopo aver eseguito le azioni sopra indicate, è obbligatorio verificare nuovamente l'area e, se conforme, aggiornare lo stato del registro.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 pt-0 flex gap-3 bg-slate-50/50 shrink-0">
+                    <button type="button"
+                            (click)="closeProcedureModal()"
+                            class="flex-1 py-4 bg-white text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200 active:scale-95">
+                        Chiudi
+                    </button>
+                    <button type="button"
+                            (click)="resolveAreaIssues(selectedProcedureArea()?.id || '')"
+                            class="flex-[1.5] py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check text-sm"></i>
+                        <span>OK · RISOLTO E CONFORME</span>
+                    </button>
                 </div>
             </div>
-        }
+        </div>
+    }
     `,
     styles: [`
         .animate-slide-down { animation: slideDown 0.3s ease-out; }
